@@ -16,7 +16,7 @@
 //     → { enter(), exit(), destroy() }
 
 import CURRICULUM from './sightReadingCurriculum.js';
-import { toMidi } from './notes.js';
+import { toMidi, noteName } from './notes.js';
 import { unlockAudio } from './audioContext.js';
 
 const LETTER_INDEX = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
@@ -86,7 +86,7 @@ export default function createView(ctx) {
     model = notes.map((name, i) => {
       const leftPct = n <= 1 ? 52 : START + ((END - START) * i) / (n - 1);
       const p = place(name);
-      const el = engrave(p, leftPct, i);
+      const el = engrave(p, leftPct, i, name);
       return { name, midi: p.midi, staff: p.staff, off: p.off, leftPct, el };
     });
 
@@ -94,7 +94,7 @@ export default function createView(ctx) {
     ui.count.textContent = `${n} note${n === 1 ? '' : 's'}  ·  ${idx + 1}/${CURRICULUM.length}`;
   }
 
-  function engrave(p, leftPct, i) {
+  function engrave(p, leftPct, i, name) {
     const staffEl = p.staff === 'treble' ? ui.treble : ui.bass;
     for (const k of ledgerOffsets(p.off)) {
       const led = el('div', { class: 'ledger' });
@@ -113,6 +113,10 @@ export default function createView(ctx) {
     }
     note.appendChild(el('div', { class: 'note__head' }));
     note.appendChild(el('div', { class: 'note__stem' }));
+    // Small name label so the staff is never ambiguous (training aid).
+    const tag = el('span', { class: 'note__name' });
+    tag.textContent = name;
+    note.appendChild(tag);
     staffEl.appendChild(note);
     return note;
   }
@@ -127,9 +131,8 @@ export default function createView(ctx) {
     mode = 'guided';
     cursor = 0;
     render();                 // fresh notes, no states
-    arm();
+    arm();                    // arm() now sets the status line
     viewport?.frame(model.map((m) => m.midi));
-    ui.status.textContent = 'Play the highlighted note.';
     setButtons();
   }
 
@@ -142,6 +145,10 @@ export default function createView(ctx) {
 
     keyboard?.clearHighlight('target');
     keyboard?.highlight([cur.midi], 'target');
+
+    // Make the expectation explicit: name AND MIDI, the single value used for
+    // the staff cursor, the keyboard highlight, and scoring alike.
+    ui.status.textContent = `Expected: ${cur.name} · MIDI ${cur.midi} — play the highlighted key.`;
   }
 
   function onNotePlayed(ev) {
@@ -156,11 +163,14 @@ export default function createView(ctx) {
       if (cursor >= model.length) { success(); return; }
       arm();
     } else {
-      // Wrong: flash red and WAIT — the cursor does not advance.
+      // Wrong: flash red and WAIT — the cursor does not advance. Show exactly
+      // what was expected vs received, so any transposition (in the engine OR
+      // in a MIDI controller's octave/transpose setting) is visible in numbers.
       cur.el.classList.add('is-missed');
       const t = setTimeout(() => cur.el.classList.remove('is-missed'), WRONG_FLASH_MS);
       timers.push(t);
-      ui.status.textContent = 'Not quite — try the highlighted note again.';
+      ui.status.textContent =
+        `✗ Expected ${cur.name} (MIDI ${cur.midi}) — received ${noteName(ev.midiNote)} (MIDI ${ev.midiNote}). Try again.`;
     }
   }
 
@@ -317,6 +327,11 @@ function injectStyles() {
     /* Cursor + preview on the staff */
     .note.is-current .note__head{box-shadow:0 0 0 2px var(--brass-bright),0 0 10px var(--brass-glow)}
     .note.is-next{opacity:.5;color:var(--brass)}
+    /* Small note-name label under each head (training aid, removes ambiguity) */
+    .note__name{position:absolute;top:calc(var(--note-head) + 3px);left:50%;
+      transform:translateX(-50%);font:500 9px var(--font-mono,monospace);
+      color:var(--ivory-faint);white-space:nowrap;pointer-events:none}
+    .note.is-current .note__name{color:var(--brass-bright)}
     /* Success pulse on the whole staff */
     .srx__staff.is-success .notation{box-shadow:0 0 0 1px var(--good),0 0 22px -4px var(--good)}
   `;
