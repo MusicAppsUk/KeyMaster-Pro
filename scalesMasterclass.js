@@ -53,14 +53,15 @@ export default function createView(ctx) {
    * Build / refresh the fingering preview on the keyboard
    * ===================================================================== */
 
-  function buildSteps() {
-    // Returns [{ midi, finger|null, degree }] for the whole exercise.
-    let steps = [];
+  // ONE ascending pass of the scale: the full set of notes, tonic→tonic.
+  // 1 octave => 8 notes, 2 octaves => 15 notes. This is what the preview shows.
+  function buildAscending() {
+    const steps = [];
     if (sel.type === 'major') {
       const f = majorFingering(sel.tonic, sel.hand, {
         octaves: sel.octaves, startOctave: START_OCT[sel.hand],
       });
-      steps = f.notes.map((n) => ({ midi: n.midi, finger: n.finger, degree: n.degree }));
+      f.notes.forEach((n) => steps.push({ midi: n.midi, finger: n.finger, degree: n.degree }));
       ui.fingerNote.textContent = f.reviewed ? '' : (f.note ?? '');
     } else {
       const scale = buildScale(parseTonic(sel.tonic), sel.type);
@@ -71,27 +72,35 @@ export default function createView(ctx) {
       steps.push({ midi: scale.midiAt(START_OCT[sel.hand] + sel.octaves)[0], finger: null, degree: 1 });
       ui.fingerNote.textContent = 'Fingering for minor scales is pending verification — practising on notes only.';
     }
-    if (sel.updown && steps.length > 1) {
-      steps = steps.concat(steps.slice(0, -1).reverse());
-    }
     return steps;
   }
 
-  /** Paint the static fingering preview (badges + ghost highlight). */
-  function showPreview() {
+  // The full play/practice sequence: ascending, plus the descending return
+  // (without repeating the top note) only when "Up & down" is selected.
+  function buildSequence() {
+    const asc = buildAscending();
+    return (sel.updown && asc.length > 1) ? asc.concat(asc.slice(0, -1).reverse()) : asc;
+  }
+
+  /**
+   * Paint the whole scale onto the keyboard with the given highlight variant,
+   * plus finger badges (majors). Used for the idle preview ('target' rings, very
+   * visible) and as the dim base during Listen/Practice ('ghost').
+   */
+  function paintScale(variant) {
     keyboard.clearHighlight('target');
     keyboard.clearHighlight('ghost');
     keyboard.clearFingers();
-    const steps = buildSteps();
-    const ascending = steps.slice(0, ascLength(steps));
-    const midis = ascending.map((s) => s.midi);
-    keyboard.highlight(midis, 'ghost');
-    ascending.forEach((s) => { if (s.finger != null) keyboard.setFinger(s.midi, s.finger); });
+    const asc = buildAscending();                 // every note, never a half-slice
+    const midis = asc.map((s) => s.midi);
+    keyboard.highlight(midis, variant);
+    asc.forEach((s) => { if (s.finger != null) keyboard.setFinger(s.midi, s.finger); });
     viewport?.frame(midis);
 
     const scale = buildScale(parseTonic(sel.tonic), sel.type);
     const names = scale.degrees.map((d) => d.name).join(' ');
-    ui.notesLine.textContent = `${displayTonic(sel.tonic)} ${typeLabel(sel.type)} · ${sel.hand}\n${names}`;
+    ui.notesLine.textContent =
+      `${displayTonic(sel.tonic)} ${typeLabel(sel.type)} · ${sel.hand} · ${asc.length} notes\n${names}`;
   }
 
   /* ===================================================================== *
@@ -103,8 +112,8 @@ export default function createView(ctx) {
     stopAll();
     mode = 'listening';
     unlockAudio();
-    showPreview();
-    const steps = buildSteps();
+    paintScale('ghost');
+    const steps = buildSequence();
     const midis = steps.map((s) => s.midi);
     viewport?.frame(midis);
 
@@ -136,9 +145,9 @@ export default function createView(ctx) {
     stopAll();
     mode = 'practice';
     unlockAudio();
-    showPreview();
+    paintScale('ghost');
 
-    const steps = buildSteps();
+    const steps = buildSequence();
     const midis = steps.map((s) => s.midi);
     viewport?.frame(midis);
 
@@ -313,7 +322,7 @@ export default function createView(ctx) {
     const actions = el('div', { class: 'smc__row' });
     const listenBtn = button('♪ Listen', listen);
     const practiceBtn = button('● Practice', practice);
-    const stopBtn = button('◼ Stop', () => { stopAll(); mode = 'idle'; ui.status.textContent = 'Ready.'; showPreview(); setButtons(); }, 'btn--ghost');
+    const stopBtn = button('◼ Stop', () => { stopAll(); mode = 'idle'; ui.status.textContent = 'Ready.'; paintScale('target'); setButtons(); }, 'btn--ghost');
     actions.append(listenBtn, practiceBtn, stopBtn);
 
     const status = el('div', { class: 'smc__status' });
@@ -342,7 +351,7 @@ export default function createView(ctx) {
     ui.metrics.innerHTML = '';
     ui.climb.innerHTML = '';
     ui.status.textContent = audioOK ? 'Ready.' : ui.status.textContent;
-    showPreview();
+    paintScale('target');
     setButtons();
   }
 
@@ -376,13 +385,6 @@ export default function createView(ctx) {
 }
 
 /* ========================= helpers ========================= */
-
-function ascLength(steps) {
-  // For up&down the ascending portion is the first ceil(len/2)+? — simplest:
-  // ascending notes are unique-by-position before the reversal point.
-  // We rebuilt updown as asc + reverse(asc[:-1]); asc length = (len+1)/2.
-  return Math.ceil((steps.length + 1) / 2);
-}
 
 function mean(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0; }
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
