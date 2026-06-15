@@ -23,6 +23,7 @@
   --staff-height: calc(var(--staff-space) * 4);     /* 5 lines = 4 gaps */
   --staff-gap: calc(var(--staff-space) * 6);        /* treble↔bass separation */
   --note-head: calc(var(--staff-space) * 1.1);
+  --clef-size: calc(var(--staff-space) * 6);        /* one size for BOTH clefs */
   --ink: var(--ivory, #F4EFE6);
   --ink-dim: var(--ivory-dim, #B9B2A6);
 
@@ -95,9 +96,13 @@
   font-family: 'Bravura', 'Noto Music', serif;
   color: var(--ink);
   line-height: 1;
+  font-size: var(--clef-size);   /* SAME size for treble and bass */
 }
-.clef--treble { top: calc(var(--staff-space) * -0.7); font-size: calc(var(--staff-space) * 7); }
-.clef--bass   { top: calc(var(--staff-space) * -0.2); font-size: calc(var(--staff-space) * 4.4); }
+/* Only the vertical seat differs: the treble body wraps the G (2nd) line and
+   trails below the staff; the bass body sits in the upper half around the F
+   (4th) line. Sizes are identical so both read at the same professional scale. */
+.clef--treble { top: calc(var(--staff-space) * -1.05); }
+.clef--bass   { top: calc(var(--staff-space) * -0.35); }
 
 .time-sig {
   position: absolute;

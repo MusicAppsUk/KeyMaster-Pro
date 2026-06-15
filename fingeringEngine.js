@@ -31,10 +31,11 @@
 //     scale (Gb / Db / Ab / Eb respectively). This is the real "topography
 //     anchor" the spec was reaching for — but it lives in the FLAT keys.
 //
-//   • B major (LH): fingering 4 3 2 1 4 3 2 1 — genuinely irregular, with the
-//     4th finger anchoring the tonic and the 4th degree (B and F#). B is a
-//     special case, but not in the way the spec described, and it does not
-//     change how the other scales are fingered.
+//   • B major (LH): fingering 4 3 2 1 4 3 2 1 — the 4th finger anchors the
+//     tonic and the 4th degree (B and F#), and the cell restarts on 4 at each
+//     octave. Verified for multi-octave: it chains as 4 3 2 1 4 3 2 (repeat) … 1.
+//     B is a special case, but not in the way the original spec described, and
+//     it does not change how the other scales are fingered.
 //
 // In short: the LH 4th finger is used in essentially every major scale; what
 // varies is which degree it lands on. The data below reflects that.
@@ -46,10 +47,12 @@ import { buildScale } from './scaleEngine.js';
  * One-octave fingerings (ascending, tonic→octave, 8 entries) for all 12 major
  * keys, both hands. Keyed by the canonical tonic display name.
  *
- * `chainable` indicates whether the simple multi-octave join rule reproduces
- * the canonical method-book fingering for that hand. Where it does not (B major
- * LH), multi-octave requests are capped to one octave and flagged, so the
- * engine never emits a confidently-wrong fingering.
+ * `chainable` indicates whether the multi-octave join rule reproduces the
+ * canonical method-book fingering for that hand. When false, multi-octave
+ * requests are capped to one octave and flagged, so the engine never emits a
+ * confidently-wrong fingering. (All 12 majors are currently chainable in both
+ * hands; the flag remains as a guard for any future scale whose join isn't yet
+ * verified.)
  */
 const MAJOR_FINGERINGS = Object.freeze({
   //          RH ascending            LH ascending            RH chain  LH chain
@@ -59,7 +62,7 @@ const MAJOR_FINGERINGS = Object.freeze({
   A:  entry([1, 2, 3, 1, 2, 3, 4, 5], [5, 4, 3, 2, 1, 3, 2, 1], true,  true),
   E:  entry([1, 2, 3, 1, 2, 3, 4, 5], [5, 4, 3, 2, 1, 3, 2, 1], true,  true),
   F:  entry([1, 2, 3, 4, 1, 2, 3, 4], [5, 4, 3, 2, 1, 3, 2, 1], true,  true),
-  B:  entry([1, 2, 3, 1, 2, 3, 4, 5], [4, 3, 2, 1, 4, 3, 2, 1], true,  false), // LH irregular
+  B:  entry([1, 2, 3, 1, 2, 3, 4, 5], [4, 3, 2, 1, 4, 3, 2, 1], true,  true), // LH cell restarts on 4 each octave
   'F#': entry([2, 3, 4, 1, 2, 3, 1, 2], [4, 3, 2, 1, 3, 2, 1, 4], true, true),
   Db: entry([2, 3, 1, 2, 3, 4, 1, 2], [3, 2, 1, 4, 3, 2, 1, 3], true,  true),
   Ab: entry([3, 4, 1, 2, 3, 1, 2, 3], [3, 2, 1, 4, 3, 2, 1, 3], true,  true),
@@ -161,7 +164,17 @@ export function majorFingering(tonicName, hand, opts = {}) {
 }
 
 /**
- * Multi-octave join. See the per-hand asymmetry note inline.
+ * Multi-octave join.
+ *
+ * RIGHT HAND, and LEFT HAND scales whose first finger recurs each octave
+ * (e.g. B major LH = 4 3 2 1 4 3 2 1): the single-octave cell minus its top
+ * note repeats once per octave, then the final top note caps the sequence.
+ * For B major LH that yields 4 3 2 1 4 3 2 · 4 3 2 1 4 3 2 · 1 (ends on 1).
+ *
+ * LEFT HAND scales that begin on the pinky (C/G/D/A/E/F LH start on 5): the 5
+ * is a bottom-only finger used exactly once; every octave above reuses the
+ * inner run, whose last value is the internal-tonic finger.
+ *
  * @param {readonly number[]} p  8-finger single-octave pattern.
  * @param {'RH'|'LH'} hand
  * @param {number} octaves
@@ -169,13 +182,17 @@ export function majorFingering(tonicName, hand, opts = {}) {
  */
 function chainFingers(p, hand, octaves) {
   const out = [];
-  if (hand === 'RH') {
-    // The pinky/cap appears only at the very top. Internal tonics reuse p[0].
+  const pinkyStart = hand === 'LH' && p[0] === 5;
+
+  if (!pinkyStart) {
+    // Cell-restart: repeat the octave cell (minus its shared top), then cap.
+    // Used by every RH scale and by LH scales like B major that re-anchor the
+    // first finger at each octave boundary.
     for (let o = 0; o < octaves; o++) out.push(...p.slice(0, 7));
     out.push(p[7]);
   } else {
-    // LH: the special bottom finger (p[0]) is used once; every octave above
-    // reuses the run p[1..7], whose last value is the internal-tonic finger.
+    // Pinky-once: the bottom 5 is played a single time; octaves above reuse the
+    // inner run p[1..7], ending each octave on the internal-tonic finger.
     out.push(p[0]);
     for (let o = 0; o < octaves; o++) out.push(...p.slice(1, 8));
   }
