@@ -56,3 +56,16 @@ Every file lives in the repo root and all imports are relative (`./x.js`), which
 is what makes GitHub Pages work without 404s. The earlier *modular* source used
 subfolders (`js/…`, `styles/…`) with absolute paths (`/js/app.js`). Pick one as
 your source of truth so the two don't drift apart.
+
+## 5. Input architecture (added in the Practice Engine, Phase 1)
+
+`noteInput.js` is the single normalized note stream. Every device feeds the same
+event shape: `{ midiNote, velocity, timestamp, source }`.
+
+- `app.js` owns the wiring: on-screen keyboard presses emit `source: 'screen'`,
+  Web MIDI emits `source: 'midi'`. Each physical action fires exactly one event
+  (screen presses that originate from MIDI are skipped to avoid double-firing).
+- Scoring engines (e.g. `sightReading.js`) `input.subscribe(fn)` and react to the
+  event shape only — they don't know or care which device played the note.
+- To add a new input source later (playback, a tutor, a different controller),
+  wire it into `this.input.emit(...)` in `app.js`. No engine changes needed.

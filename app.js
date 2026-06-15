@@ -21,6 +21,7 @@ import { getAudioContext, unlockAudio, isAudioSupported } from './audioContext.j
 import { Synth } from './synth.js';
 import { Scheduler } from './scheduler.js';
 import { Metronome } from './metronome.js';
+import { NoteInput } from './noteInput.js';
 
 /* ===========================================================================
  * 1. Observable store
@@ -189,6 +190,10 @@ class KeyMasterApp {
     });
     this.midi = new MidiRouter(this.keyboard);
 
+    // ---- Input hub: one normalized note stream for every device ----
+    this.input = new NoteInput();
+    this._wireInput();
+
     // ---- Audio layer (shared context → synth + transport) ----
     if (isAudioSupported()) {
       const ctx = getAudioContext();
@@ -203,6 +208,36 @@ class KeyMasterApp {
 
     // Reflect the live window into the header readout.
     this._refreshRegister();
+  }
+
+  /**
+   * Feed concrete devices into the normalized input hub. Each physical action
+   * must produce exactly one event:
+   *  • on-screen keyboard → forward 'press' events that did NOT originate from
+   *    MIDI (the router drives the on-screen keys for MIDI input, so those would
+   *    otherwise double-fire).
+   *  • Web MIDI → forward the router's own note-on, which carries real velocity.
+   */
+  _wireInput() {
+    this._unsubs.push(
+      this.keyboard.on('press', (midi, detail) => {
+        if (detail.source === 'midi') return; // counted via the MIDI path below
+        this.input.emit({
+          midiNote: midi,
+          velocity: detail.velocity ?? 100,
+          timestamp: performance.now(),
+          source: 'screen',
+        });
+      }),
+      this.midi.on('noteon', ({ midi, velocity, timeStamp }) => {
+        this.input.emit({
+          midiNote: midi,
+          velocity,
+          timestamp: typeof timeStamp === 'number' ? timeStamp : performance.now(),
+          source: 'midi',
+        });
+      })
+    );
   }
 
   /**
@@ -358,6 +393,7 @@ class KeyMasterApp {
         keyboard: this.keyboard,
         viewport: this.viewport,
         midi: this.midi,
+        input: this.input,
         synth: this.synth,
         scheduler: this.scheduler,
         metronome: this.metronome,
