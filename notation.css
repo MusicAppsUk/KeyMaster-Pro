@@ -1,0 +1,213 @@
+/* notation.css
+   ===========================================================================
+   Baseline visual structure for the dual-staff (grand-staff) renderer in
+   /js/sightreading/notationEngine.js.
+
+   The renderer isn't built yet; this sheet establishes the metric system and
+   component classes it will target, so notation lands consistently the moment
+   the engine produces nodes. Everything is sized off a single unit,
+   `--staff-space` (the gap between two adjacent staff lines). One diatonic
+   step = half a staff-space — the renderer positions note heads in those
+   half-steps via `top`.
+
+   Visual language: this is dark-mode-native. Rather than a white sheet of
+   paper fighting the practice-room palette, the staff sits on a raised ebony
+   panel with ivory lines and brass/felt used for the live cues (playhead,
+   read-ahead span).
+   ========================================================================= */
+
+.notation {
+  /* ---- Metric tokens (the renderer reads these) ---- */
+  --staff-space: clamp(9px, 1.6dvh, 14px);
+  --staff-line: 1.5px;
+  --staff-height: calc(var(--staff-space) * 4);     /* 5 lines = 4 gaps */
+  --staff-gap: calc(var(--staff-space) * 6);        /* treble↔bass separation */
+  --note-head: calc(var(--staff-space) * 1.1);
+  --ink: var(--ivory, #F4EFE6);
+  --ink-dim: var(--ivory-dim, #B9B2A6);
+
+  position: relative;
+  padding: var(--gap-6, 1.5rem) var(--gap-6, 1.5rem);
+  background: linear-gradient(var(--ebony-raise, #1E1C26), #1A1822);
+  border: 1px solid var(--ebony-edge, #2A2833);
+  border-radius: var(--radius-md, 10px);
+  overflow: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   Grand staff: treble over bass, joined by a brace and left system barline.
+   -------------------------------------------------------------------------- */
+.grand-staff {
+  position: relative;
+  display: grid;
+  row-gap: var(--staff-gap);
+  padding-left: calc(var(--staff-space) * 3.5);   /* room for brace + clef */
+  margin: 0 auto;
+}
+
+/* Brace spanning both staves on the left. */
+.grand-staff__brace {
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: calc(var(--staff-space) * 1.2);
+  border-left: 2px solid var(--brass, #C99A4B);
+  border-radius: 40% / 50%;
+  /* The curl is suggested by rounded top/bottom caps. */
+  box-shadow: inset 2px 0 0 -1px var(--brass-deep, #9A7330);
+}
+
+/* Left "system" barline connecting the staves. */
+.grand-staff__spine {
+  position: absolute;
+  left: calc(var(--staff-space) * 2);
+  top: 0; bottom: 0;
+  width: var(--staff-line);
+  background: var(--ink-dim);
+}
+
+/* --------------------------------------------------------------------------
+   A single 5-line staff. Lines are painted with a repeating gradient so the
+   renderer never has to emit five line elements; it just positions notes.
+   -------------------------------------------------------------------------- */
+.staff {
+  position: relative;
+  height: var(--staff-height);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--ink-dim) 0,
+    var(--ink-dim) var(--staff-line),
+    transparent var(--staff-line),
+    transparent var(--staff-space)
+  );
+  /* Pull the gradient so the last (5th) line lands exactly on the bottom edge. */
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  background-size: 100% calc(var(--staff-height) + var(--staff-line));
+}
+
+/* --------------------------------------------------------------------------
+   Clefs + meter. Rendered as sized glyphs in a leading slot; the engine sets
+   the glyph (treble/bass) and any key signature accidentals.
+   -------------------------------------------------------------------------- */
+.clef {
+  position: absolute;
+  left: calc(var(--staff-space) * 0.5);
+  font-family: 'Bravura', 'Noto Music', serif;
+  color: var(--ink);
+  line-height: 1;
+}
+.clef--treble { top: calc(var(--staff-space) * -0.7); font-size: calc(var(--staff-space) * 7); }
+.clef--bass   { top: calc(var(--staff-space) * -0.2); font-size: calc(var(--staff-space) * 4.4); }
+
+.time-sig {
+  position: absolute;
+  left: calc(var(--staff-space) * 4);
+  top: 0;
+  height: var(--staff-height);
+  display: grid;
+  align-content: center;
+  font-family: var(--font-display, serif);
+  font-weight: 600;
+  font-size: calc(var(--staff-space) * 2.1);
+  line-height: 0.92;
+  color: var(--ink);
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Barlines, positioned by the engine via `left`.
+   -------------------------------------------------------------------------- */
+.barline {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: var(--staff-line);
+  background: var(--ink-dim);
+}
+.barline--final { width: calc(var(--staff-line) * 3); background: var(--ink); }
+
+/* --------------------------------------------------------------------------
+   Notes. The engine sets `left` (time) and `top` (pitch, in half staff-spaces)
+   on .note; head/stem/flag are children so accidentals and beams can attach.
+   -------------------------------------------------------------------------- */
+.note {
+  position: absolute;
+  width: var(--note-head);
+  height: var(--note-head);
+  color: var(--ink);
+  will-change: transform;
+}
+.note__head {
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: currentColor;
+  /* Slight oval, tilted like an engraved note head. */
+  transform: rotate(-20deg) scaleX(1.18);
+}
+.note__head--open {
+  background: transparent;
+  box-shadow: inset 0 0 0 calc(var(--staff-space) * 0.22) currentColor;
+}
+.note__stem {
+  position: absolute;
+  width: var(--staff-line);
+  height: calc(var(--staff-space) * 3.4);
+  background: currentColor;
+  left: calc(100% - var(--staff-line));
+  bottom: 50%;
+}
+.note--stem-down .note__stem { left: 0; top: 50%; bottom: auto; }
+
+.note__accidental {
+  position: absolute;
+  right: 120%;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: 'Bravura', 'Noto Music', serif;
+  font-size: calc(var(--staff-space) * 2.4);
+  color: var(--ink);
+}
+
+/* Short ledger line for notes above/below the staff. */
+.ledger {
+  position: absolute;
+  height: var(--staff-line);
+  width: calc(var(--note-head) * 1.8);
+  background: var(--ink-dim);
+}
+
+/* --------------------------------------------------------------------------
+   Live performance cues
+     .playhead     — the "now" line, brass, swept by the scheduler
+     .reading-span — felt-tinted band over the notes being read ahead
+     state classes on notes: is-correct / is-missed / is-current
+   -------------------------------------------------------------------------- */
+.playhead {
+  position: absolute;
+  top: 0; bottom: 0;
+  width: 2px;
+  background: linear-gradient(var(--brass-bright, #E8C57E), var(--brass, #C99A4B));
+  box-shadow: 0 0 12px var(--brass-glow, rgba(232,197,126,0.35));
+  pointer-events: none;
+  z-index: 5;
+}
+
+.reading-span {
+  position: absolute;
+  top: 0; bottom: 0;
+  background: color-mix(in srgb, var(--felt, #9E4A4A) 18%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--felt-bright, #C96B6B) 50%, transparent);
+  border-right: 1px solid color-mix(in srgb, var(--felt-bright, #C96B6B) 50%, transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.note.is-current { color: var(--brass-bright, #E8C57E); }
+.note.is-correct { color: var(--good, #6FB59A); }
+.note.is-missed  { color: var(--bad, #C96B6B); }
+
+/* --------------------------------------------------------------------------
+   Responsive: shrink the staff unit on short viewports.
+   -------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  .notation { --staff-space: clamp(8px, 1.4dvh, 11px); padding: var(--gap-4, 1rem); }
+}

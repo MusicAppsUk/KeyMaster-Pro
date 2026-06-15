@@ -1,0 +1,57 @@
+{
+  "//": "/manifest.json — PWA config for KeyMaster PRO. Standalone + landscape so the app runs as a full-screen instrument with no browser chrome.",
+  "name": "KeyMaster PRO",
+  "short_name": "KeyMaster",
+  "description": "A cognitive piano-training studio: scales fluency and sight-reading resilience.",
+  "id": "/",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "landscape",
+  "lang": "en",
+  "dir": "ltr",
+  "theme_color": "#14131A",
+  "background_color": "#14131A",
+  "categories": ["education", "music"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Scales Masterclass",
+      "short_name": "Scales",
+      "url": "./#/scales",
+      "description": "Jump straight into scale technique training."
+    },
+    {
+      "name": "Cognitive Sight-Reading",
+      "short_name": "Sight-Reading",
+      "url": "./#/sightreading",
+      "description": "Jump straight into sight-reading training."
+    }
+  ]
+}

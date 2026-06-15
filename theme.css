@@ -1,0 +1,406 @@
+/* theme.css
+   ===========================================================================
+   KeyMaster PRO — global theme layer.
+
+   Owns: design tokens (the "low-light practice room" palette), the type
+   system, base element styling, and the app chrome that is common to every
+   view (header, launcher, view frame, placeholder). The instrument and the
+   staves get their own sheets (keyboard.css, notation.css).
+
+   Palette rationale: the materials of a real grand piano in a dim room —
+   ebony case, ivory keys, brass pedals/hardware, and the deep red felt under
+   the fallboard. Brass is the single accent of light; felt is used sparingly
+   as a second, warmer signal. Nothing here is decorative for its own sake.
+   ========================================================================= */
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+   -------------------------------------------------------------------------- */
+:root {
+  /* ---- Surfaces (ebony, lit from a low warm source) ---- */
+  --ebony:        #14131A;  /* app base */
+  --ebony-raise:  #1E1C26;  /* panels, cards */
+  --ebony-sink:   #0F0E14;  /* recesses, keybed well */
+  --ebony-edge:   #2A2833;  /* hairlines, borders */
+  --ebony-edge-2: #3A3747;  /* hover borders */
+
+  /* ---- Ivory (keys + text) ---- */
+  --ivory:        #F4EFE6;
+  --ivory-dim:    #B9B2A6;  /* secondary text */
+  --ivory-faint:  #7E7A72;  /* tertiary / disabled */
+
+  /* ---- Brass (the light) ---- */
+  --brass:        #C99A4B;
+  --brass-bright: #E8C57E;
+  --brass-deep:   #9A7330;
+  --brass-glow:   rgba(232, 197, 126, 0.35);
+
+  /* ---- Felt (the warm second signal) ---- */
+  --felt:         #9E4A4A;
+  --felt-bright:  #C96B6B;
+
+  /* ---- Functional ---- */
+  --good:         #6FB59A;  /* in-time / correct */
+  --warn:         #D8A24A;
+  --bad:          var(--felt-bright);
+
+  /* ---- Type ---- */
+  --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', 'Cascadia Mono', monospace;
+
+  --step-xs:  0.75rem;
+  --step-sm:  0.875rem;
+  --step-md:  1rem;
+  --step-lg:  1.333rem;
+  --step-xl:  1.953rem;
+  --step-2xl: 3.052rem;
+
+  /* ---- Space + shape ---- */
+  --gap-1: 0.25rem;
+  --gap-2: 0.5rem;
+  --gap-3: 0.75rem;
+  --gap-4: 1rem;
+  --gap-6: 1.5rem;
+  --gap-8: 2rem;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  /* ---- Motion ---- */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur: 0.24s;
+
+  /* ---- Chrome metrics shared with other sheets ---- */
+  --bar-h: 56px;
+  color-scheme: dark;
+}
+
+/* --------------------------------------------------------------------------
+   2. Reset + base
+   -------------------------------------------------------------------------- */
+*,
+*::before,
+*::after { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(120% 80% at 50% -10%, #1B1924 0%, var(--ebony) 60%) fixed;
+  color: var(--ivory);
+  font-family: var(--font-ui);
+  font-size: var(--step-md);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior: none;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 500;
+  line-height: 1.08;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+button { font-family: inherit; }
+
+a { color: inherit; text-decoration: none; }
+
+:focus-visible {
+  outline: 2px solid var(--brass-bright);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0);
+  white-space: nowrap; border: 0;
+}
+
+/* --------------------------------------------------------------------------
+   3. App shell layout
+   The shell is a vertical stack: bar / main / instrument. The instrument is
+   pinned to the bottom and the main region scrolls between them.
+   -------------------------------------------------------------------------- */
+.app {
+  display: grid;
+  grid-template-rows: var(--bar-h) 1fr auto;
+  height: 100dvh;
+  width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   4. Top bar
+   -------------------------------------------------------------------------- */
+.app__bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--gap-4);
+  padding: 0 var(--gap-4);
+  background: linear-gradient(var(--ebony-raise), #1A1822);
+  border-bottom: 1px solid var(--ebony-edge);
+  padding-left: max(var(--gap-4), env(safe-area-inset-left));
+  padding-right: max(var(--gap-4), env(safe-area-inset-right));
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gap-3);
+  font-family: var(--font-display);
+  font-size: var(--step-lg);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.brand__mark {
+  width: 18px; height: 18px;
+  border-radius: 3px;
+  /* A brass key-shaped glint. */
+  background:
+    linear-gradient(135deg, var(--brass-bright), var(--brass-deep));
+  box-shadow: 0 0 12px var(--brass-glow), inset 0 1px 0 rgba(255,255,255,0.4);
+}
+.brand__pro {
+  font-family: var(--font-mono);
+  font-size: 0.5em;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  color: var(--brass-bright);
+  vertical-align: super;
+  margin-left: 2px;
+}
+
+.app__controls {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gap-3);
+}
+
+/* Register readout — telemetry, hence mono. */
+.register {
+  font-family: var(--font-mono);
+  font-size: var(--step-sm);
+  letter-spacing: 0.04em;
+  color: var(--ivory-dim);
+  padding: 4px 10px;
+  border: 1px solid var(--ebony-edge);
+  border-radius: var(--radius-sm);
+  background: var(--ebony-sink);
+  min-width: 8ch;
+  text-align: center;
+}
+
+.octave-shift { display: inline-flex; gap: 2px; }
+
+/* ---- Buttons ---- */
+.btn {
+  appearance: none;
+  border: 1px solid var(--ebony-edge);
+  background: var(--ebony-raise);
+  color: var(--ivory);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: var(--step-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease),
+              background var(--dur) var(--ease),
+              transform 0.08s var(--ease);
+}
+.btn:hover { border-color: var(--ebony-edge-2); background: #24222D; }
+.btn:active { transform: translateY(1px); }
+
+.btn--ghost {
+  background: transparent;
+  font-family: var(--font-mono);
+  font-size: var(--step-xs);
+  letter-spacing: 0.04em;
+  color: var(--ivory-dim);
+}
+.btn--ghost:hover { color: var(--ivory); }
+
+/* ---- MIDI pill ---- */
+.midi-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--gap-2);
+  background: var(--ebony-sink);
+  border: 1px solid var(--ebony-edge);
+  color: var(--ivory-dim);
+  border-radius: 999px;
+  padding: 5px 12px 5px 10px;
+  font-family: var(--font-mono);
+  font-size: var(--step-xs);
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: border-color var(--dur) var(--ease), color var(--dur) var(--ease);
+}
+.midi-pill__dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--ivory-faint);
+  box-shadow: 0 0 0 0 transparent;
+  transition: background var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.midi-pill.is-connected {
+  color: var(--ivory);
+  border-color: color-mix(in srgb, var(--good) 50%, var(--ebony-edge));
+}
+.midi-pill.is-connected .midi-pill__dot {
+  background: var(--good);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--good) 70%, transparent);
+}
+
+/* --------------------------------------------------------------------------
+   5. Main view region + view transitions
+   Views are stacked; only [is-active] is shown. Section padding lives here on
+   .view (not on generic elements) to avoid specificity collisions.
+   -------------------------------------------------------------------------- */
+.app__main {
+  position: relative;
+  overflow: hidden auto;
+  min-height: 0; /* allow the grid row to actually scroll */
+}
+
+.view {
+  display: none;
+  height: 100%;
+  padding: var(--gap-8) var(--gap-6);
+  padding-left: max(var(--gap-6), env(safe-area-inset-left));
+  padding-right: max(var(--gap-6), env(safe-area-inset-right));
+  animation: view-in var(--dur) var(--ease);
+}
+.view.is-active { display: block; }
+
+.view__title {
+  font-size: var(--step-xl);
+  margin-bottom: var(--gap-6);
+}
+.view__body { max-width: 1100px; }
+
+@keyframes view-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* --------------------------------------------------------------------------
+   6. Launcher — the two training vectors
+   The number eyebrows are real sequence (vector 01 / 02), not decoration.
+   -------------------------------------------------------------------------- */
+.view--launcher { display: none; place-items: center; }
+.view--launcher.is-active { display: grid; }
+
+.launcher {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap-6);
+  width: min(100%, 920px);
+}
+
+.vector {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-2);
+  padding: var(--gap-8) var(--gap-6);
+  min-height: 230px;
+  background:
+    linear-gradient(160deg, var(--ebony-raise), var(--ebony-sink));
+  border: 1px solid var(--ebony-edge);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: border-color var(--dur) var(--ease),
+              transform var(--dur) var(--ease);
+  isolation: isolate;
+}
+/* Brass edge-light that rakes across on hover — the one flourish. */
+.vector::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  background: radial-gradient(120% 80% at 0% 0%, var(--brass-glow), transparent 45%);
+  opacity: 0;
+  transition: opacity var(--dur) var(--ease);
+  z-index: -1;
+}
+.vector:hover {
+  transform: translateY(-3px);
+  border-color: color-mix(in srgb, var(--brass) 45%, var(--ebony-edge));
+}
+.vector:hover::before { opacity: 1; }
+
+.vector__eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--step-xs);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass-bright);
+}
+.vector__title {
+  font-family: var(--font-display);
+  font-size: var(--step-xl);
+  font-weight: 600;
+  margin-top: auto;
+}
+.vector__blurb { color: var(--ivory-dim); font-size: var(--step-sm); }
+
+/* --------------------------------------------------------------------------
+   7. Placeholder (shown for a vector whose controller isn't wired yet)
+   -------------------------------------------------------------------------- */
+.placeholder {
+  border: 1px dashed var(--ebony-edge-2);
+  border-radius: var(--radius-md);
+  padding: var(--gap-8);
+  background: var(--ebony-raise);
+  color: var(--ivory-dim);
+}
+.placeholder__title {
+  font-family: var(--font-display);
+  font-size: var(--step-lg);
+  color: var(--ivory);
+  margin: 0 0 var(--gap-2);
+}
+.placeholder__note { margin: 0; font-size: var(--step-sm); }
+
+/* --------------------------------------------------------------------------
+   8. Instrument footer frame (the keyboard sits in keyboard.css; this is just
+   the recessed well it nests in).
+   -------------------------------------------------------------------------- */
+.app__instrument {
+  background: linear-gradient(#16151D, var(--ebony-sink));
+  border-top: 1px solid var(--ebony-edge);
+  padding: var(--gap-3) var(--gap-3) max(var(--gap-3), env(safe-area-inset-bottom));
+}
+.keyboard-frame {
+  position: relative;
+  overflow: hidden;            /* clips the 88-key track to the 4-octave window */
+  border-radius: var(--radius-md);
+  background: var(--ebony-sink);
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.6);
+  /* a felt strip above the keys, like the fallboard cloth */
+  border-top: 3px solid color-mix(in srgb, var(--felt) 65%, var(--ebony-sink));
+}
+
+/* --------------------------------------------------------------------------
+   9. Responsive: tighten chrome on short/landscape phones
+   -------------------------------------------------------------------------- */
+@media (max-width: 720px) {
+  :root { --bar-h: 50px; }
+  .brand__name { font-size: 0; }              /* keep just the mark on small bars */
+  .brand__mark { width: 22px; height: 22px; }
+  .launcher { grid-template-columns: 1fr; }
+  .vector { min-height: 150px; padding: var(--gap-6); }
+  .view { padding: var(--gap-6) var(--gap-4); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}

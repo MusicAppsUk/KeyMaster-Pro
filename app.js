@@ -1,0 +1,427 @@
+// app.js
+//
+// Central orchestrator for KeyMaster PRO.
+//
+// Responsibilities (and deliberately nothing more):
+//   • own global application state via a tiny observable store
+//   • boot the shared instrument once (PianoEngine → Viewport → MidiRouter)
+//   • route between the two entry points (Scales / Sight-Reading) + launcher
+//   • own the chrome that is common to every view (register readout, octave
+//     shift, MIDI pill)
+//
+// Pedagogy and rendering for each vector live in their own domain controllers,
+// which this file lazy-loads. The orchestrator never imports scale logic,
+// notation, or harmony directly — it hands each controller the instrument and
+// the store and lets the domain own its screen.
+
+import { PianoEngine, PIANO_MIN_MIDI, PIANO_MAX_MIDI } from './pianoEngine.js';
+import { Viewport } from './viewport.js';
+import { MidiRouter } from './midiRouter.js';
+import { getAudioContext, unlockAudio, isAudioSupported } from './audioContext.js';
+import { Synth } from './synth.js';
+import { Scheduler } from './scheduler.js';
+import { Metronome } from './metronome.js';
+
+/* ===========================================================================
+ * 1. Observable store
+ * ========================================================================= */
+
+/**
+ * Minimal reactive store. setState shallow-merges and notifies subscribers.
+ * Kept tiny on purpose: no framework, no dependencies, fully inspectable.
+ * @template T
+ * @param {T} initial
+ */
+function createStore(initial) {
+  let state = { ...initial };
+  const subscribers = new Set();
+
+  return {
+    getState: () => state,
+    /**
+     * @param {Partial<T> | ((s: T) => Partial<T>)} patch
+     */
+    setState(patch) {
+      const delta = typeof patch === 'function' ? patch(state) : patch;
+      const next = { ...state, ...delta };
+      // Skip notification if nothing actually changed (shallow compare).
+      let changed = false;
+      for (const k in delta) {
+        if (state[k] !== next[k]) { changed = true; break; }
+      }
+      state = next;
+      if (changed) for (const fn of subscribers) safe(fn, state);
+    },
+    subscribe(fn) {
+      subscribers.add(fn);
+      return () => subscribers.delete(fn);
+    },
+  };
+}
+
+/** Run a callback without letting one throw break the others. */
+function safe(fn, arg) {
+  try { fn(arg); } catch (err) { console.error('store subscriber threw:', err); }
+}
+
+/* ===========================================================================
+ * 2. Lightweight persistence (preferences only)
+ * ========================================================================= */
+
+const PREFS_KEY = 'keymaster.prefs.v1';
+
+/** Load persisted prefs, tolerating private-mode / disabled storage. */
+function loadPrefs() {
+  try {
+    const raw = localStorage.getItem(PREFS_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Persist a whitelisted subset of state. */
+function savePrefs(prefs) {
+  try {
+    localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+  } catch {
+    /* storage unavailable — preferences simply won't persist this session */
+  }
+}
+
+/* ===========================================================================
+ * 3. View registry (lazy-loaded domain controllers)
+ * ========================================================================= */
+
+/**
+ * Each vector points to a controller module loaded on first entry. A controller
+ * default-exports a factory:
+ *
+ *   export default function createView({ mount, store, keyboard, viewport }) {
+ *     return { enter() {}, exit() {}, destroy() {} };
+ *   }
+ *
+ * Until a controller exists, the orchestrator renders a calm placeholder so the
+ * shell stays usable and the keyboard remains playable.
+ */
+const VIEW_REGISTRY = {
+  scales: {
+    slot: 'scales',
+    load: () => import('./scalesMasterclass.js'),
+  },
+  sightreading: {
+    slot: 'sightreading',
+    load: () => import('./sightReading.js'),
+  },
+};
+
+/** Routes that map a hash to a view id. Unknown hashes fall back to home. */
+const ROUTES = {
+  '': 'home',
+  '/': 'home',
+  '/scales': 'scales',
+  '/sightreading': 'sightreading',
+};
+
+/* ===========================================================================
+ * 4. The application
+ * ========================================================================= */
+
+class KeyMasterApp {
+  constructor(root = document) {
+    this.root = root;
+    this.store = createStore({
+      view: 'home',
+      midi: { ok: false, label: 'No MIDI' },
+      register: '',
+      ...pickPrefs(loadPrefs()),
+    });
+
+    /** @type {Map<string, {controller?: object, instance?: object}>} */
+    this.views = new Map();
+    this._unsubs = [];
+  }
+
+  /* --------------------------------------------------------------------- */
+
+  async boot() {
+    this._cacheDom();
+    this._bootInstrument();
+    this._wireChrome();
+    this._wireRouter();
+    await this._connectMidiSilently();
+
+    // Reveal the shell now that everything is wired.
+    document.documentElement.setAttribute('data-boot', 'ready');
+
+    // Enter whatever route the URL points at (deep links work on first load).
+    await this._handleRoute();
+  }
+
+  /* ---- DOM ------------------------------------------------------------- */
+
+  _cacheDom() {
+    this.dom = {
+      viewRoot: this.root.getElementById('view-root'),
+      keyboardMount: this.root.getElementById('keyboard-mount'),
+      register: this.root.getElementById('register-readout'),
+      midiPill: this.root.getElementById('midi-pill'),
+      views: new Map(
+        [...this.root.querySelectorAll('[data-view]')].map((el) => [el.dataset.view, el])
+      ),
+      slots: new Map(
+        [...this.root.querySelectorAll('[data-slot]')].map((el) => [el.dataset.slot, el])
+      ),
+    };
+  }
+
+  /* ---- Instrument ------------------------------------------------------ */
+
+  _bootInstrument() {
+    const prefs = loadPrefs();
+    this.keyboard = new PianoEngine(this.dom.keyboardMount, {
+      accidental: prefs.accidental === 'flat' ? 'flat' : 'sharp',
+      showLabels: Boolean(prefs.showLabels),
+    });
+    this.viewport = new Viewport(this.keyboard, {
+      octaves: 4,
+      startMidi: clampStart(prefs.startMidi ?? 48), // C3 default
+    });
+    this.midi = new MidiRouter(this.keyboard);
+
+    // ---- Audio layer (shared context → synth + transport) ----
+    if (isAudioSupported()) {
+      const ctx = getAudioContext();
+      this.synth = new Synth(ctx, { volume: 0.8 });
+      this.scheduler = new Scheduler(ctx, { tempo: 90, beatsPerBar: 4 });
+      this.metronome = new Metronome(this.scheduler, { volume: 0.55, enabled: false });
+      this._wireSound();
+    } else {
+      // Silent fallback: the keyboard still works visually.
+      this.synth = this.scheduler = this.metronome = null;
+    }
+
+    // Reflect the live window into the header readout.
+    this._refreshRegister();
+  }
+
+  /**
+   * Connect the instrument to the synth. Browsers keep the AudioContext
+   * suspended until a gesture, so the first press also unlocks it.
+   */
+  _wireSound() {
+    let unlocked = false;
+    const ensureAudio = () => {
+      if (!unlocked) { unlockAudio(); unlocked = true; }
+    };
+    // Any first gesture is enough to unlock; key presses are the common one.
+    window.addEventListener('pointerdown', ensureAudio, { once: true });
+    window.addEventListener('keydown', ensureAudio, { once: true });
+
+    this._unsubs.push(
+      this.keyboard.on('press', (midi, detail) => {
+        ensureAudio();
+        this.synth?.noteOn(midi, detail.velocity ?? 100);
+      }),
+      this.keyboard.on('release', (midi) => {
+        this.synth?.noteOff(midi);
+      })
+    );
+  }
+
+  /* ---- Common chrome --------------------------------------------------- */
+
+  _wireChrome() {
+    // Delegate all chrome button clicks from the shell.
+    document.addEventListener('click', (ev) => {
+      const actionEl = ev.target.closest?.('[data-action]');
+      if (!actionEl) return;
+      switch (actionEl.dataset.action) {
+        case 'octave-up':   this._shiftOctaves(+1); break;
+        case 'octave-down': this._shiftOctaves(-1); break;
+        case 'connect-midi': this._connectMidi(); break;
+      }
+    });
+
+    // Hardware shortcuts: arrow keys shift the viewport.
+    document.addEventListener('keydown', (ev) => {
+      if (ev.target.matches?.('input, textarea')) return;
+      if (ev.key === 'ArrowUp')   { ev.preventDefault(); this._shiftOctaves(+1); }
+      if (ev.key === 'ArrowDown') { ev.preventDefault(); this._shiftOctaves(-1); }
+    });
+
+    // Keep the MIDI pill and register readout in sync with state.
+    this._unsubs.push(
+      this.store.subscribe((s) => this._renderMidiPill(s.midi)),
+      this.store.subscribe((s) => { if (this.dom.register) this.dom.register.textContent = s.register; })
+    );
+  }
+
+  _shiftOctaves(n) {
+    this.viewport.shiftOctaves(n);
+    this._refreshRegister();
+    savePrefs({ ...loadPrefs(), startMidi: this.viewport.startMidi });
+  }
+
+  _refreshRegister() {
+    const { low, high } = this.viewport.window;
+    this.store.setState({ register: `${short(low)}–${short(high)}` });
+  }
+
+  /* ---- MIDI ------------------------------------------------------------ */
+
+  /** Attempt connection quietly at boot; never blocks or errors the UI. */
+  async _connectMidiSilently() {
+    if (!MidiRouter.isSupported()) {
+      this.store.setState({ midi: { ok: false, label: 'No MIDI' } });
+      return;
+    }
+    // Some browsers grant without a prompt; if it needs a gesture, the pill
+    // click will retry. We attempt once here and swallow the outcome.
+    await this._connectMidi({ silent: true });
+  }
+
+  async _connectMidi({ silent = false } = {}) {
+    const status = await this.midi.connect();
+    if (status.ok) {
+      const label = status.inputs.length
+        ? status.inputs[0]
+        : 'MIDI ready';
+      this.store.setState({ midi: { ok: true, label } });
+    } else if (!silent) {
+      const label = status.reason === 'unsupported' ? 'No MIDI' : 'MIDI blocked';
+      this.store.setState({ midi: { ok: false, label } });
+    }
+  }
+
+  _renderMidiPill(midi) {
+    const pill = this.dom.midiPill;
+    if (!pill) return;
+    pill.classList.toggle('is-connected', midi.ok);
+    pill.querySelector('.midi-pill__label').textContent = midi.label;
+  }
+
+  /* ---- Routing --------------------------------------------------------- */
+
+  _wireRouter() {
+    window.addEventListener('hashchange', () => this._handleRoute());
+  }
+
+  async _handleRoute() {
+    const path = location.hash.replace(/^#/, '');
+    const viewId = ROUTES[path] ?? 'home';
+
+    // Leave the current view (if any).
+    const prev = this.store.getState().view;
+    if (prev !== viewId) await this._exitView(prev);
+
+    // Toggle section visibility.
+    for (const [id, el] of this.dom.views) {
+      const active = id === viewId;
+      el.classList.toggle('is-active', active);
+      el.hidden = !active;
+    }
+
+    this.store.setState({ view: viewId });
+    savePrefs({ ...loadPrefs(), lastView: viewId });
+
+    if (viewId !== 'home') await this._enterView(viewId);
+  }
+
+  async _enterView(viewId) {
+    const def = VIEW_REGISTRY[viewId];
+    const slot = this.dom.slots.get(def?.slot);
+    if (!def || !slot) return;
+
+    let record = this.views.get(viewId);
+    if (!record) {
+      record = {};
+      this.views.set(viewId, record);
+      try {
+        const mod = await def.load();
+        record.factory = mod.default;
+      } catch (err) {
+        // Controller not built yet (or failed to load): show a placeholder
+        // and keep the instrument playable.
+        console.info(`[KeyMaster] "${viewId}" controller unavailable:`, err?.message ?? err);
+        renderPlaceholder(slot, viewId);
+        return;
+      }
+    }
+
+    if (!record.factory) { renderPlaceholder(slot, viewId); return; }
+
+    if (!record.instance) {
+      record.instance = record.factory({
+        mount: slot,
+        store: this.store,
+        keyboard: this.keyboard,
+        viewport: this.viewport,
+        midi: this.midi,
+        synth: this.synth,
+        scheduler: this.scheduler,
+        metronome: this.metronome,
+      });
+    }
+    record.instance.enter?.();
+  }
+
+  async _exitView(viewId) {
+    const record = this.views.get(viewId);
+    record?.instance?.exit?.();
+    // Always reset any per-exercise decoration the controller may have left.
+    this.keyboard.clearFingers();
+    this.keyboard.clearHighlight('target');
+    this.keyboard.allNotesOff();
+  }
+}
+
+/* ===========================================================================
+ * 5. Helpers
+ * ========================================================================= */
+
+/** Render a graceful "coming online" panel for an unbuilt view. */
+function renderPlaceholder(slot, viewId) {
+  const label = viewId === 'scales' ? 'Scales Masterclass' : 'Cognitive Sight-Reading';
+  slot.replaceChildren();
+  const panel = document.createElement('div');
+  panel.className = 'placeholder';
+  panel.innerHTML =
+    `<p class="placeholder__title">${label}</p>` +
+    `<p class="placeholder__note">This vector is being wired up. ` +
+    `The keyboard below is live — play freely.</p>`;
+  slot.appendChild(panel);
+}
+
+/** Only persist known-safe preference keys back into the store at boot. */
+function pickPrefs(prefs) {
+  const out = {};
+  if (prefs.lastView && prefs.lastView in VIEW_REGISTRY) out.view = prefs.lastView;
+  return out;
+}
+
+function clampStart(midi) {
+  return Math.min(PIANO_MAX_MIDI - 1, Math.max(PIANO_MIN_MIDI, midi | 0));
+}
+
+/** Compact note label like "C3" (sharp spelling) for chrome readouts. */
+function short(midi) {
+  const N = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  return `${N[midi % 12]}${Math.floor(midi / 12) - 1}`;
+}
+
+/* ===========================================================================
+ * 6. Bootstrap
+ * ========================================================================= */
+
+const app = new KeyMasterApp(document);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => app.boot());
+} else {
+  app.boot();
+}
+
+// Expose for debugging / controller tooling without polluting modules.
+window.KeyMaster = app;
+
+export { KeyMasterApp, createStore };

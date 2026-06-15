@@ -1,0 +1,238 @@
+/* keyboard.css
+   ===========================================================================
+   The instrument. This is the signature surface of KeyMaster PRO, so the
+   detail budget is spent here: ivory and ebony keys with physical depth, a
+   brass glow on the sounding note, and finger badges for the curriculum.
+
+   LAYOUT MODEL (must stay in sync with pianoEngine.js + viewport.js)
+   The engine renders all 88 keys and sets, per key, `--white-index`; on the
+   container it sets `--white-count` (52). The viewport sets `--white-span`
+   (white keys visible, 28 for four octaves) and `--window-white-start` (the
+   white index of the lowest visible key).
+
+   Every horizontal measure is a fraction of `--white-count` against the FULL
+   track width, so:
+     • track width   = (white-count / white-span) * 100% of the frame
+     • a white key   = (1 / white-count) of the track
+     • the track is slid left by (window-white-start / white-count) of itself
+   which lands the active 4-octave window exactly inside the clipping frame.
+   ========================================================================= */
+
+.piano {
+  /* Defaults so the board is sane even before JS publishes geometry. */
+  --white-count: 52;
+  --white-span: 28;
+  --window-white-start: 16;
+
+  /* Key sizing + colour, tunable in one place. */
+  --key-h: clamp(116px, 34dvh, 260px);
+  --black-h-ratio: 0.62;
+  --black-w-ratio: 0.60;
+
+  --ivory-key: linear-gradient(#FBF8F1 0%, #F1EBDF 70%, #E4DCCB 100%);
+  --ivory-key-press: linear-gradient(#EFE7D6 0%, #E2D8C2 100%);
+  --ebony-key: linear-gradient(#2A2832 0%, #16151C 60%, #0C0B11 100%);
+  --ebony-key-press: linear-gradient(#1C1B23 0%, #0A0910 100%);
+
+  position: relative;
+  display: block;
+  height: var(--key-h);
+  /* The full 88-key track, wider than its clipping frame. */
+  width: calc(var(--white-count) / var(--white-span) * 100%);
+  transform: translateX(calc(var(--window-white-start) / var(--white-count) * -100%));
+  transition: transform 0.30s var(--ease, cubic-bezier(0.4, 0, 0.2, 1));
+  touch-action: none;            /* we handle pointer input ourselves */
+}
+
+/* --------------------------------------------------------------------------
+   Keys — shared
+   -------------------------------------------------------------------------- */
+.key {
+  position: absolute;
+  top: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  appearance: none;
+  cursor: pointer;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   White keys
+   Positioned by white index; full keybed height; subtle ivory grain and a
+   front lip (via ::before) for depth.
+   -------------------------------------------------------------------------- */
+.key--white {
+  left: calc(var(--white-index) / var(--white-count) * 100%);
+  width: calc(100% / var(--white-count));
+  height: 100%;
+  z-index: 1;
+  background: var(--ivory-key);
+  border-radius: 0 0 5px 5px;
+  /* Hairline seams between keys + soft top shade for roundness. */
+  box-shadow:
+    inset -1px 0 0 rgba(0,0,0,0.16),
+    inset 1px 0 0 rgba(255,255,255,0.5),
+    inset 0 6px 8px -6px rgba(0,0,0,0.18);
+}
+/* Front lip of the white key — the visible edge you press toward. */
+.key--white::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: -1px;
+  height: 9px;
+  border-radius: 0 0 5px 5px;
+  background: linear-gradient(#E0D7C5, #C9BFA9);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+/* --------------------------------------------------------------------------
+   Black keys
+   Centered on the seam after their host white key; raised with a drop shadow
+   and a beveled top highlight.
+   -------------------------------------------------------------------------- */
+.key--black {
+  left: calc((var(--white-index) + 1) / var(--white-count) * 100%);
+  width: calc(var(--black-w-ratio) * 100% / var(--white-count));
+  height: calc(var(--key-h) * var(--black-h-ratio));
+  transform: translateX(-50%);
+  z-index: 3;
+  background: var(--ebony-key);
+  border-radius: 0 0 4px 4px;
+  box-shadow:
+    0 4px 6px rgba(0,0,0,0.5),
+    inset 0 1px 0 rgba(255,255,255,0.16),
+    inset 0 -6px 8px -4px rgba(0,0,0,0.7);
+}
+/* Beveled cap so the black key reads as a 3D block, not a flat bar. */
+.key--black::before {
+  content: "";
+  position: absolute;
+  inset: 0 12% auto 12%;
+  top: 6%;
+  height: 18%;
+  border-radius: 3px;
+  background: linear-gradient(#46434F, #25232D);
+}
+
+/* --------------------------------------------------------------------------
+   Active (sounding) state — brass light
+   -------------------------------------------------------------------------- */
+.key.is-active.key--white {
+  background: var(--ivory-key-press);
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--brass) 55%, transparent),
+    inset 0 10px 16px -8px var(--brass-glow),
+    0 0 18px -2px var(--brass-glow);
+}
+.key.is-active.key--black {
+  background: var(--ebony-key-press);
+  transform: translateX(-50%) translateY(2px);
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.5),
+    inset 0 0 0 1px color-mix(in srgb, var(--brass) 60%, transparent),
+    inset 0 -10px 14px -6px var(--brass-glow),
+    0 0 16px -1px var(--brass-glow);
+}
+
+/* --------------------------------------------------------------------------
+   Highlight variants (decorative, set by scale/harmony engines)
+     hl-target — the note you're being asked to play (brass ring at the lip)
+     hl-root   — chord/scale root (felt)
+     hl-ghost  — faint "available in scale" tint
+   These read alongside, not instead of, the active state.
+   -------------------------------------------------------------------------- */
+.key.hl-target::after {
+  content: "";
+  position: absolute;
+  left: 50%; bottom: 14%;
+  width: 56%; aspect-ratio: 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--brass-bright), transparent 68%);
+  opacity: 0.9;
+  pointer-events: none;
+}
+.key--black.hl-target::after { bottom: 10%; width: 70%; }
+
+.key.hl-root::after {
+  content: "";
+  position: absolute;
+  left: 50%; bottom: 14%;
+  width: 50%; aspect-ratio: 1;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--felt-bright), transparent 66%);
+  pointer-events: none;
+}
+
+.key.hl-ghost.key--white { background: linear-gradient(#FBF8F1, #EFE6D2); }
+.key.hl-ghost.key--black { filter: brightness(1.35); }
+
+/* --------------------------------------------------------------------------
+   Finger badges (data-finger = 1..5), used by the fingering curriculum.
+   A small brass coin near the key's base with the finger number.
+   -------------------------------------------------------------------------- */
+.key[data-finger] {
+  --badge: clamp(15px, calc(100% / var(--white-span) * 0.62), 26px);
+}
+.key[data-finger]::after {
+  content: attr(data-finger);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 10%;
+  width: var(--badge); height: var(--badge);
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-family: var(--font-mono, monospace);
+  font-size: calc(var(--badge) * 0.62);
+  font-weight: 600;
+  color: var(--ebony-sink, #0F0E14);
+  background: radial-gradient(circle at 35% 30%, var(--brass-bright), var(--brass-deep));
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.5);
+  pointer-events: none;
+}
+/* On black keys the coin sits a touch higher and uses ivory text for contrast. */
+.key--black[data-finger]::after {
+  bottom: 8%;
+  color: var(--ebony, #14131A);
+}
+
+/* --------------------------------------------------------------------------
+   Optional per-key note labels (engine option showLabels)
+   -------------------------------------------------------------------------- */
+.key__label {
+  font-family: var(--font-mono, monospace);
+  font-size: clamp(8px, calc(100% / var(--white-span) * 0.32), 12px);
+  line-height: 1;
+  margin-bottom: 14px;
+  pointer-events: none;
+}
+.key--white .key__label { color: var(--ivory-faint, #7E7A72); }
+.key--black .key__label { color: rgba(244,239,230,0.55); margin-bottom: 8px; }
+
+/* --------------------------------------------------------------------------
+   Offscreen keys: kept in layout (so translate math holds) but inert. The
+   frame's overflow already clips them; this just removes them from hit-testing.
+   -------------------------------------------------------------------------- */
+.key.is-offscreen { pointer-events: none; }
+
+/* --------------------------------------------------------------------------
+   Hover affordance on fine pointers only (keeps touch clean).
+   -------------------------------------------------------------------------- */
+@media (hover: hover) and (pointer: fine) {
+  .key--white:hover { background: linear-gradient(#FFFFFF, #F1EBDF); }
+  .key--black:hover { filter: brightness(1.18); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .piano { transition: none; }
+}

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<!-- /index.html — KeyMaster PRO shell.
+     Minimal semantic container: it defines the DOM slots the JS layer owns and
+     bootstraps the ES-module app. No inline scripts, no inline styling beyond
+     the critical anti-FOUC line; all real styling lives in /styles/. -->
+<html lang="en" data-boot="pending">
+<head>
+  <meta charset="utf-8" />
+  <!-- Instrument app: lock zoom/scroll so touch maps cleanly to keys, and
+       extend under device notches in landscape. -->
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  />
+  <meta name="description" content="KeyMaster PRO — a cognitive piano-training studio." />
+  <meta name="theme-color" content="#14131A" />
+
+  <title>KeyMaster PRO</title>
+
+  <!-- PWA / standalone instrument experience -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="KeyMaster PRO" />
+  <link rel="apple-touch-icon" href="icon-180.png" />
+
+  <!-- Type system: Fraunces (display/brand), Inter (UI), IBM Plex Mono
+       (telemetry — BPM, latency, register readouts). -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <!-- Separated styling layers (theme tokens first, then component sheets). -->
+  <link rel="stylesheet" href="theme.css" />
+  <link rel="stylesheet" href="keyboard.css" />
+  <link rel="stylesheet" href="notation.css" />
+
+  <!-- The only inline style: hide the shell until the app flips data-boot,
+       preventing an unstyled flash before the module graph resolves. -->
+  <style>
+    html[data-boot="pending"] body { visibility: hidden; }
+  </style>
+</head>
+
+<body>
+  <!-- App shell ----------------------------------------------------------- -->
+  <div class="app" id="app-shell">
+
+    <!-- Top bar: identity, live keyboard register readout, instrument controls -->
+    <header class="app__bar" role="banner">
+      <a class="brand" href="#/" aria-label="KeyMaster PRO home">
+        <span class="brand__mark" aria-hidden="true"></span>
+        <span class="brand__name">KeyMaster<span class="brand__pro">PRO</span></span>
+      </a>
+
+      <div class="app__controls" role="group" aria-label="Keyboard controls">
+        <!-- Window register readout is populated by the viewport. -->
+        <output class="register" id="register-readout" aria-live="polite">C3–C7</output>
+
+        <div class="octave-shift" role="group" aria-label="Shift octave">
+          <button type="button" class="btn btn--ghost" data-action="octave-down" aria-label="Shift down an octave">−8va</button>
+          <button type="button" class="btn btn--ghost" data-action="octave-up" aria-label="Shift up an octave">+8va</button>
+        </div>
+
+        <!-- MIDI connection state; click to (re)connect hardware. -->
+        <button type="button" class="midi-pill" id="midi-pill" data-action="connect-midi" aria-live="polite">
+          <span class="midi-pill__dot" aria-hidden="true"></span>
+          <span class="midi-pill__label">No MIDI</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main view region. Exactly one [data-view] is active at a time;
+         the router toggles the `is-active` class. -->
+    <main class="app__main" id="view-root">
+
+      <!-- Launcher: the two-vector entry point (reduced cognitive load). -->
+      <section
+        class="view view--launcher is-active"
+        data-view="home"
+        aria-labelledby="launcher-heading"
+      >
+        <h1 id="launcher-heading" class="visually-hidden">Choose a training vector</h1>
+        <nav class="launcher" aria-label="Training vectors">
+          <a class="vector vector--scales" href="#/scales">
+            <span class="vector__eyebrow">01 — Technique</span>
+            <span class="vector__title">Scales Masterclass</span>
+            <span class="vector__blurb">Fingering, fluency, and the tempo climb.</span>
+          </a>
+          <a class="vector vector--reading" href="#/sightreading">
+            <span class="vector__eyebrow">02 — Cognition</span>
+            <span class="vector__title">Cognitive Sight-Reading</span>
+            <span class="vector__blurb">Read ahead, recover fast, stay in time.</span>
+          </a>
+        </nav>
+      </section>
+
+      <!-- Scales Masterclass mount. Its controller renders into [data-slot]. -->
+      <section
+        class="view view--scales"
+        data-view="scales"
+        aria-labelledby="scales-heading"
+        hidden
+      >
+        <h1 id="scales-heading" class="view__title">Scales Masterclass</h1>
+        <div class="view__body" data-slot="scales"></div>
+      </section>
+
+      <!-- Cognitive Sight-Reading mount. -->
+      <section
+        class="view view--reading"
+        data-view="sightreading"
+        aria-labelledby="reading-heading"
+        hidden
+      >
+        <h1 id="reading-heading" class="view__title">Cognitive Sight-Reading</h1>
+        <div class="view__body" data-slot="sightreading"></div>
+      </section>
+
+    </main>
+
+    <!-- Persistent instrument. The keyboard is shared across every view rather
+         than rebuilt per screen, so register context and active notes survive
+         navigation. The PianoEngine renders into #keyboard-mount. -->
+    <footer class="app__instrument" role="contentinfo" aria-label="Keyboard">
+      <div class="keyboard-frame">
+        <div id="keyboard-mount" class="keyboard-mount"></div>
+      </div>
+    </footer>
+
+  </div>
+
+  <noscript>
+    <p style="color:#F4EFE6;background:#14131A;padding:1rem;margin:0;font:1rem system-ui">
+      KeyMaster PRO needs JavaScript to run the instrument engine.
+    </p>
+  </noscript>
+
+  <!-- Single module entry point. Absolute path so it resolves regardless of
+       the route in the hash. -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
