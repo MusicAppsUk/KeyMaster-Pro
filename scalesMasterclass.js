@@ -320,9 +320,11 @@ export default function createView(ctx) {
     const fingerNote = el('p', { class: 'smc__fingernote' });
 
     const actions = el('div', { class: 'smc__row' });
-    const listenBtn = button('♪ Listen', listen);
-    const practiceBtn = button('● Practice', practice);
-    const stopBtn = button('◼ Stop', () => { stopAll(); mode = 'idle'; ui.status.textContent = 'Ready.'; paintScale('target'); setButtons(); }, 'btn--ghost');
+    // Listen and Practice are self-canceling toggles: pressing one while its own
+    // mode is active stops that mode. Stop stays a global override (unchanged).
+    const listenBtn = button('♪ Listen', () => (mode === 'listening' ? stopToIdle() : listen()));
+    const practiceBtn = button('● Practice', () => (mode === 'practice' ? stopToIdle() : practice()));
+    const stopBtn = button('◼ Stop', stopToIdle, 'btn--ghost');
     actions.append(listenBtn, practiceBtn, stopBtn);
 
     const status = el('div', { class: 'smc__status' });
@@ -355,12 +357,31 @@ export default function createView(ctx) {
     setButtons();
   }
 
+  /**
+   * Return to the idle/preview state. This is exactly what the global Stop
+   * button has always done; Listen/Practice reuse it to cancel themselves.
+   */
+  function stopToIdle() {
+    stopAll();
+    mode = 'idle';
+    ui.status.textContent = 'Ready.';
+    paintScale('target');
+    setButtons();
+  }
+
   function setButtons() {
     if (!audioOK) return;
-    const busy = mode === 'listening' || mode === 'practice';
-    ui.listenBtn.disabled = busy;
-    ui.practiceBtn.disabled = mode === 'practice';
-    ui.stopBtn.disabled = !busy;
+    const listening = mode === 'listening';
+    const practicing = mode === 'practice';
+    // Each toggle stays enabled while ITS mode is active (so a second press
+    // cancels it); it's only disabled while the OTHER mode is running.
+    ui.listenBtn.disabled = practicing;
+    ui.practiceBtn.disabled = listening;
+    ui.listenBtn.classList.toggle('is-on', listening);
+    ui.practiceBtn.classList.toggle('is-on', practicing);
+    ui.listenBtn.textContent = listening ? '◼ Stop listening' : '♪ Listen';
+    ui.practiceBtn.textContent = practicing ? '◼ Stop practice' : '● Practice';
+    ui.stopBtn.disabled = !(listening || practicing);
   }
 
   /* ===================================================================== *
