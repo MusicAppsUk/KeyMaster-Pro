@@ -73,17 +73,21 @@
 .staff {
   position: relative;
   height: var(--staff-height);
-  background-image: repeating-linear-gradient(
-    to bottom,
-    var(--ink-dim) 0,
-    var(--ink-dim) var(--staff-line),
-    transparent var(--staff-line),
-    transparent var(--staff-space)
-  );
-  /* Pull the gradient so the last (5th) line lands exactly on the bottom edge. */
-  background-position: 0 0;
-  background-repeat: no-repeat;
-  background-size: 100% calc(var(--staff-height) + var(--staff-line));
+  /* Lines are drawn as explicit .staff__line elements by the engine, in the
+     SAME coordinate system the notes use (top = k * staff-space). This replaces
+     a background-gradient that clipped the 5th line at the bottom edge, which
+     made the staff render only four lines and shifted every read by one line. */
+}
+
+/* One of the five staff lines, centered on its pitch position so a note whose
+   head-center sits at the same `top` lands exactly on the line. */
+.staff__line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--staff-line);
+  background: var(--ink-dim);
+  pointer-events: none;
 }
 
 /* --------------------------------------------------------------------------

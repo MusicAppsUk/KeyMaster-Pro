@@ -259,12 +259,30 @@ export default function createView(ctx) {
 
     root.append(staffWrap, bar, meta, status);
 
+    const treble = staffWrap.querySelector('.staff--treble');
+    const bass = staffWrap.querySelector('.staff--bass');
+    drawStaffLines(treble);
+    drawStaffLines(bass);
+
     return {
-      root, staffWrap,
-      treble: staffWrap.querySelector('.staff--treble'),
-      bass: staffWrap.querySelector('.staff--bass'),
+      root, staffWrap, treble, bass,
       practiceBtn, stopBtn, prevBtn, nextBtn, playBtn, level, count, status,
     };
+  }
+
+  /**
+   * Paint the five staff lines as explicit elements. Each line's CENTER sits at
+   * `k * staff-space` (k = 0 top … 4 bottom) — the exact y a note head occupies
+   * when its `off` equals k. So an integer-`off` note lands on its line, and a
+   * half-`off` note lands in the space between, with no clipping. render()'s
+   * cleanup only removes `.note`/`.ledger`, so these persist across renders.
+   */
+  function drawStaffLines(staffEl) {
+    for (let k = 0; k <= 4; k++) {
+      const line = el('div', { class: 'staff__line' });
+      line.style.top = `calc(var(--staff-space) * ${k} - var(--staff-line) / 2)`;
+      staffEl.appendChild(line);
+    }
   }
 
   function setButtons() {
