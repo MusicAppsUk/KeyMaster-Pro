@@ -27,8 +27,8 @@ export function createStaffView({ compact = false } = {}) {
     <div class="grand-staff">
       <div class="grand-staff__brace"></div>
       <div class="grand-staff__spine"></div>
-      <div class="staff staff--treble"><span class="clef clef--treble">&#x1D11E;</span><span class="time-sig"><span>4</span><span>4</span></span></div>
-      <div class="staff staff--bass"><span class="clef clef--bass">&#x1D122;</span><span class="time-sig"><span>4</span><span>4</span></span></div>
+      <div class="staff staff--treble"><span class="clef clef--treble">&#x1D11E;</span><span class="time-sig"><span>4</span><span>4</span></span><span class="staff__startbar"></span></div>
+      <div class="staff staff--bass"><span class="clef clef--bass">&#x1D122;</span><span class="time-sig"><span>4</span><span>4</span></span><span class="staff__startbar"></span></div>
     </div>`;
 
   const treble = el.querySelector('.staff--treble');
@@ -250,18 +250,29 @@ export function createStaffView({ compact = false } = {}) {
     const tHost = scroll ? trebleTrack : treble;
     const bHost = scroll ? bassTrack : bass;
     const leftPct = (k) => (n <= 1 ? 50 : 22 + (68 * k) / (n - 1));
+    const addBar = (x, cls) => {
+      for (const host of [tHost, bHost]) {
+        const bl = document.createElement('div');
+        bl.className = cls;
+        bl.style.left = x;
+        host.appendChild(bl);
+      }
+    };
+    // Interior barlines just before every downbeat (multiple of beatsPerBar).
     for (let i = beatsPerBar; i < n; i += beatsPerBar) {
       const x = scroll
         ? `calc(var(--col-w) * ${i} - var(--col-w) * 0.5)`
         : pan
           ? `calc(var(--gutter) + var(--col-w) * ${i} - var(--col-w) * 0.5)`
           : `${(leftPct(i - 1) + leftPct(i)) / 2}%`;
-      for (const host of [tHost, bHost]) {
-        const bl = document.createElement('div');
-        bl.className = 'barline';
-        bl.style.left = x;
-        host.appendChild(bl);
-      }
+      addBar(x, 'barline');
+    }
+    // Final barline closing the last measure.
+    if (n > 0 && !scroll) {
+      const xEnd = pan
+        ? `calc(var(--gutter) + var(--col-w) * ${n} - var(--col-w) * 0.5)`
+        : `${Math.min(99, leftPct(n - 1) + 4)}%`;
+      addBar(xEnd, 'barline barline--final');
     }
   }
 

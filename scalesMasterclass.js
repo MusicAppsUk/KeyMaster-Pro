@@ -498,10 +498,15 @@ export default function createView(ctx) {
     // staff (pan layout), and the stage scrolls vertically only as a safety on
     // very short viewports — the control bar above it stays put regardless.
     const controls = el('div', { class: 'smc__controls' });
-    controls.append(bar, actions, tempoWrap, why.el);
+    // Compact horizontal band: tempo/metronome, the "Why B Major?" trigger, and
+    // the live scale-context summary sit side-by-side (wrapping only when narrow),
+    // instead of three stacked blocks — this lifts the grand staff higher.
+    const band = el('div', { class: 'smc__band' });
+    band.append(tempoWrap, why.el, notesLine);
+    controls.append(bar, actions, band);
 
     const stage = el('div', { class: 'smc__stage' });
-    stage.append(notesLine, fingerNote, stafftop, status, metrics, climb);
+    stage.append(fingerNote, stafftop, status, metrics, climb);
 
     root.append(controls, stage);
 
@@ -645,6 +650,12 @@ function injectStyles() {
     .smc__row{display:flex;flex-wrap:wrap;gap:.5rem;margin:0}
     .smc__tempo{margin:0}
     .smc__stafftop{margin:0}
+    /* RC2 compaction: one horizontal band for tempo + Learn Why + scale context. */
+    .smc__band{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .85rem;margin:0}
+    .smc__band .smc__tempo{flex:0 1 auto;margin:0}
+    .smc__band .infopanel{flex:0 0 auto;align-self:center;margin:0}
+    .smc__band .smc__readout{flex:1 1 220px;margin:0;padding:.35rem .55rem;
+      font-size:var(--step-xs);line-height:1.4}
     .smc__field{display:flex;flex-direction:column;gap:.25rem}
     /* RC2 vertical-fit: trim non-critical chrome height (Scales only). */
     .smc .btn--xl{min-height:46px;padding:10px 16px}

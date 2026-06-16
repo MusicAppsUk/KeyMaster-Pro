@@ -574,13 +574,10 @@ function handModel(names, clef) {
   const hands = midi.map((m) => (clef === 'treble' ? 'R' : clef === 'bass' ? 'L' : m >= 60 ? 'R' : 'L'));
   const fingers = dia.map((d) => (fiveFinger ? (clef === 'treble' ? d - lo + 1 : 5 - (d - lo)) : null));
 
-  // Inline labels: a bare finger number normally; on a CROSS-CLEF note (hand's
-  // home clef ≠ the note's clef) we prefix the hand letter, e.g. "R1".
-  const labels = names.map((_, i) => {
-    const cross = (hands[i] === 'R' && midi[i] < 60) || (hands[i] === 'L' && midi[i] >= 60);
-    if (fingers[i] != null) return cross ? `${hands[i]}${fingers[i]}` : String(fingers[i]);
-    return cross ? hands[i] : null;
-  });
+  // Inline staff labels are STRICTLY fingering numbers 1–5 (or none) so they can
+  // never be mistaken for a note name. Hand (RH/LH) is conveyed by the hint text
+  // below the staff, not by a note-like letter on the staff.
+  const labels = names.map((_, i) => (fingers[i] != null ? String(fingers[i]) : null));
   return { midi, hands, fingers, fiveFinger, labels };
 }
 

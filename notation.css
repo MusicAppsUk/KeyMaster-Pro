@@ -23,7 +23,7 @@
   --staff-height: calc(var(--staff-space) * 4);     /* 5 lines = 4 gaps */
   --staff-gap: calc(var(--staff-space) * 6);        /* treble↔bass separation */
   --note-head: calc(var(--staff-space) * 1.1);
-  --clef-size: calc(var(--staff-space) * 4.2);      /* one size for BOTH clefs */
+  --clef-size: calc(var(--staff-space) * 3.4);      /* one size for BOTH clefs */
   --ink: var(--ivory, #F4EFE6);
   --ink-dim: var(--ivory-dim, #B9B2A6);
 
@@ -33,7 +33,7 @@
      overflow-y:visible guarantees high/low ledger lines are never cut off. */
   --col-w: calc(var(--staff-space) * 4.6);
   --playhead: calc(var(--staff-space) * 10);
-  --gutter: calc(var(--staff-space) * 6);   /* clef + time-signature zone */
+  --gutter: calc(var(--staff-space) * 7.6);   /* clef + time-signature + start-barline zone */
   padding: var(--pad, calc(var(--staff-space) * 5)) var(--gap-6, 1.5rem);
   background: linear-gradient(var(--ebony-raise, #1E1C26), #1A1822);
   border: 1px solid var(--ebony-edge, #2A2833);
@@ -104,16 +104,16 @@
 .clef {
   position: absolute;
   left: calc(var(--staff-space) * 0.5);
+  top: 50%;
   font-family: 'Bravura', 'Noto Music', serif;
   color: var(--ink);
   line-height: 1;
   font-size: var(--clef-size);   /* SAME size for treble and bass */
 }
-/* Only the vertical seat differs: the treble body wraps the G (2nd) line and
-   trails below the staff; the bass body sits in the upper half around the F
-   (4th) line. Sizes are identical so both read at the same professional scale. */
-.clef--treble { top: calc(var(--staff-space) * -0.7); }
-.clef--bass   { top: calc(var(--staff-space) * -0.15); }
+/* Vertically centred within the five-line staff; a tiny per-glyph optical nudge
+   accounts for each clef's asymmetric body. */
+.clef--treble { transform: translateY(-50%) translateY(calc(var(--staff-space) * -0.05)); }
+.clef--bass   { transform: translateY(-50%) translateY(calc(var(--staff-space) * 0.10)); }
 
 /* --------------------------------------------------------------------------
    Barlines, positioned by the engine via `left`.
@@ -125,6 +125,17 @@
   background: var(--ink-dim);
 }
 .barline--final { width: calc(var(--staff-line) * 3); background: var(--ink); }
+
+/* Start-of-music separator: a clear double upright sitting just after the 4/4
+   time signature and before the first note (static — survives clearNotes). */
+.staff__startbar {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: calc(var(--staff-space) * 6.3);
+  width: calc(var(--staff-line) * 3);
+  background: linear-gradient(90deg,
+    var(--ink) 0 38%, transparent 38% 62%, var(--ink) 62% 100%);
+}
 
 /* --------------------------------------------------------------------------
    Notes. The engine sets `left` (time) and `top` (pitch, in half staff-spaces)
