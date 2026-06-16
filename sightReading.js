@@ -603,47 +603,47 @@ function handModel(names, clef) {
   return { midi, hands, fingers, shifts, fiveFinger, labels };
 }
 
-// Five-finger-position fingering with shifts. Each hand keeps its own moving
-// 5-finger window; diatonic (white-key step) distance from the window's anchor
-// gives the finger, so steps → adjacent fingers and skips → finger jumps (never a
-// mechanical by-order count). A note outside the window pivots the hand to a NEW
-// position — RH thumb (1) leads an upward shift / pinky (5) a downward one; LH
-// mirrors — and that pivot number is itself the visible "new position starts here"
-// marker. The opening interval seeds the start finger so the hand has room to move
-// (RH: ascending-or-flat opening → start on 1, descending → start on 5; LH mirror).
+// Five-finger-position fingering with shifts. Notes are GROUPED into positions:
+// each position is a maximal run (per hand) whose diatonic range stays within a
+// 5th, and the hand is anchored on that position's LOWEST note (RH finger 1 /
+// LH finger 5 sits there). Fingers then follow the white-key distance from the
+// anchor, so steps → adjacent fingers and skips → finger jumps. Because the whole
+// position's range is considered before assigning, the hand seats where the music
+// actually sits — a note a third below the opening note stays in-position (a
+// natural reach) instead of triggering a spurious pinny reseat. A new position is
+// only opened when the music genuinely exceeds a 5th, and its first finger marks
+// the shift. Hands are fingered independently (grand staff).
 function assignFingering(dia, hands) {
   const fingers = new Array(dia.length).fill(null);
   const shifts = new Array(dia.length).fill(false);
-  let rhAnchor = null;   // dia where RH finger 1 (thumb) sits
-  let lhAnchor = null;   // dia where LH finger 5 (pinky) sits
 
-  const nextSameHand = (i, h) => {
-    for (let j = i + 1; j < dia.length; j++) if (hands[j] === h) return dia[j];
-    return null;
-  };
+  for (const hand of ['R', 'L']) {
+    const idx = [];
+    for (let i = 0; i < dia.length; i++) if (hands[i] === hand) idx.push(i);
+    if (!idx.length) continue;
 
-  for (let i = 0; i < dia.length; i++) {
-    const d = dia[i];
-    if (hands[i] === 'R') {
-      if (rhAnchor == null) {
-        const nxt = nextSameHand(i, 'R');
-        rhAnchor = (nxt != null && nxt < d) ? d - 4 : d;   // opens down → start on 5, else 1
+    let p = 0;
+    let first = true;
+    while (p < idx.length) {
+      // Extend this position while the running diatonic range stays within a 5th.
+      let q = p;
+      let posMin = dia[idx[p]];
+      let posMax = dia[idx[p]];
+      while (q + 1 < idx.length) {
+        const d = dia[idx[q + 1]];
+        const nMin = Math.min(posMin, d);
+        const nMax = Math.max(posMax, d);
+        if (nMax - nMin > 4) break;            // would exceed a five-finger span
+        posMin = nMin; posMax = nMax; q++;
       }
-      let f = d - rhAnchor + 1;
-      if (f > 5) { rhAnchor = d; f = 1; shifts[i] = true; }          // shift up: thumb leads
-      else if (f < 1) { rhAnchor = d - 4; f = 5; shifts[i] = true; } // shift down: pinky leads
-      fingers[i] = f;
-    } else {
-      if (lhAnchor == null) {
-        const nxt = nextSameHand(i, 'L');
-        lhAnchor = (nxt != null && nxt < d) ? d - 4 : d;   // opens down → start on 1, else 5
+      // Assign fingers from the settled anchor (the position's lowest note).
+      for (let k = p; k <= q; k++) {
+        const d = dia[idx[k]];
+        fingers[idx[k]] = hand === 'R' ? (d - posMin + 1) : (5 - (d - posMin));
       }
-      const rel = d - lhAnchor;            // 0 → finger 5 (pinky) … 4 → finger 1 (thumb)
-      let f;
-      if (rel > 4) { lhAnchor = d; f = 5; shifts[i] = true; }        // shift up: reseat pinky (room to ascend)
-      else if (rel < 0) { lhAnchor = d - 4; f = 1; shifts[i] = true; } // shift down: reseat thumb (room to descend)
-      else f = 5 - rel;
-      fingers[i] = f;
+      if (!first) shifts[idx[p]] = true;        // a genuine hand reposition begins here
+      first = false;
+      p = q + 1;
     }
   }
   return { fingers, shifts };
