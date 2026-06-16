@@ -623,8 +623,11 @@ function injectStyles() {
     .smc>.vector__eyebrow{flex:0 0 auto;margin:0}
     .smc__controls{flex:0 0 auto;display:flex;flex-direction:column;gap:.45rem}
     .smc__controls > .infopanel{align-self:flex-start}
-    .smc__stage{flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
-      display:flex;flex-direction:column;gap:.5rem}
+    /* Block scroll container (NOT a flex column): children flow at natural
+       height, so the grand staff keeps its full treble+bass height and is never
+       shrunk/clipped. Vertical scroll engages only if content exceeds the band. */
+    .smc__stage{flex:1 1 0;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
+    .smc__stage > * + *{margin-top:.5rem}
     /* Reset margins that previously created vertical rhythm in a static stack. */
     .smc__bar{display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;margin:0}
     .smc__row{display:flex;flex-wrap:wrap;gap:.5rem;margin:0}
