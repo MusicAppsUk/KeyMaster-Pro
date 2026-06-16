@@ -392,15 +392,25 @@ export default function createView(ctx) {
    * ===================================================================== */
 
   function stopAll() {
+    // 1. Cancel every queued timer + scheduler subscription registered by the
+    //    active mode (listen timers, count-in/onBar handlers, rebase/fade timers,
+    //    evaluator cleanup).
     while (disposers.length) {
       const d = disposers.pop();
       try { d(); } catch { /* ignore */ }
     }
+    // 2. Silence + halt the transport.
     if (metronome) metronome.setEnabled(false);
-    scheduler?.stop();
+    scheduler?.stop();                 // stop the look-ahead pulse train
+    // 3. Hard-kill audio. Listen pre-schedules the WHOLE scale into the Web Audio
+    //    graph with future start times, so a gentle release isn't enough — panic()
+    //    force-stops every voice, including notes scheduled to start later.
+    synth?.panic();
     synth?.allNotesOff();
+    // 4. Clear all visual playback state.
     keyboard.clearHighlight('target');
     keyboard.clearHighlight('root');
+    keyboard.clearHighlight('ghost');
     staff.clearMarks();
   }
 
@@ -445,7 +455,10 @@ export default function createView(ctx) {
     const listenBtn = button('♪ Listen', () => (mode === 'listening' ? stopToIdle() : listen()), 'btn--xl');
     const practiceBtn = button('● Practice', () => (mode === 'practice' ? stopToIdle() : practice()), 'btn--xl');
     const stopBtn = button('◼ Stop', stopToIdle, 'btn--xl btn--ghost');
-    actions.append(listenBtn, practiceBtn, stopBtn);
+    // Scales-only. Returns the exercise to its first note WITHOUT starting
+    // playback and WITHOUT touching key / major-minor / hand / range selections.
+    const resetBtn = button('↺ Reset', reset, 'btn--xl btn--ghost');
+    actions.append(listenBtn, practiceBtn, stopBtn, resetBtn);
 
     const tempoWrap = el('div', { class: 'smc__tempo' });
     const tempoLabel = el('span', { class: 'smc__tempolabel' }); tempoLabel.textContent = 'Tempo';
@@ -622,17 +635,19 @@ function injectStyles() {
        The grand staff keeps its full intrinsic height and the page scrolls via
        .app__main when content exceeds the viewport. Control order (controls
        above the staff) is preserved by DOM order; nothing is height-allocated. */
-    .smc{display:flex;flex-direction:column;gap:.5rem}
+    .smc{display:flex;flex-direction:column;gap:.4rem}
     .smc>.vector__eyebrow{margin:0}
-    .smc__controls{display:flex;flex-direction:column;gap:.45rem}
+    .smc__controls{display:flex;flex-direction:column;gap:.3rem}
     .smc__controls > .infopanel{align-self:flex-start}
-    .smc__stage{display:flex;flex-direction:column;gap:.5rem}
+    .smc__stage{display:flex;flex-direction:column;gap:.4rem}
     /* Reset margins that previously created vertical rhythm in a static stack. */
-    .smc__bar{display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;margin:0}
+    .smc__bar{display:flex;flex-wrap:wrap;gap:.55rem;align-items:flex-end;margin:0}
     .smc__row{display:flex;flex-wrap:wrap;gap:.5rem;margin:0}
     .smc__tempo{margin:0}
     .smc__stafftop{margin:0}
     .smc__field{display:flex;flex-direction:column;gap:.25rem}
+    /* RC2 vertical-fit: trim non-critical chrome height (Scales only). */
+    .smc .btn--xl{min-height:46px;padding:10px 16px}
     .smc__fieldlabel{font-family:var(--font-mono);font-size:var(--step-xs);
       letter-spacing:.08em;text-transform:uppercase;color:var(--ivory-faint)}
     .smc__select{background:var(--ebony-sink);color:var(--ivory);
@@ -642,11 +657,11 @@ function injectStyles() {
       font-size:var(--step-sm);align-self:center}
     .smc__readout{font-family:var(--font-mono);font-size:var(--step-sm);
       color:var(--ivory-dim);background:var(--ebony-sink);border:1px solid var(--ebony-edge);
-      border-radius:var(--radius-sm);padding:.6rem .75rem;white-space:pre-wrap}
+      border-radius:var(--radius-sm);padding:.45rem .6rem;white-space:pre-wrap}
     .smc__fingernote{color:var(--brass-bright);font-size:var(--step-xs);
-      font-family:var(--font-mono);margin:.4rem 0 0;min-height:1em}
+      font-family:var(--font-mono);margin:.2rem 0 0;min-height:1em}
     .smc__status{font-family:var(--font-mono);font-size:var(--step-sm);
-      color:var(--ivory);margin:.5rem 0}
+      color:var(--ivory);margin:.3rem 0}
     .smc__metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));
       gap:.6rem;margin-top:.25rem}
     .tile{display:flex;flex-direction:column;gap:.15rem;padding:.7rem .8rem;
