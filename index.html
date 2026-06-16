@@ -113,13 +113,12 @@
               <span class="vector__blurb">Read ahead, recover fast, stay in time.</span>
             </a>
 
-            <div class="vector vector--locked" aria-disabled="true" role="group" aria-label="Chord Masterclass — coming next, locked">
-              <span class="vector__status vector__status--next">Coming Next</span>
+            <a class="vector vector--chords" href="#/chords">
+              <span class="vector__status vector__status--next">Stage 1 Live</span>
               <span class="vector__eyebrow">03 — Harmony</span>
               <span class="vector__title">Chord Masterclass</span>
               <span class="vector__blurb">Triads, inversions, seventh chords, full chords, and broken chords.</span>
-              <span class="vector__lock" aria-hidden="true">🔒</span>
-            </div>
+            </a>
 
             <div class="vector vector--locked" aria-disabled="true" role="group" aria-label="Arpeggio Masterclass — planned, locked">
               <span class="vector__status vector__status--planned">Planned</span>
@@ -177,6 +176,17 @@
       >
         <h1 id="reading-heading" class="view__title">Cognitive Sight-Reading</h1>
         <div class="view__body" data-slot="sightreading"></div>
+      </section>
+
+      <!-- Chord Masterclass mount (Stage 1 prototype). -->
+      <section
+        class="view view--chords"
+        data-view="chords"
+        aria-labelledby="chords-heading"
+        hidden
+      >
+        <h1 id="chords-heading" class="view__title">Chord Masterclass</h1>
+        <div class="view__body" data-slot="chords"></div>
       </section>
 
     </main>

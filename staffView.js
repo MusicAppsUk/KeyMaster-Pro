@@ -155,7 +155,42 @@ export function createStaffView({ compact = false } = {}) {
     return model;
   }
 
-  function engrave(p, xCss, finger) {
+  /**
+   * Render a single BLOCK CHORD: all notes stacked at one centred column,
+   * stemless for a clean shape. `names` low→high. opts.fingers gives a light
+   * per-note recommended anchor (null entries draw nothing). Additive sibling of
+   * setSequence — used by the Chord Masterclass; Scales/Sight-Reading never call it.
+   */
+  function setChord(names, opts = {}) {
+    const { fingers = null } = opts;
+    scrolling = false;
+    el.classList.remove('notation--scroll', 'notation--pan');
+    clearNotes();
+
+    const x = '50%';
+    model = names.map((name, i) => {
+      const p = place(name);
+      const node = engrave(p, x, fingers ? fingers[i] : null, { stem: false });
+      return { name, midi: p.midi, off: p.off, staff: p.staff, el: node, lower: null };
+    });
+
+    // Symmetric vertical padding so high/low chords stay centred (mirrors setSequence).
+    let topLift = 0, botDrop = 0;
+    for (const m of model) {
+      if (m.staff === 'treble') topLift = Math.max(topLift, -m.off);
+      else botDrop = Math.max(botDrop, m.off - 4);
+    }
+    const topSpaces = (Math.max(0, topLift) + 1).toFixed(2);
+    const botSpaces = (Math.max(0, botDrop) + 1).toFixed(2);
+    el.style.setProperty('--pad',
+      `max(calc(var(--staff-space) * ${topSpaces} + 40px), ` +
+      `calc(var(--staff-space) * ${botSpaces} + 16px), ` +
+      `calc(var(--staff-space) * 2.5))`);
+
+    return model;
+  }
+
+  function engrave(p, xCss, finger, opts = {}) {
     const host = containerFor(p.staff);
     for (const k of ledgerOffsets(p.off)) {
       const led = document.createElement('div');
@@ -175,7 +210,9 @@ export function createStaffView({ compact = false } = {}) {
       note.appendChild(a);
     }
     const head = document.createElement('div'); head.className = 'note__head'; note.appendChild(head);
-    const stem = document.createElement('div'); stem.className = 'note__stem'; note.appendChild(stem);
+    if (opts.stem !== false) {
+      const stem = document.createElement('div'); stem.className = 'note__stem'; note.appendChild(stem);
+    }
     if (finger != null) {
       const f = document.createElement('span');
       f.className = 'note__finger';
@@ -292,7 +329,7 @@ export function createStaffView({ compact = false } = {}) {
 
   return {
     el, treble, bass,
-    setSequence, mark, markVoice, unmark, unmarkVoice, voiceHasState, clearMarks, clearCursor, setAnchor,
+    setSequence, setChord, mark, markVoice, unmark, unmarkVoice, voiceHasState, clearMarks, clearCursor, setAnchor,
     setFingersVisible, setFingersFaded, scrollToIndex, clear,
     get model() { return model; },
     get scrolling() { return scrolling; },

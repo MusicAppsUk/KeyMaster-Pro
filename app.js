@@ -116,6 +116,10 @@ const VIEW_REGISTRY = {
     slot: 'sightreading',
     load: () => import('./sightReading.js'),
   },
+  chords: {
+    slot: 'chords',
+    load: () => import('./chordMasterclass.js'),
+  },
 };
 
 /** Routes that map a hash to a view id. Unknown hashes fall back to home. */
@@ -124,6 +128,7 @@ const ROUTES = {
   '/': 'home',
   '/scales': 'scales',
   '/sightreading': 'sightreading',
+  '/chords': 'chords',
 };
 
 /* ===========================================================================
