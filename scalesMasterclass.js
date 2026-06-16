@@ -617,31 +617,21 @@ function injectStyles() {
   const s = document.createElement('style');
   s.id = 'smc-styles';
   s.textContent = `
-    /* RC2 layout: .smc fills the main band; controls pinned, staff scrolls.
-       (box-sizing:border-box is global, so height:100% + padding is safe.) */
-    .smc{display:flex;flex-direction:column;height:100%;min-height:0;gap:.5rem}
-    .smc>.vector__eyebrow{flex:0 0 auto;margin:0}
-    .smc__controls{flex:0 0 auto;display:flex;flex-direction:column;gap:.45rem}
+    /* RC2 Natural-Flow layout — structurally mirrors Sight Reading's .srx__play:
+       a plain flex-column stack with NO height:100%, NO flex:1, NO overflow.
+       The grand staff keeps its full intrinsic height and the page scrolls via
+       .app__main when content exceeds the viewport. Control order (controls
+       above the staff) is preserved by DOM order; nothing is height-allocated. */
+    .smc{display:flex;flex-direction:column;gap:.5rem}
+    .smc>.vector__eyebrow{margin:0}
+    .smc__controls{display:flex;flex-direction:column;gap:.45rem}
     .smc__controls > .infopanel{align-self:flex-start}
-    /* Block scroll container (NOT a flex column): children flow at natural
-       height, so the grand staff keeps its full treble+bass height and is never
-       shrunk/clipped. Vertical scroll engages only if content exceeds the band. */
-    .smc__stage{flex:1 1 0;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch}
-    .smc__stage > * + *{margin-top:.5rem}
+    .smc__stage{display:flex;flex-direction:column;gap:.5rem}
     /* Reset margins that previously created vertical rhythm in a static stack. */
     .smc__bar{display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;margin:0}
     .smc__row{display:flex;flex-wrap:wrap;gap:.5rem;margin:0}
     .smc__tempo{margin:0}
     .smc__stafftop{margin:0}
-    /* Short-landscape (e.g. mobile landscape): keep every control reachable by
-       trimming control chrome; the staff stage absorbs the squeeze via scroll. */
-    @media (max-height:520px){
-      .smc{gap:.35rem}
-      .smc__controls{gap:.3rem}
-      .btn--xl{min-height:44px;padding:9px 14px}
-      .smc__stafftop{padding:.4rem .55rem}
-      .smc__tempo input[type="range"]{height:22px}
-    }
     .smc__field{display:flex;flex-direction:column;gap:.25rem}
     .smc__fieldlabel{font-family:var(--font-mono);font-size:var(--step-xs);
       letter-spacing:.08em;text-transform:uppercase;color:var(--ivory-faint)}
