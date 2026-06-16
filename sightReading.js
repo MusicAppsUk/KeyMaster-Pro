@@ -57,13 +57,15 @@ export default function createView(ctx) {
   let lessonIdx = 0;
 
   // ---- engine state ----
-  let mode = 'idle';            // idle | active | pass | fail
+  let mode = 'idle';            // idle | active | listening | pass | fail
   let cursor = 0;
   let exercise = { names: [], signature: '' };
   let failCount = 0;
   let assisted = false;
   let expectedTs = 0;
   let timers = [];
+  let playToken = 0;            // playback session token — bumped on every stop so
+                               // a queued Listen callback becomes a no-op (no stacking)
   const seen = new Map();        // lesson id → recent signatures (capped)
 
   const bridge = new EventBridge();
@@ -430,12 +432,14 @@ export default function createView(ctx) {
   }
 
   function stopEngine() {
+    playToken++;                 // invalidate any queued/in-flight Listen callback
     clearTimers();
     mode = 'idle';
     hideBanner();
     evaluator?.clearExpected();
     evaluator?.reset();
     keyboard?.clearHighlight('target');
+    synth?.panic();              // hard-stop all voices, incl. future-scheduled
     synth?.allNotesOff();
     staff.clearMarks();
     if (playUI) playUI.hint.textContent = '';
@@ -452,22 +456,36 @@ export default function createView(ctx) {
 
   function listen() {
     if (!audioOK || staff.model.length === 0) return;
-    clearTimers();
-    hideBanner();
-    mode = 'idle';
+    stopEngine();                // cancel ANY prior session first (bumps token, kills audio)
+    const token = playToken;     // this session
+    mode = 'listening';
     unlockAudio();
-    synth.allNotesOff();
+    hideBanner();
     staff.clearMarks();
     const dt = 0.62;
-    const t0 = synth.ctx.currentTime + 0.12;
+    // Just-in-time, token-gated scheduling — no audio is pre-loaded into the Web
+    // Audio graph, so Stop (or a new Listen) cancels everything cleanly and taps
+    // can never stack overlapping playback.
     staff.model.forEach((m, i) => {
-      synth.noteOn(m.midi, 90, t0 + i * dt);
-      synth.noteOff(m.midi, t0 + i * dt + dt * 0.9);
-      const ms = Math.max(0, (t0 + i * dt - synth.ctx.currentTime) * 1000);
-      timers.push(setTimeout(() => { staff.clearMarks(); staff.mark(i, 'current'); }, ms));
+      const ms = Math.max(0, i * dt * 1000);
+      timers.push(setTimeout(() => {
+        if (token !== playToken || mode !== 'listening') return;   // stale → silent
+        const now = synth.ctx.currentTime;
+        synth.noteOn(m.midi, 90, now);
+        synth.noteOff(m.midi, now + dt * 0.9);
+        staff.clearMarks();
+        staff.mark(i, 'current');
+      }, ms));
     });
-    timers.push(setTimeout(() => staff.clearMarks(), (t0 + staff.model.length * dt - synth.ctx.currentTime) * 1000 + 200));
+    timers.push(setTimeout(() => {
+      if (token !== playToken) return;
+      staff.clearMarks();
+      mode = 'idle';
+      playUI.status.textContent = 'Ready. Press Practice to begin.';
+      setButtons();
+    }, staff.model.length * dt * 1000 + 200));
     playUI.status.textContent = 'Listening…';
+    setButtons();
   }
 
   /* ===================== banners + meta ===================== */
@@ -500,7 +518,10 @@ export default function createView(ctx) {
     const stopBtn = button('◼ Stop', () => { stopEngine(); playUI.status.textContent = 'Stopped. Press Practice to begin.'; setButtons(); }, 'btn--xl btn--ghost');
     const prevBtn = button('‹ Previous', () => gotoLesson(-1), 'btn--xl btn--ghost');
     const nextBtn = button('Next ›', () => gotoLesson(1), 'btn--xl btn--ghost');
-    const listenBtn = button('♪ Listen', listen, 'btn--xl btn--ghost');
+    const listenBtn = button('♪ Listen', () => {
+      if (mode === 'listening') { stopEngine(); playUI.status.textContent = 'Stopped.'; setButtons(); }
+      else listen();
+    }, 'btn--xl btn--ghost');
     bar.append(practiceBtn, stopBtn, prevBtn, nextBtn, listenBtn);
 
     const meta = el('div', { class: 'srx__meta' });
@@ -528,6 +549,8 @@ export default function createView(ctx) {
     playUI.prevBtn.disabled = assessing || !input || lessonIdx <= 0;
     playUI.nextBtn.disabled = assessing || !input || lessonIdx >= playlist.length - 1;
     playUI.listenBtn.disabled = assessing || !audioOK || staff.model.length === 0;
+    playUI.listenBtn.textContent = mode === 'listening' ? '◼ Stop listening' : '♪ Listen';
+    playUI.listenBtn.classList.toggle('is-on', mode === 'listening');
   }
 
   function clearTimers() { timers.forEach(clearTimeout); timers = []; }

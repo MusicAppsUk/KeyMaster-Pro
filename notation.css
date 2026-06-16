@@ -263,10 +263,7 @@
   left: 50%;
   transform: translateX(-50%);
   font: 700 calc(var(--staff-space) * 1.25) / 1 var(--font-mono, monospace);
-  color: var(--brass-bright);
-  background: color-mix(in srgb, var(--ebony-sink, #14130f) 70%, transparent);
-  border-radius: 4px;
-  padding: 0 2px;
+  color: var(--brass-deep, #9A7330);   /* premium gold, readable on white paper — no box */
   white-space: nowrap;
   pointer-events: none;
   transition: opacity 0.6s ease;
