@@ -43,7 +43,7 @@ const START_OCT = { RH: 4, LH: 3 };
 const CLEAN_RUN_ACCURACY = 0.9; // threshold to unlock the Tempo Climb
 
 export default function createView(ctx) {
-  const { mount, keyboard, viewport, synth, scheduler, metronome } = ctx;
+  const { mount, keyboard, viewport, synth, scheduler, metronome, evaluator } = ctx;
   const audioOK = Boolean(synth && scheduler);
 
   const sel = { tonic: 'B', type: 'major', hand: 'RH', octaves: 1, updown: false };
@@ -278,7 +278,12 @@ export default function createView(ctx) {
       staff.scrollToIndex(rIndex, true);          // continuous right-to-left scroll
       keyboard.clearHighlight('target');
       keyboard.highlight(colMidis(col), 'target');
-      M.need = new Set(colMidis(col));            // Both-Hands → both notes required
+      // Arm the centralized controller with this column's expected notes (per
+      // voice). The controller — not this module — paints correctness.
+      const pm = primaryOf(col).midi;
+      evaluator.setExpected(colMidis(col).map((m) => ({
+        midi: m, staffIndex: rIndex, voice: m === pm ? 'primary' : 'lower',
+      })));
       M.targetShownAt = performance.now();
       updateLive();
     }
@@ -308,40 +313,27 @@ export default function createView(ctx) {
     // Validate each press through the Event Bridge. A correct strike lights its
     // OWN note head green immediately (independent per hand); a column advances
     // only once every required note has been struck.
-    const onPress = (midi) => {
+    // The centralized controller evaluates + paints (keyboard + staff in
+    // lock-step); this module only logs the raw interaction and advances the
+    // column once every required voice has been satisfied.
+    const onResult = (payload) => {
       if (mode !== 'practice' || !M.started) return;
+      if (payload.state === 'complete') { advance(); return; }
       const col = baseCols[rIndex % L];
-      const isNeeded = M.need.has(midi);
-      const expectedNote = isNeeded ? midi : primaryOf(col).midi;
-      const payload = bridge.record({
-        midiNote: midi,
-        expectedNote,
-        timestamp: performance.now(),
+      bridge.record({
+        midiNote: payload.midiNote,
+        expectedNote: payload.state === 'match' ? payload.target.midi : primaryOf(col).midi,
+        timestamp: payload.timestamp ?? performance.now(),
         expectedTimestamp: M.targetShownAt,
       });
-
-      if (isNeeded && payload.accuracy) {
-        const which = (midi === primaryOf(col).midi) ? 'primary' : 'lower';
-        staff.markVoice(rIndex, which, 'correct');   // vivid green on THIS head
-        M.need.delete(midi);
-        keyboard.highlight([midi], 'target');
-        if (M.need.size > 0) return;                 // wait for the other hand
-        advance();
-      } else {
-        staff.markVoice(rIndex, 'primary', 'missed');
-        flashWrong(midi);
-      }
     };
 
-    const offPress = keyboard.on('press', onPress);
-    disposers.push(offBeat, offBar, offPress);
+    evaluator.attachStaff(staff);
+    const offEval = evaluator.on(onResult);
+    disposers.push(offBeat, offBar, offEval);
+    disposers.push(() => { evaluator.clearExpected(); evaluator.reset(); evaluator.detachStaff(); });
     ui.status.textContent = 'Count-in…';
     setButtons();
-  }
-
-  function flashWrong(midi) {
-    keyboard.highlight([midi], 'root');
-    setTimeout(() => keyboard.clearHighlight('root', [midi]), 220);
   }
 
   /* ===================================================================== *

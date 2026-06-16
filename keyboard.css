@@ -230,3 +230,30 @@
 @media (prefers-reduced-motion: reduce) {
   .piano { transition: none; }
 }
+
+/* --------------------------------------------------------------------------
+   RC4 — centralized correctness feedback. The MIDI Evaluation Controller is the
+   ONLY writer of these classes (hl-match / hl-mismatch). Transitions in/out so
+   note-off clears smoothly with no trailing artefact.
+   -------------------------------------------------------------------------- */
+.key { transition: transform 0.30s var(--ease, cubic-bezier(0.4,0,0.2,1)),
+                   background-color 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease; }
+
+.key.hl-match.key--white {
+  background: linear-gradient(#C9F8D4, #8FE6A6);
+  box-shadow: inset 0 0 0 2px var(--good, #36c46a), 0 0 16px -2px var(--good, #36c46a);
+}
+.key.hl-match.key--black {
+  background: linear-gradient(#2f7d49, #1f5e36);
+  box-shadow: inset 0 0 0 2px var(--good, #36c46a), 0 0 16px -2px var(--good, #36c46a);
+  filter: brightness(1.1);
+}
+.key.hl-mismatch.key--white {
+  background: linear-gradient(#F8C9CD, #E68F97);
+  box-shadow: inset 0 0 0 2px var(--bad, #e0566a), 0 0 16px -2px var(--bad, #e0566a);
+}
+.key.hl-mismatch.key--black {
+  background: linear-gradient(#7d2f37, #5e1f27);
+  box-shadow: inset 0 0 0 2px var(--bad, #e0566a), 0 0 16px -2px var(--bad, #e0566a);
+  filter: brightness(1.1);
+}

@@ -45,7 +45,7 @@ const STAGES = [
 ];
 
 export default function createView(ctx) {
-  const { mount, keyboard, viewport, synth, input } = ctx;
+  const { mount, keyboard, viewport, synth, input, evaluator } = ctx;
   const audioOK = Boolean(synth);
 
   // ---- shell state ----
@@ -71,7 +71,9 @@ export default function createView(ctx) {
   const root = el('div', { class: 'srx' });
   const playUI = buildPlayUI();   // built once, mounted on the play screen
 
-  const offInput = input ? input.subscribe(onNotePlayed) : null;
+  // Consume the centralized controller's broadcasts; this module no longer
+  // evaluates correctness or colours notes itself.
+  const offEval = evaluator ? evaluator.on(onResult) : null;
 
   /* ======================= screen routing ======================= */
 
@@ -85,6 +87,7 @@ export default function createView(ctx) {
 
   function renderStages() {
     stopEngine();
+    evaluator?.detachStaff();
     const wrap = el('div', { class: 'srx__screen' });
     wrap.innerHTML = `
       <p class="vector__eyebrow">02 — Cognition</p>
@@ -115,6 +118,7 @@ export default function createView(ctx) {
 
   function renderLessons() {
     stopEngine();
+    evaluator?.detachStaff();
     const stage = STAGES.find((s) => s.n === activeStage);
     const wrap = el('div', { class: 'srx__screen' });
 
@@ -178,6 +182,7 @@ export default function createView(ctx) {
     h.innerHTML = `<p class="vector__eyebrow">Stage 1 — Recognition Mode</p>`;
     head.append(back, h);
     root.replaceChildren(head, playUI.root);
+    evaluator?.attachStaff(staff);
     startLesson();
   }
 
@@ -206,7 +211,8 @@ export default function createView(ctx) {
     staff.setAnchor(assisted ? letterOf(exercise.names[0]) : null);
     playUI.hint.textContent = handHint(exercise.names, lesson.clef, hm);
 
-    arm();
+    staff.clearMarks();
+    armCurrent();
     renderMeta();
     setButtons();
     playUI.status.textContent = assisted
@@ -214,33 +220,35 @@ export default function createView(ctx) {
       : 'Read and play the sequence. Timing is free.';
   }
 
-  function arm() {
-    staff.clearMarks();
+  // Set the current target (brass cursor is a non-correctness HINT) and arm the
+  // controller with the expected note. Correctness colour is the controller's.
+  function armCurrent() {
+    const m = staff.model[cursor];
+    if (!m) return;
     staff.mark(cursor, 'current');
     expectedTs = nowMs();
+    evaluator?.setExpected([{ midi: m.midi, staffIndex: cursor, voice: 'primary' }]);
   }
 
-  function onNotePlayed(ev) {
+  // The controller already evaluated + painted; here we only advance lesson
+  // state and log the raw interaction to the bridge.
+  function onResult(payload) {
     if (screen !== 'play' || mode !== 'active') return;
-    const model = staff.model;
-    const cur = model[cursor];
-    if (!cur) return;
+    if (payload.state === 'complete') return;   // single-note steps resolve on 'match'
 
     bridge.record({
-      midiNote: ev.midiNote,
-      expectedNote: cur.midi,
-      timestamp: ev.timestamp,
+      midiNote: payload.midiNote,
+      expectedNote: payload.target?.midi ?? payload.expected?.midi ?? null,
+      timestamp: payload.timestamp,
       expectedTimestamp: expectedTs,
     });
 
-    if (ev.midiNote === cur.midi) {
+    if (payload.state === 'match') {
       staff.unmark(cursor, 'current');
-      staff.mark(cursor, 'correct');
       cursor += 1;
-      if (cursor >= model.length) { pass(); return; }
-      arm();
-    } else {
-      staff.mark(cursor, 'missed');
+      if (cursor >= staff.model.length) { pass(); return; }
+      armCurrent();
+    } else if (payload.state === 'mismatch') {
       fail();
     }
   }
@@ -248,6 +256,7 @@ export default function createView(ctx) {
   function pass() {
     mode = 'pass';
     assisted = false;
+    evaluator?.clearExpected();
     keyboard?.clearHighlight('target');
     const atEnd = lessonIdx >= playlist.length - 1;
     showBanner('pass', atEnd ? '✓ Stage path complete!' : `✓ Lesson ${activeLesson().id} complete!`);
@@ -265,6 +274,7 @@ export default function createView(ctx) {
     mode = 'fail';
     failCount += 1;
     if (failCount >= ASSIST_AFTER) assisted = true;
+    evaluator?.clearExpected();
     showBanner('fail', "Not quite there yet! Let's try a fresh variation…");
     const t = setTimeout(() => { staff.clear(); startLesson(); }, FAIL_HOLD_MS);
     timers.push(t);
@@ -275,6 +285,8 @@ export default function createView(ctx) {
     clearTimers();
     mode = 'idle';
     hideBanner();
+    evaluator?.clearExpected();
+    evaluator?.reset();
     keyboard?.clearHighlight('target');
     synth?.allNotesOff();
     staff.clearMarks();
@@ -380,8 +392,8 @@ export default function createView(ctx) {
       render();
       mount.replaceChildren(root);
     },
-    exit() { stopEngine(); },
-    destroy() { clearTimers(); offInput?.(); keyboard?.clearHighlight('target'); synth?.allNotesOff(); },
+    exit() { stopEngine(); evaluator?.detachStaff(); },
+    destroy() { clearTimers(); offEval?.(); evaluator?.detachStaff(); keyboard?.clearHighlight('target'); synth?.allNotesOff(); },
   };
 }
 

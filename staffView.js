@@ -202,6 +202,10 @@ export function createStaffView({ compact = false } = {}) {
     const node = voiceEl(i, which);
     if (node) node.classList.add(`is-${state}`);
   }
+  function unmarkVoice(i, which, state) {
+    const node = voiceEl(i, which);
+    if (node) node.classList.remove(`is-${state}`);
+  }
   function unmark(i, state) {
     const m = model[i]; if (!m) return;
     [m.el, m.lower && m.lower.el].forEach((node) => {
@@ -263,7 +267,7 @@ export function createStaffView({ compact = false } = {}) {
 
   return {
     el, treble, bass,
-    setSequence, mark, markVoice, unmark, clearMarks, setAnchor,
+    setSequence, mark, markVoice, unmark, unmarkVoice, clearMarks, setAnchor,
     setFingersVisible, setFingersFaded, scrollToIndex, clear,
     get model() { return model; },
     get scrolling() { return scrolling; },

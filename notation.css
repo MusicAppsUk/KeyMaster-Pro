@@ -23,7 +23,7 @@
   --staff-height: calc(var(--staff-space) * 4);     /* 5 lines = 4 gaps */
   --staff-gap: calc(var(--staff-space) * 6);        /* treble↔bass separation */
   --note-head: calc(var(--staff-space) * 1.1);
-  --clef-size: calc(var(--staff-space) * 6);        /* one size for BOTH clefs */
+  --clef-size: calc(var(--staff-space) * 5.4);      /* one size for BOTH clefs */
   --ink: var(--ivory, #F4EFE6);
   --ink-dim: var(--ivory-dim, #B9B2A6);
 
@@ -33,7 +33,7 @@
      overflow-y:visible guarantees high/low ledger lines are never cut off. */
   --col-w: calc(var(--staff-space) * 4.6);
   --playhead: calc(var(--staff-space) * 10);
-  --gutter: calc(var(--staff-space) * 5);   /* clef + time-signature zone */
+  --gutter: calc(var(--staff-space) * 6);   /* clef + time-signature zone */
   padding: var(--pad, calc(var(--staff-space) * 5)) var(--gap-6, 1.5rem);
   background: linear-gradient(var(--ebony-raise, #1E1C26), #1A1822);
   border: 1px solid var(--ebony-edge, #2A2833);
@@ -114,21 +114,6 @@
    (4th) line. Sizes are identical so both read at the same professional scale. */
 .clef--treble { top: calc(var(--staff-space) * -1.05); }
 .clef--bass   { top: calc(var(--staff-space) * -0.35); }
-
-.time-sig {
-  position: absolute;
-  left: calc(var(--staff-space) * 4);
-  top: 0;
-  height: var(--staff-height);
-  display: grid;
-  align-content: center;
-  font-family: var(--font-display, serif);
-  font-weight: 600;
-  font-size: calc(var(--staff-space) * 2.1);
-  line-height: 0.92;
-  color: var(--ink);
-  text-align: center;
-}
 
 /* --------------------------------------------------------------------------
    Barlines, positioned by the engine via `left`.
@@ -312,7 +297,7 @@
    -------------------------------------------------------------------------- */
 .time-sig {
   position: absolute;
-  left: calc(var(--staff-space) * 3.2);
+  left: calc(var(--staff-space) * 4.6);
   top: 50%;
   transform: translateY(-50%);
   display: flex;

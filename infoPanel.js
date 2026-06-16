@@ -1,118 +1,111 @@
 // infoPanel.js
 //
-// Reusable expandable information panel — a small "ⓘ" trigger that smoothly
-// expands/collapses a clean card of educational copy. Designed to be dropped in
-// anywhere across the app; the first instantiation is the "Why B Major?" panel
-// on the opening dashboard, but the same factory powers future panels
-// (e.g. "ⓘ Why Fingering Matters?").
+// "Learn Why" educational panel — MODAL variant (RC4).
 //
-// Usage:
-//   const panel = createInfoPanel({
-//     label: 'ⓘ Why B Major?',
-//     title: 'Why B Major?',
-//     bodyHtml: '<p>…</p>',
-//     storageKey: 'whyBMajorDismissed',   // localStorage persistence
-//     defaultOpen: true,                  // expanded on the very first visit
-//   });
-//   container.appendChild(panel.el);
+// The page keeps a small inline trigger button (e.g. "ⓘ Why B Major?"). Tapping
+// it opens a centred pop-up modal: a full-screen semi-transparent, blurred
+// backdrop with a crisp dark card on top. Because the overlay is position:fixed
+// and lives on <body>, opening/closing it never reflows the staff or the page —
+// the inline trigger never changes size, so nothing below it shifts.
 //
-// Persistence contract: once the user closes the panel after reading, the
-// storageKey is set so the panel stays COLLAPSED on subsequent launches. The
-// trigger is always available to reopen it within a session; reopening does not
-// clear the dismissal (next launch still starts collapsed).
-//
-// This component is purely presentational and does NOT touch the EventBridge
-// data layer or its payload schema.
+// Public API (unchanged from the previous accordion version):
+//   createInfoPanel({ label, title, bodyHtml, storageKey, defaultOpen })
+//     → { el, open(), close(), toggle(), isOpen, destroy() }
+//   `el` is the inline trigger to place in the page.
 
-let counter = 0;
+let _idSeq = 0;
 
-export function createInfoPanel({
-  label = 'ⓘ More info',
-  title = '',
-  bodyHtml = '',
-  storageKey = null,
-  defaultOpen = true,
-} = {}) {
+export function createInfoPanel({ label, title, bodyHtml, storageKey = null, defaultOpen = false }) {
   injectStyles();
+  const id = `infomodal-${++_idSeq}`;
 
-  const id = `infopanel-${++counter}`;
-  const root = el('section', { class: 'infopanel' });
-
-  const trigger = el('button', {
-    class: 'infopanel__trigger btn btn--xl btn--ghost',
-    type: 'button',
-    'aria-expanded': 'false',
-    'aria-controls': id,
-  });
+  // ---- inline trigger (stays in the page; never expands) ----
+  const el = document.createElement('div');
+  el.className = 'infopanel';
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'infopanel__trigger';
   trigger.textContent = label;
+  trigger.setAttribute('aria-haspopup', 'dialog');
+  trigger.setAttribute('aria-controls', id);
+  trigger.setAttribute('aria-expanded', 'false');
+  el.appendChild(trigger);
 
-  // The region uses the grid 0fr→1fr technique for a smooth, height-agnostic
-  // expand with no magic max-height numbers.
-  const region = el('div', { class: 'infopanel__region', id, role: 'region', 'aria-label': title || label });
-  const inner = el('div', { class: 'infopanel__inner' });
-  const card = el('div', { class: 'infopanel__card' });
+  // ---- modal overlay (appended to <body> lazily on first open) ----
+  const overlay = document.createElement('div');
+  overlay.className = 'infomodal';
+  overlay.id = id;
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-label', title);
+  overlay.innerHTML = `
+    <div class="infomodal__card" role="document">
+      <button class="infomodal__x" type="button" aria-label="Close">&times;</button>
+      <h2 class="infomodal__title">${title}</h2>
+      <div class="infomodal__body">${bodyHtml}</div>
+    </div>`;
+  const card = overlay.querySelector('.infomodal__card');
+  const xBtn = overlay.querySelector('.infomodal__x');
 
-  if (title) {
-    const h = el('h3', { class: 'infopanel__title' });
-    h.textContent = title;
-    card.appendChild(h);
+  let isOpen = false;
+  let lastFocus = null;
+
+  function open() {
+    if (isOpen) return;
+    isOpen = true;
+    if (!overlay.isConnected) document.body.appendChild(overlay);
+    lastFocus = document.activeElement;
+    // Two frames so the fade/scale transition runs from the hidden state.
+    requestAnimationFrame(() => requestAnimationFrame(() => overlay.classList.add('is-open')));
+    document.addEventListener('keydown', onKey, true);
+    trigger.setAttribute('aria-expanded', 'true');
+    xBtn.focus();
   }
-  const body = el('div', { class: 'infopanel__body' });
-  body.innerHTML = bodyHtml;
-  card.appendChild(body);
 
-  const close = el('button', { class: 'infopanel__close btn', type: 'button' });
-  close.textContent = 'Got it';
-  card.appendChild(close);
-
-  inner.appendChild(card);
-  region.appendChild(inner);
-  root.append(trigger, region);
-
-  let open = false;
-  function setOpen(next, { persist = false } = {}) {
-    open = Boolean(next);
-    root.classList.toggle('is-open', open);
-    trigger.setAttribute('aria-expanded', String(open));
-    // Only a CLOSE is remembered — that is the user's "I've read it" signal.
-    if (persist && !open && storageKey) safeSet(storageKey, '1');
+  function close() {
+    if (!isOpen) return;
+    isOpen = false;
+    overlay.classList.remove('is-open');
+    document.removeEventListener('keydown', onKey, true);
+    trigger.setAttribute('aria-expanded', 'false');
+    if (storageKey) { try { localStorage.setItem(storageKey, '1'); } catch (_) {} }
+    if (lastFocus && typeof lastFocus.focus === 'function') lastFocus.focus();
   }
 
-  trigger.addEventListener('click', () => setOpen(!open, { persist: true }));
-  close.addEventListener('click', () => {
-    setOpen(false, { persist: true });
-    trigger.focus();
-  });
+  function toggle() { isOpen ? close() : open(); }
 
-  // Initial state: expanded on first visit, collapsed once previously dismissed.
-  const dismissed = storageKey ? safeGet(storageKey) === '1' : false;
-  setOpen(defaultOpen && !dismissed);
+  function onKey(e) {
+    if (e.key === 'Escape') { e.stopPropagation(); close(); return; }
+    if (e.key === 'Tab') {
+      const f = overlay.querySelectorAll('button, a[href], [tabindex]:not([tabindex="-1"])');
+      if (!f.length) return;
+      const first = f[0], last = f[f.length - 1];
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+  }
+
+  trigger.addEventListener('click', open);
+  xBtn.addEventListener('click', close);
+  // Tap on the darkened backdrop (the overlay itself, not the card) dismisses.
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+
+  // defaultOpen: only auto-opens if not previously dismissed. Both current
+  // callers pass false, so the modal never appears unprompted.
+  if (defaultOpen) {
+    let dismissed = false;
+    if (storageKey) { try { dismissed = localStorage.getItem(storageKey) === '1'; } catch (_) {} }
+    if (!dismissed) requestAnimationFrame(open);
+  }
 
   return {
-    el: root,
-    open: () => setOpen(true),
-    close: () => setOpen(false, { persist: true }),
-    toggle: () => setOpen(!open, { persist: true }),
-    get isOpen() { return open; },
+    el,
+    open,
+    close,
+    toggle,
+    get isOpen() { return isOpen; },
+    destroy() { close(); overlay.remove(); },
   };
-}
-
-/* ---------- helpers ---------- */
-
-function el(tag, props = {}) {
-  const n = document.createElement(tag);
-  for (const [k, v] of Object.entries(props)) {
-    if (k === 'class') n.className = v;
-    else n.setAttribute(k, v);
-  }
-  return n;
-}
-
-function safeGet(key) {
-  try { return window.localStorage.getItem(key); } catch { return null; }
-}
-function safeSet(key, val) {
-  try { window.localStorage.setItem(key, val); } catch { /* private mode; ignore */ }
 }
 
 function injectStyles() {
@@ -120,40 +113,84 @@ function injectStyles() {
   const s = document.createElement('style');
   s.id = 'infopanel-styles';
   s.textContent = `
-    .infopanel{ margin: 1.5rem 0 0; }
-    .infopanel__trigger{ gap:.5rem; }
-    /* Smooth height-agnostic expand/collapse. */
-    .infopanel__region{
-      display:grid; grid-template-rows:0fr;
-      transition:grid-template-rows .32s var(--ease, cubic-bezier(.4,0,.2,1));
+    /* Inline trigger */
+    .infopanel { margin-top: 1rem; }
+    .infopanel__trigger {
+      font-family: var(--font-mono, monospace); font-size: var(--step-sm, .95rem);
+      color: var(--brass-bright, #e9c987); background: transparent;
+      border: 1px solid color-mix(in srgb, var(--brass, #caa45a) 40%, transparent);
+      border-radius: 999px; padding: .5rem 1rem; cursor: pointer;
+      transition: background .15s ease, border-color .15s ease;
     }
-    .infopanel.is-open .infopanel__region{ grid-template-rows:1fr; }
-    .infopanel__inner{ overflow:hidden; }
-    .infopanel__card{
-      margin-top:.85rem;
-      background:var(--ebony-sink, #14130f);
-      border:1px solid var(--ebony-edge, #2a2720);
-      border-radius:16px;
-      padding:1.25rem 1.4rem 1.1rem;
-      box-shadow:0 14px 40px -24px rgba(0,0,0,.7);
-      max-width:64ch;
+    .infopanel__trigger:hover {
+      background: color-mix(in srgb, var(--brass, #caa45a) 12%, transparent);
+      border-color: var(--brass, #caa45a);
     }
-    .infopanel__title{
-      font-family:var(--font-display, serif);
-      font-size:var(--step-lg);
-      color:var(--brass-bright);
-      margin:0 0 .6rem;
+    .infopanel__trigger:focus-visible { outline: 2px solid var(--brass-bright, #e9c987); outline-offset: 2px; }
+
+    /* Modal overlay + backdrop */
+    .infomodal {
+      position: fixed; inset: 0; z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      padding: clamp(1rem, 4vw, 2rem);
+      background: rgba(0, 0, 0, 0.5);
+      -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px);
+      opacity: 0; visibility: hidden;
+      transition: opacity .2s ease, visibility 0s linear .2s;
     }
-    .infopanel__body{ color:var(--ivory, #ECE7DC); font-size:var(--step-sm); line-height:1.6; }
-    .infopanel__body p{ margin:0 0 .7rem; }
-    .infopanel__body p:last-of-type{ margin-bottom:0; }
-    .infopanel__body strong{ color:var(--ivory); font-weight:600; }
-    .infopanel__body ul{ margin:.3rem 0 .2rem; padding-left:1.1rem; }
-    .infopanel__body li{ margin:.2rem 0; }
-    .infopanel__body .infopanel__lead{ color:var(--brass); }
-    .infopanel__close{ margin-top:1rem; }
-    @media (prefers-reduced-motion: reduce){
-      .infopanel__region{ transition:none; }
+    .infomodal.is-open { opacity: 1; visibility: visible; transition: opacity .2s ease; }
+
+    /* Card */
+    .infomodal__card {
+      position: relative;
+      width: 100%; max-width: 38rem;        /* tablet-optimised (~max-w-xl) */
+      max-height: 85vh; overflow-y: auto;
+      background: linear-gradient(165deg, var(--ebony-raise, #211f2a), #18161f);
+      border: 1px solid var(--ebony-edge, #2e2b38);
+      border-radius: 18px;
+      padding: clamp(1.5rem, 3.5vw, 2.4rem);
+      box-shadow: 0 30px 80px -22px rgba(0, 0, 0, .75), 0 0 0 1px rgba(255,255,255,.02) inset;
+      color: var(--ivory, #f4efe6);
+      transform: translateY(10px) scale(.985); opacity: 0;
+      transition: transform .22s cubic-bezier(.2,.8,.25,1), opacity .22s ease;
+    }
+    .infomodal.is-open .infomodal__card { transform: none; opacity: 1; }
+
+    /* Close button */
+    .infomodal__x {
+      position: absolute; top: .9rem; right: .9rem;
+      width: 2.4rem; height: 2.4rem; border-radius: 999px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem; line-height: 1; cursor: pointer;
+      color: var(--ivory, #f4efe6);
+      background: rgba(255, 255, 255, .05);
+      border: 1px solid var(--ebony-edge, #2e2b38);
+      transition: background .15s ease, transform .15s ease;
+    }
+    .infomodal__x:hover { background: rgba(255, 255, 255, .12); transform: rotate(90deg); }
+    .infomodal__x:focus-visible { outline: 2px solid var(--brass-bright, #e9c987); outline-offset: 2px; }
+
+    /* Text */
+    .infomodal__title {
+      font-family: var(--font-display, serif); font-weight: 600;
+      font-size: var(--step-xl, 1.6rem); color: var(--ivory, #f4efe6);
+      margin: 0 2.4rem .8rem 0;
+    }
+    .infomodal__body { font-family: var(--font-sans, system-ui); font-size: var(--step-sm, .98rem);
+      line-height: 1.6; color: var(--ivory-dim, #d9d2c6); }
+    .infomodal__body p { margin: 0 0 .8rem; }
+    .infomodal__body ul { margin: .4rem 0 .8rem; padding-left: 1.2rem; }
+    .infomodal__body li { margin: .25rem 0; }
+    .infomodal__body strong { color: var(--ivory, #f4efe6); }
+    .infomodal__body .infopanel__lead {
+      margin-top: 1rem; padding: .8rem 1rem; border-radius: 10px;
+      background: color-mix(in srgb, var(--brass, #caa45a) 10%, transparent);
+      border: 1px solid color-mix(in srgb, var(--brass, #caa45a) 28%, transparent);
+      color: var(--ivory, #f4efe6);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .infomodal, .infomodal__card, .infomodal__x { transition: none; }
     }
   `;
   document.head.appendChild(s);

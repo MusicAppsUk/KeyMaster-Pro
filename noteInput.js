@@ -17,6 +17,8 @@ export class NoteInput {
   constructor() {
     /** @type {Set<(ev: NoteEvent) => void>} */
     this._subs = new Set();
+    /** @type {Set<(ev: NoteEvent) => void>} note-off / release subscribers */
+    this._releaseSubs = new Set();
   }
 
   /**
@@ -40,13 +42,41 @@ export class NoteInput {
   }
 
   /**
-   * Subscribe to the normalized stream.
+   * Emit a normalized note-OFF (release) event through the parallel stream.
+   * @param {{ midiNote: number, timestamp?: number, source?: string }} ev
+   */
+  emitRelease(ev) {
+    if (ev == null || !Number.isInteger(ev.midiNote)) {
+      throw new TypeError('NoteInput.emitRelease requires an integer midiNote');
+    }
+    const normalized = {
+      midiNote: ev.midiNote,
+      timestamp: typeof ev.timestamp === 'number' ? ev.timestamp : now(),
+      source: ev.source || 'screen',
+    };
+    for (const fn of this._releaseSubs) {
+      try { fn(normalized); } catch (err) { console.error('NoteInput release subscriber threw:', err); }
+    }
+  }
+
+  /**
+   * Subscribe to the normalized note-ON stream.
    * @param {(ev: NoteEvent) => void} fn
    * @returns {() => void} unsubscribe
    */
   subscribe(fn) {
     this._subs.add(fn);
     return () => this._subs.delete(fn);
+  }
+
+  /**
+   * Subscribe to the normalized note-OFF (release) stream.
+   * @param {(ev: NoteEvent) => void} fn
+   * @returns {() => void} unsubscribe
+   */
+  onRelease(fn) {
+    this._releaseSubs.add(fn);
+    return () => this._releaseSubs.delete(fn);
   }
 }
 

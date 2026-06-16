@@ -22,6 +22,7 @@ import { Synth } from './synth.js';
 import { Scheduler } from './scheduler.js';
 import { Metronome } from './metronome.js';
 import { NoteInput } from './noteInput.js';
+import { createMidiEvaluator } from './midiEvaluator.js';
 
 /* ===========================================================================
  * 1. Observable store
@@ -195,6 +196,10 @@ class KeyMasterApp {
     this.input = new NoteInput();
     this._wireInput();
 
+    // ---- Centralized MIDI evaluation controller (single source of truth for
+    //      note correctness; paints keyboard + active staff in lock-step). ----
+    this.evaluator = createMidiEvaluator({ input: this.input, keyboard: this.keyboard });
+
     // ---- Audio layer (shared context → synth + transport) ----
     if (isAudioSupported()) {
       const ctx = getAudioContext();
@@ -234,6 +239,19 @@ class KeyMasterApp {
         this.input.emit({
           midiNote: midi,
           velocity,
+          timestamp: typeof timeStamp === 'number' ? timeStamp : performance.now(),
+          source: 'midi',
+        });
+      }),
+      // Releases: same one-event-per-physical-action dedup as note-on. The router
+      // drives the on-screen keys for MIDI, so skip screen releases of MIDI origin.
+      this.keyboard.on('release', (midi, detail) => {
+        if (detail?.source === 'midi') return;
+        this.input.emitRelease({ midiNote: midi, timestamp: performance.now(), source: 'screen' });
+      }),
+      this.midi.on('noteoff', ({ midi, timeStamp }) => {
+        this.input.emitRelease({
+          midiNote: midi,
           timestamp: typeof timeStamp === 'number' ? timeStamp : performance.now(),
           source: 'midi',
         });
@@ -450,6 +468,7 @@ class KeyMasterApp {
         viewport: this.viewport,
         midi: this.midi,
         input: this.input,
+        evaluator: this.evaluator,
         synth: this.synth,
         scheduler: this.scheduler,
         metronome: this.metronome,
