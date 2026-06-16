@@ -27,6 +27,7 @@ import { unlockAudio } from './audioContext.js';
 import { createInfoPanel } from './infoPanel.js';
 import { SIGHT_READING_HTML } from './infoCopy.js';
 import { toMidi } from './notes.js';
+import { createProgressionGate } from './progressionGate.js';
 
 const LETTER_INDEX = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
 
@@ -66,6 +67,12 @@ export default function createView(ctx) {
 
   const bridge = new EventBridge();
   const staff = createStaffView({ compact: false });
+  const gate = createProgressionGate();
+
+  // Stage 1 → 2 assessment accumulator (deterministic 20-note block).
+  let assess = newBlock();
+  let stage2JustUnlocked = false;
+  function newBlock() { return { targets: 0, correct: 0, latencySumMs: 0, latencyCount: 0 }; }
 
   injectStyles();
   const root = el('div', { class: 'srx' });
@@ -96,23 +103,42 @@ export default function createView(ctx) {
     const grid = el('div', { class: 'srx__stages' });
     for (const s of STAGES) {
       const count = lessonsForStage(s.n).length;
-      const card = el('button', { class: `srx__stage ${s.ready ? '' : 'is-preview'}`.trim(), type: 'button' });
+      const locked = !gate.isUnlocked(s.n);
+      const card = el('button', {
+        class: `srx__stage ${s.ready ? '' : 'is-preview'} ${locked ? 'is-locked' : ''}`.replace(/\s+/g, ' ').trim(),
+        type: 'button',
+      });
+      const eyebrow = locked ? `${s.eyebrow} · locked` : s.ready ? s.eyebrow : `${s.eyebrow} · preview`;
       card.innerHTML = `
-        <span class="srx__stage-eyebrow">${s.eyebrow}${s.ready ? '' : ' · preview'}</span>
+        <span class="srx__stage-eyebrow">${locked ? '🔒 ' : ''}${eyebrow}</span>
         <span class="srx__stage-title">${s.title}</span>
         <span class="srx__stage-tag">${s.tagline}</span>
         <span class="srx__stage-meta">${count} lessons</span>`;
-      card.addEventListener('click', () => openStage(s.n));
+      if (locked) card.setAttribute('aria-disabled', 'true');
+      card.addEventListener('click', () => (locked ? renderLockedStage(s) : openStage(s.n)));
       grid.appendChild(card);
     }
     wrap.appendChild(grid);
     root.replaceChildren(wrap);
   }
 
+  // Locked stages show their explicit unlock requirement (no probabilistic copy).
+  function renderLockedStage(s) {
+    const dialog = el('div', { class: 'srx__placeholder' });
+    dialog.innerHTML = `
+      <p class="vector__eyebrow">${s.eyebrow} — Locked</p>
+      <h2 class="srx__h">🔒 ${s.title}</h2>
+      <p class="srx__sub"><strong>To unlock:</strong> ${gate.requirementText(s.n)}</p>`;
+    const back = button('‹ Back to stages', () => go('stages'), 'btn--xl btn--ghost');
+    dialog.appendChild(back);
+    root.replaceChildren(dialog);
+  }
+
   function openStage(n) {
     activeStage = n;
     playlist = lessonsForStage(n);
     lessonIdx = 0;
+    if (n === 1) { assess = newBlock(); stage2JustUnlocked = false; }
     go('lessons');
   }
 
@@ -236,12 +262,17 @@ export default function createView(ctx) {
     if (screen !== 'play' || mode !== 'active') return;
     if (payload.state === 'complete') return;   // single-note steps resolve on 'match'
 
-    bridge.record({
+    // Canonical Event Bridge record — the ONLY data the gate is permitted to
+    // use (its accuracy + deltaMs, not any parallel/inferred measurement).
+    const rec = bridge.record({
       midiNote: payload.midiNote,
       expectedNote: payload.target?.midi ?? payload.expected?.midi ?? null,
       timestamp: payload.timestamp,
       expectedTimestamp: expectedTs,
     });
+
+    // Stage 1 → 2 gating: accumulate the 20-note block from real bridge data.
+    if (activeStage === 1) accumulateAssessment(rec);
 
     if (payload.state === 'match') {
       staff.unmark(cursor, 'current');
@@ -250,6 +281,28 @@ export default function createView(ctx) {
       armCurrent();
     } else if (payload.state === 'mismatch') {
       fail();
+    }
+  }
+
+  // Each result is the one outcome for the current target → one note in the
+  // block. Accuracy and latency come ONLY from the Event Bridge payload
+  // (rec.accuracy, rec.deltaMs); nothing is simulated, approximated or inferred.
+  function accumulateAssessment(rec) {
+    assess.targets += 1;
+    if (rec.accuracy) {
+      assess.correct += 1;
+      if (Number.isFinite(rec.deltaMs) && rec.deltaMs >= 0) {
+        assess.latencySumMs += rec.deltaMs;
+        assess.latencyCount += 1;
+      }
+    }
+    if (assess.targets >= gate.THRESHOLDS.stage1.block) {
+      const verdict = gate.evaluateStage1Block(assess);
+      assess = newBlock();
+      if (verdict.pass && !stage2JustUnlocked) {
+        stage2JustUnlocked = true;
+        playUI.status.textContent = '🔓 Stage 2 (Guided Reading) unlocked — it\u2019s in the stage menu.';
+      }
     }
   }
 
@@ -484,6 +537,8 @@ function injectStyles() {
       color:var(--ivory);cursor:pointer;transition:transform .14s ease,border-color .14s ease,box-shadow .14s ease}
     .srx__stage:hover{transform:translateY(-3px);border-color:var(--brass);box-shadow:0 14px 34px -18px var(--brass-glow,#caa45a)}
     .srx__stage.is-preview{opacity:.82}
+    .srx__stage.is-locked{opacity:.5;cursor:not-allowed}
+    .srx__stage.is-locked:hover{transform:none;border-color:var(--ebony-edge,#2a2833);box-shadow:none}
     .srx__stage-eyebrow{font-family:var(--font-mono);font-size:var(--step-xs);letter-spacing:.14em;text-transform:uppercase;color:var(--brass-bright)}
     .srx__stage-title{font-family:var(--font-display);font-size:var(--step-lg);color:var(--ivory)}
     .srx__stage-tag{font-family:var(--font-sans);font-size:var(--step-sm);color:var(--ivory-dim)}
