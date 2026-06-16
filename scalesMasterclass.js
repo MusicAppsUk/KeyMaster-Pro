@@ -50,6 +50,8 @@ export default function createView(ctx) {
   let mode = 'idle';                 // idle | listening | practice | summary
   let staffFingers = true;           // "Staff Fingering" toggle
   const disposers = [];              // cleanup callbacks for the active mode
+  let playToken = 0;                 // session token — bumped on every stop so any
+                                     // still-queued playback callback becomes a no-op
 
   // Permanent compact staff (top tier). Shows the active scale and highlights
   // in real time alongside the keyboard.
@@ -178,6 +180,7 @@ export default function createView(ctx) {
   function listen() {
     if (!audioOK) return;
     stopAll();
+    const token = playToken;           // capture this session; stopAll() bumped it
     mode = 'listening';
     unlockAudio();
     paintScale('ghost');
@@ -186,22 +189,30 @@ export default function createView(ctx) {
     viewport?.frame(midis);
 
     const dt = scheduler.secondsPerBeat;
-    const t0 = synth.ctx.currentTime + 0.12;
     const timers = [];
+    // Each column is scheduled JUST-IN-TIME through a setTimeout that is (a) in the
+    // disposer list and (b) gated by the session token — so a Stop both clears the
+    // timer AND neutralises any callback that already fired its way past clearing.
+    // No audio is pre-loaded into the Web Audio graph ahead of Stop.
     cols.forEach((col, i) => {
-      col.forEach((c) => {
-        synth.noteOn(c.midi, 90, t0 + i * dt);
-        synth.noteOff(c.midi, t0 + i * dt + dt * 0.92);
-      });
-      const ms = Math.max(0, (t0 + i * dt - synth.ctx.currentTime) * 1000);
+      const ms = Math.max(0, i * dt * 1000);
       timers.push(setTimeout(() => {
+        if (token !== playToken || mode !== 'listening') return;   // stale → silent
+        const now = synth.ctx.currentTime;
+        col.forEach((c) => {
+          synth.noteOn(c.midi, 90, now);
+          synth.noteOff(c.midi, now + dt * 0.92);
+        });
         keyboard.clearHighlight('target');
         keyboard.highlight(colMidis(col), 'target');
         markStaff(primaryOf(col).midi, 'current');
       }, ms));
     });
-    const endMs = (t0 + cols.length * dt - synth.ctx.currentTime) * 1000;
-    timers.push(setTimeout(() => { keyboard.clearHighlight('target'); staff.clearMarks(); mode = 'idle'; setButtons(); }, endMs));
+    const endMs = cols.length * dt * 1000;
+    timers.push(setTimeout(() => {
+      if (token !== playToken) return;
+      keyboard.clearHighlight('target'); staff.clearMarks(); mode = 'idle'; setButtons();
+    }, endMs));
 
     disposers.push(() => timers.forEach(clearTimeout));
     setButtons();
@@ -214,6 +225,7 @@ export default function createView(ctx) {
   function practice() {
     if (!audioOK) return;
     stopAll();
+    const token = playToken;        // session token; stale callbacks become no-ops
     mode = 'practice';
     unlockAudio();
 
@@ -261,11 +273,13 @@ export default function createView(ctx) {
     // first note of the first measure lands on the accented "one".
     let countBeats = 0, bars = 0;
     const offBeat = scheduler.onBeat(() => {
+      if (token !== playToken) return;
       if (M.started) return;
       countBeats += 1;
       ui.status.textContent = `Count-in… ${Math.min(countBeats, scheduler.beatsPerBar)}/${scheduler.beatsPerBar}`;
     });
     const offBar = scheduler.onBar(() => {
+      if (token !== playToken) return;
       if (M.started) return;
       bars += 1;
       if (bars >= 2) { M.started = true; showTarget(); }   // 2nd downbeat = first note
@@ -392,6 +406,9 @@ export default function createView(ctx) {
    * ===================================================================== */
 
   function stopAll() {
+    // 0. Invalidate the session: any playback callback still queued (or mid-flight)
+    //    checks playToken and becomes a no-op, so nothing can re-arm after Stop.
+    playToken++;
     // 1. Cancel every queued timer + scheduler subscription registered by the
     //    active mode (listen timers, count-in/onBar handlers, rebase/fade timers,
     //    evaluator cleanup).

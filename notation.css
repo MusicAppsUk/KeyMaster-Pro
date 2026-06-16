@@ -23,9 +23,11 @@
   --staff-height: calc(var(--staff-space) * 4);     /* 5 lines = 4 gaps */
   --staff-gap: calc(var(--staff-space) * 6);        /* treble↔bass separation */
   --note-head: calc(var(--staff-space) * 1.1);
-  --clef-size: calc(var(--staff-space) * 3.4);      /* one size for BOTH clefs */
-  --ink: var(--ivory, #F4EFE6);
-  --ink-dim: var(--ivory-dim, #B9B2A6);
+  --clef-size: calc(var(--staff-space) * 2.8);      /* one size for BOTH clefs */
+  --ink: #14110B;                 /* black notation on white paper */
+  --ink-dim: #2E2A22;             /* staff lines / barlines (engraving black) */
+  --good: #16A34A;                /* bright green — correct (overrides black) */
+  --bad:  #DC2626;                /* bright red — incorrect (overrides black) */
 
   position: relative;
   /* Vertical bounds are computed per-exercise by the renderer (--pad); we never
@@ -35,8 +37,9 @@
   --playhead: calc(var(--staff-space) * 10);
   --gutter: calc(var(--staff-space) * 7.6);   /* clef + time-signature + start-barline zone */
   padding: var(--pad, calc(var(--staff-space) * 5)) var(--gap-6, 1.5rem);
-  background: linear-gradient(var(--ebony-raise, #1E1C26), #1A1822);
-  border: 1px solid var(--ebony-edge, #2A2833);
+  background: #F8F5EC;
+  border: 1px solid #DCD5C4;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.18), inset 0 1px 2px rgba(255,255,255,0.6);
   border-radius: var(--radius-md, 10px);
   overflow-x: clip;
   overflow-y: visible;
@@ -58,10 +61,10 @@
   position: absolute;
   left: 0; top: 0; bottom: 0;
   width: calc(var(--staff-space) * 1.2);
-  border-left: 2px solid var(--brass, #C99A4B);
+  border-left: 2px solid var(--ink);
   border-radius: 40% / 50%;
   /* The curl is suggested by rounded top/bottom caps. */
-  box-shadow: inset 2px 0 0 -1px var(--brass-deep, #9A7330);
+  box-shadow: inset 2px 0 0 -1px var(--ink);
 }
 
 /* Left "system" barline connecting the staves. */
@@ -213,7 +216,7 @@
   z-index: 1;
 }
 
-.note.is-current { color: var(--brass-bright, #E8C57E); }
+.note.is-current { color: #B45309; }   /* amber cursor — legible on white paper */
 .note.is-correct { color: var(--good, #6FB59A); }
 .note.is-missed  { color: var(--bad, #C96B6B); }
 
@@ -246,7 +249,7 @@
   left: 50%;
   transform: translateX(-50%);
   font: italic 600 calc(var(--staff-space) * 1.7) / 1 var(--font-display, serif);
-  color: var(--ivory, #EDE6D6);
+  color: #1D4ED8;
   white-space: nowrap;
   pointer-events: none;
 }
