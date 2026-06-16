@@ -251,12 +251,13 @@ a { color: inherit; text-decoration: none; }
   transition: background var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
 }
 .midi-pill.is-connected {
-  color: var(--ivory);
-  border-color: color-mix(in srgb, var(--good) 50%, var(--ebony-edge));
+  color: #B8F5C8;
+  border-color: color-mix(in srgb, #29E06A 60%, var(--ebony-edge));
+  background: color-mix(in srgb, #29E06A 12%, var(--ebony-sink));
 }
 .midi-pill.is-connected .midi-pill__dot {
-  background: var(--good);
-  box-shadow: 0 0 8px color-mix(in srgb, var(--good) 70%, transparent);
+  background: #2BFF77;
+  box-shadow: 0 0 10px 1px #2BFF77, 0 0 2px #2BFF77;
 }
 
 /* --------------------------------------------------------------------------
@@ -404,3 +405,57 @@ a { color: inherit; text-decoration: none; }
 @media (prefers-reduced-motion: reduce) {
   * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
 }
+
+/* --------------------------------------------------------------------------
+   RC2 additions
+   -------------------------------------------------------------------------- */
+
+/* Oversized, high-visibility control buttons (accessibility tap targets). */
+.btn--xl {
+  padding: 14px 22px;
+  font-size: var(--step-md, 1.05rem);
+  font-weight: 600;
+  border-radius: var(--radius-md, 12px);
+  min-height: 52px;
+  min-width: 116px;
+  letter-spacing: 0.01em;
+}
+.btn--xl.btn--ghost { font-size: var(--step-sm); letter-spacing: 0.03em; }
+@media (max-width: 560px) {
+  .btn--xl { min-width: 0; flex: 1 1 44%; padding: 14px 14px; }
+}
+
+/* Navigation hint under the upper-left logo. */
+.brand-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; }
+.brand__hint {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--ivory-faint);
+  white-space: nowrap;
+}
+@media (max-width: 560px) { .brand__hint { display: none; } }
+
+/* Scale Masterclass permanent 3-tier stack: staff (top) lives in the dark
+   container; controls (middle); the shared keyboard footer is the bottom tier. */
+.smc__stafftop {
+  background: var(--ebony-sink, #14130f);
+  border: 1px solid var(--ebony-edge);
+  border-radius: 14px;
+  padding: 0.6rem 0.8rem;
+  margin: 0 0 1rem;
+}
+.smc__stafftop-label {
+  font-family: var(--font-mono);
+  font-size: var(--step-xs);
+  color: var(--ivory-dim);
+  margin: 0 0 0.3rem;
+  letter-spacing: 0.04em;
+}
+
+/* Scale Masterclass tempo slider (middle tier). */
+.smc__tempo { display: flex; align-items: center; gap: 0.6rem; margin: 0.4rem 0 0.2rem; }
+.smc__tempolabel { font-family: var(--font-mono); font-size: var(--step-xs); color: var(--ivory-dim); }
+.smc__tempo input[type="range"] { flex: 1 1 160px; max-width: 280px; accent-color: var(--brass); height: 26px; }
+.smc__tempoval { font-family: var(--font-mono); font-size: var(--step-sm); color: var(--brass-bright); min-width: 64px; }

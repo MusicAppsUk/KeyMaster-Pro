@@ -26,6 +26,8 @@
 import { majorFingering } from './fingeringEngine.js';
 import { buildScale } from './scaleEngine.js';
 import { unlockAudio, perfToContextTime } from './audioContext.js';
+import { createStaffView } from './staffView.js';
+import { noteName } from './notes.js';
 
 const KEYS = ['C', 'G', 'D', 'A', 'E', 'B', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'F#'];
 const TYPES = [
@@ -44,6 +46,17 @@ export default function createView(ctx) {
   const sel = { tonic: 'C', type: 'major', hand: 'RH', octaves: 1, updown: false };
   let mode = 'idle';                 // idle | listening | practice | summary
   const disposers = [];              // cleanup callbacks for the active mode
+
+  // Permanent compact staff (top tier). Shows the active scale and highlights
+  // in real time alongside the keyboard.
+  const staff = createStaffView({ compact: true });
+  let staffMap = new Map();          // midi → staff note index
+
+  function markStaff(midi, state) {
+    staff.clearMarks();
+    const i = staffMap.get(midi);
+    if (i != null) staff.mark(i, state);
+  }
 
   injectStyles();
   const ui = buildUI();
@@ -101,6 +114,13 @@ export default function createView(ctx) {
     const names = scale.degrees.map((d) => d.name).join(' ');
     ui.notesLine.textContent =
       `${displayTonic(sel.tonic)} ${typeLabel(sel.type)} · ${sel.hand} · ${asc.length} notes\n${names}`;
+
+    // Mirror the active scale onto the permanent compact staff (top tier).
+    const pref = scale.degrees.some((d) => d.name.includes('b')) ? 'flat' : 'sharp';
+    const staffNames = asc.map((s) => noteName(s.midi, { accidental: pref }));
+    staff.setSequence(staffNames);
+    staffMap = new Map();
+    staff.model.forEach((m, i) => { if (!staffMap.has(m.midi)) staffMap.set(m.midi, i); });
   }
 
   /* ===================================================================== *
@@ -127,6 +147,7 @@ export default function createView(ctx) {
       timers.push(setTimeout(() => {
         keyboard.clearHighlight('target');
         keyboard.highlight([s.midi], 'target');
+        markStaff(s.midi, 'current');
       }, ms));
     });
     const endMs = (t0 + steps.length * dt - synth.ctx.currentTime) * 1000;
@@ -174,6 +195,7 @@ export default function createView(ctx) {
       keyboard.clearHighlight('target');
       const step = steps[M.idx];
       keyboard.highlight([step.midi], 'target');
+      markStaff(step.midi, 'current');
       M.targetShownAt = synth.ctx.currentTime;
       updateLive();
     }
@@ -191,6 +213,7 @@ export default function createView(ctx) {
 
       if (midi === expected) {
         M.correct += 1;
+        markStaff(expected, 'correct');
         M.latencies.push(Math.max(0, (pressTime - M.targetShownAt) * 1000));
         M.deviations.push(Math.abs(scheduler.nearestBeat(pressTime).deviation) * 1000);
         if (M.inError) {
@@ -204,6 +227,7 @@ export default function createView(ctx) {
       } else {
         M.errors += 1;
         if (!M.inError) { M.inError = true; M.errorBeatPos = scheduler.beatPositionAt(pressTime); }
+        markStaff(expected, 'missed');
         flashWrong(midi);
         updateLive();
       }
@@ -293,6 +317,7 @@ export default function createView(ctx) {
     synth?.allNotesOff();
     keyboard.clearHighlight('target');
     keyboard.clearHighlight('root');
+    staff.clearMarks();
   }
 
   /* ===================================================================== *
@@ -319,23 +344,43 @@ export default function createView(ctx) {
     const notesLine = el('div', { class: 'smc__readout' });
     const fingerNote = el('p', { class: 'smc__fingernote' });
 
+    // TOP TIER — permanent compact staff inside the dark container.
+    const stafftop = el('div', { class: 'smc__stafftop' });
+    const stafflabel = el('p', { class: 'smc__stafftop-label' });
+    stafflabel.textContent = 'Active scale';
+    stafftop.append(stafflabel, staff.el);
+
+    // MIDDLE TIER — oversized controls + tempo slider.
     const actions = el('div', { class: 'smc__row' });
     // Listen and Practice are self-canceling toggles: pressing one while its own
     // mode is active stops that mode. Stop stays a global override (unchanged).
-    const listenBtn = button('♪ Listen', () => (mode === 'listening' ? stopToIdle() : listen()));
-    const practiceBtn = button('● Practice', () => (mode === 'practice' ? stopToIdle() : practice()));
-    const stopBtn = button('◼ Stop', stopToIdle, 'btn--ghost');
+    const listenBtn = button('♪ Listen', () => (mode === 'listening' ? stopToIdle() : listen()), 'btn--xl');
+    const practiceBtn = button('● Practice', () => (mode === 'practice' ? stopToIdle() : practice()), 'btn--xl');
+    const stopBtn = button('◼ Stop', stopToIdle, 'btn--xl btn--ghost');
     actions.append(listenBtn, practiceBtn, stopBtn);
+
+    const tempoWrap = el('label', { class: 'smc__tempo' });
+    const tempo = el('input', { type: 'range', min: '40', max: '180', step: '1' });
+    tempo.value = String(scheduler?.tempo ?? 90);
+    const tempoVal = el('span', { class: 'smc__tempoval' });
+    tempoVal.textContent = `${tempo.value} BPM`;
+    tempo.addEventListener('input', () => {
+      const bpm = Number(tempo.value);
+      try { scheduler?.setTempo(bpm); } catch { /* ignore */ }
+      tempoVal.textContent = `${scheduler?.tempo ?? bpm} BPM`;
+    });
+    tempoWrap.append(el('span', { class: 'smc__tempolabel' }), tempo, tempoVal);
+    tempoWrap.querySelector('.smc__tempolabel').textContent = 'Tempo';
 
     const status = el('div', { class: 'smc__status' });
     status.textContent = audioOK ? 'Ready.' : 'Web Audio unavailable — Listen and Practice are disabled, but the fingering preview works.';
     const metrics = el('div', { class: 'smc__metrics' });
     const climb = el('div', { class: 'smc__climb' });
 
-    root.append(bar, notesLine, fingerNote, actions, status, metrics, climb);
+    root.append(stafftop, bar, notesLine, fingerNote, actions, tempoWrap, status, metrics, climb);
 
     return { root, keySel, typeSel, handSel, octSel, updown,
-             notesLine, fingerNote, listenBtn, practiceBtn, stopBtn, status, metrics, climb };
+             notesLine, fingerNote, listenBtn, practiceBtn, stopBtn, tempo, tempoVal, status, metrics, climb };
   }
 
   function wireControls() {

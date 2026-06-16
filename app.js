@@ -247,7 +247,7 @@ class KeyMasterApp {
   _wireSound() {
     let unlocked = false;
     const ensureAudio = () => {
-      if (!unlocked) { unlockAudio(); unlocked = true; }
+      if (!unlocked) { unlockAudio(); unlocked = true; this._welcomeChord(); }
     };
     // Any first gesture is enough to unlock; key presses are the common one.
     window.addEventListener('pointerdown', ensureAudio, { once: true });
@@ -262,6 +262,22 @@ class KeyMasterApp {
         this.synth?.noteOff(midi);
       })
     );
+  }
+
+  /**
+   * A short, warm welcome chord played once, on the first audio unlock. Browser
+   * autoplay policy forbids sound before a gesture, so "on init" is honoured as
+   * "the moment audio first becomes available".
+   */
+  _welcomeChord() {
+    if (!this.synth) return;
+    try {
+      const t = this.synth.ctx.currentTime + 0.05;
+      [60, 64, 67, 72].forEach((m, i) => {       // soft Cmaj, gently rolled
+        this.synth.noteOn(m, 34, t + i * 0.05);
+        this.synth.noteOff(m, t + 1.8);
+      });
+    } catch { /* audio not ready; ignore */ }
   }
 
   /* ---- Common chrome --------------------------------------------------- */
@@ -288,7 +304,9 @@ class KeyMasterApp {
     // Keep the MIDI pill and register readout in sync with state.
     this._unsubs.push(
       this.store.subscribe((s) => this._renderMidiPill(s.midi)),
-      this.store.subscribe((s) => { if (this.dom.register) this.dom.register.textContent = s.register; })
+      this.store.subscribe((s) => { if (this.dom.register) this.dom.register.textContent = s.register; }),
+      // Hot-plug: re-evaluate the indicator whenever devices come or go.
+      this.midi.on('statechange', () => this._refreshMidiState())
     );
   }
 
@@ -319,14 +337,20 @@ class KeyMasterApp {
   async _connectMidi({ silent = false } = {}) {
     const status = await this.midi.connect();
     if (status.ok) {
-      const label = status.inputs.length
-        ? status.inputs[0]
-        : 'MIDI ready';
-      this.store.setState({ midi: { ok: true, label } });
+      // Bright green ONLY when an actual device handshake is verified.
+      const hasDevice = status.inputs.length > 0;
+      this.store.setState({ midi: { ok: hasDevice, label: hasDevice ? status.inputs[0] : 'No device' } });
     } else if (!silent) {
       const label = status.reason === 'unsupported' ? 'No MIDI' : 'MIDI blocked';
       this.store.setState({ midi: { ok: false, label } });
     }
+  }
+
+  /** Recompute the indicator from the live input list (used on hot-plug). */
+  _refreshMidiState() {
+    const names = [...this.midi.inputs.values()].map((i) => i.name ?? i.id);
+    const ok = names.length > 0;
+    this.store.setState({ midi: { ok, label: ok ? names[0] : 'No device' } });
   }
 
   _renderMidiPill(midi) {

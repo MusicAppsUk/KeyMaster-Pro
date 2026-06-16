@@ -180,7 +180,7 @@
    A small brass coin near the key's base with the finger number.
    -------------------------------------------------------------------------- */
 .key[data-finger] {
-  --badge: clamp(15px, calc(100% / var(--white-span) * 0.62), 26px);
+  --badge: clamp(18px, calc(100% / var(--white-span) * 0.72), 32px);
 }
 .key[data-finger]::after {
   content: attr(data-finger);
@@ -193,11 +193,12 @@
   place-items: center;
   border-radius: 50%;
   font-family: var(--font-mono, monospace);
-  font-size: calc(var(--badge) * 0.62);
-  font-weight: 600;
+  font-size: calc(var(--badge) * 0.66);
+  font-weight: 700;
   color: var(--ebony-sink, #0F0E14);
   background: radial-gradient(circle at 35% 30%, var(--brass-bright), var(--brass-deep));
-  box-shadow: 0 1px 3px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.5);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.6),
+              0 0 0 1.5px rgba(0,0,0,0.35);
   pointer-events: none;
 }
 /* On black keys the coin sits a touch higher and uses ivory text for contrast. */
@@ -207,17 +208,10 @@
 }
 
 /* --------------------------------------------------------------------------
-   Optional per-key note labels (engine option showLabels)
+   Per-key note labels are SUPPRESSED during practice (no-crutch rule). The
+   key's aria-label still carries the note name for screen readers.
    -------------------------------------------------------------------------- */
-.key__label {
-  font-family: var(--font-mono, monospace);
-  font-size: clamp(8px, calc(100% / var(--white-span) * 0.32), 12px);
-  line-height: 1;
-  margin-bottom: 14px;
-  pointer-events: none;
-}
-.key--white .key__label { color: var(--ivory-faint, #7E7A72); }
-.key--black .key__label { color: rgba(244,239,230,0.55); margin-bottom: 8px; }
+.key__label { display: none; }
 
 /* --------------------------------------------------------------------------
    Offscreen keys: kept in layout (so translate math holds) but inert. The

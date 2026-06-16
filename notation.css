@@ -220,3 +220,26 @@
 @media (max-width: 720px) {
   .notation { --staff-space: clamp(8px, 1.4dvh, 11px); padding: var(--gap-4, 1rem); }
 }
+
+/* --------------------------------------------------------------------------
+   RC2 additions
+   -------------------------------------------------------------------------- */
+
+/* Compact staff used by the Scale Masterclass top section. */
+.notation--compact {
+  --staff-space: clamp(7px, 1.15dvh, 10px);
+  padding: 0.2rem 0;
+}
+
+/* Assisted-mode first-note letter anchor — the ONLY label permitted on the
+   staff during practice (spatial hand-placement aid for sight-reading). */
+.note__anchor {
+  position: absolute;
+  top: calc(var(--note-head) + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  font: 600 calc(var(--staff-space) * 1.6) / 1 var(--font-display, serif);
+  color: var(--brass-bright);
+  white-space: nowrap;
+  pointer-events: none;
+}

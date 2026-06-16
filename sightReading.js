@@ -1,189 +1,142 @@
 // sightReading.js
 //
-// Cognitive Sight-Reading — curriculum ENGINE + interactive practice.
-// Data-driven (reads sightReadingCurriculum.js) and input-agnostic: it scores
-// the normalized note stream from app's NoteInput hub and never cares whether a
-// note came from the on-screen keyboard or a Web MIDI controller.
+// MODULE 1 — Cognitive Sight-Reading Engine (RC2).
 //
-// PHASE 1 — Guided "stop-and-wait" practice:
-//   • a cursor marks the expected note; the next note shows a faint preview
-//   • correct input  → note turns emerald green, cursor advances
-//   • wrong input    → note flashes warning red, cursor WAITS (no advance)
-//   • last note right → success state, then the next level loads automatically
+// Standard Middle-C notation domain only; scores the raw normalized MIDI stream
+// from the NoteInput hub. It never transposes and never consults the B-Major
+// motor system — the two communicate purely through performance events.
 //
-// Loaded lazily by app.js: import('./sightReading.js'). Factory:
-//   createView({ mount, keyboard, viewport, synth, input, … })
-//     → { enter(), exit(), destroy() }
+// Core loop (free timing, zero rhythm constraints):
+//   • procedurally generate an exercise for the active level (3-variable matrix)
+//   • the user plays the sequence; each interaction is logged to the EventBridge
+//   • 100% pitch accuracy → Emerald Success Banner, advance level
+//   • one wrong note    → fail text, regenerate a fresh equivalent exercise
+//   • after 3 fails in a level → Assisted mode (letter anchor under FIRST note)
+//
+// No alpha note-name labels are painted under notes during practice (no-crutch
+// rule); the only exception is the Assisted first-note anchor.
 
-import CURRICULUM from './sightReadingCurriculum.js';
-import { toMidi, noteName } from './notes.js';
+import { LEVELS, levelAt, generateExercise } from './exerciseGenerator.js';
+import { createStaffView } from './staffView.js';
+import { EventBridge } from './eventBridge.js';
 import { unlockAudio } from './audioContext.js';
 
-const LETTER_INDEX = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
-const TREBLE_TOP = 38; // F5 diatonic number (top line of treble)
-const BASS_TOP = 26;   // A3 diatonic number (top line of bass)
-const WRONG_FLASH_MS = 280;
-const SUCCESS_HOLD_MS = 1300;
+const PASS_HOLD_MS = 1500;
+const FAIL_HOLD_MS = 1500;
+const ASSIST_AFTER = 3;
 
 export default function createView(ctx) {
   const { mount, keyboard, viewport, synth, input } = ctx;
   const audioOK = Boolean(synth);
 
-  let idx = 0;               // current level index
-  let mode = 'idle';         // idle | guided | complete
-  let cursor = 0;            // expected-note index within the exercise
-  let model = [];            // [{ name, midi, staff, off, leftPct, el }]
+  let levelIdx = 0;
+  let mode = 'idle';            // idle | active | pass | fail
+  let cursor = 0;
+  let exercise = { names: [], signature: '' };
+  let failCount = 0;
+  let assisted = false;
+  let expectedTs = 0;
   let timers = [];
+
+  const seen = new Map();        // levelIdx → string[] (recent signatures, capped)
+  const RECENT_CAP = 16;         // avoid exact repeats within the last N exercises
+  const bridge = new EventBridge();
+  const staff = createStaffView({ compact: false });
 
   injectStyles();
   const ui = buildUI();
 
-  // One subscription to the normalized input stream for the life of the view.
   const offInput = input ? input.subscribe(onNotePlayed) : null;
 
-  /* ===================================================================== *
-   * Note parsing + staff placement
-   * ===================================================================== */
+  /* ===================== exercise lifecycle ===================== */
 
-  function parseNote(name) {
-    const m = /^([A-Ga-g])(##|bb|[#b]|x)?(-?\d+)$/.exec(String(name).trim());
-    if (!m) throw new Error(`sightReading: unparseable note "${name}"`);
-    const letter = m[1].toUpperCase();
-    const accidental = { '#': 1, '##': 2, x: 2, b: -1, bb: -2 }[m[2]] ?? 0;
-    return { letter, accidental, octave: parseInt(m[3], 10) };
+  function recentFor(i) {
+    if (!seen.has(i)) seen.set(i, []);
+    return seen.get(i);
   }
 
-  function place(name) {
-    const n = parseNote(name);
-    const diatonic = LETTER_INDEX[n.letter] + 7 * n.octave;
-    const midi = toMidi(n.letter, n.accidental, n.octave);
-    const staff = midi >= 60 ? 'treble' : 'bass';
-    const topLine = staff === 'treble' ? TREBLE_TOP : BASS_TOP;
-    return { staff, off: (topLine - diatonic) / 2, accidental: n.accidental, midi };
-  }
-
-  function ledgerOffsets(off) {
-    const out = []; const EPS = 1e-9;
-    if (off >= 5 - EPS) for (let k = 5; k <= Math.floor(off + EPS); k++) out.push(k);
-    if (off <= -1 + EPS) for (let k = -1; k >= Math.ceil(off - EPS); k--) out.push(k);
-    return out;
-  }
-
-  /* ===================================================================== *
-   * Render the current level into the staff (builds `model`)
-   * ===================================================================== */
-
-  function render() {
-    idx = ((idx % CURRICULUM.length) + CURRICULUM.length) % CURRICULUM.length;
-    const ex = CURRICULUM[idx];
-
-    [ui.treble, ui.bass].forEach((s) =>
-      s.querySelectorAll('.note, .ledger').forEach((n) => n.remove()));
-
-    const notes = ex.notes ?? [];
-    const n = notes.length;
-    const START = 24, END = 88;
-    model = notes.map((name, i) => {
-      const leftPct = n <= 1 ? 52 : START + ((END - START) * i) / (n - 1);
-      const p = place(name);
-      const el = engrave(p, leftPct, i, name);
-      return { name, midi: p.midi, staff: p.staff, off: p.off, leftPct, el };
-    });
-
-    ui.level.textContent = `Level ${ex.level}${ex.name ? ' · ' + ex.name : ''}`;
-    ui.count.textContent = `${n} note${n === 1 ? '' : 's'}  ·  ${idx + 1}/${CURRICULUM.length}`;
-  }
-
-  function engrave(p, leftPct, i, name) {
-    const staffEl = p.staff === 'treble' ? ui.treble : ui.bass;
-    for (const k of ledgerOffsets(p.off)) {
-      const led = el('div', { class: 'ledger' });
-      led.style.left = `calc(${leftPct}% - var(--note-head) * 0.4)`;
-      led.style.top = `calc(var(--staff-space) * ${k} - var(--staff-line) / 2)`;
-      staffEl.appendChild(led);
-    }
-    const note = el('div', { class: `note ${p.off < 2 ? 'note--stem-down' : ''}`.trim() });
-    note.dataset.index = String(i);
-    note.style.left = `${leftPct}%`;
-    note.style.top = `calc(var(--staff-space) * ${p.off} - var(--note-head) / 2)`;
-    if (p.accidental) {
-      const a = el('span', { class: 'note__accidental' });
-      a.textContent = p.accidental > 0 ? '\u266F' : '\u266D';
-      note.appendChild(a);
-    }
-    note.appendChild(el('div', { class: 'note__head' }));
-    note.appendChild(el('div', { class: 'note__stem' }));
-    // Small name label so the staff is never ambiguous (training aid).
-    const tag = el('span', { class: 'note__name' });
-    tag.textContent = name;
-    note.appendChild(tag);
-    staffEl.appendChild(note);
-    return note;
-  }
-
-  /* ===================================================================== *
-   * Guided practice (stop-and-wait)
-   * ===================================================================== */
-
-  function startGuided() {
-    if (!input || model.length === 0) return;
+  function startLevel() {
+    if (!input) return;
     clearTimers();
-    mode = 'guided';
+    hideBanner();
+    mode = 'active';
     cursor = 0;
-    render();                 // fresh notes, no states
-    arm();                    // arm() now sets the status line
+
+    const cfg = levelAt(levelIdx);
+    const recent = recentFor(levelIdx);
+    exercise = generateExercise(cfg, new Set(recent));
+    recent.push(exercise.signature);
+    if (recent.length > RECENT_CAP) recent.shift();
+
+    const model = staff.setSequence(exercise.names);
     viewport?.frame(model.map((m) => m.midi));
+
+    // Assisted scaffolding: letter anchor under the very first note only.
+    staff.setAnchor(assisted ? letterOf(exercise.names[0]) : null);
+
+    arm();
+    renderMeta();
     setButtons();
+    ui.status.textContent = assisted
+      ? 'Assisted: the first note is labelled — read the rest by interval.'
+      : 'Read and play the sequence. Timing is free.';
   }
 
-  /** Mark the expected note as the cursor, preview the next, guide the key. */
   function arm() {
-    model.forEach((m) => m.el.classList.remove('is-current', 'is-next'));
-    const cur = model[cursor];
-    cur.el.classList.add('is-current');
-    model[cursor + 1]?.el.classList.add('is-next');
-
-    keyboard?.clearHighlight('target');
-    keyboard?.highlight([cur.midi], 'target');
-
-    // Make the expectation explicit: name AND MIDI, the single value used for
-    // the staff cursor, the keyboard highlight, and scoring alike.
-    ui.status.textContent = `Expected: ${cur.name} · MIDI ${cur.midi} — play the highlighted key.`;
+    staff.clearMarks();
+    staff.mark(cursor, 'current');
+    expectedTs = now();
   }
 
   function onNotePlayed(ev) {
-    if (mode !== 'guided') return;          // input-agnostic: only the shape matters
+    if (mode !== 'active') return;
+    const model = staff.model;
     const cur = model[cursor];
     if (!cur) return;
 
+    // Event Bridge: log EVERY interaction (raw data layer, no scoring).
+    bridge.record({
+      midiNote: ev.midiNote,
+      expectedNote: cur.midi,
+      timestamp: ev.timestamp,
+      expectedTimestamp: expectedTs,
+    });
+
     if (ev.midiNote === cur.midi) {
-      cur.el.classList.remove('is-current', 'is-missed');
-      cur.el.classList.add('is-correct');   // emerald green
+      staff.unmark(cursor, 'current');
+      staff.mark(cursor, 'correct');          // real-time green
       cursor += 1;
-      if (cursor >= model.length) { success(); return; }
+      if (cursor >= model.length) { pass(); return; }
       arm();
     } else {
-      // Wrong: flash red and WAIT — the cursor does not advance. Show exactly
-      // what was expected vs received, so any transposition (in the engine OR
-      // in a MIDI controller's octave/transpose setting) is visible in numbers.
-      cur.el.classList.add('is-missed');
-      const t = setTimeout(() => cur.el.classList.remove('is-missed'), WRONG_FLASH_MS);
-      timers.push(t);
-      ui.status.textContent =
-        `✗ Expected ${cur.name} (MIDI ${cur.midi}) — received ${noteName(ev.midiNote)} (MIDI ${ev.midiNote}). Try again.`;
+      staff.mark(cursor, 'missed');           // real-time red
+      fail();                                 // one wrong note = immediate fail
     }
   }
 
-  function success() {
-    mode = 'complete';
+  function pass() {
+    mode = 'pass';
+    assisted = false;                          // deactivate scaffolding on success
     keyboard?.clearHighlight('target');
-    ui.status.textContent = '✓ Level complete! Loading the next one…';
-    ui.staffWrap.classList.add('is-success');
+    showBanner('pass', `✓ Level ${levelAt(levelIdx).level} complete!`);
     const t = setTimeout(() => {
-      ui.staffWrap.classList.remove('is-success');
-      idx += 1;          // advance the curriculum
-      startGuided();     // auto-load + arm the next level
-    }, SUCCESS_HOLD_MS);
+      levelIdx += 1;                           // advance the ladder
+      failCount = 0;
+      startLevel();
+    }, PASS_HOLD_MS);
+    timers.push(t);
+    setButtons();
+  }
+
+  function fail() {
+    mode = 'fail';
+    failCount += 1;
+    if (failCount >= ASSIST_AFTER) assisted = true;
+    showBanner('fail', "Not quite there yet! Let's try a fresh variation…");
+    const t = setTimeout(() => {
+      staff.clear();                           // clear the canvas
+      startLevel();                            // fresh equivalent exercise
+    }, FAIL_HOLD_MS);
     timers.push(t);
     setButtons();
   }
@@ -191,118 +144,109 @@ export default function createView(ctx) {
   function stop() {
     clearTimers();
     mode = 'idle';
+    hideBanner();
     keyboard?.clearHighlight('target');
-    ui.staffWrap.classList.remove('is-success');
-    render();
-    ui.status.textContent = 'Ready.';
+    staff.clearMarks();
+    ui.status.textContent = 'Ready. Press Practice to begin.';
     setButtons();
   }
 
-  /* ===================================================================== *
-   * Listen (bonus)
-   * ===================================================================== */
+  function gotoLevel(delta) {
+    levelIdx = ((levelIdx + delta) % LEVELS.length + LEVELS.length) % LEVELS.length;
+    failCount = 0;
+    assisted = false;
+    startLevel();
+  }
 
-  function play() {
-    if (!audioOK) return;
-    stop();
+  /* ===================== Listen (audio preview) ===================== */
+
+  function listen() {
+    if (!audioOK || staff.model.length === 0) return;
+    clearTimers();
+    hideBanner();
+    mode = 'idle';
     unlockAudio();
     synth.allNotesOff();
-    const dt = 0.6;
-    const t0 = synth.ctx.currentTime + 0.1;
-    model.forEach((m, i) => {
-      synth.noteOn(m.midi, 92, t0 + i * dt);
+    staff.clearMarks();
+    const dt = 0.62;
+    const t0 = synth.ctx.currentTime + 0.12;
+    staff.model.forEach((m, i) => {
+      synth.noteOn(m.midi, 90, t0 + i * dt);
       synth.noteOff(m.midi, t0 + i * dt + dt * 0.9);
       const ms = Math.max(0, (t0 + i * dt - synth.ctx.currentTime) * 1000);
-      timers.push(setTimeout(() => flash(i), ms));
+      timers.push(setTimeout(() => {
+        staff.clearMarks();
+        staff.mark(i, 'current');
+      }, ms));
     });
+    timers.push(setTimeout(() => staff.clearMarks(), (t0 + staff.model.length * dt - synth.ctx.currentTime) * 1000 + 200));
+    ui.status.textContent = 'Listening…';
   }
 
-  function flash(i) {
-    model.forEach((m) => m.el.classList.remove('is-current'));
-    model[i]?.el.classList.add('is-current');
+  /* ===================== banners + meta ===================== */
+
+  function showBanner(kind, text) {
+    ui.banner.textContent = text;
+    ui.banner.className = `srx__banner is-${kind} is-shown`;
+  }
+  function hideBanner() { ui.banner.className = 'srx__banner'; }
+
+  function renderMeta() {
+    const cfg = levelAt(levelIdx);
+    ui.level.textContent = `Level ${cfg.level} · ${cfg.name}`;
+    ui.count.textContent = `${exercise.names.length} notes · ${levelIdx + 1}/${LEVELS.length}`;
+    ui.assist.hidden = !assisted;
   }
 
-  /* ===================================================================== *
-   * UI
-   * ===================================================================== */
+  /* ===================== UI ===================== */
 
   function buildUI() {
     const root = el('div', { class: 'srx' });
     root.innerHTML = `<p class="vector__eyebrow">02 — Cognition</p>`;
 
     const staffWrap = el('div', { class: 'srx__staff' });
-    staffWrap.innerHTML = `
-      <div class="notation">
-        <div class="grand-staff">
-          <div class="grand-staff__brace"></div>
-          <div class="grand-staff__spine"></div>
-          <div class="staff staff--treble"><span class="clef clef--treble">&#x1D11E;</span></div>
-          <div class="staff staff--bass"><span class="clef clef--bass">&#x1D122;</span></div>
-        </div>
-      </div>`;
+    const banner = el('div', { class: 'srx__banner' });
+    staffWrap.append(banner, staff.el);
 
     const bar = el('div', { class: 'srx__bar' });
-    const practiceBtn = button('● Practice', startGuided);
-    const stopBtn = button('◼ Stop', stop, 'btn--ghost');
-    const prevBtn = button('‹ Prev', () => { idx -= 1; mode === 'idle' ? render() : startGuided(); }, 'btn--ghost');
-    const nextBtn = button('Next ›', () => { idx += 1; mode === 'idle' ? render() : startGuided(); }, 'btn--ghost');
-    const playBtn = button('♪ Listen', play, 'btn--ghost');
-    const level = el('span', { class: 'srx__level' });
-    const count = el('span', { class: 'srx__count' });
-    bar.append(practiceBtn, stopBtn, prevBtn, nextBtn, playBtn);
+    const practiceBtn = button('● Practice', () => startLevel(), 'btn--xl');
+    const stopBtn = button('◼ Stop', stop, 'btn--xl btn--ghost');
+    const prevBtn = button('‹ Previous', () => gotoLevel(-1), 'btn--xl btn--ghost');
+    const nextBtn = button('Next ›', () => gotoLevel(1), 'btn--xl btn--ghost');
+    const listenBtn = button('♪ Listen', listen, 'btn--xl btn--ghost');
+    bar.append(practiceBtn, stopBtn, prevBtn, nextBtn, listenBtn);
     if (!input) practiceBtn.disabled = true;
-    if (!audioOK) playBtn.disabled = true;
+    if (!audioOK) listenBtn.disabled = true;
 
     const meta = el('div', { class: 'srx__meta' });
-    meta.append(level, count);
+    const level = el('span', { class: 'srx__level' });
+    const count = el('span', { class: 'srx__count' });
+    const assist = el('span', { class: 'srx__assist' }); assist.textContent = 'ASSIST'; assist.hidden = true;
+    meta.append(level, count, assist);
     const status = el('div', { class: 'srx__status' });
 
     root.append(staffWrap, bar, meta, status);
-
-    const treble = staffWrap.querySelector('.staff--treble');
-    const bass = staffWrap.querySelector('.staff--bass');
-    drawStaffLines(treble);
-    drawStaffLines(bass);
-
-    return {
-      root, staffWrap, treble, bass,
-      practiceBtn, stopBtn, prevBtn, nextBtn, playBtn, level, count, status,
-    };
-  }
-
-  /**
-   * Paint the five staff lines as explicit elements. Each line's CENTER sits at
-   * `k * staff-space` (k = 0 top … 4 bottom) — the exact y a note head occupies
-   * when its `off` equals k. So an integer-`off` note lands on its line, and a
-   * half-`off` note lands in the space between, with no clipping. render()'s
-   * cleanup only removes `.note`/`.ledger`, so these persist across renders.
-   */
-  function drawStaffLines(staffEl) {
-    for (let k = 0; k <= 4; k++) {
-      const line = el('div', { class: 'staff__line' });
-      line.style.top = `calc(var(--staff-space) * ${k} - var(--staff-line) / 2)`;
-      staffEl.appendChild(line);
-    }
+    return { root, staffWrap, banner, practiceBtn, stopBtn, prevBtn, nextBtn, listenBtn, level, count, assist, status };
   }
 
   function setButtons() {
-    ui.practiceBtn.disabled = !input || mode === 'guided';
+    const active = mode === 'active';
+    ui.practiceBtn.disabled = !input;
     ui.stopBtn.disabled = mode === 'idle';
+    ui.prevBtn.disabled = !input;
+    ui.nextBtn.disabled = !input;
+    ui.listenBtn.disabled = !audioOK || staff.model.length === 0;
   }
 
   function clearTimers() { timers.forEach(clearTimeout); timers = []; }
 
-  /* ===================================================================== *
-   * Lifecycle
-   * ===================================================================== */
+  /* ===================== lifecycle ===================== */
 
   return {
     enter() {
       mount.replaceChildren(ui.root);
       mode = 'idle';
-      render();
-      ui.status.textContent = input ? 'Press Practice, then play the highlighted notes.' : 'Input unavailable.';
-      setButtons();
+      if (input) { startLevel(); } else { ui.status.textContent = 'Input unavailable.'; renderMeta(); }
     },
     exit() {
       clearTimers();
@@ -319,7 +263,10 @@ export default function createView(ctx) {
   };
 }
 
-/* ========================= helpers ========================= */
+/* ===================== helpers ===================== */
+
+function letterOf(name) { return /^[A-Ga-g]/.exec(name)?.[0].toUpperCase() ?? '?'; }
+function now() { return (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now(); }
 
 function el(tag, props = {}) {
   const n = document.createElement(tag);
@@ -337,21 +284,24 @@ function injectStyles() {
   const s = document.createElement('style');
   s.id = 'srx-styles';
   s.textContent = `
-    .srx__bar{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-top:1rem}
-    .srx__meta{display:flex;gap:.75rem;align-items:baseline;margin-top:.6rem}
+    .srx__staff{position:relative}
+    .srx__bar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-top:1.1rem}
+    .srx__meta{display:flex;gap:.75rem;align-items:baseline;margin-top:.7rem;flex-wrap:wrap}
     .srx__level{font-family:var(--font-display);font-size:var(--step-lg);color:var(--brass-bright)}
     .srx__count{font-family:var(--font-mono);font-size:var(--step-sm);color:var(--ivory-dim)}
-    .srx__status{font-family:var(--font-mono);font-size:var(--step-sm);color:var(--ivory);margin-top:.4rem;min-height:1.2em}
-    /* Cursor + preview on the staff */
+    .srx__assist{font-family:var(--font-mono);font-size:var(--step-xs);letter-spacing:.12em;
+      color:var(--ebony-deep,#15110c);background:var(--brass);border-radius:4px;padding:.1rem .4rem}
+    .srx__status{font-family:var(--font-mono);font-size:var(--step-sm);color:var(--ivory);margin-top:.5rem;min-height:1.2em}
     .note.is-current .note__head{box-shadow:0 0 0 2px var(--brass-bright),0 0 10px var(--brass-glow)}
-    .note.is-next{opacity:.5;color:var(--brass)}
-    /* Small note-name label under each head (training aid, removes ambiguity) */
-    .note__name{position:absolute;top:calc(var(--note-head) + 3px);left:50%;
-      transform:translateX(-50%);font:500 9px var(--font-mono,monospace);
-      color:var(--ivory-faint);white-space:nowrap;pointer-events:none}
-    .note.is-current .note__name{color:var(--brass-bright)}
-    /* Success pulse on the whole staff */
-    .srx__staff.is-success .notation{box-shadow:0 0 0 1px var(--good),0 0 22px -4px var(--good)}
+    /* Pass / Fail banner overlay on the staff */
+    .srx__banner{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      text-align:center;font-family:var(--font-display);font-size:var(--step-lg);font-weight:600;
+      border-radius:14px;opacity:0;pointer-events:none;transition:opacity .18s ease;z-index:5;padding:1rem}
+    .srx__banner.is-shown{opacity:1}
+    .srx__banner.is-pass{background:color-mix(in srgb,var(--good) 22%, transparent);
+      color:var(--good);box-shadow:inset 0 0 0 1px var(--good),0 0 30px -6px var(--good)}
+    .srx__banner.is-fail{background:color-mix(in srgb,var(--bad) 18%, transparent);
+      color:var(--bad);box-shadow:inset 0 0 0 1px var(--bad)}
   `;
   document.head.appendChild(s);
 }
