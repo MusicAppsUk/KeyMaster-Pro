@@ -273,7 +273,7 @@ export default function createView(ctx) {
 
     function showTarget() {
       const col = baseCols[rIndex % L];
-      staff.clearMarks();
+      staff.clearCursor();   // keep controller's is-correct/is-missed; clear only the cursor
       staff.mark(rIndex, 'current');
       staff.scrollToIndex(rIndex, true);          // continuous right-to-left scroll
       keyboard.clearHighlight('target');
@@ -297,7 +297,7 @@ export default function createView(ctx) {
         rebaseTimer = setTimeout(() => {
           rebaseTimer = null;
           rIndex -= L;
-          staff.clearMarks();
+          staff.clearCursor();
           staff.scrollToIndex(rIndex, false);
           staff.mark(rIndex, 'current');
         }, 460);

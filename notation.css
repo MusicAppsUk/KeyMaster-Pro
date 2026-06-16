@@ -225,13 +225,17 @@
 
 /* Assisted-mode first-note letter anchor — the ONLY label permitted on the
    staff during practice (spatial hand-placement aid for sight-reading). */
+/* Assisted-mode first-note letter anchor — the ONLY note-name label permitted
+   on the staff. Rendered ABOVE the notehead in an ivory serif so it is clearly
+   distinct from fingering numbers (brass mono, in a pill, BELOW the notehead)
+   and the two can never overlap or be confused. */
 .note__anchor {
   position: absolute;
-  top: calc(var(--note-head) + 4px);
+  bottom: calc(100% + 4px);
   left: 50%;
   transform: translateX(-50%);
-  font: 600 calc(var(--staff-space) * 1.6) / 1 var(--font-display, serif);
-  color: var(--brass-bright);
+  font: italic 600 calc(var(--staff-space) * 1.7) / 1 var(--font-display, serif);
+  color: var(--ivory, #EDE6D6);
   white-space: nowrap;
   pointer-events: none;
 }
@@ -289,7 +293,7 @@
    which still clears every ledger line because --pad reserves room for them. */
 .notation--pan { overflow-x: auto; overflow-y: hidden; }
 .notation--pan .grand-staff,
-.notation--pan .staff { min-width: var(--content-w, 100%); }
+.notation--pan .staff { min-width: max(var(--content-w, 100%), 100%); }
 
 /* --------------------------------------------------------------------------
    RC3 — rhythmic notation: 4/4 time signature, measure bar lines, and the

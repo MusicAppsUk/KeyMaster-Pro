@@ -285,7 +285,9 @@ a { color: inherit; text-decoration: none; }
   font-size: var(--step-xl);
   margin-bottom: var(--gap-6);
 }
-.view__body { max-width: 1100px; }
+/* RC2 width fix: do not cap the module width — Scales & Sight-Reading mount
+   inside .view__body and the staff must use the full available tablet width. */
+.view__body { max-width: none; }
 
 @keyframes view-in {
   from { opacity: 0; transform: translateY(8px); }

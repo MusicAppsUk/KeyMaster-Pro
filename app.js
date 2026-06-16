@@ -23,6 +23,7 @@ import { Scheduler } from './scheduler.js';
 import { Metronome } from './metronome.js';
 import { NoteInput } from './noteInput.js';
 import { createMidiEvaluator } from './midiEvaluator.js';
+import { createDevReadout, isDevMode } from './devReadout.js';
 
 /* ===========================================================================
  * 1. Observable store
@@ -199,6 +200,11 @@ class KeyMasterApp {
     // ---- Centralized MIDI evaluation controller (single source of truth for
     //      note correctness; paints keyboard + active staff in lock-step). ----
     this.evaluator = createMidiEvaluator({ input: this.input, keyboard: this.keyboard });
+
+    // ---- TEMPORARY dev validation tooling (no-op unless ?dev / km_dev) ----
+    if (isDevMode()) {
+      this.devReadout = createDevReadout({ evaluator: this.evaluator });
+    }
 
     // ---- Audio layer (shared context → synth + transport) ----
     if (isAudioSupported()) {

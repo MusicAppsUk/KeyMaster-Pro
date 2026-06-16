@@ -588,7 +588,10 @@ function handHint(names, clef, hm) {
   const seg = (hand, idx) => {
     if (idx < 0) return null;
     const f = hm.fingers[idx];
-    return f != null ? `${hand}: Finger ${f} on ${names[idx]}` : `${hand}: start on ${names[idx]}`;
+    // Hand + finger guidance only — the note itself is read from the staff (and,
+    // in assisted mode, labelled once by the staff anchor). Naming the note here
+    // too produced a second, conflicting reference (e.g. anchor "G" vs hint "D4").
+    return f != null ? `${hand}: Finger ${f}` : hand;
   };
   if (clef === 'treble') return seg('RH', 0) ?? '';
   if (clef === 'bass') return seg('LH', 0) ?? '';

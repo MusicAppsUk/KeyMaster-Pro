@@ -206,6 +206,13 @@ export function createStaffView({ compact = false } = {}) {
     const node = voiceEl(i, which);
     if (node) node.classList.remove(`is-${state}`);
   }
+  // DEV verification: does the notehead for (i, voice) currently carry is-<state>?
+  // Returns null when the node can't be found (target missing), else a boolean.
+  function voiceHasState(i, which, state) {
+    const node = voiceEl(i, which);
+    if (!node) return null;
+    return node.classList.contains(`is-${state}`);
+  }
   function unmark(i, state) {
     const m = model[i]; if (!m) return;
     [m.el, m.lower && m.lower.el].forEach((node) => {
@@ -215,6 +222,13 @@ export function createStaffView({ compact = false } = {}) {
     });
   }
   function clearMarks() { model.forEach((_, i) => unmark(i)); }
+  // Clear ONLY the module-owned cursor states (is-current / is-next). The
+  // correctness states (is-correct / is-missed) belong to the MIDI Evaluation
+  // Controller and must NOT be wiped by a cursor re-target, or the green/red
+  // feedback would vanish on the same tick it was painted.
+  function clearCursor() {
+    model.forEach((_, i) => { unmark(i, 'current'); unmark(i, 'next'); });
+  }
 
   function setAnchor(letter) {
     el.querySelectorAll('.note__anchor').forEach((n) => n.remove());
@@ -267,7 +281,7 @@ export function createStaffView({ compact = false } = {}) {
 
   return {
     el, treble, bass,
-    setSequence, mark, markVoice, unmark, unmarkVoice, clearMarks, setAnchor,
+    setSequence, mark, markVoice, unmark, unmarkVoice, voiceHasState, clearMarks, clearCursor, setAnchor,
     setFingersVisible, setFingersFaded, scrollToIndex, clear,
     get model() { return model; },
     get scrolling() { return scrolling; },
