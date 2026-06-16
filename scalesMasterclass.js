@@ -478,7 +478,19 @@ export default function createView(ctx) {
       bodyHtml: WHY_B_MAJOR_HTML,
     });
 
-    root.append(stafftop, bar, notesLine, fingerNote, actions, tempoWrap, status, metrics, climb, why.el);
+    // LAYOUT (RC2 fix) — controls take priority and never scroll off-screen.
+    //   HEADER (app bar)  →  CONTROL BAR (.smc__controls, pinned)
+    //   →  STAFF VIEWPORT (.smc__stage, the scrollable element)  →  KEYBOARD (footer)
+    // The staff keeps its full RC2 size; horizontal overflow scrolls inside the
+    // staff (pan layout), and the stage scrolls vertically only as a safety on
+    // very short viewports — the control bar above it stays put regardless.
+    const controls = el('div', { class: 'smc__controls' });
+    controls.append(bar, actions, tempoWrap, why.el);
+
+    const stage = el('div', { class: 'smc__stage' });
+    stage.append(notesLine, fingerNote, stafftop, status, metrics, climb);
+
+    root.append(controls, stage);
 
     return { root, keySel, typeSel, handSel, octSel, updown, fingerToggle,
              notesLine, fingerNote, listenBtn, practiceBtn, stopBtn, tempo, tempoVal, status, metrics, climb };
@@ -605,7 +617,28 @@ function injectStyles() {
   const s = document.createElement('style');
   s.id = 'smc-styles';
   s.textContent = `
-    .smc__bar{display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;margin:.25rem 0 1rem}
+    /* RC2 layout: .smc fills the main band; controls pinned, staff scrolls.
+       (box-sizing:border-box is global, so height:100% + padding is safe.) */
+    .smc{display:flex;flex-direction:column;height:100%;min-height:0;gap:.5rem}
+    .smc>.vector__eyebrow{flex:0 0 auto;margin:0}
+    .smc__controls{flex:0 0 auto;display:flex;flex-direction:column;gap:.45rem}
+    .smc__controls > .infopanel{align-self:flex-start}
+    .smc__stage{flex:1 1 0;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;
+      display:flex;flex-direction:column;gap:.5rem}
+    /* Reset margins that previously created vertical rhythm in a static stack. */
+    .smc__bar{display:flex;flex-wrap:wrap;gap:.75rem;align-items:flex-end;margin:0}
+    .smc__row{display:flex;flex-wrap:wrap;gap:.5rem;margin:0}
+    .smc__tempo{margin:0}
+    .smc__stafftop{margin:0}
+    /* Short-landscape (e.g. mobile landscape): keep every control reachable by
+       trimming control chrome; the staff stage absorbs the squeeze via scroll. */
+    @media (max-height:520px){
+      .smc{gap:.35rem}
+      .smc__controls{gap:.3rem}
+      .btn--xl{min-height:44px;padding:9px 14px}
+      .smc__stafftop{padding:.4rem .55rem}
+      .smc__tempo input[type="range"]{height:22px}
+    }
     .smc__field{display:flex;flex-direction:column;gap:.25rem}
     .smc__fieldlabel{font-family:var(--font-mono);font-size:var(--step-xs);
       letter-spacing:.08em;text-transform:uppercase;color:var(--ivory-faint)}
@@ -614,7 +647,6 @@ function injectStyles() {
       padding:6px 8px;font-family:var(--font-ui);font-size:var(--step-sm)}
     .smc__check{display:flex;align-items:center;gap:.4rem;color:var(--ivory-dim);
       font-size:var(--step-sm);align-self:center}
-    .smc__row{display:flex;flex-wrap:wrap;gap:.5rem;margin:.5rem 0}
     .smc__readout{font-family:var(--font-mono);font-size:var(--step-sm);
       color:var(--ivory-dim);background:var(--ebony-sink);border:1px solid var(--ebony-edge);
       border-radius:var(--radius-sm);padding:.6rem .75rem;white-space:pre-wrap}
