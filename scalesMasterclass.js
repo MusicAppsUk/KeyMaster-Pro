@@ -165,6 +165,7 @@ export default function createView(ctx) {
       lowerFingers = cols.map((col) => lowerOf(col)?.finger ?? null);
     }
     staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers });
+    staff.el.classList.toggle('notation--range2', sel.octaves === 2);
     staff.setFingersVisible(staffFingers);
     staff.setFingersFaded(false);
     staffMap = new Map();
@@ -235,6 +236,7 @@ export default function createView(ctx) {
       lowerFingers = repCols.map((col) => lowerOf(col)?.finger ?? null);
     }
     staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers, scroll: true });
+    staff.el.classList.toggle('notation--range2', sel.octaves === 2);
     staff.setFingersVisible(staffFingers);
     staff.setFingersFaded(false);
     keyboard.clearFingers();

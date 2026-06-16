@@ -114,6 +114,26 @@ export function createStaffView({ compact = false } = {}) {
       return entry;
     });
     if (scroll) scrollToIndex(0, false);
+
+    // ---- Dynamic vertical bounds (no fixed rendering boundary) ----
+    // Measure how far the music extends above the treble top line and below the
+    // bass bottom line, then reserve SYMMETRIC padding (keeps the staff centred)
+    // sized to the larger extreme + a 40px safe margin above the top ledger.
+    let topLift = 0, botDrop = 0;
+    for (const m of model) {
+      for (const v of [m, m.lower]) {
+        if (!v) continue;
+        if (v.staff === 'treble') topLift = Math.max(topLift, -v.off);  // negative off = above
+        else botDrop = Math.max(botDrop, v.off - 4);                    // off>4 = below bass
+      }
+    }
+    const topSpaces = (Math.max(0, topLift) + 1).toFixed(2);  // +1 ≈ note-head radius
+    const botSpaces = (Math.max(0, botDrop) + 1).toFixed(2);
+    el.style.setProperty('--pad',
+      `max(calc(var(--staff-space) * ${topSpaces} + 40px), ` +
+      `calc(var(--staff-space) * ${botSpaces} + 16px), ` +
+      `calc(var(--staff-space) * 2.5))`);
+
     return model;
   }
 
