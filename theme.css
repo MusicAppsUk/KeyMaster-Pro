@@ -301,11 +301,35 @@ a { color: inherit; text-decoration: none; }
 .view--launcher { display: none; place-items: center; }
 .view--launcher.is-active { display: grid; }
 
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-6);
+  width: min(100%, 1120px);
+  align-items: center;
+}
+.dashboard__head { text-align: center; }
+.dashboard__eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--step-xs);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass-bright);
+  margin: 0 0 var(--gap-1);
+}
+.dashboard__title {
+  font-family: var(--font-display);
+  font-size: var(--step-xl);
+  font-weight: 600;
+  margin: 0;
+}
+.dashboard__sub { color: var(--ivory-dim); font-size: var(--step-sm); margin: var(--gap-1) 0 0; }
+
 .launcher {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--gap-6);
-  width: min(100%, 920px);
+  width: 100%;
 }
 
 .vector {
@@ -313,8 +337,8 @@ a { color: inherit; text-decoration: none; }
   display: flex;
   flex-direction: column;
   gap: var(--gap-2);
-  padding: var(--gap-8) var(--gap-6);
-  min-height: 230px;
+  padding: var(--gap-6) var(--gap-6);
+  min-height: 184px;
   background:
     linear-gradient(160deg, var(--ebony-raise), var(--ebony-sink));
   border: 1px solid var(--ebony-edge);
@@ -354,6 +378,64 @@ a { color: inherit; text-decoration: none; }
   margin-top: auto;
 }
 .vector__blurb { color: var(--ivory-dim); font-size: var(--step-sm); }
+
+/* Status badge (top-right). */
+.vector__status {
+  position: absolute;
+  top: var(--gap-4);
+  right: var(--gap-4);
+  z-index: 1;
+  font-family: var(--font-mono);
+  font-size: var(--step-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  background: color-mix(in srgb, var(--ebony-sink) 70%, transparent);
+}
+.vector__status--active  { color: var(--good, #6FB59A); }
+.vector__status--next    { color: var(--brass-bright); }
+.vector__status--planned { color: var(--ivory-dim); }
+.vector__status--future  { color: var(--ivory-faint, #8B8576); }
+
+/* Visible-but-locked future modules: dimmed, non-interactive, no hover lift. */
+.vector--locked {
+  opacity: 0.66;
+  cursor: not-allowed;
+  filter: saturate(0.8);
+}
+.vector--locked:hover { transform: none; border-color: var(--ebony-edge); }
+.vector--locked:hover::before { opacity: 0; }
+.vector__lock {
+  position: absolute;
+  bottom: var(--gap-4);
+  right: var(--gap-4);
+  font-size: var(--step-md);
+  opacity: 0.8;
+}
+
+/* Curriculum flow — the expert-reader sequence, shown beneath the modules. */
+.launcher__flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--gap-2) var(--gap-3);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-mono);
+  font-size: var(--step-xs);
+  letter-spacing: 0.04em;
+  color: var(--ivory-dim);
+}
+.launcher__flow li { display: inline-flex; align-items: center; }
+.launcher__flow li:not(:last-child)::after {
+  content: "→";
+  margin-left: var(--gap-3);
+  color: var(--brass);
+}
 
 /* --------------------------------------------------------------------------
    7. Placeholder (shown for a vector whose controller isn't wired yet)
@@ -395,6 +477,9 @@ a { color: inherit; text-decoration: none; }
 /* --------------------------------------------------------------------------
    9. Responsive: tighten chrome on short/landscape phones
    -------------------------------------------------------------------------- */
+@media (max-width: 980px) {
+  .launcher { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
 @media (max-width: 720px) {
   :root { --bar-h: 50px; }
   .brand__name { font-size: 0; }              /* keep just the mark on small bars */

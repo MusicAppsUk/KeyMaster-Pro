@@ -84,25 +84,77 @@
          the router toggles the `is-active` class. -->
     <main class="app__main" id="view-root">
 
-      <!-- Launcher: the two-vector entry point (reduced cognitive load). -->
+      <!-- Launcher: the curriculum dashboard. Active modules launch; future
+           modules are visible but locked (no engine wired yet). -->
       <section
         class="view view--launcher is-active"
         data-view="home"
         aria-labelledby="launcher-heading"
       >
-        <h1 id="launcher-heading" class="visually-hidden">Choose a training vector</h1>
-        <nav class="launcher" aria-label="Training vectors">
-          <a class="vector vector--scales" href="#/scales">
-            <span class="vector__eyebrow">01 — Technique</span>
-            <span class="vector__title">Scales Masterclass</span>
-            <span class="vector__blurb">Fingering, fluency, and the tempo climb.</span>
-          </a>
-          <a class="vector vector--reading" href="#/sightreading">
-            <span class="vector__eyebrow">02 — Cognition</span>
-            <span class="vector__title">Cognitive Sight-Reading</span>
-            <span class="vector__blurb">Read ahead, recover fast, stay in time.</span>
-          </a>
-        </nav>
+        <div class="dashboard">
+          <header class="dashboard__head">
+            <p class="dashboard__eyebrow">KeyMaster PRO</p>
+            <h1 id="launcher-heading" class="dashboard__title">The Curriculum</h1>
+            <p class="dashboard__sub">Process music like an expert reader and performer.</p>
+          </header>
+
+          <nav class="launcher" aria-label="Training modules">
+            <a class="vector vector--scales" href="#/scales">
+              <span class="vector__status vector__status--active">Active</span>
+              <span class="vector__eyebrow">01 — Technique</span>
+              <span class="vector__title">Scales Masterclass</span>
+              <span class="vector__blurb">Fingering, fluency, and the tempo climb.</span>
+            </a>
+
+            <a class="vector vector--reading" href="#/sightreading">
+              <span class="vector__status vector__status--active">Active</span>
+              <span class="vector__eyebrow">02 — Cognition</span>
+              <span class="vector__title">Cognitive Sight-Reading</span>
+              <span class="vector__blurb">Read ahead, recover fast, stay in time.</span>
+            </a>
+
+            <div class="vector vector--locked" aria-disabled="true" role="group" aria-label="Chord Masterclass — coming next, locked">
+              <span class="vector__status vector__status--next">Coming Next</span>
+              <span class="vector__eyebrow">03 — Harmony</span>
+              <span class="vector__title">Chord Masterclass</span>
+              <span class="vector__blurb">Triads, inversions, seventh chords, full chords, and broken chords.</span>
+              <span class="vector__lock" aria-hidden="true">🔒</span>
+            </div>
+
+            <div class="vector vector--locked" aria-disabled="true" role="group" aria-label="Arpeggio Masterclass — planned, locked">
+              <span class="vector__status vector__status--planned">Planned</span>
+              <span class="vector__eyebrow">04 — Flow</span>
+              <span class="vector__title">Arpeggio Masterclass</span>
+              <span class="vector__blurb">Broken-chord patterns across all keys, hands, and inversions.</span>
+              <span class="vector__lock" aria-hidden="true">🔒</span>
+            </div>
+
+            <div class="vector vector--locked" aria-disabled="true" role="group" aria-label="Pattern Reading — future, locked">
+              <span class="vector__status vector__status--future">Future</span>
+              <span class="vector__eyebrow">05 — Pattern</span>
+              <span class="vector__title">Pattern Reading</span>
+              <span class="vector__blurb">Think in fragments, shapes, intervals, and harmonic structures.</span>
+              <span class="vector__lock" aria-hidden="true">🔒</span>
+            </div>
+
+            <div class="vector vector--locked" aria-disabled="true" role="group" aria-label="Organ / Pedalboard Training — future, locked">
+              <span class="vector__status vector__status--future">Future</span>
+              <span class="vector__eyebrow">06 — Organ</span>
+              <span class="vector__title">Organ / Pedalboard</span>
+              <span class="vector__blurb">Hands-and-feet coordination, pedal reading, full pedalboard.</span>
+              <span class="vector__lock" aria-hidden="true">🔒</span>
+            </div>
+          </nav>
+
+          <ol class="launcher__flow" aria-label="Curriculum flow">
+            <li>Scales</li>
+            <li>Sight-Reading</li>
+            <li>Chords</li>
+            <li>Arpeggios</li>
+            <li>Pattern Reading</li>
+            <li>Organ / Pedalboard</li>
+          </ol>
+        </div>
       </section>
 
       <!-- Scales Masterclass mount. Its controller renders into [data-slot]. -->
