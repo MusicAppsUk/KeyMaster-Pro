@@ -28,6 +28,9 @@ import { buildScale } from './scaleEngine.js';
 import { unlockAudio, perfToContextTime } from './audioContext.js';
 import { createStaffView } from './staffView.js';
 import { noteName } from './notes.js';
+import { createInfoPanel } from './infoPanel.js';
+import { WHY_B_MAJOR_HTML } from './infoCopy.js';
+import { EventBridge } from './eventBridge.js';
 
 const KEYS = ['C', 'G', 'D', 'A', 'E', 'B', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'F#'];
 const TYPES = [
@@ -43,14 +46,16 @@ export default function createView(ctx) {
   const { mount, keyboard, viewport, synth, scheduler, metronome } = ctx;
   const audioOK = Boolean(synth && scheduler);
 
-  const sel = { tonic: 'C', type: 'major', hand: 'RH', octaves: 1, updown: false };
+  const sel = { tonic: 'B', type: 'major', hand: 'RH', octaves: 1, updown: false };
   let mode = 'idle';                 // idle | listening | practice | summary
+  let staffFingers = true;           // "Staff Fingering" toggle
   const disposers = [];              // cleanup callbacks for the active mode
 
   // Permanent compact staff (top tier). Shows the active scale and highlights
   // in real time alongside the keyboard.
   const staff = createStaffView({ compact: true });
   let staffMap = new Map();          // midi → staff note index
+  const bridge = new EventBridge();  // raw validation/log layer (RC3)
 
   function markStaff(midi, state) {
     staff.clearMarks();
@@ -58,42 +63,76 @@ export default function createView(ctx) {
     if (i != null) staff.mark(i, state);
   }
 
+  // Two-way tempo binding: a single place that reflects the scheduler's tempo
+  // into the slider position + numerical readout.
+  function syncTempoUI(bpm) {
+    if (!ui || !ui.tempo) return;
+    ui.tempo.value = String(bpm);
+    ui.tempoVal.textContent = `${bpm} BPM`;
+  }
+  function bumpTempoBy(delta) {
+    if (!scheduler) return;
+    scheduler.setTempo(scheduler.tempo + delta);   // clamped inside the scheduler
+    syncTempoUI(scheduler.tempo);                   // immediate, even if onTempo no-ops
+  }
+
   injectStyles();
   const ui = buildUI();
   wireControls();
+  // Reflect ANY tempo change (steppers, slider, or engine logic) into the UI.
+  // Persistent for the view's life (NOT a per-mode disposer).
+  if (scheduler?.onTempo) scheduler.onTempo((bpm) => syncTempoUI(bpm));
 
   /* ===================================================================== *
    * Build / refresh the fingering preview on the keyboard
    * ===================================================================== */
 
-  // ONE ascending pass of the scale: the full set of notes, tonic→tonic.
-  // 1 octave => 8 notes, 2 octaves => 15 notes. This is what the preview shows.
-  function buildAscending() {
+  // Which hands are active, and which is the "primary" (staff treble) voice.
+  function activeHands() { return sel.hand === 'Both' ? ['RH', 'LH'] : [sel.hand]; }
+  function primaryHand() { return sel.hand === 'LH' ? 'LH' : 'RH'; }
+
+  // ONE ascending pass for a given hand: tonic→tonic, with fingering (majors).
+  function buildHandAsc(hand) {
     const steps = [];
     if (sel.type === 'major') {
-      const f = majorFingering(sel.tonic, sel.hand, {
-        octaves: sel.octaves, startOctave: START_OCT[sel.hand],
+      const f = majorFingering(sel.tonic, hand, {
+        octaves: sel.octaves, startOctave: START_OCT[hand],
       });
       f.notes.forEach((n) => steps.push({ midi: n.midi, finger: n.finger, degree: n.degree }));
-      ui.fingerNote.textContent = f.reviewed ? '' : (f.note ?? '');
+      if (hand === primaryHand()) ui.fingerNote.textContent = f.reviewed ? '' : (f.note ?? '');
     } else {
       const scale = buildScale(parseTonic(sel.tonic), sel.type);
       for (let o = 0; o < sel.octaves; o++) {
-        scale.midiAt(START_OCT[sel.hand] + o).forEach((m, i) =>
+        scale.midiAt(START_OCT[hand] + o).forEach((m, i) =>
           steps.push({ midi: m, finger: null, degree: i + 1 }));
       }
-      steps.push({ midi: scale.midiAt(START_OCT[sel.hand] + sel.octaves)[0], finger: null, degree: 1 });
-      ui.fingerNote.textContent = 'Fingering for minor scales is pending verification — practising on notes only.';
+      steps.push({ midi: scale.midiAt(START_OCT[hand] + sel.octaves)[0], finger: null, degree: 1 });
+      if (hand === primaryHand()) ui.fingerNote.textContent =
+        'Fingering for minor scales is pending verification — practising on notes only.';
     }
     return steps;
   }
 
-  // The full play/practice sequence: ascending, plus the descending return
-  // (without repeating the top note) only when "Up & down" is selected.
-  function buildSequence() {
-    const asc = buildAscending();
-    return (sel.updown && asc.length > 1) ? asc.concat(asc.slice(0, -1).reverse()) : asc;
+  // Columns: one entry per beat. Each column carries every active hand's note,
+  // so Both-Hands is a true grand-staff chord per step.
+  function buildColumns() {
+    const hands = activeHands();
+    const per = {}; hands.forEach((h) => { per[h] = buildHandAsc(h); });
+    const len = Math.min(...hands.map((h) => per[h].length));
+    const cols = [];
+    for (let i = 0; i < len; i++) cols.push(hands.map((h) => ({ hand: h, ...per[h][i] })));
+    return cols;
   }
+
+  // Ascending then descending (no repeated turn note) — used by Listen and by
+  // the continuous Practice loop, which cycles this forever.
+  function buildUpDownColumns(cols) {
+    return cols.length > 1 ? cols.concat(cols.slice(0, -1).reverse()) : cols;
+  }
+
+  function primaryOf(col) { return col.find((c) => c.hand === primaryHand()) ?? col[0]; }
+  function lowerOf(col) { return col.find((c) => c.hand !== primaryHand()) ?? null; }
+  function colMidis(col) { return col.map((c) => c.midi); }
 
   /**
    * Paint the whole scale onto the keyboard with the given highlight variant,
@@ -104,21 +143,30 @@ export default function createView(ctx) {
     keyboard.clearHighlight('target');
     keyboard.clearHighlight('ghost');
     keyboard.clearFingers();
-    const asc = buildAscending();                 // every note, never a half-slice
-    const midis = asc.map((s) => s.midi);
+    const cols = buildColumns();
+    const midis = cols.flatMap(colMidis);
     keyboard.highlight(midis, variant);
-    asc.forEach((s) => { if (s.finger != null) keyboard.setFinger(s.midi, s.finger); });
+    cols.forEach((col) => col.forEach((c) => { if (c.finger != null) keyboard.setFinger(c.midi, c.finger); }));
     viewport?.frame(midis);
 
     const scale = buildScale(parseTonic(sel.tonic), sel.type);
     const names = scale.degrees.map((d) => d.name).join(' ');
+    const handLabel = sel.hand === 'Both' ? 'Both' : sel.hand;
     ui.notesLine.textContent =
-      `${displayTonic(sel.tonic)} ${typeLabel(sel.type)} · ${sel.hand} · ${asc.length} notes\n${names}`;
+      `${displayTonic(sel.tonic)} ${typeLabel(sel.type)} · ${handLabel} · ${cols.length} notes\n${names}`;
 
-    // Mirror the active scale onto the permanent compact staff (top tier).
+    // Mirror onto the permanent compact staff. Both-Hands → grand-staff chords.
     const pref = scale.degrees.some((d) => d.name.includes('b')) ? 'flat' : 'sharp';
-    const staffNames = asc.map((s) => noteName(s.midi, { accidental: pref }));
-    staff.setSequence(staffNames);
+    const primaryNames = cols.map((col) => noteName(primaryOf(col).midi, { accidental: pref }));
+    const primaryFingers = cols.map((col) => primaryOf(col).finger);
+    let lowerNames = null, lowerFingers = null;
+    if (sel.hand === 'Both') {
+      lowerNames = cols.map((col) => noteName(lowerOf(col).midi, { accidental: pref }));
+      lowerFingers = cols.map((col) => lowerOf(col)?.finger ?? null);
+    }
+    staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers });
+    staff.setFingersVisible(staffFingers);
+    staff.setFingersFaded(false);
     staffMap = new Map();
     staff.model.forEach((m, i) => { if (!staffMap.has(m.midi)) staffMap.set(m.midi, i); });
   }
@@ -133,25 +181,27 @@ export default function createView(ctx) {
     mode = 'listening';
     unlockAudio();
     paintScale('ghost');
-    const steps = buildSequence();
-    const midis = steps.map((s) => s.midi);
+    const cols = buildUpDownColumns(buildColumns());
+    const midis = cols.flatMap(colMidis);
     viewport?.frame(midis);
 
     const dt = scheduler.secondsPerBeat;
     const t0 = synth.ctx.currentTime + 0.12;
     const timers = [];
-    steps.forEach((s, i) => {
-      synth.noteOn(s.midi, 92, t0 + i * dt);
-      synth.noteOff(s.midi, t0 + i * dt + dt * 0.92);
+    cols.forEach((col, i) => {
+      col.forEach((c) => {
+        synth.noteOn(c.midi, 90, t0 + i * dt);
+        synth.noteOff(c.midi, t0 + i * dt + dt * 0.92);
+      });
       const ms = Math.max(0, (t0 + i * dt - synth.ctx.currentTime) * 1000);
       timers.push(setTimeout(() => {
         keyboard.clearHighlight('target');
-        keyboard.highlight([s.midi], 'target');
-        markStaff(s.midi, 'current');
+        keyboard.highlight(colMidis(col), 'target');
+        markStaff(primaryOf(col).midi, 'current');
       }, ms));
     });
-    const endMs = (t0 + steps.length * dt - synth.ctx.currentTime) * 1000;
-    timers.push(setTimeout(() => { keyboard.clearHighlight('target'); mode = 'idle'; setButtons(); }, endMs));
+    const endMs = (t0 + cols.length * dt - synth.ctx.currentTime) * 1000;
+    timers.push(setTimeout(() => { keyboard.clearHighlight('target'); staff.clearMarks(); mode = 'idle'; setButtons(); }, endMs));
 
     disposers.push(() => timers.forEach(clearTimeout));
     setButtons();
@@ -166,23 +216,47 @@ export default function createView(ctx) {
     stopAll();
     mode = 'practice';
     unlockAudio();
-    paintScale('ghost');
 
-    const steps = buildSequence();
-    const midis = steps.map((s) => s.midi);
-    viewport?.frame(midis);
+    // Build the looping up-&-down columns, then render THREE copies on the
+    // scrolling staff so there is always a full copy of lookbehind + lookahead.
+    const baseCols = buildUpDownColumns(buildColumns());
+    const L = baseCols.length;
+    const COPIES = 3;
+    const repCols = [];
+    for (let c = 0; c < COPIES; c++) for (let j = 0; j < L; j++) repCols.push(baseCols[j]);
 
-    const M = {
-      idx: 0, correct: 0, errors: 0,
-      latencies: [], deviations: [], resyncs: [],
-      inError: false, errorBeatPos: 0, targetShownAt: 0,
-      started: false,
-    };
+    const scale = buildScale(parseTonic(sel.tonic), sel.type);
+    const pref = scale.degrees.some((d) => d.name.includes('b')) ? 'flat' : 'sharp';
+    const primaryNames = repCols.map((col) => noteName(primaryOf(col).midi, { accidental: pref }));
+    const primaryFingers = repCols.map((col) => primaryOf(col).finger);
+    let lowerNames = null, lowerFingers = null;
+    if (sel.hand === 'Both') {
+      lowerNames = repCols.map((col) => noteName(lowerOf(col).midi, { accidental: pref }));
+      lowerFingers = repCols.map((col) => lowerOf(col)?.finger ?? null);
+    }
+    staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers, scroll: true });
+    staff.setFingersVisible(staffFingers);
+    staff.setFingersFaded(false);
+    keyboard.clearFingers();
+    repCols.slice(0, L).forEach((col) => col.forEach((c) => { if (c.finger != null) keyboard.setFinger(c.midi, c.finger); }));
+    viewport?.frame(baseCols.flatMap(colMidis));
+
+    const M = { started: false, need: new Set(), targetShownAt: 0 };
+    let rIndex = L;              // start in the middle copy
+    let rebaseTimer = null;
+    staff.scrollToIndex(rIndex, false);
 
     scheduler.start();
     if (metronome) metronome.setEnabled(true);
 
-    // Count-in: begin showing targets after one full bar.
+    // Fade the staff fingering after 60s of continuous practice (force recall).
+    const fadeTimer = setTimeout(() => {
+      staff.setFingersFaded(true);
+      ui.status.textContent = 'Fingering faded — rely on memory. Keep looping, or press Stop.';
+    }, 60000);
+    disposers.push(() => clearTimeout(fadeTimer));
+    disposers.push(() => { if (rebaseTimer) clearTimeout(rebaseTimer); });
+
     let countBeats = 0;
     const offBeat = scheduler.onBeat(() => {
       if (M.started) return;
@@ -192,54 +266,66 @@ export default function createView(ctx) {
     });
 
     function showTarget() {
+      const col = baseCols[rIndex % L];
+      staff.clearMarks();
+      staff.mark(rIndex, 'current');
+      staff.scrollToIndex(rIndex, true);          // continuous right-to-left scroll
       keyboard.clearHighlight('target');
-      const step = steps[M.idx];
-      keyboard.highlight([step.midi], 'target');
-      markStaff(step.midi, 'current');
-      M.targetShownAt = synth.ctx.currentTime;
+      keyboard.highlight(colMidis(col), 'target');
+      M.need = new Set(colMidis(col));            // Both-Hands → both notes required
+      M.targetShownAt = performance.now();
       updateLive();
     }
 
-    function finish() {
-      mode = 'summary';
-      stopAll();
-      renderSummary(summarise(M, steps.length, scheduler.secondsPerBeat));
-    }
-
-    const onPress = (midi) => {
-      if (mode !== 'practice' || !M.started) return;
-      const pressTime = perfToContextTime(performance.now());
-      const expected = steps[M.idx].midi;
-
-      if (midi === expected) {
-        M.correct += 1;
-        markStaff(expected, 'correct');
-        M.latencies.push(Math.max(0, (pressTime - M.targetShownAt) * 1000));
-        M.deviations.push(Math.abs(scheduler.nearestBeat(pressTime).deviation) * 1000);
-        if (M.inError) {
-          M.resyncs.push(scheduler.beatPositionAt(pressTime) - M.errorBeatPos);
-          M.inError = false;
-          keyboard.clearHighlight('root');
-        }
-        M.idx += 1;
-        if (M.idx >= steps.length) { finish(); return; }
-        showTarget();
-      } else {
-        M.errors += 1;
-        if (!M.inError) { M.inError = true; M.errorBeatPos = scheduler.beatPositionAt(pressTime); }
-        markStaff(expected, 'missed');
-        flashWrong(midi);
-        updateLive();
+    function advance() {
+      rIndex += 1;
+      showTarget();
+      // Seamless treadmill: once we scroll into the upper copy, after the glide
+      // completes jump back one copy to an identical frame (no visible jump).
+      if (rIndex >= 2 * L && !rebaseTimer) {
+        rebaseTimer = setTimeout(() => {
+          rebaseTimer = null;
+          rIndex -= L;
+          staff.clearMarks();
+          staff.scrollToIndex(rIndex, false);
+          staff.mark(rIndex, 'current');
+        }, 460);
       }
-    };
+    }
 
     function updateLive() {
-      const total = M.correct + M.errors;
-      const acc = total ? Math.round((M.correct / total) * 100) : 100;
       ui.status.textContent =
-        `Note ${Math.min(M.idx + 1, steps.length)}/${steps.length}  ·  ` +
-        `${M.correct} correct  ·  ${M.errors} slips  ·  ${acc}% acc  ·  ${scheduler.tempo} BPM`;
+        `Looping ${displayTonic(sel.tonic)} ${typeLabel(sel.type)} · ` +
+        `${sel.hand === 'Both' ? 'Both hands' : sel.hand} · ${scheduler.tempo} BPM`;
     }
+
+    // Validate each press through the Event Bridge. A correct strike lights its
+    // OWN note head green immediately (independent per hand); a column advances
+    // only once every required note has been struck.
+    const onPress = (midi) => {
+      if (mode !== 'practice' || !M.started) return;
+      const col = baseCols[rIndex % L];
+      const isNeeded = M.need.has(midi);
+      const expectedNote = isNeeded ? midi : primaryOf(col).midi;
+      const payload = bridge.record({
+        midiNote: midi,
+        expectedNote,
+        timestamp: performance.now(),
+        expectedTimestamp: M.targetShownAt,
+      });
+
+      if (isNeeded && payload.accuracy) {
+        const which = (midi === primaryOf(col).midi) ? 'primary' : 'lower';
+        staff.markVoice(rIndex, which, 'correct');   // vivid green on THIS head
+        M.need.delete(midi);
+        keyboard.highlight([midi], 'target');
+        if (M.need.size > 0) return;                 // wait for the other hand
+        advance();
+      } else {
+        staff.markVoice(rIndex, 'primary', 'missed');
+        flashWrong(midi);
+      }
+    };
 
     const offPress = keyboard.on('press', onPress);
     disposers.push(offBeat, offPress);
@@ -331,14 +417,18 @@ export default function createView(ctx) {
     const bar = el('div', { class: 'smc__bar' });
     const keySel = select(KEYS.map((k) => [k, displayTonic(k)]), sel.tonic);
     const typeSel = select(TYPES, sel.type);
-    const handSel = select([['RH', 'Right hand'], ['LH', 'Left hand']], sel.hand);
+    const handSel = select([['RH', 'Right hand'], ['LH', 'Left hand'], ['Both', 'Both hands']], sel.hand);
     const octSel = select([['1', '1 octave'], ['2', '2 octaves']], String(sel.octaves));
     const updownWrap = el('label', { class: 'smc__check' });
     const updown = el('input', { type: 'checkbox' });
     updownWrap.append(updown, document.createTextNode(' Up & down'));
+    const fingerWrap = el('label', { class: 'smc__check' });
+    const fingerToggle = el('input', { type: 'checkbox' });
+    fingerToggle.checked = staffFingers;
+    fingerWrap.append(fingerToggle, document.createTextNode(' Staff fingering'));
     bar.append(
       labeled('Key', keySel), labeled('Scale', typeSel),
-      labeled('Hand', handSel), labeled('Range', octSel), updownWrap,
+      labeled('Hand', handSel), labeled('Range', octSel), updownWrap, fingerWrap,
     );
 
     const notesLine = el('div', { class: 'smc__readout' });
@@ -359,27 +449,40 @@ export default function createView(ctx) {
     const stopBtn = button('◼ Stop', stopToIdle, 'btn--xl btn--ghost');
     actions.append(listenBtn, practiceBtn, stopBtn);
 
-    const tempoWrap = el('label', { class: 'smc__tempo' });
-    const tempo = el('input', { type: 'range', min: '40', max: '180', step: '1' });
+    const tempoWrap = el('div', { class: 'smc__tempo' });
+    const tempoLabel = el('span', { class: 'smc__tempolabel' }); tempoLabel.textContent = 'Tempo';
+    const tempoDown = button('−5', () => bumpTempoBy(-5), 'btn--ghost smc__step');
+    const tempo = el('input', { type: 'range', min: '40', max: '180', step: '1', 'aria-label': 'Tempo (BPM)' });
     tempo.value = String(scheduler?.tempo ?? 90);
+    const tempoUp = button('+5', () => bumpTempoBy(+5), 'btn--ghost smc__step');
     const tempoVal = el('span', { class: 'smc__tempoval' });
     tempoVal.textContent = `${tempo.value} BPM`;
+    // Dragging the slider drives the scheduler; the onTempo subscription (set up
+    // after buildUI) reflects every change — from here, the steppers, OR engine
+    // logic such as Tempo Climb — back into the slider position + readout.
     tempo.addEventListener('input', () => {
-      const bpm = Number(tempo.value);
-      try { scheduler?.setTempo(bpm); } catch { /* ignore */ }
-      tempoVal.textContent = `${scheduler?.tempo ?? bpm} BPM`;
+      try { scheduler?.setTempo(Number(tempo.value)); } catch { /* ignore */ }
+      syncTempoUI(scheduler?.tempo ?? Number(tempo.value));
     });
-    tempoWrap.append(el('span', { class: 'smc__tempolabel' }), tempo, tempoVal);
-    tempoWrap.querySelector('.smc__tempolabel').textContent = 'Tempo';
+    tempoWrap.append(tempoLabel, tempoDown, tempo, tempoUp, tempoVal);
 
     const status = el('div', { class: 'smc__status' });
     status.textContent = audioOK ? 'Ready.' : 'Web Audio unavailable — Listen and Practice are disabled, but the fingering preview works.';
     const metrics = el('div', { class: 'smc__metrics' });
     const climb = el('div', { class: 'smc__climb' });
 
-    root.append(stafftop, bar, notesLine, fingerNote, actions, tempoWrap, status, metrics, climb);
+    // "Why B Major?" — relocated from the dashboard to this page (RC3).
+    const why = createInfoPanel({
+      label: 'ⓘ Why B Major?',
+      title: 'Why B Major?',
+      storageKey: 'whyBMajorDismissed',
+      defaultOpen: false,
+      bodyHtml: WHY_B_MAJOR_HTML,
+    });
 
-    return { root, keySel, typeSel, handSel, octSel, updown,
+    root.append(stafftop, bar, notesLine, fingerNote, actions, tempoWrap, status, metrics, climb, why.el);
+
+    return { root, keySel, typeSel, handSel, octSel, updown, fingerToggle,
              notesLine, fingerNote, listenBtn, practiceBtn, stopBtn, tempo, tempoVal, status, metrics, climb };
   }
 
@@ -389,6 +492,10 @@ export default function createView(ctx) {
     ui.handSel.addEventListener('change', () => { sel.hand = ui.handSel.value; reset(); });
     ui.octSel.addEventListener('change', () => { sel.octaves = Number(ui.octSel.value); reset(); });
     ui.updown.addEventListener('change', () => { sel.updown = ui.updown.checked; reset(); });
+    ui.fingerToggle.addEventListener('change', () => {
+      staffFingers = ui.fingerToggle.checked;
+      staff.setFingersVisible(staffFingers);
+    });
     if (!audioOK) { ui.listenBtn.disabled = true; ui.practiceBtn.disabled = true; }
   }
 

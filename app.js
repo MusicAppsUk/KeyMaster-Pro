@@ -18,7 +18,6 @@ import { PianoEngine, PIANO_MIN_MIDI, PIANO_MAX_MIDI } from './pianoEngine.js';
 import { Viewport } from './viewport.js';
 import { MidiRouter } from './midiRouter.js';
 import { getAudioContext, unlockAudio, isAudioSupported } from './audioContext.js';
-import { createInfoPanel } from './infoPanel.js';
 import { Synth } from './synth.js';
 import { Scheduler } from './scheduler.js';
 import { Metronome } from './metronome.js';
@@ -125,22 +124,6 @@ const ROUTES = {
   '/sightreading': 'sightreading',
 };
 
-// Exact body copy for the first reusable info panel.
-const WHY_B_MAJOR_HTML = `
-  <p>Most piano methods begin with C Major because it is visually simple and contains no sharps or flats.</p>
-  <p>KeyMaster PRO takes a different approach.</p>
-  <p>The great pianist and teacher Frédéric Chopin often introduced students to B Major first because the natural shape of the hand sits comfortably across the keyboard's pattern of black and white keys. The longer fingers naturally rest on the raised black keys, while the thumb and little finger fall comfortably onto the white keys, encouraging a relaxed and balanced hand position.</p>
-  <p>Starting here helps develop awareness of the keyboard's physical geography from the very beginning, rather than treating every white key as identical.</p>
-  <p>For this reason, KeyMaster PRO opens with the B Major family as its default training environment.</p>
-  <p class="infopanel__lead"><strong>Prefer to begin with C Major?</strong><br>No problem. You can switch to any key at any time.</p>
-  <p>Our philosophy is simple:</p>
-  <ul>
-    <li>Train the hand naturally.</li>
-    <li>Train the eye intelligently.</li>
-    <li>Build musical fluency that transfers to every key.</li>
-  </ul>
-`;
-
 /* ===========================================================================
  * 4. The application
  * ========================================================================= */
@@ -167,7 +150,7 @@ class KeyMasterApp {
     this._bootInstrument();
     this._wireChrome();
     this._wireRouter();
-    this._mountInfoPanels();
+    try { this._applyKeyboardPref(window.localStorage.getItem('keyboardHidden') === '1'); } catch { /* ignore */ }
     await this._connectMidiSilently();
 
     // Reveal the shell now that everything is wired.
@@ -185,7 +168,6 @@ class KeyMasterApp {
       keyboardMount: this.root.getElementById('keyboard-mount'),
       register: this.root.getElementById('register-readout'),
       midiPill: this.root.getElementById('midi-pill'),
-      launcherInfo: this.root.getElementById('launcher-info'),
       views: new Map(
         [...this.root.querySelectorAll('[data-view]')].map((el) => [el.dataset.view, el])
       ),
@@ -299,20 +281,33 @@ class KeyMasterApp {
     } catch { /* audio not ready; ignore */ }
   }
 
-  /**
-   * Instantiate reusable info panels on the dashboard. The factory is generic,
-   * so future panels (e.g. "ⓘ Why Fingering Matters?") are one call each.
-   */
-  _mountInfoPanels() {
-    if (!this.dom.launcherInfo) return;
-    const why = createInfoPanel({
-      label: 'ⓘ Why B Major?',
-      title: 'Why B Major?',
-      storageKey: 'whyBMajorDismissed',
-      defaultOpen: true,
-      bodyHtml: WHY_B_MAJOR_HTML,
-    });
-    this.dom.launcherInfo.replaceChildren(why.el);
+  /** Toggle the browser Fullscreen API to hide tablet UI chrome. */
+  _toggleFullscreen() {
+    try {
+      const doc = document;
+      const root = doc.documentElement;
+      if (!doc.fullscreenElement) {
+        root.requestFullscreen?.();
+      } else {
+        doc.exitFullscreen?.();
+      }
+    } catch { /* unsupported; ignore */ }
+  }
+
+  /** Collapse/expand the on-screen keyboard footer; the staff grows to fill. */
+  _toggleKeyboard() {
+    const hidden = document.documentElement.getAttribute('data-keyboard') !== 'hidden';
+    this._applyKeyboardPref(hidden);
+    try { window.localStorage.setItem('keyboardHidden', hidden ? '1' : '0'); } catch { /* ignore */ }
+  }
+
+  _applyKeyboardPref(hidden) {
+    document.documentElement.setAttribute('data-keyboard', hidden ? 'hidden' : 'shown');
+    const btn = this.root.querySelector('[data-action="toggle-keyboard"]');
+    if (btn) {
+      btn.setAttribute('aria-pressed', String(hidden));
+      btn.textContent = hidden ? '⌨ Show Keyboard' : '⌨ Hide Keyboard';
+    }
   }
 
   /* ---- Common chrome --------------------------------------------------- */
@@ -326,6 +321,8 @@ class KeyMasterApp {
         case 'octave-up':   this._shiftOctaves(+1); break;
         case 'octave-down': this._shiftOctaves(-1); break;
         case 'connect-midi': this._connectMidi(); break;
+        case 'toggle-keyboard': this._toggleKeyboard(); break;
+        case 'fullscreen': this._toggleFullscreen(); break;
       }
     });
 

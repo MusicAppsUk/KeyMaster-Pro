@@ -55,7 +55,7 @@ export class Scheduler {
     this._anchorBeats = 0;  // fractional beats elapsed at the anchor
 
     /** @type {Record<string, Set<Function>>} */
-    this._listeners = { pulse: new Set(), beat: new Set(), bar: new Set() };
+    this._listeners = { pulse: new Set(), beat: new Set(), bar: new Set(), tempo: new Set() };
 
     this._tick = this._tick.bind(this);
   }
@@ -76,6 +76,7 @@ export class Scheduler {
     if (next === this._tempo) return;
     this._reanchor();
     this._tempo = next;
+    emit(this._listeners.tempo, this._tempo);   // notify UI (two-way binding)
   }
 
   /**
@@ -123,6 +124,8 @@ export class Scheduler {
   onBeat(fn) { return this._sub('beat', fn); }
   /** Bar downbeats only. @returns unsubscribe */
   onBar(fn) { return this._sub('bar', fn); }
+  /** Tempo changes (from any source: slider, steppers, Tempo Climb). @returns unsubscribe */
+  onTempo(fn) { return this._sub('tempo', fn); }
 
   _sub(kind, fn) {
     this._listeners[kind].add(fn);

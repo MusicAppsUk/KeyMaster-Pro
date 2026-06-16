@@ -1,18 +1,18 @@
 // staffView.js
 //
-// Shared STANDARD Middle-C notation renderer (RC2). Used by both the
-// sight-reading engine and the Scale Masterclass compact staff. It knows nothing
-// about the B-Major motor/anchor system — it only draws standard notation and
-// highlights note indices. No labels are painted on notes (no-crutch rule); the
-// single exception is an optional letter anchor under the FIRST note, used by
-// sight-reading's Assisted mode.
+// Shared STANDARD Middle-C notation renderer (RC3+). Used by the sight-reading
+// engine and the Scale Masterclass staff.
 //
-//   const sv = createStaffView({ compact: true });
-//   container.appendChild(sv.el);
-//   sv.setSequence(['C4','E4','G4']);   // → model [{name,midi,off,staff,el}]
-//   sv.mark(0, 'current');              // is-current | is-correct | is-missed | is-next
-//   sv.setAnchor('C');                  // letter under first note (or null)
-//   sv.clear();
+// Layout modes:
+//   • PAGE (default): notes spread across the staff width by percentage.
+//   • SCROLL: notes laid on a fixed pixel grid inside a translatable track, so
+//     the engine can scroll the music right-to-left with the current note held
+//     at a fixed "playhead". Used for the continuous practice loop.
+//
+// Features: per-note fingering (matches keyboard badges), a show/hide + timed
+// fade for that fingering, an optional LOWER voice for a true grand staff
+// (Both-Hands), per-VOICE highlighting (independent green per hand), and an
+// assisted first-note letter anchor.
 
 import { toMidi } from './notes.js';
 
@@ -36,6 +36,9 @@ export function createStaffView({ compact = false } = {}) {
   drawStaffLines(treble);
   drawStaffLines(bass);
 
+  // Scroll tracks (created lazily) + a playhead marker.
+  let trebleTrack = null, bassTrack = null, scrolling = false;
+
   let model = [];
 
   function place(name) {
@@ -58,36 +61,74 @@ export function createStaffView({ compact = false } = {}) {
     return out;
   }
 
-  function clearNotes() {
-    [treble, bass].forEach((s) =>
-      s.querySelectorAll('.note, .ledger').forEach((n) => n.remove()));
+  function ensureTracks() {
+    if (trebleTrack) return;
+    trebleTrack = document.createElement('div'); trebleTrack.className = 'staff__track';
+    bassTrack = document.createElement('div'); bassTrack.className = 'staff__track';
+    treble.appendChild(trebleTrack);
+    bass.appendChild(bassTrack);
+    for (const s of [treble, bass]) {
+      const ph = document.createElement('div'); ph.className = 'staff__playhead'; s.appendChild(ph);
+    }
   }
 
-  function setSequence(names) {
+  function containerFor(staffName) {
+    if (scrolling) return staffName === 'treble' ? trebleTrack : bassTrack;
+    return staffName === 'treble' ? treble : bass;
+  }
+
+  function clearNotes() {
+    [treble, bass, trebleTrack, bassTrack].forEach((s) =>
+      s && s.querySelectorAll('.note, .ledger').forEach((n) => n.remove()));
+  }
+
+  /**
+   * Render a sequence.
+   *   opts.lower        second voice (same length) → grand-staff Both-Hands
+   *   opts.fingers      fingering numbers under each primary note
+   *   opts.lowerFingers fingering numbers under each lower note
+   *   opts.scroll       lay notes on the fixed pixel grid for scrolling
+   */
+  function setSequence(names, opts = {}) {
+    const { lower = null, fingers = null, lowerFingers = null, scroll = false } = opts;
+    scrolling = scroll;
+    el.classList.toggle('notation--scroll', scroll);
+    if (scroll) ensureTracks();
     clearNotes();
+
     const n = names.length;
-    const START = 22, END = 90;
+    const xFor = scroll
+      ? (i) => `calc(var(--col-w) * ${i})`
+      : (i) => `${n <= 1 ? 50 : 22 + (68 * i) / (n - 1)}%`;
+
     model = names.map((name, i) => {
-      const leftPct = n <= 1 ? 50 : START + ((END - START) * i) / (n - 1);
+      const x = xFor(i);
       const p = place(name);
-      const node = engrave(p, leftPct);
-      return { name, midi: p.midi, off: p.off, staff: p.staff, el: node };
+      const node = engrave(p, x, fingers ? fingers[i] : null);
+      const entry = { name, midi: p.midi, off: p.off, staff: p.staff, el: node, lower: null };
+      if (lower && lower[i] != null) {
+        const lp = place(lower[i]);
+        const lnode = engrave(lp, x, lowerFingers ? lowerFingers[i] : null);
+        entry.lower = { name: lower[i], midi: lp.midi, off: lp.off, staff: lp.staff, el: lnode };
+      }
+      return entry;
     });
+    if (scroll) scrollToIndex(0, false);
     return model;
   }
 
-  function engrave(p, leftPct) {
-    const staffEl = p.staff === 'treble' ? treble : bass;
+  function engrave(p, xCss, finger) {
+    const host = containerFor(p.staff);
     for (const k of ledgerOffsets(p.off)) {
       const led = document.createElement('div');
       led.className = 'ledger';
-      led.style.left = `calc(${leftPct}% - var(--note-head) * 0.4)`;
+      led.style.left = `calc(${xCss} - var(--note-head) * 0.4)`;
       led.style.top = `calc(var(--staff-space) * ${k} - var(--staff-line) / 2)`;
-      staffEl.appendChild(led);
+      host.appendChild(led);
     }
     const note = document.createElement('div');
     note.className = `note ${p.off < 2 ? 'note--stem-down' : ''}`.trim();
-    note.style.left = `${leftPct}%`;
+    note.style.left = xCss;
     note.style.top = `calc(var(--staff-space) * ${p.off} - var(--note-head) / 2)`;
     if (p.accidental) {
       const a = document.createElement('span');
@@ -97,25 +138,44 @@ export function createStaffView({ compact = false } = {}) {
     }
     const head = document.createElement('div'); head.className = 'note__head'; note.appendChild(head);
     const stem = document.createElement('div'); stem.className = 'note__stem'; note.appendChild(stem);
-    staffEl.appendChild(note);
+    if (finger != null) {
+      const f = document.createElement('span');
+      f.className = 'note__finger';
+      f.textContent = String(finger);
+      note.appendChild(f);
+    }
+    host.appendChild(note);
     return note;
   }
 
+  /* ---- highlighting (per column or per voice) ---- */
+
   const STATES = ['is-current', 'is-correct', 'is-missed', 'is-next'];
+  function voiceEl(i, which) {
+    const m = model[i]; if (!m) return null;
+    return which === 'lower' ? (m.lower && m.lower.el) : m.el;
+  }
   function mark(i, state) {
     const m = model[i]; if (!m) return;
     m.el.classList.add(`is-${state}`);
+    if (m.lower) m.lower.el.classList.add(`is-${state}`);
+  }
+  function markVoice(i, which, state) {
+    const node = voiceEl(i, which);
+    if (node) node.classList.add(`is-${state}`);
   }
   function unmark(i, state) {
     const m = model[i]; if (!m) return;
-    if (state) m.el.classList.remove(`is-${state}`);
-    else STATES.forEach((c) => m.el.classList.remove(c));
+    [m.el, m.lower && m.lower.el].forEach((node) => {
+      if (!node) return;
+      if (state) node.classList.remove(`is-${state}`);
+      else STATES.forEach((c) => node.classList.remove(c));
+    });
   }
   function clearMarks() { model.forEach((_, i) => unmark(i)); }
 
   function setAnchor(letter) {
-    treble.querySelectorAll('.note__anchor').forEach((n) => n.remove());
-    bass.querySelectorAll('.note__anchor').forEach((n) => n.remove());
+    el.querySelectorAll('.note__anchor').forEach((n) => n.remove());
     if (letter == null || !model[0]) return;
     const tag = document.createElement('span');
     tag.className = 'note__anchor';
@@ -123,9 +183,30 @@ export function createStaffView({ compact = false } = {}) {
     model[0].el.appendChild(tag);
   }
 
+  function setFingersVisible(on) { el.classList.toggle('is-fingers-hidden', !on); }
+  function setFingersFaded(on) { el.classList.toggle('is-fingers-faded', !!on); }
+
+  /* ---- scrolling ---- */
+
+  function scrollToIndex(i, animate = true) {
+    if (!scrolling) return;
+    const transform = `translateX(calc(var(--playhead) - var(--col-w) * ${i}))`;
+    for (const t of [trebleTrack, bassTrack]) {
+      if (!t) continue;
+      t.classList.toggle('is-animating', !!animate);
+      t.style.transform = transform;
+    }
+  }
+
   function clear() { clearNotes(); model = []; }
 
-  return { el, treble, bass, setSequence, mark, unmark, clearMarks, setAnchor, clear, get model() { return model; } };
+  return {
+    el, treble, bass,
+    setSequence, mark, markVoice, unmark, clearMarks, setAnchor,
+    setFingersVisible, setFingersFaded, scrollToIndex, clear,
+    get model() { return model; },
+    get scrolling() { return scrolling; },
+  };
 }
 
 function drawStaffLines(staffEl) {

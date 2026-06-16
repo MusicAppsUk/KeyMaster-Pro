@@ -20,6 +20,8 @@ import { LEVELS, levelAt, generateExercise } from './exerciseGenerator.js';
 import { createStaffView } from './staffView.js';
 import { EventBridge } from './eventBridge.js';
 import { unlockAudio } from './audioContext.js';
+import { createInfoPanel } from './infoPanel.js';
+import { SIGHT_READING_HTML } from './infoCopy.js';
 
 const PASS_HOLD_MS = 1500;
 const FAIL_HOLD_MS = 1500;
@@ -225,7 +227,16 @@ export default function createView(ctx) {
     meta.append(level, count, assist);
     const status = el('div', { class: 'srx__status' });
 
-    root.append(staffWrap, bar, meta, status);
+    // "ⓘ The Sight-Reading Engine" — reusable info panel (RC3).
+    const info = createInfoPanel({
+      label: 'ⓘ The Sight-Reading Engine',
+      title: 'The Sight-Reading Engine',
+      storageKey: 'sightReadingEngineDismissed',
+      defaultOpen: false,
+      bodyHtml: SIGHT_READING_HTML,
+    });
+
+    root.append(staffWrap, bar, meta, status, info.el);
     return { root, staffWrap, banner, practiceBtn, stopBtn, prevBtn, nextBtn, listenBtn, level, count, assist, status };
   }
 

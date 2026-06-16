@@ -28,7 +28,11 @@
   --ink-dim: var(--ivory-dim, #B9B2A6);
 
   position: relative;
-  padding: var(--gap-6, 1.5rem) var(--gap-6, 1.5rem);
+  /* Tall vertical padding keeps 2-octave ledger lines visible; overflow:hidden
+     then clips only horizontally, which is what the scrolling staff needs. */
+  --col-w: calc(var(--staff-space) * 4.6);
+  --playhead: calc(var(--staff-space) * 10);
+  padding: calc(var(--staff-space) * 6) var(--gap-6, 1.5rem);
   background: linear-gradient(var(--ebony-raise, #1E1C26), #1A1822);
   border: 1px solid var(--ebony-edge, #2A2833);
   border-radius: var(--radius-md, 10px);
@@ -243,3 +247,50 @@
   white-space: nowrap;
   pointer-events: none;
 }
+
+/* --------------------------------------------------------------------------
+   RC3 — staff fingering numbers (match the keyboard badges) + fade mechanic
+   -------------------------------------------------------------------------- */
+.note__finger {
+  position: absolute;
+  top: calc(var(--note-head) + 3px);
+  left: 50%;
+  transform: translateX(-50%);
+  font: 700 calc(var(--staff-space) * 1.25) / 1 var(--font-mono, monospace);
+  color: var(--brass-bright);
+  background: color-mix(in srgb, var(--ebony-sink, #14130f) 70%, transparent);
+  border-radius: 4px;
+  padding: 0 2px;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.6s ease;
+}
+/* "Staff Fingering" toggle OFF */
+.notation.is-fingers-hidden .note__finger { display: none; }
+/* Timed fade: numbers gently disappear to force recall */
+.notation.is-fingers-faded .note__finger { opacity: 0; }
+
+/* --------------------------------------------------------------------------
+   RC3 — scrolling staff (continuous practice). Notes live in a translatable
+   track; the lines/clef stay fixed. The current note is held at --playhead.
+   -------------------------------------------------------------------------- */
+.staff__track {
+  position: absolute;
+  left: 0; top: 0;
+  height: 100%;
+  will-change: transform;
+  transform: translateX(var(--playhead));
+}
+.staff__track.is-animating { transition: transform 0.42s linear; }
+
+.staff__playhead {
+  position: absolute;
+  top: calc(var(--staff-space) * -1.2);
+  bottom: calc(var(--staff-space) * -1.2);
+  left: calc(var(--playhead) + var(--note-head) / 2);
+  width: 2px;
+  background: color-mix(in srgb, var(--brass) 55%, transparent);
+  pointer-events: none;
+  opacity: 0;
+}
+.notation--scroll .staff__playhead { opacity: 0.7; }
