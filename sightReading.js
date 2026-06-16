@@ -590,34 +590,78 @@ function handModel(names, clef) {
   const parsed = names.map(parseName);
   const dia = parsed.map((p) => LETTER_INDEX[p.letter] + 7 * p.octave);
   const midi = parsed.map((p) => toMidi(p.letter, p.acc, p.octave));
-  const single = clef === 'treble' || clef === 'bass';
-  const lo = Math.min(...dia), hi = Math.max(...dia);
-  const fiveFinger = single && hi - lo <= 4;   // principled fingering only here
-
   const hands = midi.map((m) => (clef === 'treble' ? 'R' : clef === 'bass' ? 'L' : m >= 60 ? 'R' : 'L'));
-  const fingers = dia.map((d) => (fiveFinger ? (clef === 'treble' ? d - lo + 1 : 5 - (d - lo)) : null));
 
-  // Inline staff labels are STRICTLY fingering numbers 1–5 (or none) so they can
-  // never be mistaken for a note name. Hand (RH/LH) is conveyed by the hint text
-  // below the staff, not by a note-like letter on the staff.
-  const labels = names.map((_, i) => (fingers[i] != null ? String(fingers[i]) : null));
-  return { midi, hands, fingers, fiveFinger, labels };
+  // Musical fingering for EVERY note (never null) with position shifts.
+  const { fingers, shifts } = assignFingering(dia, hands);
+  const fiveFinger = !shifts.some(Boolean);   // whole line fits one position
+
+  // Inline staff labels are STRICTLY fingering numbers 1–5 so they can never be
+  // mistaken for a note name. Hand (RH/LH) is conveyed by the hint text below the
+  // staff, never by a note-like letter on the staff.
+  const labels = fingers.map((f) => (f != null ? String(f) : null));
+  return { midi, hands, fingers, shifts, fiveFinger, labels };
 }
 
-function handHint(names, clef, hm) {
-  const seg = (hand, idx) => {
-    if (idx < 0) return null;
-    const f = hm.fingers[idx];
-    // Hand + finger guidance only — the note itself is read from the staff (and,
-    // in assisted mode, labelled once by the staff anchor). Naming the note here
-    // too produced a second, conflicting reference (e.g. anchor "G" vs hint "D4").
-    return f != null ? `${hand}: Finger ${f}` : hand;
+// Five-finger-position fingering with shifts. Each hand keeps its own moving
+// 5-finger window; diatonic (white-key step) distance from the window's anchor
+// gives the finger, so steps → adjacent fingers and skips → finger jumps (never a
+// mechanical by-order count). A note outside the window pivots the hand to a NEW
+// position — RH thumb (1) leads an upward shift / pinky (5) a downward one; LH
+// mirrors — and that pivot number is itself the visible "new position starts here"
+// marker. The opening interval seeds the start finger so the hand has room to move
+// (RH: ascending-or-flat opening → start on 1, descending → start on 5; LH mirror).
+function assignFingering(dia, hands) {
+  const fingers = new Array(dia.length).fill(null);
+  const shifts = new Array(dia.length).fill(false);
+  let rhAnchor = null;   // dia where RH finger 1 (thumb) sits
+  let lhAnchor = null;   // dia where LH finger 5 (pinky) sits
+
+  const nextSameHand = (i, h) => {
+    for (let j = i + 1; j < dia.length; j++) if (hands[j] === h) return dia[j];
+    return null;
   };
-  if (clef === 'treble') return seg('RH', 0) ?? '';
-  if (clef === 'bass') return seg('LH', 0) ?? '';
-  const rh = seg('RH', hm.midi.findIndex((m) => m >= 60));
-  const lh = seg('LH', hm.midi.findIndex((m) => m < 60));
-  return [rh, lh].filter(Boolean).join('   ·   ');
+
+  for (let i = 0; i < dia.length; i++) {
+    const d = dia[i];
+    if (hands[i] === 'R') {
+      if (rhAnchor == null) {
+        const nxt = nextSameHand(i, 'R');
+        rhAnchor = (nxt != null && nxt < d) ? d - 4 : d;   // opens down → start on 5, else 1
+      }
+      let f = d - rhAnchor + 1;
+      if (f > 5) { rhAnchor = d; f = 1; shifts[i] = true; }          // shift up: thumb leads
+      else if (f < 1) { rhAnchor = d - 4; f = 5; shifts[i] = true; } // shift down: pinky leads
+      fingers[i] = f;
+    } else {
+      if (lhAnchor == null) {
+        const nxt = nextSameHand(i, 'L');
+        lhAnchor = (nxt != null && nxt < d) ? d - 4 : d;   // opens down → start on 1, else 5
+      }
+      const rel = d - lhAnchor;            // 0 → finger 5 (pinky) … 4 → finger 1 (thumb)
+      let f;
+      if (rel > 4) { lhAnchor = d; f = 5; shifts[i] = true; }        // shift up: reseat pinky (room to ascend)
+      else if (rel < 0) { lhAnchor = d - 4; f = 1; shifts[i] = true; } // shift down: reseat thumb (room to descend)
+      else f = 5 - rel;
+      fingers[i] = f;
+    }
+  }
+  return { fingers, shifts };
+}
+
+// Starting-position hint: states the starting hand + finger (no note names).
+function handHint(names, clef, hm) {
+  const startFinger = (h) => {
+    const i = hm.hands.findIndex((x) => x === h);
+    return i >= 0 ? hm.fingers[i] : null;
+  };
+  const seg = (label, h) => {
+    const f = startFinger(h);
+    return f != null ? `${label}: start finger ${f}` : null;
+  };
+  if (clef === 'treble') return seg('Right Hand', 'R') ?? '';
+  if (clef === 'bass') return seg('Left Hand', 'L') ?? '';
+  return [seg('Right Hand', 'R'), seg('Left Hand', 'L')].filter(Boolean).join('   ·   ');
 }
 
 /* ===================== helpers ===================== */
