@@ -4,13 +4,13 @@
 // instantiate a panel without duplicating text.
 
 export const WHY_B_MAJOR_HTML = `
-  <p>Most piano methods begin with C Major because it is visually simple and contains no sharps or flats.</p>
-  <p>KeyMaster PRO takes a different approach.</p>
-  <p>The great pianist and teacher Frédéric Chopin often introduced students to B Major first because the natural shape of the hand sits comfortably across the keyboard's pattern of black and white keys. The longer fingers naturally rest on the raised black keys, while the thumb and little finger fall comfortably onto the white keys, encouraging a relaxed and balanced hand position.</p>
-  <p>Starting here helps develop awareness of the keyboard's physical geography from the very beginning, rather than treating every white key as identical.</p>
-  <p>For this reason, KeyMaster PRO opens with the B Major family as its default training environment.</p>
-  <p class="infopanel__lead"><strong>Prefer to begin with C Major?</strong><br>No problem. You can switch to any key at any time.</p>
-  <p>Our philosophy is simple:</p>
+  <p>Most methods open with C Major: no sharps, no flats, an unbroken row of white keys. Visually tidy — yet for the hand, deceptively unhelpful.</p>
+  <p>KeyMaster PRO follows the approach favoured by Frédéric Chopin (1810–1849) — one of the most important composers in the history of piano music and a foundational voice of the Romantic era, whose work defined much of the modern piano repertoire and whose teaching shaped a generation of pianists in Paris.</p>
+  <p>Chopin frequently started pupils in B Major rather than C. With its five sharps, B Major invites the hand into its natural architecture: the longer middle fingers rise to meet the raised black keys while the thumb and fifth finger settle onto the white keys below — a relaxed, well-balanced shape from the very first note. He regarded C Major, offering no black keys to orient the hand, as among the most difficult scales to play evenly, precisely because it gives the fingers no anchor points.</p>
+  <p>Beginning here cultivates a genuine feel for the keyboard's topography from the outset, rather than treating every white key as interchangeable terrain.</p>
+  <p>For this reason, KeyMaster PRO opens in the B Major family as its default training environment.</p>
+  <p class="infopanel__lead"><strong>Prefer to begin in C Major?</strong><br>Of course. You can change key at any moment.</p>
+  <p>Our philosophy is straightforward:</p>
   <ul>
     <li>Train the hand naturally.</li>
     <li>Train the eye intelligently.</li>

@@ -53,7 +53,7 @@ export default function createView(ctx) {
 
   // Permanent compact staff (top tier). Shows the active scale and highlights
   // in real time alongside the keyboard.
-  const staff = createStaffView({ compact: true });
+  const staff = createStaffView({ compact: false });
   let staffMap = new Map();          // midi → staff note index
   const bridge = new EventBridge();  // raw validation/log layer (RC3)
 
@@ -164,8 +164,7 @@ export default function createView(ctx) {
       lowerNames = cols.map((col) => noteName(lowerOf(col).midi, { accidental: pref }));
       lowerFingers = cols.map((col) => lowerOf(col)?.finger ?? null);
     }
-    staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers });
-    staff.el.classList.toggle('notation--range2', sel.octaves === 2);
+    staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers, pan: true });
     staff.setFingersVisible(staffFingers);
     staff.setFingersFaded(false);
     staffMap = new Map();
@@ -236,7 +235,6 @@ export default function createView(ctx) {
       lowerFingers = repCols.map((col) => lowerOf(col)?.finger ?? null);
     }
     staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers, scroll: true });
-    staff.el.classList.toggle('notation--range2', sel.octaves === 2);
     staff.setFingersVisible(staffFingers);
     staff.setFingersFaded(false);
     keyboard.clearFingers();
@@ -259,12 +257,18 @@ export default function createView(ctx) {
     disposers.push(() => clearTimeout(fadeTimer));
     disposers.push(() => { if (rebaseTimer) clearTimeout(rebaseTimer); });
 
-    let countBeats = 0;
+    // Count-in: let one full bar pass, then begin on the NEXT downbeat so the
+    // first note of the first measure lands on the accented "one".
+    let countBeats = 0, bars = 0;
     const offBeat = scheduler.onBeat(() => {
       if (M.started) return;
       countBeats += 1;
-      ui.status.textContent = `Count-in… ${countBeats}/${scheduler.beatsPerBar}`;
-      if (countBeats >= scheduler.beatsPerBar) { M.started = true; showTarget(); }
+      ui.status.textContent = `Count-in… ${Math.min(countBeats, scheduler.beatsPerBar)}/${scheduler.beatsPerBar}`;
+    });
+    const offBar = scheduler.onBar(() => {
+      if (M.started) return;
+      bars += 1;
+      if (bars >= 2) { M.started = true; showTarget(); }   // 2nd downbeat = first note
     });
 
     function showTarget() {
@@ -330,7 +334,7 @@ export default function createView(ctx) {
     };
 
     const offPress = keyboard.on('press', onPress);
-    disposers.push(offBeat, offPress);
+    disposers.push(offBeat, offBar, offPress);
     ui.status.textContent = 'Count-in…';
     setButtons();
   }

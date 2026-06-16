@@ -27,8 +27,8 @@ export function createStaffView({ compact = false } = {}) {
     <div class="grand-staff">
       <div class="grand-staff__brace"></div>
       <div class="grand-staff__spine"></div>
-      <div class="staff staff--treble"><span class="clef clef--treble">&#x1D11E;</span></div>
-      <div class="staff staff--bass"><span class="clef clef--bass">&#x1D122;</span></div>
+      <div class="staff staff--treble"><span class="clef clef--treble">&#x1D11E;</span><span class="time-sig"><span>4</span><span>4</span></span></div>
+      <div class="staff staff--bass"><span class="clef clef--bass">&#x1D122;</span><span class="time-sig"><span>4</span><span>4</span></span></div>
     </div>`;
 
   const treble = el.querySelector('.staff--treble');
@@ -63,13 +63,18 @@ export function createStaffView({ compact = false } = {}) {
 
   function ensureTracks() {
     if (trebleTrack) return;
-    trebleTrack = document.createElement('div'); trebleTrack.className = 'staff__track';
-    bassTrack = document.createElement('div'); bassTrack.className = 'staff__track';
-    treble.appendChild(trebleTrack);
-    bass.appendChild(bassTrack);
-    for (const s of [treble, bass]) {
-      const ph = document.createElement('div'); ph.className = 'staff__playhead'; s.appendChild(ph);
-    }
+    const mk = (staffEl) => {
+      // The scroll-area starts AFTER the clef + time signature so scrolled-past
+      // notes are clipped there and never overlap the fixed emblems.
+      const area = document.createElement('div'); area.className = 'staff__scrollarea';
+      const track = document.createElement('div'); track.className = 'staff__track';
+      area.appendChild(track);
+      staffEl.appendChild(area);
+      const ph = document.createElement('div'); ph.className = 'staff__playhead'; staffEl.appendChild(ph);
+      return track;
+    };
+    trebleTrack = mk(treble);
+    bassTrack = mk(bass);
   }
 
   function containerFor(staffName) {
@@ -79,7 +84,7 @@ export function createStaffView({ compact = false } = {}) {
 
   function clearNotes() {
     [treble, bass, trebleTrack, bassTrack].forEach((s) =>
-      s && s.querySelectorAll('.note, .ledger').forEach((n) => n.remove()));
+      s && s.querySelectorAll('.note, .ledger, .barline').forEach((n) => n.remove()));
   }
 
   /**
@@ -90,16 +95,27 @@ export function createStaffView({ compact = false } = {}) {
    *   opts.scroll       lay notes on the fixed pixel grid for scrolling
    */
   function setSequence(names, opts = {}) {
-    const { lower = null, fingers = null, lowerFingers = null, scroll = false } = opts;
+    const { lower = null, fingers = null, lowerFingers = null, scroll = false, pan = false, beatsPerBar = 4 } = opts;
     scrolling = scroll;
     el.classList.toggle('notation--scroll', scroll);
+    el.classList.toggle('notation--pan', pan && !scroll);
     if (scroll) ensureTracks();
     clearNotes();
 
     const n = names.length;
+    // Layout x-position per note index:
+    //   scroll → fixed grid inside the translatable track (animated playhead)
+    //   pan    → fixed grid in a natively horizontally-scrollable container
+    //            (full note size; the staff scrolls instead of shrinking)
+    //   page   → spread across the width by percentage (short exercises)
     const xFor = scroll
       ? (i) => `calc(var(--col-w) * ${i})`
-      : (i) => `${n <= 1 ? 50 : 22 + (68 * i) / (n - 1)}%`;
+      : pan
+        ? (i) => `calc(var(--gutter) + var(--col-w) * ${i})`
+        : (i) => `${n <= 1 ? 50 : 22 + (68 * i) / (n - 1)}%`;
+    if (pan && !scroll) {
+      el.style.setProperty('--content-w', `calc(var(--gutter) + var(--col-w) * ${(n + 0.5).toFixed(2)})`);
+    }
 
     model = names.map((name, i) => {
       const x = xFor(i);
@@ -113,6 +129,8 @@ export function createStaffView({ compact = false } = {}) {
       }
       return entry;
     });
+
+    drawBarlines(n, scroll, pan, beatsPerBar);
     if (scroll) scrollToIndex(0, false);
 
     // ---- Dynamic vertical bounds (no fixed rendering boundary) ----
@@ -208,9 +226,32 @@ export function createStaffView({ compact = false } = {}) {
 
   /* ---- scrolling ---- */
 
+  // Vertical bar lines dividing the stream into 4-beat measures. A line is drawn
+  // just before every note whose index is a multiple of beatsPerBar.
+  function drawBarlines(n, scroll, pan, beatsPerBar) {
+    const tHost = scroll ? trebleTrack : treble;
+    const bHost = scroll ? bassTrack : bass;
+    const leftPct = (k) => (n <= 1 ? 50 : 22 + (68 * k) / (n - 1));
+    for (let i = beatsPerBar; i < n; i += beatsPerBar) {
+      const x = scroll
+        ? `calc(var(--col-w) * ${i} - var(--col-w) * 0.5)`
+        : pan
+          ? `calc(var(--gutter) + var(--col-w) * ${i} - var(--col-w) * 0.5)`
+          : `${(leftPct(i - 1) + leftPct(i)) / 2}%`;
+      for (const host of [tHost, bHost]) {
+        const bl = document.createElement('div');
+        bl.className = 'barline';
+        bl.style.left = x;
+        host.appendChild(bl);
+      }
+    }
+  }
+
   function scrollToIndex(i, animate = true) {
     if (!scrolling) return;
-    const transform = `translateX(calc(var(--playhead) - var(--col-w) * ${i}))`;
+    // Subtract the gutter so the current note lands exactly on the playhead even
+    // though the track sits inside the (gutter-offset) scroll-area.
+    const transform = `translateX(calc(var(--playhead) - var(--gutter, 0px) - var(--col-w) * ${i}))`;
     for (const t of [trebleTrack, bassTrack]) {
       if (!t) continue;
       t.classList.toggle('is-animating', !!animate);

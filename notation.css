@@ -33,6 +33,7 @@
      overflow-y:visible guarantees high/low ledger lines are never cut off. */
   --col-w: calc(var(--staff-space) * 4.6);
   --playhead: calc(var(--staff-space) * 10);
+  --gutter: calc(var(--staff-space) * 5);   /* clef + time-signature zone */
   padding: var(--pad, calc(var(--staff-space) * 5)) var(--gap-6, 1.5rem);
   background: linear-gradient(var(--ebony-raise, #1E1C26), #1A1822);
   border: 1px solid var(--ebony-edge, #2A2833);
@@ -297,6 +298,51 @@
 }
 .notation--scroll .staff__playhead { opacity: 0.7; }
 
-/* RC3 — slightly reduce the compact staff scale for 2-octave ranges so the
-   whole grand staff + ledger lines sit comfortably in the dark container. */
-.notation--compact.notation--range2 { --staff-space: clamp(6px, 1.0dvh, 9px); }
+/* RC4 — "pan" layout: full-size notes in a horizontally scrollable container.
+   Used by the Scales preview so a 2-octave scale scrolls cleanly instead of
+   being shrunk. overflow-y stays clipped at the (dynamically padded) box edge,
+   which still clears every ledger line because --pad reserves room for them. */
+.notation--pan { overflow-x: auto; overflow-y: hidden; }
+.notation--pan .grand-staff,
+.notation--pan .staff { min-width: var(--content-w, 100%); }
+
+/* --------------------------------------------------------------------------
+   RC3 — rhythmic notation: 4/4 time signature, measure bar lines, and the
+   scroll-area that keeps scrolled notes clear of the clef + time signature.
+   -------------------------------------------------------------------------- */
+.time-sig {
+  position: absolute;
+  left: calc(var(--staff-space) * 3.2);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 0.9;
+  font-family: var(--font-display, serif);
+  font-weight: 700;
+  color: var(--ink);
+  font-size: calc(var(--staff-space) * 1.95);
+  z-index: 3;
+  pointer-events: none;
+}
+
+.barline {
+  position: absolute;
+  top: 0;
+  height: var(--staff-height);
+  width: 1.6px;
+  background: var(--ink-dim);
+}
+
+/* Scrolling staff: notes live in a track inside this clipping area, which starts
+   after the clef/time-signature gutter. overflow-y stays visible for ledgers. */
+.staff__scrollarea {
+  position: absolute;
+  left: var(--gutter);
+  right: 0;
+  top: 0;
+  bottom: 0;
+  overflow-x: clip;
+  overflow-y: visible;
+}
