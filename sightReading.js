@@ -19,7 +19,7 @@
 // MIDI stream from the NoteInput hub. It never transposes and never consults the
 // B-Major motor system — the two communicate purely through performance events.
 
-import { generateExercise } from './exerciseGenerator.js';
+import { generateExercise, whiteKeyPool } from './exerciseGenerator.js';
 import { lessonsForStage, tiersForStage, TOTAL_LESSONS } from './lessonMatrix.js';
 import { createStaffView } from './staffView.js';
 import { EventBridge } from './eventBridge.js';
@@ -28,6 +28,7 @@ import { createInfoPanel } from './infoPanel.js';
 import { SIGHT_READING_HTML } from './infoCopy.js';
 import { toMidi } from './notes.js';
 import { createProgressionGate } from './progressionGate.js';
+import { createStage3Flow } from './stage3Flow.js';
 
 const LETTER_INDEX = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
 
@@ -42,7 +43,7 @@ const STAGES = [
   { n: 2, title: 'Guided Reading',          eyebrow: 'Stage 2',
     tagline: 'Short note sequences carried by a gentle pulse.',        ready: false },
   { n: 3, title: 'Cognitive Sight-Reading', eyebrow: 'Stage 3',
-    tagline: 'A continuous scrolling timeline — recovery-focused.',    ready: false },
+    tagline: 'A continuous scrolling timeline — recovery-focused.',    ready: true },
 ];
 
 export default function createView(ctx) {
@@ -68,10 +69,21 @@ export default function createView(ctx) {
   const bridge = new EventBridge();
   const staff = createStaffView({ compact: false });
   const gate = createProgressionGate();
+  let stage3 = null;   // lazily created continuous-flow engine (Stage 3)
 
   // Stage 1 → 2 assessment accumulator (deterministic 20-note block).
+  // Stage 1 → 2 assessment: ONE atomic, continuous 20-note exercise instance
+  // (no cross-exercise accumulation). A grand-staff natural span exercises both
+  // treble and bass recognition. Evaluated as a single coherent performance unit.
+  const ASSESSMENT_CFG = {
+    name: 'Stage 1 Unlock Assessment',
+    pool: whiteKeyPool('C3', 'C5'),
+    maxStep: 3,
+    maxDirChanges: 4,
+    length: gate.THRESHOLDS.stage1.block,   // 20
+  };
+  let assessing = false;            // true while the atomic assessment is running
   let assess = newBlock();
-  let stage2JustUnlocked = false;
   function newBlock() { return { targets: 0, correct: 0, latencySumMs: 0, latencyCount: 0 }; }
 
   injectStyles();
@@ -90,11 +102,14 @@ export default function createView(ctx) {
     if (screen === 'stages') return renderStages();
     if (screen === 'lessons') return renderLessons();
     if (screen === 'play') return renderPlay();
+    if (screen === 'stage3') return renderStage3();
   }
 
   function renderStages() {
     stopEngine();
     evaluator?.detachStaff();
+    stage3?.stop(true);
+    assessing = false;
     const wrap = el('div', { class: 'srx__screen' });
     wrap.innerHTML = `
       <p class="vector__eyebrow">02 — Cognition</p>
@@ -115,7 +130,11 @@ export default function createView(ctx) {
         <span class="srx__stage-tag">${s.tagline}</span>
         <span class="srx__stage-meta">${count} lessons</span>`;
       if (locked) card.setAttribute('aria-disabled', 'true');
-      card.addEventListener('click', () => (locked ? renderLockedStage(s) : openStage(s.n)));
+      card.addEventListener('click', () => {
+        if (locked) return renderLockedStage(s);
+        if (s.n === 3) return openStage3();   // continuous flow, not a lesson menu
+        openStage(s.n);
+      });
       grid.appendChild(card);
     }
     wrap.appendChild(grid);
@@ -138,13 +157,33 @@ export default function createView(ctx) {
     activeStage = n;
     playlist = lessonsForStage(n);
     lessonIdx = 0;
-    if (n === 1) { assess = newBlock(); stage2JustUnlocked = false; }
+    assessing = false;
     go('lessons');
+  }
+
+  // Stage 3 — continuous flow. Self-contained engine; shares only the keyboard,
+  // viewport, evaluator and Event Bridge. Does NOT touch Stage 1/2 logic.
+  function openStage3() {
+    activeStage = 3;
+    assessing = false;
+    go('stage3');
+  }
+
+  function renderStage3() {
+    stopEngine();
+    evaluator?.detachStaff();
+    if (!stage3) stage3 = createStage3Flow({ keyboard, viewport, evaluator, synth });
+    const head = el('div', { class: 'srx__head' });
+    const back = button('‹ Stages', () => { stage3?.stop(true); evaluator?.detachStaff(); go('stages'); }, 'btn--ghost srx__back');
+    head.append(back, el('div'));
+    root.replaceChildren(head, stage3.el);
   }
 
   function renderLessons() {
     stopEngine();
     evaluator?.detachStaff();
+    stage3?.stop(true);
+    assessing = false;
     const stage = STAGES.find((s) => s.n === activeStage);
     const wrap = el('div', { class: 'srx__screen' });
 
@@ -160,6 +199,20 @@ export default function createView(ctx) {
       const note = el('div', { class: 'srx__previewbar' });
       note.textContent = `Preview — ${stage.title} playback is coming soon. The lesson path below is live and will run in this mode once released.`;
       wrap.appendChild(note);
+    }
+
+    // Stage 1 unlock assessment — the single, atomic gate to Stage 2.
+    if (activeStage === 1) {
+      const unlocked = gate.isUnlocked(2);
+      const cta = button(
+        unlocked
+          ? '✓ Stage 2 unlocked — retake assessment'
+          : `● Take the Stage 2 Unlock Assessment (${gate.THRESHOLDS.stage1.block} notes)`,
+        openAssessment,
+        'btn--xl srx__assessbtn',
+      );
+      if (!input) cta.disabled = true;
+      wrap.appendChild(cta);
     }
 
     for (const group of tiersForStage(activeStage)) {
@@ -205,11 +258,11 @@ export default function createView(ctx) {
     const head = el('div', { class: 'srx__head' });
     const back = button('‹ Lessons', () => go('lessons'), 'btn--ghost srx__back');
     const h = el('div');
-    h.innerHTML = `<p class="vector__eyebrow">Stage 1 — Recognition Mode</p>`;
+    h.innerHTML = `<p class="vector__eyebrow">${assessing ? 'Stage 1 — Unlock Assessment' : 'Stage 1 — Recognition Mode'}</p>`;
     head.append(back, h);
     root.replaceChildren(head, playUI.root);
     evaluator?.attachStaff(staff);
-    startLesson();
+    if (assessing) startAssessment(); else startLesson();
   }
 
   /* ===================== exercise lifecycle ===================== */
@@ -271,9 +324,10 @@ export default function createView(ctx) {
       expectedTimestamp: expectedTs,
     });
 
-    // Stage 1 → 2 gating: accumulate the 20-note block from real bridge data.
-    if (activeStage === 1) accumulateAssessment(rec);
+    if (assessing) { onAssessResult(rec); return; }
 
+    // Regular practice: NO progression gating happens here (gating is the
+    // dedicated atomic assessment only).
     if (payload.state === 'match') {
       staff.unmark(cursor, 'current');
       cursor += 1;
@@ -284,10 +338,33 @@ export default function createView(ctx) {
     }
   }
 
-  // Each result is the one outcome for the current target → one note in the
-  // block. Accuracy and latency come ONLY from the Event Bridge payload
-  // (rec.accuracy, rec.deltaMs); nothing is simulated, approximated or inferred.
-  function accumulateAssessment(rec) {
+  /* ===================== Stage 1 → 2 atomic assessment ===================== */
+
+  function startAssessment() {
+    if (!input) return;
+    clearTimers();
+    hideBanner();
+    assessing = true;
+    mode = 'active';
+    cursor = 0;
+    assess = newBlock();
+
+    exercise = generateExercise(ASSESSMENT_CFG, new Set());
+    const model = staff.setSequence(exercise.names);
+    viewport?.frame(model.map((m) => m.midi));
+    staff.setAnchor(null);
+    playUI.hint.textContent = 'Unlock Assessment — one continuous 20-note sequence, no restarts.';
+    armCurrent();
+    playUI.level.textContent = 'Stage 1 — Unlock Assessment';
+    playUI.count.textContent = `${ASSESSMENT_CFG.length}-note block · need ≥95% · ≤1200 ms`;
+    playUI.assist.hidden = true;
+    setButtons();
+    playUI.status.textContent = `Play all ${ASSESSMENT_CFG.length} notes in sequence. Each note is graded once.`;
+  }
+
+  // One graded attempt per note, from canonical Event Bridge data; advance
+  // regardless of right/wrong so the block stays a single coherent unit.
+  function onAssessResult(rec) {
     assess.targets += 1;
     if (rec.accuracy) {
       assess.correct += 1;
@@ -296,14 +373,32 @@ export default function createView(ctx) {
         assess.latencyCount += 1;
       }
     }
-    if (assess.targets >= gate.THRESHOLDS.stage1.block) {
-      const verdict = gate.evaluateStage1Block(assess);
-      assess = newBlock();
-      if (verdict.pass && !stage2JustUnlocked) {
-        stage2JustUnlocked = true;
-        playUI.status.textContent = '🔓 Stage 2 (Guided Reading) unlocked — it\u2019s in the stage menu.';
-      }
+    staff.unmark(cursor, 'current');
+    cursor += 1;
+    if (cursor >= staff.model.length) { finishAssessment(); return; }
+    armCurrent();
+  }
+
+  function finishAssessment() {
+    mode = 'done';
+    evaluator?.clearExpected();
+    const verdict = gate.evaluateStage1Block(assess);    // deterministic, hard thresholds
+    const acc = Math.round((assess.correct / assess.targets) * 100);
+    const lat = assess.latencyCount ? Math.round(assess.latencySumMs / assess.latencyCount) : null;
+    const latTxt = lat == null ? '—' : `${lat} ms`;
+    if (verdict.pass) {
+      showBanner('pass', '✓ Assessment passed — Stage 2 unlocked!');
+      playUI.status.textContent = `Accuracy ${acc}% · avg latency ${latTxt}. Stage 2 (Guided Reading) is now unlocked in the stage menu.`;
+    } else {
+      showBanner('fail', 'Assessment not passed');
+      playUI.status.textContent = `Accuracy ${acc}% · avg latency ${latTxt}. Need ≥ 95% and ≤ 1200 ms across all 20 notes. Press Retry.`;
     }
+    setButtons();
+  }
+
+  function openAssessment() {
+    assessing = true;
+    go('play');
   }
 
   function pass() {
@@ -401,7 +496,7 @@ export default function createView(ctx) {
     staffWrap.append(banner, staff.el);
 
     const bar = el('div', { class: 'srx__bar' });
-    const practiceBtn = button('● Practice', () => startLesson(), 'btn--xl');
+    const practiceBtn = button('● Practice', () => (assessing ? startAssessment() : startLesson()), 'btn--xl');
     const stopBtn = button('◼ Stop', () => { stopEngine(); playUI.status.textContent = 'Stopped. Press Practice to begin.'; setButtons(); }, 'btn--xl btn--ghost');
     const prevBtn = button('‹ Previous', () => gotoLesson(-1), 'btn--xl btn--ghost');
     const nextBtn = button('Next ›', () => gotoLesson(1), 'btn--xl btn--ghost');
@@ -430,9 +525,9 @@ export default function createView(ctx) {
   function setButtons() {
     playUI.practiceBtn.disabled = !input;
     playUI.stopBtn.disabled = mode === 'idle';
-    playUI.prevBtn.disabled = !input || lessonIdx <= 0;
-    playUI.nextBtn.disabled = !input || lessonIdx >= playlist.length - 1;
-    playUI.listenBtn.disabled = !audioOK || staff.model.length === 0;
+    playUI.prevBtn.disabled = assessing || !input || lessonIdx <= 0;
+    playUI.nextBtn.disabled = assessing || !input || lessonIdx >= playlist.length - 1;
+    playUI.listenBtn.disabled = assessing || !audioOK || staff.model.length === 0;
   }
 
   function clearTimers() { timers.forEach(clearTimeout); timers = []; }
@@ -445,8 +540,8 @@ export default function createView(ctx) {
       render();
       mount.replaceChildren(root);
     },
-    exit() { stopEngine(); evaluator?.detachStaff(); },
-    destroy() { clearTimers(); offEval?.(); evaluator?.detachStaff(); keyboard?.clearHighlight('target'); synth?.allNotesOff(); },
+    exit() { stopEngine(); stage3?.stop(true); evaluator?.detachStaff(); },
+    destroy() { clearTimers(); offEval?.(); stage3?.destroy(); evaluator?.detachStaff(); keyboard?.clearHighlight('target'); synth?.allNotesOff(); },
   };
 }
 
@@ -547,6 +642,7 @@ function injectStyles() {
     .srx__previewbar{font-family:var(--font-sans);font-size:var(--step-sm);color:var(--ivory);
       background:color-mix(in srgb,var(--brass) 14%,transparent);border:1px solid color-mix(in srgb,var(--brass) 40%,transparent);
       border-radius:10px;padding:.7rem .9rem;margin:.5rem 0}
+    .srx__assessbtn{align-self:flex-start;margin:.5rem 0 .3rem}
     /* Lesson lists */
     .srx__tier{margin-top:1rem}
     .srx__tier-title{font-family:var(--font-display);font-size:var(--step-md,1.1rem);color:var(--ivory);display:flex;gap:.6rem;align-items:baseline;margin:.2rem 0 .5rem}
