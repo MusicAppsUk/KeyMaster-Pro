@@ -95,6 +95,48 @@ function governanceFor(spec, sub) {
   return sub <= 3 ? 'Keyboard Geography' : 'Reading Fluency';
 }
 
+// ── Phase 1: Tier 1 de-bundling ─────────────────────────────────────────────
+// Tier 1 Cognitive Sight-Reading is sequenced so EACH lesson moves exactly ONE
+// cfg knob (span / length / maxStep / maxDirChanges) — one new cognitive concept
+// per lesson, per the canonical Stage 1 philosophy ("create a reader"). Motion-
+// reading is built first inside a fixed C4–G4 frame (1–5); geography then widens
+// with motion held constant (6–11), with ledger lines (9,10) and the register
+// shift (11) as their own explicit lessons. Tiers 2–10 are UNCHANGED.
+const TIER1_SEQUENCE = [
+  { low: 'C4', high: 'G4', length: 3, maxStep: 1, maxDirChanges: 0, concept: 'Note recognition — three-note reading' },
+  { low: 'C4', high: 'G4', length: 5, maxStep: 1, maxDirChanges: 0, concept: 'The five-note frame — sustained stepwise reading' },
+  { low: 'C4', high: 'G4', length: 5, maxStep: 2, maxDirChanges: 0, concept: 'The skip — reading a 3rd' },
+  { low: 'C4', high: 'G4', length: 5, maxStep: 2, maxDirChanges: 1, concept: 'The single turn — one direction change' },
+  { low: 'C4', high: 'G4', length: 5, maxStep: 2, maxDirChanges: 2, concept: 'Free contour — multiple direction changes' },
+  { low: 'C4', high: 'A4', length: 5, maxStep: 2, maxDirChanges: 2, concept: 'One note above the frame — a 6th' },
+  { low: 'C4', high: 'C5', length: 5, maxStep: 2, maxDirChanges: 2, concept: 'The octave' },
+  { low: 'C4', high: 'C5', length: 5, maxStep: 3, maxDirChanges: 2, concept: 'The leap — reading a 4th' },
+  { low: 'C4', high: 'A5', length: 5, maxStep: 3, maxDirChanges: 2, concept: 'First ledger line above the staff (A5)' },
+  { low: 'C4', high: 'C6', length: 5, maxStep: 3, maxDirChanges: 2, concept: 'Multiple ledger lines (to C6)' },
+  { low: 'A4', high: 'E6', length: 5, maxStep: 3, maxDirChanges: 2, concept: 'Register shift — the home leaves C4' },
+];
+
+/** Build one Tier-1 lesson from its explicit single-concept knob state. */
+function buildTier1Lesson(spec, state, sub, number) {
+  const pool = whiteKeyPool(state.low, state.high);
+  const title = `${CLEF_LABEL[spec.clef]} · ${describeSpan(state.low, state.high, state.length)}`;
+  return {
+    id: `${spec.tier}.${sub}`,
+    number,
+    tier: spec.tier,
+    sub,
+    title,
+    tierTitle: spec.title,
+    clef: spec.clef,
+    range: { low: state.low, high: state.high },
+    accidentals: spec.accidentals,
+    stage: spec.stage,
+    governance: sub <= 5 ? 'Keyboard Geography' : 'Reading Fluency',
+    concept: state.concept,
+    cfg: { level: number, name: title, pool, maxStep: state.maxStep, maxDirChanges: state.maxDirChanges, length: state.length },
+  };
+}
+
 /** Build one lesson object (with its generator cfg) for a tier + sub-lesson. */
 function buildLesson(spec, sub, number) {
   const [low, high] = RANGE_LADDER[spec.clef][sub - 1];
@@ -145,9 +187,17 @@ export function buildLessonMatrix() {
   const out = [];
   let number = 0;
   for (const spec of CURRICULUM) {
-    for (let sub = 1; sub <= SUBS_PER_TIER; sub++) {
-      number += 1;
-      out.push(buildLesson(spec, sub, number));
+    if (spec.tier === 1) {
+      // Tier 1 uses the explicit single-concept sequence (11 lessons).
+      TIER1_SEQUENCE.forEach((state, i) => {
+        number += 1;
+        out.push(buildTier1Lesson(spec, state, i + 1, number));
+      });
+    } else {
+      for (let sub = 1; sub <= SUBS_PER_TIER; sub++) {
+        number += 1;
+        out.push(buildLesson(spec, sub, number));
+      }
     }
   }
   _matrix = out;
@@ -174,4 +224,4 @@ export function lessonById(id) {
 }
 
 export const STAGE_COUNT = 3;
-export const TOTAL_LESSONS = SUBS_PER_TIER * CURRICULUM.length;
+export const TOTAL_LESSONS = buildLessonMatrix().length;

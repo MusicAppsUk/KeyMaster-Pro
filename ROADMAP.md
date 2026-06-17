@@ -9,6 +9,30 @@ These are the stable foundation. No new engine work may destabilise MIDI mapping
 the Event Bridge, staff rendering, progression gating, the feedback system,
 transport controls, or the existing fingering systems.
 
+## Stage 1 Recognition — Governing Philosophy (CANONICAL)
+
+> **The objective of Stage 1 is not to create a pianist.**
+> **The objective of Stage 1 is to create a reader.**
+
+Stage 1 Recognition teaches **reading before technique**. During Stage 1:
+
+- The eye is trained before the hand.
+- Recognition is trained before speed.
+- Continuity is trained before perfection.
+- Reading fluency is trained before scale technique.
+
+For this reason:
+
+- Fixed-position fingering is used (Stage 1 only).
+- Technical piano mechanics are intentionally simplified.
+- Scales Masterclass remains the dedicated environment for technical development.
+
+**Canonical status.** This statement is the constitutional document for Stage 1
+Recognition. Every future Stage 1 curriculum decision must be evaluated against
+it: *does this change serve the reader the eye is becoming, or does it import
+hand-technique load that belongs to Scales Masterclass?* If the latter, it does
+not belong in Stage 1.
+
 ## Curriculum flow
 
 Scales → Cognitive Sight-Reading → Chords → Arpeggios → Pattern Reading →
