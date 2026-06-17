@@ -111,15 +111,15 @@ function savePrefs(prefs) {
 const VIEW_REGISTRY = {
   scales: {
     slot: 'scales',
-    load: () => import('./scalesMasterclass.js?v=rc2-17'),
+    load: () => import('./scalesMasterclass.js?v=rc2-18'),
   },
   sightreading: {
     slot: 'sightreading',
-    load: () => import('./sightReading.js?v=rc2-17'),
+    load: () => import('./sightReading.js?v=rc2-18'),
   },
   chords: {
     slot: 'chords',
-    load: () => import('./chordMasterclass.js?v=rc2-17'),
+    load: () => import('./chordMasterclass.js?v=rc2-18'),
   },
 };
 
@@ -497,7 +497,9 @@ class KeyMasterApp {
   _makeNav(viewId) {
     return {
       set: (trail) => {
-        if (this.store.getState().view === viewId) this._setModuleTrail(trail || []);
+        try {
+          if (this.store.getState().view === viewId) this._setModuleTrail(trail || []);
+        } catch (err) { console.info('[KeyMaster] breadcrumb update skipped:', err?.message ?? err); }
       },
     };
   }
@@ -604,6 +606,7 @@ class KeyMasterApp {
   /** Attempt connection quietly at boot; never blocks or errors the UI. */
   async _connectMidiSilently() {
     if (!MidiRouter.isSupported()) {
+      console.info('[KeyMaster MIDI] Web MIDI API not available in this browser (navigator.requestMIDIAccess missing).');
       this.store.setState({ midi: { ok: false, label: 'No MIDI' } });
       return;
     }
@@ -614,6 +617,7 @@ class KeyMasterApp {
 
   async _connectMidi({ silent = false } = {}) {
     const status = await this.midi.connect();
+    console.info('[KeyMaster MIDI] connect attempt', { silent, ok: status.ok, reason: status.reason, inputs: status.inputs?.length ?? 0 });
     if (status.ok) {
       // Bright green ONLY when an actual device handshake is verified.
       const hasDevice = status.inputs.length > 0;
@@ -628,6 +632,7 @@ class KeyMasterApp {
   _refreshMidiState() {
     const names = [...this.midi.inputs.values()].map((i) => i.name ?? i.id);
     const ok = names.length > 0;
+    console.info('[KeyMaster MIDI] device statechange — inputs:', names.length, names);
     this.store.setState({ midi: { ok, label: ok ? names[0] : 'No device' } });
   }
 
@@ -673,8 +678,12 @@ class KeyMasterApp {
 
     // Seed the breadcrumb. A module with internal levels (e.g. Sight-Reading)
     // overrides this with a deeper trail via ctx.nav during _enterView.
-    if (viewId === 'home') this._clearBreadcrumb();
-    else this._setModuleTrail([{ label: MODULE_NAME[viewId] ?? viewId }]);
+    // Navigation is non-critical and must NEVER abort routing — a throw here
+    // would stop the instrument/view from mounting. Fully isolated.
+    try {
+      if (viewId === 'home') this._clearBreadcrumb();
+      else this._setModuleTrail([{ label: MODULE_NAME[viewId] ?? viewId }]);
+    } catch (err) { console.info('[KeyMaster] breadcrumb seed skipped:', err?.message ?? err); }
 
     if (viewId !== 'home') await this._enterView(viewId);
   }

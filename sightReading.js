@@ -114,20 +114,22 @@ export default function createView(ctx) {
   // engine, scoring or lesson state is touched here.
   function publishNav() {
     if (!nav) return;
-    const SR = 'Cognitive Sight-Reading';
-    const tierName = () => {
-      const focus = tiersForStage(activeStage).find((t) => t.tier === focusTier);
-      return focus ? tierCopyFor(focus).name : 'Lessons';
-    };
-    if (screen === 'lessons') {
-      nav.set([{ label: SR, go: () => go('stages') }, { label: tierName() }]);
-    } else if (screen === 'play') {
-      nav.set([{ label: SR, go: () => go('stages') }, { label: tierName(), go: () => go('lessons') }, { label: 'Practice' }]);
-    } else if (screen === 'stage3') {
-      nav.set([{ label: SR, go: () => go('stages') }, { label: 'Continuous Flow' }]);
-    } else {
-      nav.set([{ label: SR }]);
-    }
+    try {
+      const SR = 'Cognitive Sight-Reading';
+      const tierName = () => {
+        const focus = tiersForStage(activeStage).find((t) => t.tier === focusTier);
+        return focus ? tierCopyFor(focus).name : 'Lessons';
+      };
+      if (screen === 'lessons') {
+        nav.set([{ label: SR, go: () => go('stages') }, { label: tierName() }]);
+      } else if (screen === 'play') {
+        nav.set([{ label: SR, go: () => go('stages') }, { label: tierName(), go: () => go('lessons') }, { label: 'Practice' }]);
+      } else if (screen === 'stage3') {
+        nav.set([{ label: SR, go: () => go('stages') }, { label: 'Continuous Flow' }]);
+      } else {
+        nav.set([{ label: SR }]);
+      }
+    } catch { /* navigation is non-critical; never break the screen render */ }
   }
 
   function renderStages() {
