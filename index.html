@@ -57,10 +57,13 @@
           <span class="brand__mark" aria-hidden="true"></span>
           <span class="brand__name">KeyMaster<span class="brand__pro">PRO</span></span>
         </a>
-        <p class="brand__hint">Main Screen: click logo to return</p>
+        <p class="brand__hint">Tap “Modules” to return to the main menu</p>
       </div>
 
       <div class="app__controls" role="group" aria-label="Keyboard controls">
+        <!-- Clear return-to-dashboard control (no longer rely on the logo). -->
+        <button type="button" class="btn btn--ghost app__home" data-action="home" aria-label="Back to all training modules">‹ Modules</button>
+
         <!-- Window register readout is populated by the viewport. -->
         <output class="register" id="register-readout" aria-live="polite">C3–C7</output>
 
@@ -70,6 +73,7 @@
         </div>
 
         <button type="button" class="btn btn--ghost" data-action="toggle-keyboard" aria-pressed="false">⌨ Hide Keyboard</button>
+        <button type="button" class="btn btn--ghost" data-action="toggle-fingering" aria-pressed="false" aria-label="Show or hide fingering numbers">① Hide Fingering</button>
         <button type="button" class="btn btn--ghost" data-action="fullscreen" aria-label="Toggle full screen">⛶ Full Screen</button>
         <button type="button" class="btn btn--ghost" data-action="exit" aria-label="Exit full screen or return to dashboard">⤓ Exit</button>
 
@@ -211,6 +215,6 @@
 
   <!-- Single module entry point. Absolute path so it resolves regardless of
        the route in the hash. -->
-  <script type="module" src="app.js?v=rc2-15"></script>
+  <script type="module" src="app.js?v=rc2-16"></script>
 </body>
 </html>

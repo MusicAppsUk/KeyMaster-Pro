@@ -111,15 +111,15 @@ function savePrefs(prefs) {
 const VIEW_REGISTRY = {
   scales: {
     slot: 'scales',
-    load: () => import('./scalesMasterclass.js?v=rc2-15'),
+    load: () => import('./scalesMasterclass.js?v=rc2-16'),
   },
   sightreading: {
     slot: 'sightreading',
-    load: () => import('./sightReading.js?v=rc2-15'),
+    load: () => import('./sightReading.js?v=rc2-16'),
   },
   chords: {
     slot: 'chords',
-    load: () => import('./chordMasterclass.js?v=rc2-15'),
+    load: () => import('./chordMasterclass.js?v=rc2-16'),
   },
 };
 
@@ -144,6 +144,20 @@ const KEYBOARD_HIDDEN_DEFAULT = {
   home: false,
   scales: true,
   sightreading: true,
+  chords: false,
+};
+
+/**
+ * Per-module fingering-number DEFAULT visibility (presentation only). `true` =
+ * hidden by default. Every module defaults to fingering ON (shown) so current
+ * behaviour is preserved; the learner can hide it per module and the choice is
+ * remembered under localStorage `fingerHidden:<viewId>`. The fingering engine,
+ * assigned data, scoring and MIDI are never affected — only painting.
+ */
+const FINGERING_HIDDEN_DEFAULT = {
+  home: false,
+  scales: false,
+  sightreading: false,
   chords: false,
 };
 
@@ -178,6 +192,8 @@ class KeyMasterApp {
     try {
       const initialView = ROUTES[location.hash.replace(/^#/, '')] ?? 'home';
       this._applyKeyboardPref(this._resolveKeyboardHidden(initialView));
+      document.documentElement.setAttribute('data-view', initialView);
+      this._applyFingeringPref(this._resolveFingeringHidden(initialView));
     } catch { /* ignore */ }
     await this._connectMidiSilently();
 
@@ -430,6 +446,33 @@ class KeyMasterApp {
     }
   }
 
+  /** Show/hide fingering numbers (display only); remembered per module. */
+  _toggleFingering() {
+    const hidden = document.documentElement.getAttribute('data-fingering') !== 'hidden';
+    this._applyFingeringPref(hidden);
+    const viewId = this.store.getState().view ?? 'home';
+    try { window.localStorage.setItem(`fingerHidden:${viewId}`, hidden ? '1' : '0'); } catch { /* ignore */ }
+  }
+
+  /** Resolve a module's fingering-hidden state: remembered choice, else default. */
+  _resolveFingeringHidden(viewId) {
+    try {
+      const stored = window.localStorage.getItem(`fingerHidden:${viewId}`);
+      if (stored === '1') return true;
+      if (stored === '0') return false;
+    } catch { /* ignore */ }
+    return FINGERING_HIDDEN_DEFAULT[viewId] ?? false;
+  }
+
+  _applyFingeringPref(hidden) {
+    document.documentElement.setAttribute('data-fingering', hidden ? 'hidden' : 'shown');
+    const btn = this.root.querySelector('[data-action="toggle-fingering"]');
+    if (btn) {
+      btn.setAttribute('aria-pressed', String(hidden));
+      btn.textContent = hidden ? '① Show Fingering' : '① Hide Fingering';
+    }
+  }
+
   /* ---- Common chrome --------------------------------------------------- */
 
   _wireChrome() {
@@ -442,6 +485,8 @@ class KeyMasterApp {
         case 'octave-down': this._shiftOctaves(-1); break;
         case 'connect-midi': this._connectMidi(); break;
         case 'toggle-keyboard': this._toggleKeyboard(); break;
+        case 'toggle-fingering': this._toggleFingering(); break;
+        case 'home': if (location.hash && location.hash !== '#/' && location.hash !== '#') location.hash = '#/'; break;
         case 'fullscreen': this._toggleFullscreen(); break;
         case 'exit': this._exit(); break;
       }
@@ -540,6 +585,11 @@ class KeyMasterApp {
     // Presentation: apply this module's on-screen-keyboard preference (the
     // remembered manual choice if any, otherwise the module's default).
     this._applyKeyboardPref(this._resolveKeyboardHidden(viewId));
+
+    // Reflect the active view for chrome (hides module-only controls on home)
+    // and apply this module's fingering-number preference (display only).
+    document.documentElement.setAttribute('data-view', viewId);
+    this._applyFingeringPref(this._resolveFingeringHidden(viewId));
 
     if (viewId !== 'home') await this._enterView(viewId);
   }

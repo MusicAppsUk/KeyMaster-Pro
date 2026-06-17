@@ -555,6 +555,23 @@ a { color: inherit; text-decoration: none; }
 [data-keyboard="hidden"] .notation { --staff-space: clamp(13px, 3.2dvh, 24px); }
 [data-keyboard="hidden"] .notation--compact { --staff-space: clamp(12px, 2.6dvh, 20px); }
 
+/* --------------------------------------------------------------------------
+   Fingering-number visibility — a presentation-only toggle. When the learner
+   turns fingering OFF, the already-rendered numbers are hidden everywhere they
+   appear (staff badges, on-screen keyboard coins, chord-recommendation label).
+   The fingering ENGINE, the assigned data, scoring and MIDI are untouched — the
+   numbers are merely not painted. Default (attr absent or "shown") = ON.
+   -------------------------------------------------------------------------- */
+[data-fingering="hidden"] .note__finger { display: none; }
+[data-fingering="hidden"] .key[data-finger]::after { content: none; }
+[data-fingering="hidden"] .cmx__finger { display: none; }
+
+/* Chrome controls that only make sense inside a training module are hidden on
+   the dashboard so the home screen stays calm. */
+[data-view="home"] [data-action="home"],
+[data-view="home"] [data-action="toggle-fingering"] { display: none; }
+
+
 /* RC3 — BPM stepper buttons flanking the tempo slider (tablet precision). */
 .smc__step {
   min-width: 48px;
