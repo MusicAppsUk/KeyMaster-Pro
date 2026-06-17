@@ -46,8 +46,11 @@ export default function createView(ctx) {
   const { mount, keyboard, viewport, synth, scheduler, metronome, evaluator } = ctx;
   const audioOK = Boolean(synth && scheduler);
 
-  const sel = { tonic: 'B', type: 'major', hand: 'RH', octaves: 1, updown: false };
+  const sel = { tonic: 'B', type: 'major', hand: 'RH', octaves: 1, updown: false, metro: true };
   let mode = 'idle';                 // idle | listening | practice | summary
+  // Free-practice (idle, metronome-less) cursor over the displayed sequence.
+  let freeCols = [];
+  let freeIndex = 0;
   let staffFingers = true;           // "Staff Fingering" toggle
   const disposers = [];              // cleanup callbacks for the active mode
   let playToken = 0;                 // session token — bumped on every stop so any
@@ -132,6 +135,15 @@ export default function createView(ctx) {
     return cols.length > 1 ? cols.concat(cols.slice(0, -1).reverse()) : cols;
   }
 
+  // THE single source of truth for scale direction. Every consumer — static
+  // paint, Listen, Practice, and free practice — builds its column sequence from
+  // here, so the "Up & down" toggle (sel.updown) governs all of them identically
+  // and no mode can override it. OFF → ascending only; ON → ascending+descending.
+  function activeColumns() {
+    const asc = buildColumns();
+    return sel.updown ? buildUpDownColumns(asc) : asc;
+  }
+
   function primaryOf(col) { return col.find((c) => c.hand === primaryHand()) ?? col[0]; }
   function lowerOf(col) { return col.find((c) => c.hand !== primaryHand()) ?? null; }
   function colMidis(col) { return col.map((c) => c.midi); }
@@ -145,7 +157,7 @@ export default function createView(ctx) {
     keyboard.clearHighlight('target');
     keyboard.clearHighlight('ghost');
     keyboard.clearFingers();
-    const cols = buildColumns();
+    const cols = activeColumns();
     const midis = cols.flatMap(colMidis);
     keyboard.highlight(midis, variant);
     cols.forEach((col) => col.forEach((c) => { if (c.finger != null) keyboard.setFinger(c.midi, c.finger); }));
@@ -184,7 +196,7 @@ export default function createView(ctx) {
     mode = 'listening';
     unlockAudio();
     paintScale('ghost');
-    const cols = buildUpDownColumns(buildColumns());
+    const cols = activeColumns();
     const midis = cols.flatMap(colMidis);
     viewport?.frame(midis);
 
@@ -229,9 +241,9 @@ export default function createView(ctx) {
     mode = 'practice';
     unlockAudio();
 
-    // Build the looping up-&-down columns, then render THREE copies on the
-    // scrolling staff so there is always a full copy of lookbehind + lookahead.
-    const baseCols = buildUpDownColumns(buildColumns());
+    // Looping columns follow the Up & Down toggle (ascending only, or up+down),
+    // rendered as THREE copies on the scrolling staff for lookbehind + lookahead.
+    const baseCols = activeColumns();
     const L = baseCols.length;
     const COPIES = 3;
     const repCols = [];
@@ -258,8 +270,9 @@ export default function createView(ctx) {
     let rebaseTimer = null;
     staff.scrollToIndex(rIndex, false);
 
+    const useMetro = sel.metro && Boolean(metronome);
     scheduler.start();
-    if (metronome) metronome.setEnabled(true);
+    if (useMetro) metronome.setEnabled(true);
 
     // Fade the staff fingering after 60s of continuous practice (force recall).
     const fadeTimer = setTimeout(() => {
@@ -269,21 +282,26 @@ export default function createView(ctx) {
     disposers.push(() => clearTimeout(fadeTimer));
     disposers.push(() => { if (rebaseTimer) clearTimeout(rebaseTimer); });
 
-    // Count-in: let one full bar pass, then begin on the NEXT downbeat so the
-    // first note of the first measure lands on the accented "one".
-    let countBeats = 0, bars = 0;
-    const offBeat = scheduler.onBeat(() => {
-      if (token !== playToken) return;
-      if (M.started) return;
-      countBeats += 1;
-      ui.status.textContent = `Count-in… ${Math.min(countBeats, scheduler.beatsPerBar)}/${scheduler.beatsPerBar}`;
-    });
-    const offBar = scheduler.onBar(() => {
-      if (token !== playToken) return;
-      if (M.started) return;
-      bars += 1;
-      if (bars >= 2) { M.started = true; showTarget(); }   // 2nd downbeat = first note
-    });
+    // Count-in only when the metronome is ON: let one full bar pass, then begin on
+    // the NEXT downbeat so the first note lands on the accented "one". With the
+    // metronome OFF there is no click and no count-in — practice begins immediately
+    // and is purely self-paced (advancement is match-driven, never beat-driven).
+    if (useMetro) {
+      let countBeats = 0, bars = 0;
+      const offBeat = scheduler.onBeat(() => {
+        if (token !== playToken) return;
+        if (M.started) return;
+        countBeats += 1;
+        ui.status.textContent = `Count-in… ${Math.min(countBeats, scheduler.beatsPerBar)}/${scheduler.beatsPerBar}`;
+      });
+      const offBar = scheduler.onBar(() => {
+        if (token !== playToken) return;
+        if (M.started) return;
+        bars += 1;
+        if (bars >= 2) { M.started = true; showTarget(); }   // 2nd downbeat = first note
+      });
+      disposers.push(offBeat, offBar);
+    }
 
     function showTarget() {
       const col = baseCols[rIndex % L];
@@ -344,9 +362,16 @@ export default function createView(ctx) {
 
     evaluator.attachStaff(staff);
     const offEval = evaluator.on(onResult);
-    disposers.push(offBeat, offBar, offEval);
+    disposers.push(offEval);
     disposers.push(() => { evaluator.clearExpected(); evaluator.reset(); evaluator.detachStaff(); });
-    ui.status.textContent = 'Count-in…';
+    if (useMetro) {
+      ui.status.textContent = 'Count-in…';
+    } else {
+      // No metronome → no count-in: arm the first target now and let the player
+      // advance at their own pace.
+      M.started = true;
+      showTarget();
+    }
     setButtons();
   }
 
@@ -432,6 +457,45 @@ export default function createView(ctx) {
   }
 
   /* ===================================================================== *
+   * Free practice — idle, metronome-less note detection against the
+   * currently displayed scale. Reuses the SAME centralized evaluator that
+   * Practice uses (so green/red feedback + auto-clear are identical), but
+   * advancement is purely match-driven: there is no beat grid, no click, and
+   * the user can play at their own pace. The sequence follows activeColumns(),
+   * so it honours the Up & Down toggle exactly like every other mode.
+   * ===================================================================== */
+
+  function armFreePractice() {
+    if (!evaluator) return;
+    freeCols = activeColumns();
+    if (!freeCols.length) return;
+    freeIndex = 0;
+    evaluator.attachStaff(staff);
+    armFreeTarget();
+    const offEval = evaluator.on(onFreeResult);
+    disposers.push(offEval);
+    disposers.push(() => { evaluator.clearExpected(); evaluator.reset(); evaluator.detachStaff(); });
+  }
+
+  function armFreeTarget() {
+    const col = freeCols[freeIndex];
+    if (!col) return;
+    staff.clearCursor();             // move only the cursor; keep any green/red flash
+    staff.mark(freeIndex, 'current');
+    const pm = primaryOf(col).midi;
+    evaluator.setExpected(colMidis(col).map((m) => ({
+      midi: m, staffIndex: freeIndex, voice: m === pm ? 'primary' : 'lower',
+    })));
+  }
+
+  function onFreeResult(payload) {
+    if (mode !== 'idle') return;     // free practice is only live in the idle preview
+    if (payload.state !== 'complete') return;   // the controller already painted green/red
+    freeIndex = (freeIndex + 1) % freeCols.length;   // loop back to the top at the end
+    armFreeTarget();
+  }
+
+  /* ===================================================================== *
    * UI
    * ===================================================================== */
 
@@ -451,9 +515,13 @@ export default function createView(ctx) {
     const fingerToggle = el('input', { type: 'checkbox' });
     fingerToggle.checked = staffFingers;
     fingerWrap.append(fingerToggle, document.createTextNode(' Staff fingering'));
+    const metroWrap = el('label', { class: 'smc__check' });
+    const metro = el('input', { type: 'checkbox' });
+    metro.checked = sel.metro;        // default ON
+    metroWrap.append(metro, document.createTextNode(' Practice metronome'));
     bar.append(
       labeled('Key', keySel), labeled('Scale', typeSel),
-      labeled('Hand', handSel), labeled('Range', octSel), updownWrap, fingerWrap,
+      labeled('Hand', handSel), labeled('Range', octSel), updownWrap, fingerWrap, metroWrap,
     );
 
     const notesLine = el('div', { class: 'smc__readout' });
@@ -527,7 +595,7 @@ export default function createView(ctx) {
 
     root.append(controls, stage);
 
-    return { root, keySel, typeSel, handSel, octSel, updown, fingerToggle,
+    return { root, keySel, typeSel, handSel, octSel, updown, fingerToggle, metro,
              notesLine, fingerNote, listenBtn, practiceBtn, stopBtn, tempo, tempoVal, status, metrics, climb };
   }
 
@@ -541,6 +609,9 @@ export default function createView(ctx) {
       staffFingers = ui.fingerToggle.checked;
       staff.setFingersVisible(staffFingers);
     });
+    // Practice metronome is a behaviour flag for the NEXT practice run; it does
+    // not change the displayed scale, so it deliberately does not trigger reset().
+    ui.metro.addEventListener('change', () => { sel.metro = ui.metro.checked; });
     if (!audioOK) { ui.listenBtn.disabled = true; ui.practiceBtn.disabled = true; }
   }
 
@@ -551,6 +622,7 @@ export default function createView(ctx) {
     ui.climb.innerHTML = '';
     ui.status.textContent = audioOK ? 'Ready.' : ui.status.textContent;
     paintScale('target');
+    armFreePractice();
     setButtons();
   }
 
@@ -563,6 +635,7 @@ export default function createView(ctx) {
     mode = 'idle';
     ui.status.textContent = 'Ready.';
     paintScale('target');
+    armFreePractice();
     setButtons();
   }
 
@@ -599,6 +672,7 @@ export default function createView(ctx) {
     ui.keySel.value = sel.tonic; ui.typeSel.value = sel.type;
     ui.handSel.value = sel.hand; ui.octSel.value = String(sel.octaves);
     ui.updown.checked = sel.updown;
+    ui.metro.checked = sel.metro;
   }
 }
 
