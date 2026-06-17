@@ -64,6 +64,7 @@ export default function createView(ctx) {
   let failCount = 0;
   let assisted = false;
   let expectedTs = 0;
+  let sessionStartLen = 0;       // index into bridge.log marking this practice session's start (read-only review)
   let timers = [];
   let playToken = 0;            // playback session token — bumped on every stop so
                                // a queued Listen callback becomes a no-op (no stacking)
@@ -106,6 +107,7 @@ export default function createView(ctx) {
     if (screen === 'stages') return renderStages();
     if (screen === 'lessons') return renderLessons();
     if (screen === 'play') return renderPlay();
+    if (screen === 'review') return renderReview();
     if (screen === 'stage3') return renderStage3();
   }
 
@@ -124,6 +126,8 @@ export default function createView(ctx) {
         nav.set([{ label: SR, go: () => go('stages') }, { label: tierName() }]);
       } else if (screen === 'play') {
         nav.set([{ label: SR, go: () => go('stages') }, { label: tierName(), go: () => go('lessons') }, { label: 'Practice' }]);
+      } else if (screen === 'review') {
+        nav.set([{ label: SR, go: () => go('stages') }, { label: tierName(), go: () => go('lessons') }, { label: 'Practice Review' }]);
       } else if (screen === 'stage3') {
         nav.set([{ label: SR, go: () => go('stages') }, { label: 'Continuous Flow' }]);
       } else {
@@ -338,7 +342,73 @@ export default function createView(ctx) {
     go('play');
   }
 
+  // End the current practice session and show the read-only review.
+  function endSession() { go('review'); }
+
+  // Your Practice Review — calm, teacher-led summary computed read-only from the
+  // Event Bridge records logged this session. No scoring/evaluator/MIDI change.
+  function renderReview() {
+    stopEngine();
+    evaluator?.detachStaff();
+    const records = bridge.log.slice(sessionStartLen);
+    const a = analyseSession(records);
+    const lesson = activeLesson();
+    const lc = lesson ? lessonCopyFor(lesson) : { title: 'Practice' };
+
+    const wrap = el('div', { class: 'srx__screen srx__review' });
+
+    const head = el('div', { class: 'srx__head' });
+    const back = button('‹ Lessons', () => go('lessons'), 'btn--ghost srx__back');
+    const h = el('div');
+    h.innerHTML = `<p class="srx__eyebrow">Stage ${activeStage} · Recognition</p>
+      <h2 class="srx__review-title">Your Practice Review</h2>
+      <p class="srx__review-sub">${lc.title}</p>`;
+    head.append(back, h);
+    wrap.appendChild(head);
+
+    if (!a.attempted) {
+      const empty = el('p', { class: 'srx__review-empty' });
+      empty.textContent = 'No notes were recorded in this session yet. Press Practise Again to begin reading.';
+      wrap.appendChild(empty);
+    } else {
+      const rows = [
+        ['Notes read', `${a.correct} of ${a.attempted}`],
+        ['Accuracy', `${a.accuracy}%`],
+        ['Longest fluent run', `${a.longest} ${a.longest === 1 ? 'note' : 'notes'}`],
+        ['Reading consistency', a.consistency],
+      ];
+      const grid = el('div', { class: 'srx__review-grid' });
+      rows.forEach(([k, v]) => {
+        const row = el('div', { class: 'srx__review-row' });
+        row.innerHTML = `<span class="srx__review-key">${k}</span><span class="srx__review-val">${v}</span>`;
+        grid.appendChild(row);
+      });
+      wrap.appendChild(grid);
+
+      const notes = el('div', { class: 'srx__review-notes' });
+      notes.innerHTML = `
+        <p class="srx__review-line"><span class="srx__review-label">What stood out</span>${hesitationPhrase(a.hesitant)}</p>
+        <p class="srx__review-line"><span class="srx__review-label">Focus for next time</span>${focusPhrase(a)}</p>
+        <p class="srx__review-coach">${coachNote(a)}</p>`;
+      wrap.appendChild(notes);
+    }
+
+    const actions = el('div', { class: 'srx__review-actions' });
+    actions.append(
+      button('Practise Again', () => openLesson(lessonIdx), 'btn--xl'),
+      button('Back to Lessons', () => go('lessons'), 'btn--xl btn--ghost'),
+      button('Back to Modules', () => {
+        try { if (location.hash && location.hash !== '#/' && location.hash !== '#') location.hash = '#/'; } catch { /* ignore */ }
+      }, 'btn--xl btn--ghost'),
+    );
+    wrap.appendChild(actions);
+
+    root.replaceChildren(wrap);
+  }
+
   function renderPlay() {
+    // Mark where this practice session's records begin (read-only review only).
+    if (!assessing) sessionStartLen = bridge.log.length;
     const head = el('div', { class: 'srx__head' });
     const back = button('‹ Lessons', () => go('lessons'), 'btn--ghost srx__back');
     const h = el('div');
@@ -607,7 +677,8 @@ export default function createView(ctx) {
       if (mode === 'listening') { stopEngine(); playUI.status.textContent = 'Stopped.'; setButtons(); }
       else listen();
     }, 'btn--xl btn--ghost');
-    bar.append(practiceBtn, stopBtn, prevBtn, nextBtn, listenBtn);
+    const reviewBtn = button('Finish & Review', () => endSession(), 'btn--xl btn--ghost');
+    bar.append(practiceBtn, stopBtn, prevBtn, nextBtn, listenBtn, reviewBtn);
 
     const meta = el('div', { class: 'srx__meta' });
     const level = el('span', { class: 'srx__level' });
@@ -629,7 +700,7 @@ export default function createView(ctx) {
     diag.textContent = `${SR_FINGERING_BUILD}\n(press Practice to populate the readout)`;
 
     container.append(hint, staffWrap, bar, meta, status, info.el, diag);
-    return { root: container, hint, banner, practiceBtn, stopBtn, prevBtn, nextBtn, listenBtn, level, count, assist, status, diag };
+    return { root: container, hint, banner, practiceBtn, stopBtn, prevBtn, nextBtn, listenBtn, reviewBtn, level, count, assist, status, diag };
   }
 
   function setButtons() {
@@ -640,6 +711,9 @@ export default function createView(ctx) {
     playUI.listenBtn.disabled = assessing || !audioOK || staff.model.length === 0;
     playUI.listenBtn.textContent = mode === 'listening' ? '◼ Stop listening' : '♪ Listen';
     playUI.listenBtn.classList.toggle('is-on', mode === 'listening');
+    // Review is offered for regular practice once at least one note is recorded
+    // this session. Read-only; never shown for the atomic unlock assessment.
+    playUI.reviewBtn.disabled = assessing || bridge.log.length <= sessionStartLen;
   }
 
   function clearTimers() { timers.forEach(clearTimeout); timers = []; }
@@ -872,6 +946,82 @@ function progressDots(done, total) {
   return s;
 }
 
+/* ---- Practice Review analysis (READ-ONLY over Event Bridge records) ----
+ * These pure functions never touch scoring, the evaluator, the gate, MIDI or
+ * the bridge's own state — they only read a copy of the session's records and
+ * turn them into calm, teacher-led language. */
+const PITCH_NAMES = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+function midiToName(m) {
+  if (!Number.isFinite(m)) return '—';
+  return `${PITCH_NAMES[((m % 12) + 12) % 12]}${Math.floor(m / 12) - 1}`;
+}
+function analyseSession(records) {
+  const attempted = records.length;
+  const correct = records.reduce((n, r) => n + (r.accuracy ? 1 : 0), 0);
+  const misses = attempted - correct;
+  const accuracy = attempted ? Math.round((correct / attempted) * 100) : 0;
+
+  let longest = 0, run = 0;
+  for (const r of records) { if (r.accuracy) { run += 1; if (run > longest) longest = run; } else run = 0; }
+  let trailing = 0;
+  for (let i = records.length - 1; i >= 0; i--) { if (records[i].accuracy) trailing += 1; else break; }
+
+  const lat = records
+    .filter((r) => r.accuracy && Number.isFinite(r.deltaMs) && r.deltaMs >= 0)
+    .map((r) => r.deltaMs);
+  const mean = lat.length ? lat.reduce((a, b) => a + b, 0) / lat.length : null;
+  const sd = lat.length > 1 ? Math.sqrt(lat.reduce((a, b) => a + (b - mean) ** 2, 0) / (lat.length - 1)) : 0;
+  const cv = mean && mean > 0 ? sd / mean : 0;
+  let consistency = '—';
+  if (lat.length >= 3) consistency = cv < 0.4 ? 'steady' : cv < 0.75 ? 'fairly steady' : 'still settling';
+  else if (lat.length) consistency = 'steady';
+
+  const byNote = new Map();
+  for (const r of records) {
+    const midi = r.expectedNote;
+    if (!Number.isFinite(midi)) continue;
+    let e = byNote.get(midi);
+    if (!e) { e = { midi, name: midiToName(midi), attempts: 0, misses: 0, latSum: 0, latN: 0 }; byNote.set(midi, e); }
+    e.attempts += 1;
+    if (!r.accuracy) e.misses += 1;
+    else if (Number.isFinite(r.deltaMs) && r.deltaMs >= 0) { e.latSum += r.deltaMs; e.latN += 1; }
+  }
+  const slowThresh = mean != null ? mean * 1.3 : Infinity;
+  const hesitant = [...byNote.values()]
+    .map((n) => ({ ...n, avgLat: n.latN ? n.latSum / n.latN : null }))
+    .filter((n) => n.misses > 0 || (n.avgLat != null && n.avgLat > slowThresh))
+    .sort((a, b) => (b.misses - a.misses) || ((b.avgLat ?? 0) - (a.avgLat ?? 0)));
+
+  return { attempted, correct, misses, accuracy, longest, trailing, consistency, cv, meanLat: mean, hesitant };
+}
+function hesitationPhrase(hesitant) {
+  if (!hesitant.length) return 'Nothing stood out — your reading stayed even across the whole session.';
+  const top = hesitant.slice(0, 2);
+  if (top.every((n) => n.midi >= 81)) return 'You paused most on the higher ledger-line notes above the staff.';
+  if (top.every((n) => n.midi <= 48)) return 'You paused most on the lower ledger-line notes below the staff.';
+  return `You paused most around ${top.map((n) => n.name).join(' and ')}.`;
+}
+function focusPhrase(a) {
+  if (!a.attempted) return 'Play a few notes and your focus for next time will appear here.';
+  if (a.hesitant.length) {
+    const top = a.hesitant.slice(0, 2);
+    if (top.every((n) => n.midi >= 81)) return 'Next time, name the ledger-line note before your hand moves to the key.';
+    if (top.every((n) => n.midi <= 48)) return 'Next time, take an extra moment to place the lower ledger notes before playing.';
+    return `Next time, look at ${top[0].name} and read its position before reaching for it.`;
+  }
+  if (a.consistency === 'still settling') return 'Next time, let your reading settle into an even, unhurried pace.';
+  if (a.accuracy >= 95) return 'Next time, let your eyes glance ahead to the next note while you play the current one.';
+  return 'Next time, read each note’s position on the staff before reaching for the key.';
+}
+function coachNote(a) {
+  if (!a.attempted) return 'Whenever you’re ready, take it one note at a time — there’s no rush.';
+  if (a.accuracy >= 95 && a.consistency === 'steady') return 'Your reading was accurate and assured today — that is exactly how fluency is built.';
+  if (a.misses > 0 && a.trailing >= 3) return 'You kept reading after a slip rather than stalling — that recovery is a real strength.';
+  if (a.longest >= 8) return 'You sustained some long, fluent passages today — that steadiness is real reading progress.';
+  if (a.accuracy >= 80) return 'Good work — your reading is becoming more confident.';
+  return 'Every read makes the next one easier. Steady, patient practice is doing its work.';
+}
+
 function el(tag, props = {}) {
   const n = document.createElement(tag);
   for (const [k, v] of Object.entries(props)) k === 'class' ? (n.className = v) : n.setAttribute(k, v);
@@ -965,6 +1115,25 @@ function injectStyles() {
     .srx__coming-chip{font-family:var(--font-mono);font-size:var(--step-xs);color:var(--brass-bright)}
     .srx__milestone{display:flex;align-items:center;gap:.8rem;margin:1.4rem 0 .3rem;padding-top:1rem;border-top:1px solid color-mix(in srgb,var(--ivory) 10%,transparent)}
     .srx__milestone-label{font-family:var(--font-mono);font-size:var(--step-xs);color:var(--ivory-dim)}
+    /* ---- Your Practice Review (calm, coach-led; no badges/XP/scoreboard) ---- */
+    .srx__review-title{font-family:var(--font-display);font-size:var(--step-lg,1.6rem);color:var(--ivory);margin:.1rem 0}
+    .srx__review-sub{font-family:var(--font-sans);font-size:var(--step-sm);color:var(--ivory-dim);margin:0}
+    .srx__review-empty{font-family:var(--font-sans);font-size:var(--step-sm);color:var(--ivory-dim);margin:1rem 0}
+    .srx__review-grid{display:flex;flex-direction:column;gap:.1rem;margin:1rem 0 .4rem;
+      border:1px solid color-mix(in srgb,var(--ivory) 10%,transparent);border-radius:14px;overflow:hidden}
+    .srx__review-row{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;padding:.6rem .9rem;
+      background:color-mix(in srgb,var(--ivory) 3%,transparent)}
+    .srx__review-row:nth-child(even){background:color-mix(in srgb,var(--ivory) 5%,transparent)}
+    .srx__review-key{font-family:var(--font-sans);font-size:var(--step-sm);color:var(--ivory-dim)}
+    .srx__review-val{font-family:var(--font-display);font-size:var(--step-md,1.2rem);color:var(--ivory)}
+    .srx__review-notes{display:flex;flex-direction:column;gap:.7rem;margin:1.1rem 0}
+    .srx__review-line{font-family:var(--font-sans);font-size:var(--step-sm);color:var(--ivory);margin:0;line-height:1.5}
+    .srx__review-label{display:block;font-family:var(--font-mono);font-size:var(--step-xs);letter-spacing:.1em;
+      text-transform:uppercase;color:var(--brass-bright);margin-bottom:.15rem}
+    .srx__review-coach{font-family:var(--font-display);font-style:italic;font-size:var(--step-md,1.15rem);
+      color:var(--ivory);margin:.4rem 0 0;padding:.8rem 1rem;border-left:2px solid var(--brass);
+      background:color-mix(in srgb,var(--brass) 8%,transparent);border-radius:0 10px 10px 0;line-height:1.5}
+    .srx__review-actions{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.3rem}
     /* Hand / register anchor hint above the staff */
     .srx__hint{font-family:var(--font-mono);font-size:var(--step-sm);color:var(--brass-bright);
       min-height:1.2em;margin-bottom:.4rem;letter-spacing:.02em}

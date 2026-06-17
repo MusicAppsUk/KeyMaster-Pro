@@ -69,3 +69,12 @@ event shape: `{ midiNote, velocity, timestamp, source }`.
   event shape only — they don't know or care which device played the note.
 - To add a new input source later (playback, a tutor, a different controller),
   wire it into `this.input.emit(...)` in `app.js`. No engine changes needed.
+
+## 6. Stable baseline log
+
+- **rc2-18 — STABLE BASELINE (confirmed on device).** MIDI detection/input verified
+  working on the tablet after the rc2-17 navigation hardening + diagnostics hotfix.
+  Confirmed stable in this build: Web-MIDI detection and note input; the breadcrumb /
+  Back navigation across Sight-Reading, Scales and Chords; the per-module fingering-
+  number show/hide toggle; the learner-facing Sight-Reading lesson screen; the frozen
+  fingering engine (rc2-12). This is the rollback point for subsequent feature work.
