@@ -26,11 +26,16 @@ export function getDisplayName() {
   return n.length ? n : null;
 }
 
-/** Experience toggles (both default enabled). */
+/**
+ * Experience toggles. Welcome screen defaults ON; the startup flourish defaults
+ * OFF for RC2 (the synth's voice-stop tail tick needs piano-voice refinement
+ * first). The code path is fully intact — set localStorage `km_play_flourish`
+ * to '1' (or via a future Settings toggle) to re-enable it for tuning.
+ */
 export function welcomeSettings() {
-  return { showWelcome: flag(LS.showWelcome, true), playFlourish: flag(LS.playFlourish, true) };
+  return { showWelcome: flag(LS.showWelcome, true), playFlourish: flag(LS.playFlourish, false) };
 }
-export function flourishEnabled() { return flag(LS.playFlourish, true); }
+export function flourishEnabled() { return flag(LS.playFlourish, false); }
 
 // Coordinated timeline (ms). Visual fade-out and the flourish's decay are tuned
 // to land together near the 2s mark.
