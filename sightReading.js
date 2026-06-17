@@ -904,17 +904,32 @@ function accTag(a) { return a === 'sharps' ? 'sharps' : a === 'flats' ? 'flats' 
  * a humanised label, so the learner never sees an internal label and new lessons
  * never break the screen. */
 const LESSON_COPY = {
-  '1.1':  { title: 'Starting Notes',          blurb: 'Get to know your first treble notes.' },
-  '1.2':  { title: 'Five-Note Frame',         blurb: 'Build confidence reading five notes around Middle C.' },
-  '1.3':  { title: 'Skips',                   blurb: 'Read notes that move by a skip.' },
-  '1.4':  { title: 'Single Turn',             blurb: 'Practise changing direction while you read.' },
-  '1.5':  { title: 'Free Contour',            blurb: 'Follow a simple musical shape up and down.' },
-  '1.6':  { title: 'One Note Above',          blurb: 'Stretch your reading just beyond the five-note frame.' },
-  '1.7':  { title: 'The Octave',              blurb: 'Read across a full octave.' },
-  '1.8':  { title: 'Fourth Leaps',            blurb: 'Recognise wider jumps on the staff.' },
-  '1.9':  { title: 'First Ledger Line Above', blurb: 'Step onto the first note above the staff.' },
-  '1.10': { title: 'Second Ledger Line',      blurb: 'Step onto the second ledger line.' },
-  '1.11': { title: 'Register Shift',          blurb: 'Move your reading frame higher up the keyboard.' },
+  // Stage 1 — Note Recognition
+  '1.1':  { title: 'Starting Notes',        blurb: 'Meet your first three treble notes.' },
+  '1.2':  { title: 'The Five-Note Frame',   blurb: 'Read five notes around Middle C, step by step.' },
+  '1.3':  { title: 'Knowing the Frame',     blurb: 'Find each of the five notes in any order.' },
+  // Stage 2 — Step Recognition
+  '1.4':  { title: 'Reading by Step',       blurb: 'Follow notes that move to their neighbour.' },
+  '1.5':  { title: 'Steps Up and Down',     blurb: 'Read longer stepwise lines that change direction.' },
+  // Stage 3 — Shape / Contour Recognition
+  '1.6':  { title: 'First Shapes',          blurb: 'Recognise the shape of a three-note phrase.' },
+  '1.7':  { title: 'Four-Note Shapes',      blurb: 'Read the contour of a four-note phrase.' },
+  '1.8':  { title: 'Changing Direction',    blurb: 'Follow a line that turns more than once.' },
+  '1.9':  { title: 'Little Melodies',       blurb: 'Read simple melodic shapes within the frame.' },
+  // Stage 4 — Skip Recognition
+  '1.10': { title: 'The Skip',              blurb: 'Read your first skip — a jump of a third.' },
+  '1.11': { title: 'Steps and Skips',       blurb: 'Mix steps and skips in the same line.' },
+  '1.12': { title: 'Reading Patterns',      blurb: 'Recognise small patterns of steps and skips.' },
+  // Stage 5 — Interval Recognition
+  '1.13': { title: 'Wider Skips',           blurb: 'Read jumps up to a fourth.' },
+  '1.14': { title: 'Reaching a Fifth',      blurb: 'Read the widest jumps inside the frame.' },
+  // Stage 6 — Register Expansion
+  '1.15': { title: 'One Note Above',        blurb: 'Stretch your reading just beyond the frame.' },
+  '1.16': { title: 'Up to the Octave',      blurb: 'Read across a full octave from Middle C.' },
+  '1.17': { title: 'First Ledger Line',     blurb: 'Step onto your first note above the staff.' },
+  // Stage 7 — Register Shift
+  '1.18': { title: 'Further Ledger Lines',  blurb: 'Read higher notes above the staff.' },
+  '1.19': { title: 'A New Position',        blurb: 'Move your reading frame higher up the keyboard.' },
 };
 const TIER_COPY = {
   1: { name: 'Treble Foundations',  blurb: 'Learning to read fluently around Middle C.' },

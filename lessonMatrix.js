@@ -95,25 +95,42 @@ function governanceFor(spec, sub) {
   return sub <= 3 ? 'Keyboard Geography' : 'Reading Fluency';
 }
 
-// ── Phase 1: Tier 1 de-bundling ─────────────────────────────────────────────
-// Tier 1 Cognitive Sight-Reading is sequenced so EACH lesson moves exactly ONE
-// cfg knob (span / length / maxStep / maxDirChanges) — one new cognitive concept
-// per lesson, per the canonical Stage 1 philosophy ("create a reader"). Motion-
-// reading is built first inside a fixed C4–G4 frame (1–5); geography then widens
-// with motion held constant (6–11), with ledger lines (9,10) and the register
-// shift (11) as their own explicit lessons. Tiers 2–10 are UNCHANGED.
+// ── Tier 1 Cognitive Sight-Reading — beginner-first recognition pathway ──────
+// Sequenced for a genuine beginner under the canonical "Recognition before
+// Execution" principle. The reading eye is built ENTIRELY inside the fixed
+// C4–G4 five-note frame across Stages 1–5 (lessons 1–14): note position →
+// steps → contour/shape → skips → intervals, growing only ONE cfg knob at a
+// time (length, then direction changes, then interval reach). Register only
+// widens in Stage 6 (lessons 15–17), and the FIRST ledger line is deliberately
+// withheld until lesson 17; the register shift is the very last lesson (19).
+// Pure curriculum data — no engine/generator change. Tiers 2–10 are UNCHANGED.
 const TIER1_SEQUENCE = [
-  { low: 'C4', high: 'G4', length: 3, maxStep: 1, maxDirChanges: 0, concept: 'Note recognition — three-note reading' },
-  { low: 'C4', high: 'G4', length: 5, maxStep: 1, maxDirChanges: 0, concept: 'The five-note frame — sustained stepwise reading' },
-  { low: 'C4', high: 'G4', length: 5, maxStep: 2, maxDirChanges: 0, concept: 'The skip — reading a 3rd' },
-  { low: 'C4', high: 'G4', length: 5, maxStep: 2, maxDirChanges: 1, concept: 'The single turn — one direction change' },
-  { low: 'C4', high: 'G4', length: 5, maxStep: 2, maxDirChanges: 2, concept: 'Free contour — multiple direction changes' },
-  { low: 'C4', high: 'A4', length: 5, maxStep: 2, maxDirChanges: 2, concept: 'One note above the frame — a 6th' },
-  { low: 'C4', high: 'C5', length: 5, maxStep: 2, maxDirChanges: 2, concept: 'The octave' },
-  { low: 'C4', high: 'C5', length: 5, maxStep: 3, maxDirChanges: 2, concept: 'The leap — reading a 4th' },
+  // Stage 1 — Note Recognition (cement the five-note frame; no leaps yet)
+  { low: 'C4', high: 'G4', length: 3, maxStep: 1, maxDirChanges: 0, concept: 'Note recognition — three notes' },
+  { low: 'C4', high: 'G4', length: 5, maxStep: 1, maxDirChanges: 0, concept: 'The five-note frame — stepwise' },
+  { low: 'C4', high: 'G4', length: 5, maxStep: 1, maxDirChanges: 2, concept: 'Knowing the frame — the five notes in varied order' },
+  // Stage 2 — Step Recognition
+  { low: 'C4', high: 'G4', length: 5, maxStep: 1, maxDirChanges: 1, concept: 'Reading by step — a single change of direction' },
+  { low: 'C4', high: 'G4', length: 6, maxStep: 1, maxDirChanges: 2, concept: 'Mixed steps — longer stepwise lines' },
+  // Stage 3 — Shape / Contour Recognition (still stepwise)
+  { low: 'C4', high: 'G4', length: 3, maxStep: 1, maxDirChanges: 1, concept: 'Three-note contours' },
+  { low: 'C4', high: 'G4', length: 4, maxStep: 1, maxDirChanges: 2, concept: 'Four-note contours' },
+  { low: 'C4', high: 'G4', length: 5, maxStep: 1, maxDirChanges: 3, concept: 'Direction changes' },
+  { low: 'C4', high: 'G4', length: 6, maxStep: 1, maxDirChanges: 2, concept: 'Simple melodic shapes' },
+  // Stage 4 — Skip Recognition (introduce the 3rd)
+  { low: 'C4', high: 'G4', length: 5, maxStep: 2, maxDirChanges: 1, concept: 'The skip — reading a 3rd' },
+  { low: 'C4', high: 'G4', length: 5, maxStep: 2, maxDirChanges: 2, concept: 'Mixed steps and skips' },
+  { low: 'C4', high: 'G4', length: 6, maxStep: 2, maxDirChanges: 2, concept: 'Simple patterns — steps and skips' },
+  // Stage 5 — Interval Recognition (reach within the frame; up to a 5th)
+  { low: 'C4', high: 'G4', length: 5, maxStep: 3, maxDirChanges: 2, concept: 'Reading up to a 4th' },
+  { low: 'C4', high: 'G4', length: 5, maxStep: 4, maxDirChanges: 2, concept: 'Reading up to a 5th' },
+  // Stage 6 — Register Expansion (leave the frame upward; first ledger line)
+  { low: 'C4', high: 'A4', length: 5, maxStep: 3, maxDirChanges: 2, concept: 'One note above the frame' },
+  { low: 'C4', high: 'C5', length: 6, maxStep: 3, maxDirChanges: 2, concept: 'Up to the octave' },
   { low: 'C4', high: 'A5', length: 5, maxStep: 3, maxDirChanges: 2, concept: 'First ledger line above the staff (A5)' },
-  { low: 'C4', high: 'C6', length: 5, maxStep: 3, maxDirChanges: 2, concept: 'Multiple ledger lines (to C6)' },
-  { low: 'A4', high: 'E6', length: 5, maxStep: 3, maxDirChanges: 2, concept: 'Register shift — the home leaves C4' },
+  // Stage 7 — Register Shift (last)
+  { low: 'C4', high: 'C6', length: 5, maxStep: 3, maxDirChanges: 2, concept: 'Further ledger lines (to C6)' },
+  { low: 'A4', high: 'E6', length: 5, maxStep: 3, maxDirChanges: 2, concept: 'Register shift — the home leaves Middle C' },
 ];
 
 /** Build one Tier-1 lesson from its explicit single-concept knob state. */

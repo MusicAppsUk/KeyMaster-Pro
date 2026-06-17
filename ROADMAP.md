@@ -52,6 +52,32 @@ Organ / Pedalboard. This sequence is surfaced on the dashboard.
 Future modules are **visible but locked** on the dashboard. No engines are
 implemented yet — the cards advertise the curriculum only.
 
+## Cognitive Sight-Reading — Tier 1 pathway (CANONICAL)
+
+Tier 1 is sequenced for a **genuine beginner** under *Recognition before
+Execution*. The reading eye is developed entirely inside the fixed **C4–G4
+five-note frame** before any register expansion; ledger lines are withheld
+until late, and the register shift is last. This is pure curriculum data in
+`TIER1_SEQUENCE` (`lessonMatrix.js`) using only the existing generator knobs
+(range · `length` · `maxStep` · `maxDirChanges`) — no engine/generator change.
+
+| Stage | Lessons | Focus | Frame |
+|------|---------|-------|-------|
+| 1 — Note Recognition | 1.1–1.3 | Three notes → five-note frame → the frame in varied order | C4–G4 |
+| 2 — Step Recognition | 1.4–1.5 | Reading by step; longer stepwise lines | C4–G4 |
+| 3 — Shape / Contour | 1.6–1.9 | Three- & four-note contours, direction changes, simple shapes | C4–G4 |
+| 4 — Skip Recognition | 1.10–1.12 | The 3rd; mixed steps & skips; simple patterns | C4–G4 |
+| 5 — Interval Recognition | 1.13–1.14 | Reading up to a 4th, then a 5th | C4–G4 |
+| 6 — Register Expansion | 1.15–1.17 | One above the frame → the octave → **first ledger line (A5)** | widening up |
+| 7 — Register Shift | 1.18–1.19 | Further ledger lines (to C6); the home leaves Middle C | shifted |
+
+Pacing rationale: Stages 1–5 (lessons 1–14) never leave C4–G4, so position,
+step, contour, skip and interval recognition are all automatic before the
+**first ledger line appears at lesson 17** (vs. lesson 9 previously). Items that
+would need a new generator knob (repeated notes, ascending/descending split,
+isolated 4ths/5ths, notes below Middle C) are intentionally **out of scope** and
+omitted; the pathway stays fully data-driven on the current engine.
+
 ## Chord Masterclass (future)
 
 Purpose: instant recognition and execution of chord structures.
