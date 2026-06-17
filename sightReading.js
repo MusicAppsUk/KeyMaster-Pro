@@ -288,6 +288,7 @@ export default function createView(ctx) {
     // Hand assignment + register logic (labels rendered on-staff).
     const hm = handModel(exercise.names, lesson.clef);
     const model = staff.setSequence(exercise.names, { fingers: hm.labels });
+    playUI.diag.textContent = renderFingeringDiag(hm, exercise.names);   // [diagnostic rc2-11]
     viewport?.frame(model.map((m) => m.midi));
     staff.setAnchor(assisted ? letterOf(exercise.names[0]) : null);
     playUI.hint.textContent = handHint(exercise.names, lesson.clef, hm);
@@ -539,8 +540,12 @@ export default function createView(ctx) {
       bodyHtml: SIGHT_READING_HTML,
     });
 
-    container.append(hint, staffWrap, bar, meta, status, info.el);
-    return { root: container, hint, banner, practiceBtn, stopBtn, prevBtn, nextBtn, listenBtn, level, count, assist, status };
+    // [diagnostic rc2-11] Temporary fingering-engine readout — remove later.
+    const diag = el('pre', { class: 'srx__diag' });
+    diag.textContent = `${SR_FINGERING_BUILD}\n(press Practice to populate the readout)`;
+
+    container.append(hint, staffWrap, bar, meta, status, info.el, diag);
+    return { root: container, hint, banner, practiceBtn, stopBtn, prevBtn, nextBtn, listenBtn, level, count, assist, status, diag };
   }
 
   function setButtons() {
@@ -649,6 +654,41 @@ function assignFingering(dia, hands) {
   return { fingers, shifts };
 }
 
+/* ===== TEMPORARY fingering-engine diagnostic (build rc2-11) =====
+   Derives its readout purely from the live handModel output — it does NOT
+   touch assignFingering, so the algorithm itself is unchanged. Remove after we
+   have confirmed which build is running on the tablet. */
+const SR_FINGERING_BUILD = 'Sight Reading Fingering Engine: range-aware rc2-11';
+const NOTE_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
+function diaToName(d) {
+  const oct = Math.floor(d / 7);
+  const li = ((d % 7) + 7) % 7;
+  return `${NOTE_LETTERS[li]}${oct}`;
+}
+function renderFingeringDiag(hm, names) {
+  const dia = names.map((n) => { const p = parseName(n); return LETTER_INDEX[p.letter] + 7 * p.octave; });
+  // Per-note position anchor (posMin) implied by the assigned finger:
+  //   RH: finger = d - posMin + 1   ->  posMin = d - (finger - 1)
+  //   LH: finger = 5 - (d - posMin) ->  posMin = d - (5 - finger)
+  const anchors = dia.map((d, i) => {
+    const f = hm.fingers[i]; const h = hm.hands[i];
+    if (f == null) return '--';
+    return diaToName(h === 'R' ? d - (f - 1) : d - (5 - f));
+  });
+  const w = (arr) => arr.map((x) => String(x == null ? '-' : x).padStart(3, ' ')).join(' ');
+  return [
+    SR_FINGERING_BUILD,
+    `idx:    ${w(names.map((_, i) => i))}`,
+    `name:   ${w(names)}`,
+    `midi:   ${w(hm.midi)}`,
+    `hand:   ${w(hm.hands)}`,
+    `finger: ${w(hm.fingers)}`,
+    `anchor: ${w(anchors)}`,
+    `shift:  ${w(hm.shifts.map((s) => (s ? '^' : '-')))}`,
+    `one-position: ${hm.fiveFinger ? 'YES — single five-finger position, no shift' : 'NO — shift(s) applied'}`,
+  ].join('\n');
+}
+
 // Starting-position hint: states the starting hand + finger (no note names).
 function handHint(names, clef, hm) {
   const startFinger = (h) => {
@@ -733,6 +773,10 @@ function injectStyles() {
       background:linear-gradient(165deg,var(--ebony-raise,#1f1d27),#191721);border:1px solid var(--ebony-edge,#2a2833)}
     /* Play screen (engine) */
     .srx__play{display:flex;flex-direction:column}
+    /* [diagnostic rc2-11] temporary fingering-engine readout */
+    .srx__diag{margin:.5rem 0 0;padding:.55rem .7rem;background:#0c0b10;color:#8fe39a;
+      border:1px solid #2a2833;border-radius:8px;white-space:pre;overflow-x:auto;
+      font:600 11px/1.45 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.02em}
     .srx__staff{position:relative}
     .srx__bar{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;margin-top:1.1rem}
     .srx__meta{display:flex;gap:.75rem;align-items:baseline;margin-top:.7rem;flex-wrap:wrap}
