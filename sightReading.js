@@ -47,7 +47,7 @@ const STAGES = [
 ];
 
 export default function createView(ctx) {
-  const { mount, keyboard, viewport, synth, input, evaluator } = ctx;
+  const { mount, keyboard, viewport, synth, input, evaluator, nav } = ctx;
   const audioOK = Boolean(synth);
 
   // ---- shell state ----
@@ -102,10 +102,32 @@ export default function createView(ctx) {
   function go(next) { screen = next; render(); }
 
   function render() {
+    publishNav();
     if (screen === 'stages') return renderStages();
     if (screen === 'lessons') return renderLessons();
     if (screen === 'play') return renderPlay();
     if (screen === 'stage3') return renderStage3();
+  }
+
+  // Report the current breadcrumb trail to the chrome (navigation only). The
+  // chrome prepends a "Modules" crumb and derives the Back target from this; no
+  // engine, scoring or lesson state is touched here.
+  function publishNav() {
+    if (!nav) return;
+    const SR = 'Cognitive Sight-Reading';
+    const tierName = () => {
+      const focus = tiersForStage(activeStage).find((t) => t.tier === focusTier);
+      return focus ? tierCopyFor(focus).name : 'Lessons';
+    };
+    if (screen === 'lessons') {
+      nav.set([{ label: SR, go: () => go('stages') }, { label: tierName() }]);
+    } else if (screen === 'play') {
+      nav.set([{ label: SR, go: () => go('stages') }, { label: tierName(), go: () => go('lessons') }, { label: 'Practice' }]);
+    } else if (screen === 'stage3') {
+      nav.set([{ label: SR, go: () => go('stages') }, { label: 'Continuous Flow' }]);
+    } else {
+      nav.set([{ label: SR }]);
+    }
   }
 
   function renderStages() {

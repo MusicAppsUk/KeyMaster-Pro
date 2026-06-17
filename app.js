@@ -111,15 +111,15 @@ function savePrefs(prefs) {
 const VIEW_REGISTRY = {
   scales: {
     slot: 'scales',
-    load: () => import('./scalesMasterclass.js?v=rc2-16'),
+    load: () => import('./scalesMasterclass.js?v=rc2-17'),
   },
   sightreading: {
     slot: 'sightreading',
-    load: () => import('./sightReading.js?v=rc2-16'),
+    load: () => import('./sightReading.js?v=rc2-17'),
   },
   chords: {
     slot: 'chords',
-    load: () => import('./chordMasterclass.js?v=rc2-16'),
+    load: () => import('./chordMasterclass.js?v=rc2-17'),
   },
 };
 
@@ -159,6 +159,18 @@ const FINGERING_HIDDEN_DEFAULT = {
   scales: false,
   sightreading: false,
   chords: false,
+};
+
+/**
+ * Human module names for the breadcrumb. Adding a future module here (plus its
+ * ROUTES entry) gives it a "Modules › <Name>" crumb automatically — no module
+ * code required. A module with internal levels can publish a deeper trail via
+ * the optional `ctx.nav` helper.
+ */
+const MODULE_NAME = {
+  scales: 'Scales Masterclass',
+  sightreading: 'Cognitive Sight-Reading',
+  chords: 'Chord Masterclass',
 };
 
 /* ===========================================================================
@@ -230,6 +242,7 @@ class KeyMasterApp {
       keyboardMount: this.root.getElementById('keyboard-mount'),
       register: this.root.getElementById('register-readout'),
       midiPill: this.root.getElementById('midi-pill'),
+      breadcrumb: this.root.getElementById('breadcrumb'),
       views: new Map(
         [...this.root.querySelectorAll('[data-view]')].map((el) => [el.dataset.view, el])
       ),
@@ -473,6 +486,73 @@ class KeyMasterApp {
     }
   }
 
+  /* ---- Breadcrumb / back navigation ------------------------------------ *
+   * The chrome owns a "Modules › … " breadcrumb and a Back control. Modules
+   * are optional participants: any module can call ctx.nav.set([...]) to add
+   * deeper crumbs and define what "one level up" means; modules that say
+   * nothing get a clean two-level crumb with Back returning to the dashboard.
+   * Pure navigation — no module state, scoring, or engine is involved. */
+
+  /** Build the optional nav helper handed to a view (guarded to the active view). */
+  _makeNav(viewId) {
+    return {
+      set: (trail) => {
+        if (this.store.getState().view === viewId) this._setModuleTrail(trail || []);
+      },
+    };
+  }
+
+  /** Return to the dashboard via the router (never destroys state). */
+  _goHome() {
+    try {
+      if (location.hash && location.hash !== '#/' && location.hash !== '#') location.hash = '#/';
+    } catch { /* ignore */ }
+  }
+
+  /** Compose the full trail (Modules + module crumbs) and wire the Back target. */
+  _setModuleTrail(moduleTrail) {
+    const full = [{ label: 'Modules', go: () => this._goHome() }, ...moduleTrail];
+    this._renderBreadcrumb(full);
+    const up = full[full.length - 2];               // one level up from current
+    this._backFn = up?.go ?? (() => this._goHome());
+  }
+
+  _clearBreadcrumb() {
+    this._backFn = () => this._goHome();
+    if (this.dom.breadcrumb) this.dom.breadcrumb.replaceChildren();
+  }
+
+  _renderBreadcrumb(full) {
+    const host = this.dom.breadcrumb;
+    if (!host) return;
+    const frag = document.createDocumentFragment();
+    full.forEach((crumb, i) => {
+      if (i > 0) {
+        const sep = document.createElement('span');
+        sep.className = 'breadcrumb__sep';
+        sep.setAttribute('aria-hidden', 'true');
+        sep.textContent = '›';
+        frag.appendChild(sep);
+      }
+      const last = i === full.length - 1;
+      if (!last && typeof crumb.go === 'function') {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'breadcrumb__crumb';
+        b.textContent = crumb.label;
+        b.addEventListener('click', crumb.go);
+        frag.appendChild(b);
+      } else {
+        const s = document.createElement('span');
+        s.className = `breadcrumb__crumb${last ? ' is-current' : ''}`;
+        if (last) s.setAttribute('aria-current', 'page');
+        s.textContent = crumb.label;
+        frag.appendChild(s);
+      }
+    });
+    host.replaceChildren(frag);
+  }
+
   /* ---- Common chrome --------------------------------------------------- */
 
   _wireChrome() {
@@ -486,7 +566,7 @@ class KeyMasterApp {
         case 'connect-midi': this._connectMidi(); break;
         case 'toggle-keyboard': this._toggleKeyboard(); break;
         case 'toggle-fingering': this._toggleFingering(); break;
-        case 'home': if (location.hash && location.hash !== '#/' && location.hash !== '#') location.hash = '#/'; break;
+        case 'back': (this._backFn ?? (() => this._goHome()))(); break;
         case 'fullscreen': this._toggleFullscreen(); break;
         case 'exit': this._exit(); break;
       }
@@ -591,6 +671,11 @@ class KeyMasterApp {
     document.documentElement.setAttribute('data-view', viewId);
     this._applyFingeringPref(this._resolveFingeringHidden(viewId));
 
+    // Seed the breadcrumb. A module with internal levels (e.g. Sight-Reading)
+    // overrides this with a deeper trail via ctx.nav during _enterView.
+    if (viewId === 'home') this._clearBreadcrumb();
+    else this._setModuleTrail([{ label: MODULE_NAME[viewId] ?? viewId }]);
+
     if (viewId !== 'home') await this._enterView(viewId);
   }
 
@@ -629,6 +714,7 @@ class KeyMasterApp {
         synth: this.synth,
         scheduler: this.scheduler,
         metronome: this.metronome,
+        nav: this._makeNav(viewId),
       });
     }
     record.instance.enter?.();
