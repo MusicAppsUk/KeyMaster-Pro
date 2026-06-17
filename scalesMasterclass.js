@@ -485,6 +485,13 @@ export default function createView(ctx) {
     if (!col) return;
     staff.clearCursor();             // move only the cursor; keep any green/red flash
     staff.mark(freeIndex, 'current');
+    // Keep the current target visible: if the static staff is scrolled (long
+    // 2-octave / up-&-down scale), bring the target notehead into view. block:
+    // 'nearest' avoids any vertical page jump; it only scrolls the horizontal
+    // pan container. Guarded — purely a visibility aid.
+    try {
+      staff.model?.[freeIndex]?.el?.scrollIntoView({ inline: 'center', block: 'nearest' });
+    } catch { /* non-critical */ }
     const pm = primaryOf(col).midi;
     evaluator.setExpected(colMidis(col).map((m) => ({
       midi: m, staffIndex: freeIndex, voice: m === pm ? 'primary' : 'lower',
@@ -525,7 +532,13 @@ export default function createView(ctx) {
     bar.append(
       labeled('Key', keySel), labeled('Scale', typeSel),
       labeled('Hand', handSel), labeled('Range', octSel), updownWrap, fingerWrap, metroWrap,
+      keySig.el,
     );
+    // [diagnostic rc2-9] Expose the key-sig panel's ACTUAL live parent so the
+    // on-device red label can read it back via CSS attr(). Remove after verifying.
+    keySig.el.dataset.diagParent = keySig.el.parentElement
+      ? (keySig.el.parentElement.className || '(no-class)')
+      : '(detached)';
 
     const notesLine = el('div', { class: 'smc__readout' });
     const fingerNote = el('p', { class: 'smc__fingernote' });
@@ -609,7 +622,7 @@ export default function createView(ctx) {
     // the live scale-context summary sit side-by-side (wrapping only when narrow),
     // instead of three stacked blocks — this lifts the grand staff higher.
     const band = el('div', { class: 'smc__band' });
-    band.append(tempoWrap, why.el, notesLine, keySig.el);
+    band.append(tempoWrap, why.el, notesLine);
     controls.append(bar, actions, band);
 
     const stage = el('div', { class: 'smc__stage' });
@@ -766,18 +779,24 @@ function injectStyles() {
     .smc>.vector__eyebrow{margin:0}
     .smc__controls{display:flex;flex-direction:column;gap:.3rem}
     .smc__controls > .infopanel{align-self:flex-start}
-    .smc__stage{display:flex;flex-direction:column;gap:.4rem}
+    .smc__stage{display:flex;flex-direction:column;gap:.4rem;min-width:0}
     /* Reset margins that previously created vertical rhythm in a static stack. */
     .smc__bar{display:flex;flex-wrap:wrap;gap:.55rem;align-items:flex-end;margin:0}
     .smc__row{display:flex;flex-wrap:wrap;gap:.5rem;margin:0}
     .smc__tempo{margin:0}
-    .smc__stafftop{margin:0}
-    /* Key Signature Preview — compact "sheet-music" reference, riding on the right
-       of the scale-context band so it never pushes the main grand staff down. */
-    .smc__kspanel{margin:0 0 0 auto;padding:.15rem .35rem;align-self:center;
-      background:#F8F5EC;border:1px solid #DCD5C4;border-radius:6px;
+    /* The static staff scrolls horizontally (full note size) when a 2-octave or
+       up-&-down scale is wider than the viewport, instead of running off-screen.
+       min-width:0 lets the flex item be constrained so the inner .notation--pan
+       (overflow-x:auto) actually scrolls rather than stretching the layout. */
+    .smc__stafftop{margin:0;min-width:0;max-width:100%}
+    .smc__stafftop .notation{max-width:100%}
+    /* Key Signature Preview — clearly readable mini grand-staff, sitting on the
+       toggle line (right of Up&Down / Staff fingering / Practice metronome). Fixed
+       height keeps it a consistent size across keys; it never shrinks per key. */
+    .smc__kspanel{margin:0 0 0 auto;padding:.25rem .5rem;align-self:center;
+      background:#F8F5EC;border:1px solid #DCD5C4;border-radius:7px;
       box-shadow:0 1px 2px rgba(0,0,0,.18);line-height:0;flex:0 0 auto}
-    .smc__kspanel svg{height:clamp(38px,5.2dvh,52px);width:auto;display:block}
+    .smc__kspanel svg{height:clamp(58px,8dvh,80px);width:auto;display:block}
     /* RC2 compaction: one horizontal band for tempo + Learn Why + scale context. */
     .smc__band{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .85rem;margin:0}
     .smc__band .smc__tempo{flex:0 1 auto;margin:0}
@@ -813,6 +832,30 @@ function injectStyles() {
     .smc__climb{margin-top:1rem;display:flex;flex-direction:column;gap:.6rem;align-items:flex-start}
     .smc__levelup{color:var(--good);font-family:var(--font-mono);font-size:var(--step-sm);margin:0}
     .smc__levelup--hold{color:var(--warn)}
+
+    /* ================================================================
+       TEMPORARY LIVE-DOM DIAGNOSTIC MARKERS — build token rc2-9
+       Scales-scoped only. To be removed after on-device verification.
+       ================================================================ */
+    /* Key-signature panel: red outline + label showing its real parent */
+    .smc__kspanel{outline:3px solid #ff2d2d !important;position:relative !important;overflow:visible !important}
+    .smc__kspanel::after{
+      content:"KEYSIG PANEL [rc2-9]  parent=" attr(data-diag-parent);
+      position:absolute;left:0;bottom:100%;margin-bottom:2px;
+      font:bold 10px/1.25 monospace;color:#fff;background:#ff2d2d;
+      padding:2px 5px;white-space:nowrap;z-index:99999;border-radius:3px}
+    /* Scales staff: green outline on the element that is SUPPOSED to scroll,
+       with a forced-visible scrollbar so it's obvious whether it scrolls. */
+    .smc__stafftop .notation{
+      outline:3px dashed #12c400 !important;
+      overflow-x:scroll !important;position:relative !important}
+    .smc__stafftop .notation::before{
+      content:"SCROLL CONTAINER  (.notation--pan, overflow-x:auto)";
+      position:absolute;left:0;top:0;
+      font:bold 10px/1.25 monospace;color:#000;background:#12c400;
+      padding:2px 5px;white-space:nowrap;z-index:99999}
+    .smc__stafftop .notation::-webkit-scrollbar{height:10px;-webkit-appearance:none}
+    .smc__stafftop .notation::-webkit-scrollbar-thumb{background:#12c400;border-radius:5px}
   `;
   document.head.appendChild(s);
 }
