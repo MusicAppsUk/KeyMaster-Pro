@@ -47,7 +47,7 @@ export default function createView(ctx) {
   const { mount, keyboard, viewport, synth, scheduler, metronome, evaluator } = ctx;
   const audioOK = Boolean(synth && scheduler);
 
-  const sel = { tonic: 'B', type: 'major', hand: 'RH', octaves: 1, updown: false, metro: true };
+  const sel = { tonic: storedDefaultTonic(), type: 'major', hand: 'RH', octaves: 1, updown: false, metro: true };
   let mode = 'idle';                 // idle | listening | practice | summary
   // Free-practice (idle, metronome-less) cursor over the displayed sequence.
   let freeCols = [];
@@ -578,6 +578,25 @@ export default function createView(ctx) {
       defaultOpen: false,
       bodyHtml: WHY_B_MAJOR_HTML,
     });
+    // "Prefer to begin in C Major" — a pressable choice inside the Why panel that
+    // persists C as the opening scale for future launches (B Major philosophy and
+    // the explanation are untouched; the user can still pick any key manually).
+    const cChoice = why.queryBody('[data-action="prefer-c-major"]');
+    if (cChoice) {
+      if (storedDefaultTonic() === 'C') {
+        cChoice.classList.add('is-active');
+        cChoice.textContent = 'C Major is your opening scale';
+      }
+      cChoice.addEventListener('click', () => {
+        try { localStorage.setItem('km_default_scale', 'C'); } catch { /* ignore */ }
+        sel.tonic = 'C';
+        cChoice.classList.add('is-active');
+        cChoice.textContent = 'C Major is your opening scale';
+        syncControls();        // reflect in the key selector
+        reset();               // repaint in C major now
+        why.close();
+      });
+    }
 
     // LAYOUT (RC2 fix) — controls take priority and never scroll off-screen.
     //   HEADER (app bar)  →  CONTROL BAR (.smc__controls, pinned)
@@ -590,11 +609,11 @@ export default function createView(ctx) {
     // the live scale-context summary sit side-by-side (wrapping only when narrow),
     // instead of three stacked blocks — this lifts the grand staff higher.
     const band = el('div', { class: 'smc__band' });
-    band.append(tempoWrap, why.el, notesLine);
+    band.append(tempoWrap, why.el, notesLine, keySig.el);
     controls.append(bar, actions, band);
 
     const stage = el('div', { class: 'smc__stage' });
-    stage.append(fingerNote, keySig.el, stafftop, status, metrics, climb);
+    stage.append(fingerNote, stafftop, status, metrics, climb);
 
     root.append(controls, stage);
 
@@ -681,6 +700,15 @@ export default function createView(ctx) {
 
 /* ========================= helpers ========================= */
 
+// The persisted opening scale (set via "Prefer to begin in C Major"). Defaults to
+// B — the house philosophy — and only ever returns a tonic the module supports.
+function storedDefaultTonic() {
+  try {
+    const v = window.localStorage.getItem('km_default_scale');
+    return v && KEYS.includes(v) ? v : 'B';
+  } catch { return 'B'; }
+}
+
 function mean(arr) { return arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0; }
 function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
 
@@ -744,12 +772,12 @@ function injectStyles() {
     .smc__row{display:flex;flex-wrap:wrap;gap:.5rem;margin:0}
     .smc__tempo{margin:0}
     .smc__stafftop{margin:0}
-    /* Key Signature Preview — small white "sheet-music" reference above the staff.
-       Compact and unobtrusive; the main exercise staff stays the primary focus. */
-    .smc__kspanel{margin:0 0 .15rem;padding:.2rem .4rem;align-self:flex-start;
+    /* Key Signature Preview — compact "sheet-music" reference, riding on the right
+       of the scale-context band so it never pushes the main grand staff down. */
+    .smc__kspanel{margin:0 0 0 auto;padding:.15rem .35rem;align-self:center;
       background:#F8F5EC;border:1px solid #DCD5C4;border-radius:6px;
-      box-shadow:0 1px 2px rgba(0,0,0,.18);line-height:0}
-    .smc__kspanel svg{height:clamp(46px,8.5dvh,68px);width:auto}
+      box-shadow:0 1px 2px rgba(0,0,0,.18);line-height:0;flex:0 0 auto}
+    .smc__kspanel svg{height:clamp(38px,5.2dvh,52px);width:auto;display:block}
     /* RC2 compaction: one horizontal band for tempo + Learn Why + scale context. */
     .smc__band{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .85rem;margin:0}
     .smc__band .smc__tempo{flex:0 1 auto;margin:0}

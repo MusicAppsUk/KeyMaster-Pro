@@ -104,6 +104,7 @@ export function createInfoPanel({ label, title, bodyHtml, storageKey = null, def
     close,
     toggle,
     get isOpen() { return isOpen; },
+    queryBody(sel) { return overlay.querySelector(sel); },
     destroy() { close(); overlay.remove(); },
   };
 }
@@ -187,6 +188,24 @@ function injectStyles() {
       background: color-mix(in srgb, var(--brass, #caa45a) 10%, transparent);
       border: 1px solid color-mix(in srgb, var(--brass, #caa45a) 28%, transparent);
       color: var(--ivory, #f4efe6);
+    }
+    .infomodal__body .infopanel__choice {
+      font-family: var(--font-mono, ui-monospace, monospace);
+      font-size: var(--step-sm, .95rem); letter-spacing: .02em;
+      color: var(--ivory, #f4efe6); cursor: pointer;
+      padding: .55rem .95rem; border-radius: 10px;
+      background: color-mix(in srgb, var(--brass, #caa45a) 16%, transparent);
+      border: 1px solid color-mix(in srgb, var(--brass, #caa45a) 42%, transparent);
+      transition: background 140ms ease, border-color 140ms ease, transform 120ms ease;
+    }
+    .infomodal__body .infopanel__choice:hover {
+      background: color-mix(in srgb, var(--brass, #caa45a) 26%, transparent);
+      border-color: color-mix(in srgb, var(--brass, #caa45a) 60%, transparent);
+    }
+    .infomodal__body .infopanel__choice:active { transform: translateY(1px); }
+    .infomodal__body .infopanel__choice.is-active {
+      background: color-mix(in srgb, var(--brass, #caa45a) 34%, transparent);
+      border-color: var(--brass-bright, #e9c987); cursor: default;
     }
 
     @media (prefers-reduced-motion: reduce) {

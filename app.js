@@ -328,12 +328,16 @@ class KeyMasterApp {
     if (!ctx || ctx.state !== 'running') return;     // not yet unlocked → a later gesture retries
     this._flourishPlayed = true;
     try {
-      const t = ctx.currentTime + 0.04;
-      // B3, D#4, F#4, B4 — soft velocities, gently rolled, shared warm decay (< 2s).
-      const NOTES = [[59, 50], [63, 44], [66, 54], [71, 40]];
+      // Schedule well in the future so each voice's envelope ramps up from silence
+      // cleanly (a near-"now" start collapses the attack ramp into an onset click).
+      const t = ctx.currentTime + 0.12;
+      // Softer velocities keep the summed peak below the limiter threshold (no
+      // pumping/clipping); a wider roll stops the four attacks stacking into one
+      // transient. B3, D#4, F#4, B4 — warm, gentle, ends near the visual fade.
+      const NOTES = [[59, 40], [63, 34], [66, 44], [71, 30]];
       NOTES.forEach(([m, v], i) => {
-        this.synth.noteOn(m, v, t + i * 0.06);        // ~60ms roll between notes
-        this.synth.noteOff(m, t + 1.5);               // realistic decay, ends near the visual fade
+        this.synth.noteOn(m, v, t + i * 0.085);       // ~85ms roll between notes
+        this.synth.noteOff(m, t + 1.3);               // decay finishes near the 2s mark
       });
     } catch { /* audio not ready; ignore */ }
   }
@@ -348,6 +352,24 @@ class KeyMasterApp {
       } else {
         doc.exitFullscreen?.();
       }
+    } catch { /* unsupported; ignore */ }
+  }
+
+  /**
+   * Convenience "leave" control. If browser fullscreen is active, drop out of it;
+   * otherwise return to the dashboard. Never tries to close the tab/window (blocked
+   * by browsers) and never destroys state — it's pure navigation.
+   */
+  _exit() {
+    try {
+      const doc = document;
+      const fsEl = doc.fullscreenElement || doc.webkitFullscreenElement;
+      if (fsEl) {
+        (doc.exitFullscreen || doc.webkitExitFullscreen)?.call(doc);
+        return;
+      }
+      const hash = location.hash;
+      if (hash && hash !== '#/' && hash !== '#') location.hash = '#/';
     } catch { /* unsupported; ignore */ }
   }
 
@@ -380,6 +402,7 @@ class KeyMasterApp {
         case 'connect-midi': this._connectMidi(); break;
         case 'toggle-keyboard': this._toggleKeyboard(); break;
         case 'fullscreen': this._toggleFullscreen(); break;
+        case 'exit': this._exit(); break;
       }
     });
 

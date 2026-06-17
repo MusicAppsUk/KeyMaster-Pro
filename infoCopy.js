@@ -10,6 +10,7 @@ export const WHY_B_MAJOR_HTML = `
   <p>Beginning here cultivates a genuine feel for the keyboard's topography from the outset, rather than treating every white key as interchangeable terrain.</p>
   <p>For this reason, KeyMaster PRO opens in the B Major family as its default training environment.</p>
   <p class="infopanel__lead"><strong>Prefer to begin in C Major?</strong><br>Of course. You can change key at any moment.</p>
+  <p><button type="button" class="infopanel__choice" data-action="prefer-c-major">Set C Major as my opening scale</button></p>
   <p>Our philosophy is straightforward:</p>
   <ul>
     <li>Train the hand naturally.</li>
