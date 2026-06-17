@@ -464,6 +464,11 @@ export default function createView(ctx) {
     staff.mark(cursor, 'current');
     expectedTs = nowMs();
     evaluator?.setExpected([{ midi: m.midi, staffIndex: cursor, voice: 'primary' }]);
+    // [TEMP rc2-20 diagnostic] read-only echo of what is expected for this step.
+    console.info('[KeyMaster SR-arm]', { index: cursor, expectedName: midiToName(m.midi), expectedMidi: m.midi });
+    if (playUI?.matchDiag) {
+      playUI.matchDiag.textContent = `armed: ${midiToName(m.midi)} (midi ${m.midi}) · index ${cursor}\nplay this note…`;
+    }
   }
 
   // The controller already evaluated + painted; here we only advance lesson
@@ -471,6 +476,25 @@ export default function createView(ctx) {
   function onResult(payload) {
     if (screen !== 'play' || mode !== 'active') return;
     if (payload.state === 'complete') return;   // single-note steps resolve on 'match'
+
+    // [TEMP rc2-20 diagnostic] read-only — captured BEFORE any advance. Compares
+    // the note currently displayed/expected at the cursor with what was played
+    // and the evaluator's own verdict. Changes nothing in the matching flow.
+    const _expMidi = staff.model[cursor]?.midi ?? null;
+    const _played = payload.midiNote;
+    console.info('[KeyMaster SR-match]', {
+      index: cursor,
+      displayedExpectedName: midiToName(_expMidi), displayedExpectedMidi: _expMidi,
+      playedName: midiToName(_played), playedMidi: _played,
+      evaluatorState: payload.state,
+      evaluatorTargetMidi: payload.target?.midi ?? payload.expected?.midi ?? null,
+    });
+    if (playUI?.matchDiag) {
+      playUI.matchDiag.textContent =
+        `played   ${midiToName(_played)} (midi ${_played})\n` +
+        `expected ${midiToName(_expMidi)} (midi ${_expMidi}) · index ${cursor}\n` +
+        `evaluator: ${payload.state}`;
+    }
 
     // Canonical Event Bridge record — the ONLY data the gate is permitted to
     // use (its accuracy + deltaMs, not any parallel/inferred measurement).
@@ -699,8 +723,13 @@ export default function createView(ctx) {
     const diag = el('pre', { class: 'srx__diag' });
     diag.textContent = `${SR_FINGERING_BUILD}\n(press Practice to populate the readout)`;
 
-    container.append(hint, staffWrap, bar, meta, status, info.el, diag);
-    return { root: container, hint, banner, practiceBtn, stopBtn, prevBtn, nextBtn, listenBtn, reviewBtn, level, count, assist, status, diag };
+    // [TEMP note-match diagnostic — rc2-20] Read-only: shows the armed/expected
+    // note vs the played note and the evaluator's verdict. Does NOT change matching.
+    const matchDiag = el('pre', { class: 'srx__diag' });
+    matchDiag.textContent = 'note-match: press Practice, then play a note';
+
+    container.append(hint, staffWrap, bar, meta, status, info.el, diag, matchDiag);
+    return { root: container, hint, banner, practiceBtn, stopBtn, prevBtn, nextBtn, listenBtn, reviewBtn, level, count, assist, status, diag, matchDiag };
   }
 
   function setButtons() {
