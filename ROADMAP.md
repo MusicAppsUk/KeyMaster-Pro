@@ -33,6 +33,57 @@ it: *does this change serve the reader the eye is becoming, or does it import
 hand-technique load that belongs to Scales Masterclass?* If the latter, it does
 not belong in Stage 1.
 
+## Canonical Pillar — Time, Rhythm & Musical Duration (R1)
+
+> **Music is not only the correct note. It is the correct note, at the correct
+> time, for the correct duration, within a living pulse.**
+
+Timing is a **first-class pillar** of KeyMaster PRO, equal to pitch — not an
+optional extra, and not specific to keyboard players. Pitch tells the musician
+*what* to play; timing tells them *when*; duration tells them *how long* to hold
+or release; silence (rests) tells them *when not* to play.
+
+**Governing principle — the same one that governs reading:** *Recognition before
+Execution.* Timing is taught as a **recognition skill before a speed skill**. The
+learner first learns to *recognise* — Is the note short or long? On the beat or
+between beats? Is there a rest? Does the rhythm continue or pause? Is the pattern
+repeated? Does the phrase feel complete? — and only once recognition is secure
+does speed and fluency increase.
+
+**Founder's design constraint (canonical):** the founder found timekeeping hard
+to learn, so KeyMaster PRO must **never assume** pulse, counting, duration or
+rests are obvious. Timing must be made **visible, audible, and understandable** —
+the aim is to help the learner *feel* time, not merely count mechanically.
+
+**Progressive vocabulary (recognition first, execution later).** Whole/semibreve
+→ half/minim → quarter/crotchet → eighth/quaver → sixteenth/semiquaver; dotted
+notes, tied notes, triplets and tuplets; rests of every value; bar lines and time
+signatures; simple and compound meter; anacrusis/pickups, held and repeated
+notes, off-beat entries, syncopation, rhythmic patterns and phrase endings. Each
+is introduced only when the prior layer is secure.
+
+**Cross-module role (eventual).** Timing cross-references every module — Scales
+(evenness, pulse, controlled tempo), Cognitive Sight-Reading (reading rhythm as
+well as pitch, rests, continuity, not stopping after a mistake), Chords (harmonic
+rhythm, in-tempo changes), Arpeggios (flow, pulse stability, crossing points),
+Pattern Reading (rhythmic motifs, syncopation, musical memory), Organ/Pedalboard
+(limb independence, sustained notes, release timing).
+
+**Practice Review (eventual, educational — never game stats).** Timing will
+surface as teacher-style lines alongside the existing review, e.g. *Pulse
+Stability: Developing · Rhythm Recognition: Good · Note Duration: Needs attention
+· Continuity: Improving · Rest Awareness: Ready.* These remain calm, formative
+feedback in the established review voice.
+
+**Status & safety.** This is a **design/specification entry only**. No rhythm
+scoring, metronome enforcement, duration detection, rests engine, or tempo
+progression is wired into RC2. The full design lives in
+`TIMING_RHYTHM_PILLAR.md` (design docs); a forward-looking, **unused** vocabulary
+stub lives in `rhythmModel.js` (imported by nothing). Nothing here touches MIDI,
+the Event Bridge, staff rendering, progression gating, feedback, transport, or
+any stable module. Existing display-only crotchet rests in Sight-Reading are the
+first visible step of this pillar; everything else is future work.
+
 ## Curriculum flow
 
 Scales → Cognitive Sight-Reading → Chords → Arpeggios → Pattern Reading →

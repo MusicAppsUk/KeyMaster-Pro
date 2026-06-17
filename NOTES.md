@@ -85,3 +85,12 @@ event shape: `{ midiNote, velocity, timestamp, source }`.
   to the app. The temporary diagnostic has now been removed. New active baseline going
   forward: Sight-Reading matching, MIDI, navigation, fingering toggle and Practice
   Review all confirmed working.
+
+- **R1 design — Time, Rhythm & Musical Duration pillar (design/stub only).**
+  Added the canonical timing pillar to ROADMAP.md, a detailed design doc
+  (TIMING_RHYTHM_PILLAR.md, design-docs location), and an isolated, FROZEN,
+  UNUSED vocabulary stub `rhythmModel.js` (imported by nothing). No runtime
+  module changed; no version bump. Nothing touches MIDI, Event Bridge, staff
+  rendering, gating, feedback, transport, or any stable module. The display-only
+  crotchet rests already in Sight-Reading are the only visible part of this
+  pillar; all else is future, re-approval-gated work.
