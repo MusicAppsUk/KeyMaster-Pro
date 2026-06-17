@@ -331,13 +331,21 @@ class KeyMasterApp {
       // Schedule well in the future so each voice's envelope ramps up from silence
       // cleanly (a near-"now" start collapses the attack ramp into an onset click).
       const t = ctx.currentTime + 0.12;
-      // Softer velocities keep the summed peak below the limiter threshold (no
-      // pumping/clipping); a wider roll stops the four attacks stacking into one
-      // transient. B3, D#4, F#4, B4 — warm, gentle, ends near the visual fade.
-      const NOTES = [[59, 40], [63, 34], [66, 44], [71, 30]];
-      NOTES.forEach(([m, v], i) => {
-        this.synth.noteOn(m, v, t + i * 0.085);       // ~85ms roll between notes
-        this.synth.noteOff(m, t + 1.3);               // decay finishes near the 2s mark
+      // [midi, velocity, offAtSec]. B3, D#4, F#4, B4 — soft, gently rolled.
+      // The note-OFFs are STAGGERED (not all at one instant): four coherent
+      // releases + simultaneous oscillator stops sum into an end-of-flourish click,
+      // so instead the hand "lifts" note by note — the soft top B first, the root
+      // last — giving a gentle, gradual fade. Velocities stay low so the summed
+      // decay never reaches the limiter. Latest tail (~1.35 + release) stays < 2s.
+      const NOTES = [
+        [59, 38, 1.35],   // B3  (root)  — rings longest
+        [63, 32, 1.20],   // D#4         — lifts third
+        [66, 38, 1.05],   // F#4         — lifts second
+        [71, 22, 0.92],   // B4  (top)   — softest, lifts first
+      ];
+      NOTES.forEach(([m, v, off], i) => {
+        this.synth.noteOn(m, v, t + i * 0.085);       // ~85ms roll between onsets
+        this.synth.noteOff(m, t + off);               // staggered release → no end click
       });
     } catch { /* audio not ready; ignore */ }
   }
