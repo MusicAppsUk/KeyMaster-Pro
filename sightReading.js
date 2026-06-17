@@ -285,10 +285,12 @@ export default function createView(ctx) {
     recent.push(exercise.signature);
     if (recent.length > RECENT_CAP) recent.shift();
 
-    // Hand assignment + register logic (labels rendered on-staff).
-    const hm = handModel(exercise.names, lesson.clef);
+    // Hand assignment + register logic (labels rendered on-staff). Recognition
+    // (Stage 1) lessons use cognitive fixed-position fingering; see usesFixedPosition.
+    const fixedPos = usesFixedPosition(lesson);
+    const hm = handModel(exercise.names, lesson.clef, fixedPos);
     const model = staff.setSequence(exercise.names, { fingers: hm.labels });
-    playUI.diag.textContent = renderFingeringDiag(hm, exercise.names);   // [diagnostic rc2-11]
+    playUI.diag.textContent = renderFingeringDiag(hm, exercise.names, fixedPos);   // [diagnostic rc2-12]
     viewport?.frame(model.map((m) => m.midi));
     staff.setAnchor(assisted ? letterOf(exercise.names[0]) : null);
     playUI.hint.textContent = handHint(exercise.names, lesson.clef, hm);
@@ -591,14 +593,15 @@ function parseName(name) {
   return { letter: m[1], acc: m[2] === '#' ? 1 : m[2] === 'b' ? -1 : 0, octave: parseInt(m[3], 10) };
 }
 
-function handModel(names, clef) {
+function handModel(names, clef, fixedPosition = false) {
   const parsed = names.map(parseName);
   const dia = parsed.map((p) => LETTER_INDEX[p.letter] + 7 * p.octave);
   const midi = parsed.map((p) => toMidi(p.letter, p.acc, p.octave));
   const hands = midi.map((m) => (clef === 'treble' ? 'R' : clef === 'bass' ? 'L' : m >= 60 ? 'R' : 'L'));
 
-  // Musical fingering for EVERY note (never null) with position shifts.
-  const { fingers, shifts } = assignFingering(dia, hands);
+  // Musical fingering for EVERY note (never null). Recognition-stage lessons use
+  // a fixed five-finger position (no shifts); later stages use range-aware shifts.
+  const { fingers, shifts } = assignFingering(dia, hands, { fixedPosition });
   const fiveFinger = !shifts.some(Boolean);   // whole line fits one position
 
   // Inline staff labels are STRICTLY fingering numbers 1–5 so they can never be
@@ -618,7 +621,8 @@ function handModel(names, clef) {
 // natural reach) instead of triggering a spurious pinny reseat. A new position is
 // only opened when the music genuinely exceeds a 5th, and its first finger marks
 // the shift. Hands are fingered independently (grand staff).
-function assignFingering(dia, hands) {
+function assignFingering(dia, hands, opts = {}) {
+  const fixedPosition = opts.fixedPosition === true;
   const fingers = new Array(dia.length).fill(null);
   const shifts = new Array(dia.length).fill(false);
 
@@ -626,6 +630,23 @@ function assignFingering(dia, hands) {
     const idx = [];
     for (let i = 0; i < dia.length; i++) if (hands[i] === hand) idx.push(i);
     if (!idx.length) continue;
+
+    if (fixedPosition) {
+      // COGNITIVE fixed-position fingering (Recognition / Stage 1). The hand stays
+      // anchored on the phrase's LOWEST note for the WHOLE phrase: no thumb-under,
+      // no position shift, one stable five-finger mental map. Notes beyond the
+      // five-finger span are clamped to the boundary finger, so the finger number
+      // never runs backwards against the pitch (no crossing). This optimises for
+      // reading flow, not concert technique — wider spans simply keep the pinky
+      // (RH) / thumb (LH) on everything past the fifth.
+      const anchor = Math.min(...idx.map((i) => dia[i]));
+      for (const i of idx) {
+        const within = dia[i] - anchor;
+        const f = hand === 'R' ? within + 1 : 5 - within;
+        fingers[i] = Math.min(5, Math.max(1, f));
+      }
+      continue;   // fixed mode never shifts
+    }
 
     let p = 0;
     let first = true;
@@ -658,14 +679,14 @@ function assignFingering(dia, hands) {
    Derives its readout purely from the live handModel output — it does NOT
    touch assignFingering, so the algorithm itself is unchanged. Remove after we
    have confirmed which build is running on the tablet. */
-const SR_FINGERING_BUILD = 'Sight Reading Fingering Engine: range-aware rc2-11';
+const SR_FINGERING_BUILD = 'Sight Reading Fingering Engine: rc2-12 (fixed-position for Stage 1)';
 const NOTE_LETTERS = ['C', 'D', 'E', 'F', 'G', 'A', 'B'];
 function diaToName(d) {
   const oct = Math.floor(d / 7);
   const li = ((d % 7) + 7) % 7;
   return `${NOTE_LETTERS[li]}${oct}`;
 }
-function renderFingeringDiag(hm, names) {
+function renderFingeringDiag(hm, names, fixedPosition = false) {
   const dia = names.map((n) => { const p = parseName(n); return LETTER_INDEX[p.letter] + 7 * p.octave; });
   // Per-note position anchor (posMin) implied by the assigned finger:
   //   RH: finger = d - posMin + 1   ->  posMin = d - (finger - 1)
@@ -678,6 +699,7 @@ function renderFingeringDiag(hm, names) {
   const w = (arr) => arr.map((x) => String(x == null ? '-' : x).padStart(3, ' ')).join(' ');
   return [
     SR_FINGERING_BUILD,
+    `mode:   ${fixedPosition ? 'fixed_position (Recognition / Stage 1) — no shift, no thumb-under' : 'range-aware (conventional pianistic)'}`,
     `idx:    ${w(names.map((_, i) => i))}`,
     `name:   ${w(names)}`,
     `midi:   ${w(hm.midi)}`,
@@ -687,6 +709,15 @@ function renderFingeringDiag(hm, names) {
     `shift:  ${w(hm.shifts.map((s) => (s ? '^' : '-')))}`,
     `one-position: ${hm.fiveFinger ? 'YES — single five-finger position, no shift' : 'NO — shift(s) applied'}`,
   ].join('\n');
+}
+
+// Cognitive Sight-Reading mode gate. The Recognition stage (Stage 1) optimises
+// for note recognition: fixed five-finger position, no thumb-under, no shifts.
+// Later stages (and the separate Scales Masterclass module) keep conventional
+// pianistic fingering. Adjust this single predicate to retune which lessons
+// qualify (e.g. `lesson?.cfg?.level <= 5` for a stricter early-levels-only gate).
+function usesFixedPosition(lesson) {
+  return lesson?.stage === 1;
 }
 
 // Starting-position hint: states the starting hand + finger (no note names).
