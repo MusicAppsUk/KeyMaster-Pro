@@ -84,8 +84,14 @@ export default function createView(ctx) {
     const chord = buildChord(sel);
     const names = chord.midis.map((m) => noteName(m, { accidental: pref }));
     const fingers = recommendedFingering(chord.midis, sel.hand);
+    // Stage 1 display polish: show only the thumb anchor (finger 1) on the staff.
+    // The pinky (5) marker is dropped to keep stacked triads uncluttered — the
+    // keyboard highlights already teach the full hand shape. This trims the STAFF
+    // LABELS only; chord detection, inversion logic, and keyboard highlights are
+    // unaffected (none of them read this array).
+    const staffFingers = fingers.map((f) => (f === 1 ? 1 : null));
 
-    staff.setChord(names, { fingers });
+    staff.setChord(names, { fingers: staffFingers });
     const map = new Map();
     chord.midis.forEach((m, i) => map.set(m, i));
     evaluator.attachStaff(staff, map);
