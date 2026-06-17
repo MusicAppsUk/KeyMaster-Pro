@@ -141,6 +141,24 @@
 }
 
 /* --------------------------------------------------------------------------
+   Rests — DISPLAY ONLY. The engine pads an incomplete 4/4 bar with crotchet
+   rests (Sight-Reading opt-in). Rests are never playable and never enter the
+   note model; they are positioned by `left` on the staff like barlines.
+   -------------------------------------------------------------------------- */
+.rest {
+  position: absolute;
+  left: 0;
+  top: calc(var(--staff-space) * 2);   /* centre line of the five-line staff */
+  transform: translate(-50%, -54%);
+  font-family: 'Bravura', 'Noto Music', serif;
+  font-size: calc(var(--staff-space) * 3.6);
+  line-height: 1;
+  color: var(--ink-dim);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* --------------------------------------------------------------------------
    Notes. The engine sets `left` (time) and `top` (pitch, in half staff-spaces)
    on .note; head/stem/flag are children so accidentals and beams can attach.
    -------------------------------------------------------------------------- */

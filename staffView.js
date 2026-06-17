@@ -84,7 +84,7 @@ export function createStaffView({ compact = false } = {}) {
 
   function clearNotes() {
     [treble, bass, trebleTrack, bassTrack].forEach((s) =>
-      s && s.querySelectorAll('.note, .ledger, .barline').forEach((n) => n.remove()));
+      s && s.querySelectorAll('.note, .ledger, .barline, .rest').forEach((n) => n.remove()));
   }
 
   /**
@@ -95,7 +95,7 @@ export function createStaffView({ compact = false } = {}) {
    *   opts.scroll       lay notes on the fixed pixel grid for scrolling
    */
   function setSequence(names, opts = {}) {
-    const { lower = null, fingers = null, lowerFingers = null, scroll = false, pan = false, beatsPerBar = 4 } = opts;
+    const { lower = null, fingers = null, lowerFingers = null, scroll = false, pan = false, beatsPerBar = 4, showRests = false } = opts;
     scrolling = scroll;
     el.classList.toggle('notation--scroll', scroll);
     el.classList.toggle('notation--pan', pan && !scroll);
@@ -103,16 +103,22 @@ export function createStaffView({ compact = false } = {}) {
     clearNotes();
 
     const n = names.length;
+    // Visual rests are PAGE-mode only and OPT-IN. When on, notes sit on a whole-bar
+    // beat grid (rounded up to full bars) and the trailing empty beats of the final
+    // bar are padded with crotchet rests. This is DISPLAY ONLY — `model` still holds
+    // notes only, so the cursor, matching, scoring and review are unaffected.
+    const restPad = showRests && !scroll && !pan && n > 0;
+    const slots = restPad ? Math.max(1, Math.ceil(n / beatsPerBar) * beatsPerBar) : n;
+    const pageDen = Math.max(1, slots - 1);
     // Layout x-position per note index:
     //   scroll → fixed grid inside the translatable track (animated playhead)
     //   pan    → fixed grid in a natively horizontally-scrollable container
-    //            (full note size; the staff scrolls instead of shrinking)
     //   page   → spread across the width by percentage (short exercises)
     const xFor = scroll
       ? (i) => `calc(var(--col-w) * ${i})`
       : pan
         ? (i) => `calc(var(--gutter) + var(--col-w) * ${i})`
-        : (i) => `${n <= 1 ? 50 : 22 + (68 * i) / (n - 1)}%`;
+        : (i) => `${slots <= 1 ? 50 : 22 + (68 * i) / pageDen}%`;
     if (pan && !scroll) {
       el.style.setProperty('--content-w', `calc(var(--gutter) + var(--col-w) * ${(n + 0.5).toFixed(2)})`);
     }
@@ -130,7 +136,13 @@ export function createStaffView({ compact = false } = {}) {
       return entry;
     });
 
-    drawBarlines(n, scroll, pan, beatsPerBar);
+    // Pad the final incomplete bar with crotchet rests (notation only; not in model).
+    if (restPad && slots > n) {
+      const restStaff = model.length ? model[model.length - 1].staff : 'treble';
+      for (let k = n; k < slots; k++) engraveRest(xFor(k), restStaff);
+    }
+
+    drawBarlines(n, scroll, pan, beatsPerBar, slots);
     if (scroll) scrollToIndex(0, false);
 
     // ---- Dynamic vertical bounds (no fixed rendering boundary) ----
@@ -283,10 +295,11 @@ export function createStaffView({ compact = false } = {}) {
 
   // Vertical bar lines dividing the stream into 4-beat measures. A line is drawn
   // just before every note whose index is a multiple of beatsPerBar.
-  function drawBarlines(n, scroll, pan, beatsPerBar) {
+  function drawBarlines(n, scroll, pan, beatsPerBar, slots = n) {
     const tHost = scroll ? trebleTrack : treble;
     const bHost = scroll ? bassTrack : bass;
-    const leftPct = (k) => (n <= 1 ? 50 : 22 + (68 * k) / (n - 1));
+    const span = Math.max(1, slots - 1);
+    const leftPct = (k) => (slots <= 1 ? 50 : 22 + (68 * k) / span);
     const addBar = (x, cls) => {
       for (const host of [tHost, bHost]) {
         const bl = document.createElement('div');
@@ -296,7 +309,7 @@ export function createStaffView({ compact = false } = {}) {
       }
     };
     // Interior barlines just before every downbeat (multiple of beatsPerBar).
-    for (let i = beatsPerBar; i < n; i += beatsPerBar) {
+    for (let i = beatsPerBar; i < slots; i += beatsPerBar) {
       const x = scroll
         ? `calc(var(--col-w) * ${i} - var(--col-w) * 0.5)`
         : pan
@@ -305,12 +318,24 @@ export function createStaffView({ compact = false } = {}) {
       addBar(x, 'barline');
     }
     // Final barline closing the last measure.
-    if (n > 0 && !scroll) {
+    if (slots > 0 && !scroll) {
       const xEnd = pan
         ? `calc(var(--gutter) + var(--col-w) * ${n} - var(--col-w) * 0.5)`
-        : `${Math.min(99, leftPct(n - 1) + 4)}%`;
+        : `${Math.min(99, leftPct(slots - 1) + 4)}%`;
       addBar(xEnd, 'barline barline--final');
     }
+  }
+
+  // A display-only crotchet rest at a beat slot (never enters `model`).
+  function engraveRest(xCss, staffName) {
+    const host = containerFor(staffName);
+    const r = document.createElement('div');
+    r.className = 'rest rest--quarter';
+    r.style.left = xCss;
+    r.setAttribute('aria-hidden', 'true');
+    r.textContent = '\uD834\uDD3D';   // U+1D13D MUSICAL SYMBOL QUARTER REST
+    host.appendChild(r);
+    return r;
   }
 
   function scrollToIndex(i, animate = true) {

@@ -78,3 +78,10 @@ event shape: `{ midiNote, velocity, timestamp, source }`.
   Back navigation across Sight-Reading, Scales and Chords; the per-module fingering-
   number show/hide toggle; the learner-facing Sight-Reading lesson screen; the frozen
   fingering engine (rc2-12). This is the rollback point for subsequent feature work.
+
+- **rc2-20 — Sight-Reading note matching CONFIRMED working on device.** The rc2-20
+  temporary on-screen note-match diagnostic confirmed the expected/played MIDI flow
+  was correct (the matching code was unchanged from baseline); root cause was external
+  to the app. The temporary diagnostic has now been removed. New active baseline going
+  forward: Sight-Reading matching, MIDI, navigation, fingering toggle and Practice
+  Review all confirmed working.

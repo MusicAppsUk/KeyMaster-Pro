@@ -63,6 +63,7 @@ export default function createView(ctx) {
   const keySig = createKeySignaturePanel();
   let staffMap = new Map();          // midi → staff note index
   const bridge = new EventBridge();  // raw validation/log layer (RC3)
+  let sessionStartLen = 0;           // index into bridge.log marking this practice run's start (read-only review)
 
   function markStaff(midi, state) {
     staff.clearMarks();
@@ -240,6 +241,7 @@ export default function createView(ctx) {
   function practice() {
     if (!audioOK) return;
     stopAll();
+    sessionStartLen = bridge.log.length;   // read-only review covers this run onward
     const token = playToken;        // session token; stale callbacks become no-ops
     mode = 'practice';
     unlockAudio();
@@ -554,7 +556,9 @@ export default function createView(ctx) {
     // Scales-only. Returns the exercise to its first note WITHOUT starting
     // playback and WITHOUT touching key / major-minor / hand / range selections.
     const resetBtn = button('↺ Reset', reset, 'btn--xl btn--ghost');
-    actions.append(listenBtn, practiceBtn, stopBtn, resetBtn);
+    const reviewBtn = button('Finish & Review', finishReview, 'btn--xl btn--ghost');
+    reviewBtn.disabled = true;
+    actions.append(listenBtn, practiceBtn, stopBtn, resetBtn, reviewBtn);
 
     const tempoWrap = el('div', { class: 'smc__tempo' });
     const tempoLabel = el('span', { class: 'smc__tempolabel' }); tempoLabel.textContent = 'Tempo';
@@ -626,7 +630,7 @@ export default function createView(ctx) {
     root.append(controls, stage);
 
     return { root, keySel, typeSel, handSel, octSel, updown, fingerToggle, metro,
-             notesLine, fingerNote, listenBtn, practiceBtn, stopBtn, tempo, tempoVal, status, metrics, climb };
+             notesLine, fingerNote, listenBtn, practiceBtn, stopBtn, reviewBtn, tempo, tempoVal, status, metrics, climb };
   }
 
   function wireControls() {
@@ -669,6 +673,71 @@ export default function createView(ctx) {
     setButtons();
   }
 
+  // End the current run and show the read-only Practice Review (swaps the stage
+  // for a calm review panel; restored by the panel's own actions). Read-only over
+  // bridge.log — no scoring/evaluator/fingering/scale logic is touched.
+  function finishReview() {
+    if (bridge.log.length <= sessionStartLen) return;   // nothing to review yet
+    stopAll();
+    mode = 'summary';
+    renderScalesReview();
+  }
+
+  function renderScalesReview() {
+    const records = bridge.log.slice(sessionStartLen);
+    const a = analyseScaleSession(records);
+    const handLabel = sel.hand === 'Both' ? 'Both hands' : sel.hand;
+    const scaleName = `${displayTonic(sel.tonic)} ${typeLabel(sel.type)} · ${handLabel}`;
+    const direction = sel.updown ? 'Ascending & descending' : 'Ascending';
+
+    const wrap = el('div', { class: 'smc__review' });
+    const head = el('div');
+    head.innerHTML = `<p class="smc__review-eyebrow">Scales Masterclass</p>
+      <h2 class="smc__review-title">Your Practice Review</h2>
+      <p class="smc__review-sub">${scaleName} · ${direction}</p>`;
+    wrap.appendChild(head);
+
+    if (!a.attempted) {
+      const empty = el('p', { class: 'smc__review-empty' });
+      empty.textContent = 'No notes were recorded in this run yet. Press Practise Again to begin.';
+      wrap.appendChild(empty);
+    } else {
+      const rows = [
+        ['Notes played', `${a.correct} of ${a.attempted}`],
+        ['Accuracy', `${a.accuracy}%`],
+        ['Longest fluent run', `${a.longest} ${a.longest === 1 ? 'note' : 'notes'}`],
+      ];
+      const grid = el('div', { class: 'smc__review-grid' });
+      rows.forEach(([k, v]) => {
+        const row = el('div', { class: 'smc__review-row' });
+        row.innerHTML = `<span class="smc__review-key">${k}</span><span class="smc__review-val">${v}</span>`;
+        grid.appendChild(row);
+      });
+      wrap.appendChild(grid);
+
+      const notes = el('div', { class: 'smc__review-notes' });
+      const hesLine = a.hesitant.length
+        ? `<p class="smc__review-line"><span class="smc__review-label">What stood out</span>You paused most around ${smcMidiName(a.hesitant[0].midi)}.</p>`
+        : '';
+      notes.innerHTML = hesLine +
+        `<p class="smc__review-line"><span class="smc__review-label">Focus for next time</span>${scaleFocus(a, sel.updown)}</p>` +
+        `<p class="smc__review-coach">${scaleCoachNote(a)}</p>`;
+      wrap.appendChild(notes);
+    }
+
+    const actions = el('div', { class: 'smc__review-actions' });
+    actions.append(
+      button('Practise Again', () => { mount.replaceChildren(ui.root); reset(); practice(); }, 'btn--xl'),
+      button('Back to Scales', () => { mount.replaceChildren(ui.root); reset(); }, 'btn--xl btn--ghost'),
+      button('Back to Modules', () => {
+        try { if (location.hash && location.hash !== '#/' && location.hash !== '#') location.hash = '#/'; } catch { /* ignore */ }
+      }, 'btn--xl btn--ghost'),
+    );
+    wrap.appendChild(actions);
+
+    mount.replaceChildren(wrap);
+  }
+
   function setButtons() {
     if (!audioOK) return;
     const listening = mode === 'listening';
@@ -682,6 +751,8 @@ export default function createView(ctx) {
     ui.listenBtn.textContent = listening ? '◼ Stop listening' : '♪ Listen';
     ui.practiceBtn.textContent = practicing ? '◼ Stop practice' : '● Practice';
     ui.stopBtn.disabled = !(listening || practicing);
+    // Review available once this practice run has recorded at least one note (read-only).
+    if (ui.reviewBtn) ui.reviewBtn.disabled = bridge.log.length <= sessionStartLen;
   }
 
   /* ===================================================================== *
@@ -727,6 +798,45 @@ function parseTonic(name) {
   return { letter, accidental };
 }
 function displayTonic(name) { return name.replace('b', '♭').replace('#', '♯'); }
+
+/* ---- Scales Practice Review analysis (READ-ONLY over Event Bridge records) ----
+ * Pure helpers; they never touch scoring, the evaluator, fingering, scale logic
+ * or the bridge's own state — only a copy of the run's records. */
+const SMC_PITCH = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+function smcMidiName(m) {
+  return Number.isFinite(m) ? `${SMC_PITCH[((m % 12) + 12) % 12]}${Math.floor(m / 12) - 1}` : '—';
+}
+function analyseScaleSession(records) {
+  const attempted = records.length;
+  const correct = records.reduce((n, r) => n + (r.accuracy ? 1 : 0), 0);
+  const accuracy = attempted ? Math.round((correct / attempted) * 100) : 0;
+  let longest = 0, run = 0, trailing = 0;
+  for (const r of records) { if (r.accuracy) { run += 1; if (run > longest) longest = run; } else run = 0; }
+  for (let i = records.length - 1; i >= 0; i--) { if (records[i].accuracy) trailing += 1; else break; }
+  const byNote = new Map();
+  for (const r of records) {
+    const m = r.expectedNote;
+    if (!Number.isFinite(m)) continue;
+    const e = byNote.get(m) || { midi: m, misses: 0 };
+    e.misses += r.accuracy ? 0 : 1;
+    byNote.set(m, e);
+  }
+  const hesitant = [...byNote.values()].filter((e) => e.misses > 0).sort((a, b) => b.misses - a.misses);
+  return { attempted, correct, accuracy, longest, trailing, misses: attempted - correct, hesitant };
+}
+function scaleCoachNote(a) {
+  if (!a.attempted) return 'Whenever you’re ready, play the scale slowly and evenly.';
+  if (a.accuracy >= 95) return 'Your scale was accurate and even today — that control is exactly what builds fluency.';
+  if (a.misses > 0 && a.trailing >= 3) return 'You recovered well after a slip and finished the run cleanly.';
+  if (a.accuracy >= 80) return 'Good work — your scale is becoming more secure.';
+  return 'Steady, slow repetition is doing its work — evenness comes before speed.';
+}
+function scaleFocus(a, updown) {
+  if (!a.attempted) return 'Play a few notes and your focus for next time will appear here.';
+  if (a.hesitant.length) return `Next time, take an extra moment on ${smcMidiName(a.hesitant[0].midi)} before playing it.`;
+  if (updown) return 'Next time, keep the turn at the top of the scale smooth and even.';
+  return 'Next time, aim for a steady, even pulse from the first note to the last.';
+}
 function typeLabel(t) { return (TYPES.find((x) => x[0] === t) || [t, t])[1]; }
 
 function el(tag, props = {}) {
@@ -841,6 +951,25 @@ function injectStyles() {
     .smc__climb{margin-top:1rem;display:flex;flex-direction:column;gap:.6rem;align-items:flex-start}
     .smc__levelup{color:var(--good);font-family:var(--font-mono);font-size:var(--step-sm);margin:0}
     .smc__levelup--hold{color:var(--warn)}
+    /* ---- Scales Practice Review (calm, coach-led; no badges/XP/scoreboard) ---- */
+    .smc__review{display:flex;flex-direction:column;gap:.4rem;max-width:640px}
+    .smc__review-eyebrow{font-family:var(--font-mono);font-size:var(--step-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--brass-bright);margin:0}
+    .smc__review-title{font-family:var(--font-display);font-size:var(--step-lg,1.6rem);color:var(--ivory);margin:.1rem 0}
+    .smc__review-sub{font-family:var(--font-sans);font-size:var(--step-sm);color:var(--ivory-dim);margin:0}
+    .smc__review-empty{font-family:var(--font-sans);font-size:var(--step-sm);color:var(--ivory-dim);margin:1rem 0}
+    .smc__review-grid{display:flex;flex-direction:column;gap:.1rem;margin:1rem 0 .4rem;
+      border:1px solid color-mix(in srgb,var(--ivory) 10%,transparent);border-radius:14px;overflow:hidden}
+    .smc__review-row{display:flex;align-items:baseline;justify-content:space-between;gap:1rem;padding:.6rem .9rem;
+      background:color-mix(in srgb,var(--ivory) 3%,transparent)}
+    .smc__review-row:nth-child(even){background:color-mix(in srgb,var(--ivory) 5%,transparent)}
+    .smc__review-key{font-family:var(--font-sans);font-size:var(--step-sm);color:var(--ivory-dim)}
+    .smc__review-val{font-family:var(--font-display);font-size:var(--step-md,1.2rem);color:var(--ivory)}
+    .smc__review-notes{display:flex;flex-direction:column;gap:.7rem;margin:1.1rem 0}
+    .smc__review-line{font-family:var(--font-sans);font-size:var(--step-sm);color:var(--ivory);margin:0;line-height:1.5}
+    .smc__review-label{display:block;font-family:var(--font-mono);font-size:var(--step-xs);letter-spacing:.1em;text-transform:uppercase;color:var(--brass-bright);margin-bottom:.15rem}
+    .smc__review-coach{font-family:var(--font-display);font-style:italic;font-size:var(--step-md,1.15rem);color:var(--ivory);
+      margin:.4rem 0 0;padding:.8rem 1rem;border-left:2px solid var(--brass);background:color-mix(in srgb,var(--brass) 8%,transparent);border-radius:0 10px 10px 0;line-height:1.5}
+    .smc__review-actions{display:flex;flex-wrap:wrap;gap:.6rem;margin-top:1.3rem}
   `;
   document.head.appendChild(s);
 }
