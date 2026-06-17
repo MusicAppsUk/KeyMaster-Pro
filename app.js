@@ -111,15 +111,15 @@ function savePrefs(prefs) {
 const VIEW_REGISTRY = {
   scales: {
     slot: 'scales',
-    load: () => import('./scalesMasterclass.js?v=rc2-9'),
+    load: () => import('./scalesMasterclass.js?v=rc2-10'),
   },
   sightreading: {
     slot: 'sightreading',
-    load: () => import('./sightReading.js?v=rc2-9'),
+    load: () => import('./sightReading.js?v=rc2-10'),
   },
   chords: {
     slot: 'chords',
-    load: () => import('./chordMasterclass.js?v=rc2-9'),
+    load: () => import('./chordMasterclass.js?v=rc2-10'),
   },
 };
 

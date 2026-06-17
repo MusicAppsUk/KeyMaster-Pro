@@ -534,11 +534,6 @@ export default function createView(ctx) {
       labeled('Hand', handSel), labeled('Range', octSel), updownWrap, fingerWrap, metroWrap,
       keySig.el,
     );
-    // [diagnostic rc2-9] Expose the key-sig panel's ACTUAL live parent so the
-    // on-device red label can read it back via CSS attr(). Remove after verifying.
-    keySig.el.dataset.diagParent = keySig.el.parentElement
-      ? (keySig.el.parentElement.className || '(no-class)')
-      : '(detached)';
 
     const notesLine = el('div', { class: 'smc__readout' });
     const fingerNote = el('p', { class: 'smc__fingernote' });
@@ -788,15 +783,29 @@ function injectStyles() {
        up-&-down scale is wider than the viewport, instead of running off-screen.
        min-width:0 lets the flex item be constrained so the inner .notation--pan
        (overflow-x:auto) actually scrolls rather than stretching the layout. */
-    .smc__stafftop{margin:0;min-width:0;max-width:100%}
-    .smc__stafftop .notation{max-width:100%}
+    /* Long-scale horizontal scroll. The app's main region is overflow:hidden,
+       so a staff wider than the viewport gets CLIPPED unless it scrolls inside
+       its own panel. Pin every Scales container to the available width, make the
+       staff panel itself the horizontal scroller (touch + momentum), and set the
+       engraved content width explicitly — so a 2-octave / up-&-down run is wider
+       than the panel and therefore scrollable, rather than relying on inherited
+       pan-layout sizing that the app shell was overriding. */
+    .smc,.smc__controls,.smc__stage,.smc__stafftop{min-width:0;max-width:100%}
+    .smc__stafftop{margin:0;overflow:hidden}
+    .smc__stafftop .notation{
+      width:100%;max-width:100%;
+      overflow-x:auto;overflow-y:hidden;
+      -webkit-overflow-scrolling:touch;
+      touch-action:pan-x pan-y}
+    .smc__stafftop .notation .staff,
+    .smc__stafftop .notation .grand-staff{min-width:var(--content-w,100%)}
     /* Key Signature Preview — clearly readable mini grand-staff, sitting on the
        toggle line (right of Up&Down / Staff fingering / Practice metronome). Fixed
        height keeps it a consistent size across keys; it never shrinks per key. */
     .smc__kspanel{margin:0 0 0 auto;padding:.25rem .5rem;align-self:center;
       background:#F8F5EC;border:1px solid #DCD5C4;border-radius:7px;
       box-shadow:0 1px 2px rgba(0,0,0,.18);line-height:0;flex:0 0 auto}
-    .smc__kspanel svg{height:clamp(58px,8dvh,80px);width:auto;display:block}
+    .smc__kspanel svg{height:clamp(92px,12vw,120px);width:auto;display:block}
     /* RC2 compaction: one horizontal band for tempo + Learn Why + scale context. */
     .smc__band{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .85rem;margin:0}
     .smc__band .smc__tempo{flex:0 1 auto;margin:0}
@@ -832,30 +841,6 @@ function injectStyles() {
     .smc__climb{margin-top:1rem;display:flex;flex-direction:column;gap:.6rem;align-items:flex-start}
     .smc__levelup{color:var(--good);font-family:var(--font-mono);font-size:var(--step-sm);margin:0}
     .smc__levelup--hold{color:var(--warn)}
-
-    /* ================================================================
-       TEMPORARY LIVE-DOM DIAGNOSTIC MARKERS — build token rc2-9
-       Scales-scoped only. To be removed after on-device verification.
-       ================================================================ */
-    /* Key-signature panel: red outline + label showing its real parent */
-    .smc__kspanel{outline:3px solid #ff2d2d !important;position:relative !important;overflow:visible !important}
-    .smc__kspanel::after{
-      content:"KEYSIG PANEL [rc2-9]  parent=" attr(data-diag-parent);
-      position:absolute;left:0;bottom:100%;margin-bottom:2px;
-      font:bold 10px/1.25 monospace;color:#fff;background:#ff2d2d;
-      padding:2px 5px;white-space:nowrap;z-index:99999;border-radius:3px}
-    /* Scales staff: green outline on the element that is SUPPOSED to scroll,
-       with a forced-visible scrollbar so it's obvious whether it scrolls. */
-    .smc__stafftop .notation{
-      outline:3px dashed #12c400 !important;
-      overflow-x:scroll !important;position:relative !important}
-    .smc__stafftop .notation::before{
-      content:"SCROLL CONTAINER  (.notation--pan, overflow-x:auto)";
-      position:absolute;left:0;top:0;
-      font:bold 10px/1.25 monospace;color:#000;background:#12c400;
-      padding:2px 5px;white-space:nowrap;z-index:99999}
-    .smc__stafftop .notation::-webkit-scrollbar{height:10px;-webkit-appearance:none}
-    .smc__stafftop .notation::-webkit-scrollbar-thumb{background:#12c400;border-radius:5px}
   `;
   document.head.appendChild(s);
 }
