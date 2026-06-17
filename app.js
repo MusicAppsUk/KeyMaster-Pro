@@ -111,15 +111,15 @@ function savePrefs(prefs) {
 const VIEW_REGISTRY = {
   scales: {
     slot: 'scales',
-    load: () => import('./scalesMasterclass.js?v=rc2-13'),
+    load: () => import('./scalesMasterclass.js?v=rc2-14'),
   },
   sightreading: {
     slot: 'sightreading',
-    load: () => import('./sightReading.js?v=rc2-13'),
+    load: () => import('./sightReading.js?v=rc2-14'),
   },
   chords: {
     slot: 'chords',
-    load: () => import('./chordMasterclass.js?v=rc2-13'),
+    load: () => import('./chordMasterclass.js?v=rc2-14'),
   },
 };
 
@@ -130,6 +130,21 @@ const ROUTES = {
   '/scales': 'scales',
   '/sightreading': 'sightreading',
   '/chords': 'chords',
+};
+
+/**
+ * Per-module on-screen-keyboard DEFAULT visibility (presentation only).
+ * Sight-Reading and Scales favour a focused view (keyboard hidden so the staff
+ * fills the screen); Chord Trainer shows the keyboard guide by default so chord
+ * shapes, spacing and construction are visible. `true` = hidden by default.
+ * A module's manual toggle is remembered independently under localStorage
+ * `kbHidden:<viewId>` and overrides its default.
+ */
+const KEYBOARD_HIDDEN_DEFAULT = {
+  home: false,
+  scales: true,
+  sightreading: true,
+  chords: false,
 };
 
 /* ===========================================================================
@@ -158,7 +173,12 @@ class KeyMasterApp {
     this._bootInstrument();
     this._wireChrome();
     this._wireRouter();
-    try { this._applyKeyboardPref(window.localStorage.getItem('keyboardHidden') === '1'); } catch { /* ignore */ }
+    // Apply the per-module keyboard default for the INITIAL route before reveal
+    // (avoids a flash of the wrong layout on deep links / reload).
+    try {
+      const initialView = ROUTES[location.hash.replace(/^#/, '')] ?? 'home';
+      this._applyKeyboardPref(this._resolveKeyboardHidden(initialView));
+    } catch { /* ignore */ }
     await this._connectMidiSilently();
 
     // Reveal the shell now that everything is wired.
@@ -386,7 +406,19 @@ class KeyMasterApp {
   _toggleKeyboard() {
     const hidden = document.documentElement.getAttribute('data-keyboard') !== 'hidden';
     this._applyKeyboardPref(hidden);
-    try { window.localStorage.setItem('keyboardHidden', hidden ? '1' : '0'); } catch { /* ignore */ }
+    // Remember the choice PER MODULE, not globally.
+    const viewId = this.store.getState().view ?? 'home';
+    try { window.localStorage.setItem(`kbHidden:${viewId}`, hidden ? '1' : '0'); } catch { /* ignore */ }
+  }
+
+  /** Resolve a module's keyboard-hidden state: remembered choice, else default. */
+  _resolveKeyboardHidden(viewId) {
+    try {
+      const stored = window.localStorage.getItem(`kbHidden:${viewId}`);
+      if (stored === '1') return true;
+      if (stored === '0') return false;
+    } catch { /* ignore */ }
+    return KEYBOARD_HIDDEN_DEFAULT[viewId] ?? false;
   }
 
   _applyKeyboardPref(hidden) {
@@ -504,6 +536,10 @@ class KeyMasterApp {
 
     this.store.setState({ view: viewId });
     savePrefs({ ...loadPrefs(), lastView: viewId });
+
+    // Presentation: apply this module's on-screen-keyboard preference (the
+    // remembered manual choice if any, otherwise the module's default).
+    this._applyKeyboardPref(this._resolveKeyboardHidden(viewId));
 
     if (viewId !== 'home') await this._enterView(viewId);
   }
