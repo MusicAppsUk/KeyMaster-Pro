@@ -55,6 +55,7 @@ export default function createView(ctx) {
   let activeStage = 1;
   let playlist = [];            // lessons for the active stage
   let lessonIdx = 0;
+  let focusTier = 1;            // which tier's pathway the lessons screen shows (others collapse)
 
   // ---- engine state ----
   let mode = 'idle';            // idle | active | listening | pass | fail
@@ -160,6 +161,8 @@ export default function createView(ctx) {
     playlist = lessonsForStage(n);
     lessonIdx = 0;
     assessing = false;
+    const tiers = tiersForStage(n);
+    focusTier = tiers.length ? tiers[0].tier : 1;
     go('lessons');
   }
 
@@ -187,65 +190,120 @@ export default function createView(ctx) {
     stage3?.stop(true);
     assessing = false;
     const stage = STAGES.find((s) => s.n === activeStage);
+    const tiers = tiersForStage(activeStage);
+    if (!tiers.some((t) => t.tier === focusTier)) focusTier = tiers[0]?.tier ?? 1;
+    const focus = tiers.find((t) => t.tier === focusTier);
+    const nextLessonIn = (lessons) => lessons.find((l) => !seen.has(l.id)) || lessons[lessons.length - 1];
+
     const wrap = el('div', { class: 'srx__screen' });
 
+    // ---- Header: where am I ----
     const head = el('div', { class: 'srx__head' });
     const back = button('‹ Stages', () => go('stages'), 'btn--ghost srx__back');
+    const info = focus ? tierCopyFor(focus) : { name: stage.title, blurb: '' };
     const h = el('div');
-    h.innerHTML = `<p class="vector__eyebrow">${stage.eyebrow} — ${stage.title}</p>
-      <h2 class="srx__h">${stage.title} — Lessons</h2>`;
+    h.innerHTML = `<p class="srx__eyebrow">Stage ${stage.n} · ${stage.title}</p>
+      <h2 class="srx__path-title">${info.name}</h2>
+      <p class="srx__path-sub">${info.blurb}</p>`;
     head.append(back, h);
     wrap.appendChild(head);
 
-    if (!stage.ready) {
-      const note = el('div', { class: 'srx__previewbar' });
-      note.textContent = `Preview — ${stage.title} playback is coming soon. The lesson path below is live and will run in this mode once released.`;
-      wrap.appendChild(note);
-    }
+    if (focus) {
+      const visited = focus.lessons.filter((l) => seen.has(l.id)).length;
+      const total = focus.lessons.length;
+      const prog = el('div', { class: 'srx__progress' });
+      prog.innerHTML = `<span class="srx__progress-dots">${progressDots(visited, total)}</span>
+        <span class="srx__progress-label">${visited} of ${total} practised</span>`;
+      wrap.appendChild(prog);
 
-    // Stage 1 unlock assessment — the single, atomic gate to Stage 2.
-    if (activeStage === 1) {
-      const unlocked = gate.isUnlocked(2);
-      const cta = button(
-        unlocked
-          ? '✓ Stage 2 unlocked — retake assessment'
-          : `● Take the Stage 2 Unlock Assessment (${gate.THRESHOLDS.stage1.block} notes)`,
-        openAssessment,
-        'btn--xl srx__assessbtn',
-      );
-      if (!input) cta.disabled = true;
-      wrap.appendChild(cta);
-    }
-
-    for (const group of tiersForStage(activeStage)) {
-      const sec = el('section', { class: 'srx__tier' });
-      sec.innerHTML = `<h3 class="srx__tier-title"><span>Tier ${group.tier}</span> ${group.title}</h3>`;
-      const list = el('div', { class: 'srx__lessons' });
-      for (const lesson of group.lessons) {
-        const idx = playlist.findIndex((l) => l.id === lesson.id);
-        const b = el('button', { class: 'srx__lesson', type: 'button' });
-        b.innerHTML = `
-          <span class="srx__lesson-id">${lesson.id}</span>
-          <span class="srx__lesson-title">${lesson.title}</span>
-          <span class="srx__lesson-tags">${clefTag(lesson.clef)} · ${accTag(lesson.accidentals)}</span>
-          <span class="srx__lesson-gov">${lesson.governance}</span>`;
-        b.addEventListener('click', () => (stage.ready ? openLesson(idx) : previewLesson(lesson)));
-        list.appendChild(b);
+      if (!stage.ready) {
+        const note = el('div', { class: 'srx__previewbar' });
+        note.textContent = 'Preview — this mode is coming soon. The pathway below is ready and will run here once released.';
+        wrap.appendChild(note);
       }
+
+      // ---- Continue card: the single primary action (what next) ----
+      const next = nextLessonIn(focus.lessons);
+      const nc = lessonCopyFor(next);
+      const nVisited = seen.has(next.id);
+      const verb = nVisited ? 'Resume' : (visited > 0 ? 'Continue' : 'Start here');
+      const nextIdx = playlist.findIndex((l) => l.id === next.id);
+      const cont = el('div', { class: 'srx__continue' });
+      cont.innerHTML = `<span class="srx__continue-eyebrow">${verb}</span>
+        <h3 class="srx__continue-title">${nc.title}</h3>
+        <p class="srx__continue-blurb">${nc.blurb}</p>
+        <p class="srx__continue-meta">${spanLine(next)}</p>`;
+      cont.appendChild(button(`${nVisited ? 'Resume' : (visited > 0 ? 'Continue' : 'Start')} →`,
+        () => (stage.ready ? openLesson(nextIdx) : previewLesson(next)), 'btn--xl srx__continue-btn'));
+      wrap.appendChild(cont);
+
+      // ---- Pathway: this tier's lessons (what will each teach me) ----
+      const sec = el('section', { class: 'srx__tier' });
+      sec.innerHTML = `<h3 class="srx__tier-title">Your pathway</h3>`;
+      const list = el('div', { class: 'srx__pathlist' });
+      focus.lessons.forEach((lesson, i) => {
+        const lc = lessonCopyFor(lesson);
+        const isNext = lesson.id === next.id;
+        const isVisited = seen.has(lesson.id);
+        const state = isNext ? 'current' : isVisited ? 'review' : 'available';
+        const action = isNext ? (isVisited ? 'Resume' : 'Start') : isVisited ? 'Review' : 'Start';
+        const idx = playlist.findIndex((l) => l.id === lesson.id);
+        const row = el('button', { class: `srx__step is-${state}`, type: 'button' });
+        row.innerHTML = `<span class="srx__step-mark">${isNext ? '▶' : isVisited ? '✓' : i + 1}</span>
+          <span class="srx__step-body">
+            <span class="srx__step-title">${lc.title}</span>
+            <span class="srx__step-blurb">${lc.blurb}</span>
+            <span class="srx__step-meta">${spanLine(lesson)}</span>
+          </span>
+          <span class="srx__step-action">${action}</span>`;
+        row.addEventListener('click', () => (stage.ready ? openLesson(idx) : previewLesson(lesson)));
+        list.appendChild(row);
+      });
       sec.appendChild(list);
       wrap.appendChild(sec);
     }
+
+    // ---- Coming next: other tiers, collapsed (reduce clutter) ----
+    const others = tiers.filter((t) => t.tier !== focusTier);
+    if (others.length) {
+      const cn = el('section', { class: 'srx__coming' });
+      cn.innerHTML = `<h3 class="srx__coming-title">Coming next</h3>`;
+      others.forEach((t) => {
+        const tc = tierCopyFor(t);
+        const r = el('button', { class: 'srx__coming-row', type: 'button' });
+        r.innerHTML = `<span class="srx__coming-name">${tc.name}</span>
+          <span class="srx__coming-blurb">${tc.blurb}</span>
+          <span class="srx__coming-chip">View</span>`;
+        r.addEventListener('click', () => { focusTier = t.tier; render(); });
+        cn.appendChild(r);
+      });
+      wrap.appendChild(cn);
+    }
+
+    // ---- Secondary milestone: the unlock challenge (never the primary CTA) ----
+    if (activeStage === 1) {
+      const unlocked = gate.isUnlocked(2);
+      const ms = el('div', { class: 'srx__milestone' });
+      ms.innerHTML = `<span class="srx__milestone-label">${unlocked ? '✓ Stage 2 unlocked' : 'When you’re ready'}</span>`;
+      const cta = button(unlocked ? 'Retake the unlock challenge' : 'Take the Stage 2 unlock challenge',
+        openAssessment, 'btn--ghost srx__assessbtn');
+      if (!input) cta.disabled = true;
+      ms.appendChild(cta);
+      wrap.appendChild(ms);
+    }
+
     root.replaceChildren(wrap);
   }
 
   function previewLesson(lesson) {
     const stage = STAGES.find((s) => s.n === activeStage);
+    const lc = lessonCopyFor(lesson);
     const dialog = el('div', { class: 'srx__placeholder' });
     dialog.innerHTML = `
-      <p class="vector__eyebrow">${stage.eyebrow} — ${stage.title}</p>
-      <h2 class="srx__h">Lesson ${lesson.id} · ${lesson.title}</h2>
-      <p class="srx__sub">${stage.tagline}</p>
-      <p class="srx__sub">This mode is in development. When released, this lesson will run with: <strong>${clefTag(lesson.clef)}</strong> clef focus, a <strong>${lesson.range.low}–${lesson.range.high}</strong> span, and <strong>${accTag(lesson.accidentals)}</strong>.</p>`;
+      <p class="vector__eyebrow">${stage.eyebrow} · ${stage.title}</p>
+      <h2 class="srx__h">${lc.title}</h2>
+      <p class="srx__sub">${lc.blurb || stage.tagline}</p>
+      <p class="srx__sub">This mode is coming soon. When it’s ready, this lesson will run right here.</p>`;
     const back = button('‹ Back to lessons', () => go('lessons'), 'btn--xl btn--ghost');
     dialog.appendChild(back);
     root.replaceChildren(dialog);
@@ -742,6 +800,54 @@ function nowMs() { return (typeof performance !== 'undefined' && performance.now
 function clefTag(c) { return c === 'grand' ? 'Grand staff' : c === 'bass' ? 'Bass clef' : 'Treble clef'; }
 function accTag(a) { return a === 'sharps' ? 'sharps' : a === 'flats' ? 'flats' : 'naturals only'; }
 
+/* ---- Learner-facing lesson presentation (copy only — no curriculum data) ----
+ * Friendly titles + one-line teacher descriptions keyed by the lesson id that
+ * already exists in the build. If an id has no entry we fall back gracefully to
+ * a humanised label, so the learner never sees an internal label and new lessons
+ * never break the screen. */
+const LESSON_COPY = {
+  '1.1':  { title: 'Starting Notes',          blurb: 'Get to know your first treble notes.' },
+  '1.2':  { title: 'Five-Note Frame',         blurb: 'Build confidence reading five notes around Middle C.' },
+  '1.3':  { title: 'Skips',                   blurb: 'Read notes that move by a skip.' },
+  '1.4':  { title: 'Single Turn',             blurb: 'Practise changing direction while you read.' },
+  '1.5':  { title: 'Free Contour',            blurb: 'Follow a simple musical shape up and down.' },
+  '1.6':  { title: 'One Note Above',          blurb: 'Stretch your reading just beyond the five-note frame.' },
+  '1.7':  { title: 'The Octave',              blurb: 'Read across a full octave.' },
+  '1.8':  { title: 'Fourth Leaps',            blurb: 'Recognise wider jumps on the staff.' },
+  '1.9':  { title: 'First Ledger Line Above', blurb: 'Step onto the first note above the staff.' },
+  '1.10': { title: 'Second Ledger Line',      blurb: 'Step onto the second ledger line.' },
+  '1.11': { title: 'Register Shift',          blurb: 'Move your reading frame higher up the keyboard.' },
+};
+const TIER_COPY = {
+  1: { name: 'Treble Foundations',  blurb: 'Learning to read fluently around Middle C.' },
+  2: { name: 'Bass Foundations',    blurb: 'Reading confidently in the bass clef.' },
+  3: { name: 'Grand Staff Reading', blurb: 'Reading across both hands and the middle-C bridge.' },
+};
+const RANGE_PHRASES = {
+  'C4-G4': 'around Middle C', 'C4-A4': 'around Middle C',
+  'C4-C5': 'a full octave from Middle C', 'C4-A5': 'up to the first ledger line',
+  'C4-C6': 'up to the second ledger line', 'A4-E6': 'higher up the staff',
+};
+function lessonCopyFor(lesson) {
+  const c = LESSON_COPY[lesson.id];
+  if (c) return c;
+  const concept = lesson.concept ? lesson.concept.split('—')[0].trim() : null;
+  return { title: concept || `${clefTag(lesson.clef)} reading`, blurb: '' };
+}
+function tierCopyFor(group) { return TIER_COPY[group.tier] || { name: group.title, blurb: '' }; }
+function spanLine(lesson) {
+  const r = lesson.range;
+  const phrase = RANGE_PHRASES[`${r.low}-${r.high}`];
+  const span = phrase ? `${phrase} (${r.low}–${r.high})` : `${r.low}–${r.high}`;
+  const n = lesson.cfg.length;
+  return `${clefTag(lesson.clef)} · ${span} · ${n} ${n === 1 ? 'note' : 'notes'}`;
+}
+function progressDots(done, total) {
+  const max = Math.min(total, 12); let s = '';
+  for (let i = 0; i < max; i++) s += i < done ? '●' : '○';
+  return s;
+}
+
 function el(tag, props = {}) {
   const n = document.createElement(tag);
   for (const [k, v] of Object.entries(props)) k === 'class' ? (n.className = v) : n.setAttribute(k, v);
@@ -796,6 +902,45 @@ function injectStyles() {
     .srx__lesson-gov{margin-top:.15rem;align-self:flex-start;font-family:var(--font-mono);font-size:var(--step-xs);
       letter-spacing:.04em;color:var(--brass-bright);background:color-mix(in srgb,var(--brass) 14%,transparent);
       border:1px solid color-mix(in srgb,var(--brass) 34%,transparent);border-radius:999px;padding:.05rem .5rem}
+    /* ---- Learner-facing lesson screen (presentation) ---- */
+    .srx__eyebrow{font-family:var(--font-mono);font-size:var(--step-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--brass-bright)}
+    .srx__path-title{font-family:var(--font-display);font-size:var(--step-lg,1.6rem);color:var(--ivory);margin:.1rem 0}
+    .srx__path-sub{font-family:var(--font-sans);font-size:var(--step-sm);color:var(--ivory-dim);margin:0}
+    .srx__progress{display:flex;align-items:center;gap:.6rem;margin:.4rem 0 .2rem}
+    .srx__progress-dots{font-size:var(--step-sm);letter-spacing:.18em;color:var(--brass)}
+    .srx__progress-label{font-family:var(--font-mono);font-size:var(--step-xs);color:var(--ivory-dim)}
+    .srx__continue{display:flex;flex-direction:column;gap:.2rem;padding:1rem 1.1rem;border-radius:16px;margin:.6rem 0 1.1rem;
+      background:linear-gradient(160deg,color-mix(in srgb,var(--brass) 16%,transparent),transparent);border:1px solid var(--brass)}
+    .srx__continue-eyebrow{font-family:var(--font-mono);font-size:var(--step-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--brass-bright)}
+    .srx__continue-title{font-family:var(--font-display);font-size:var(--step-md,1.25rem);color:var(--ivory);margin:.05rem 0}
+    .srx__continue-blurb{font-family:var(--font-sans);font-size:var(--step-sm);color:var(--ivory);margin:0}
+    .srx__continue-meta{font-family:var(--font-mono);font-size:var(--step-xs);color:var(--ivory-dim);margin:.15rem 0 .55rem}
+    .srx__continue-btn{align-self:flex-start}
+    .srx__pathlist{display:flex;flex-direction:column;gap:.5rem}
+    .srx__step{display:flex;align-items:center;gap:.8rem;width:100%;text-align:left;padding:.7rem .8rem;border-radius:12px;cursor:pointer;
+      background:color-mix(in srgb,var(--ivory) 4%,transparent);border:1px solid color-mix(in srgb,var(--ivory) 10%,transparent);transition:transform .12s,border-color .12s}
+    .srx__step:hover{transform:translateY(-1px);border-color:var(--brass)}
+    .srx__step-mark{flex:0 0 1.7rem;height:1.7rem;display:grid;place-items:center;border-radius:50%;
+      font-family:var(--font-mono);font-size:var(--step-xs);color:var(--ivory-dim);background:color-mix(in srgb,var(--ivory) 6%,transparent)}
+    .srx__step.is-current{border-color:var(--brass);background:color-mix(in srgb,var(--brass) 10%,transparent)}
+    .srx__step.is-current .srx__step-mark{color:var(--brass-bright);background:color-mix(in srgb,var(--brass) 22%,transparent)}
+    .srx__step.is-review{opacity:.72}
+    .srx__step.is-review .srx__step-mark{color:var(--ok,#6fcf97)}
+    .srx__step-body{display:flex;flex-direction:column;gap:.1rem;flex:1 1 auto;min-width:0}
+    .srx__step-title{font-family:var(--font-sans);font-size:var(--step-sm);color:var(--ivory)}
+    .srx__step-blurb{font-family:var(--font-sans);font-size:var(--step-xs);color:var(--ivory-dim)}
+    .srx__step-meta{font-family:var(--font-mono);font-size:var(--step-xs);color:var(--ivory-dim);opacity:.82}
+    .srx__step-action{flex:0 0 auto;font-family:var(--font-mono);font-size:var(--step-xs);letter-spacing:.08em;text-transform:uppercase;color:var(--brass-bright)}
+    .srx__coming{margin-top:1.3rem}
+    .srx__coming-title{font-family:var(--font-mono);font-size:var(--step-xs);letter-spacing:.12em;text-transform:uppercase;color:var(--ivory-dim);margin:0 0 .4rem}
+    .srx__coming-row{display:flex;align-items:center;gap:.6rem;width:100%;text-align:left;padding:.6rem .8rem;border-radius:12px;cursor:pointer;margin-bottom:.4rem;
+      background:color-mix(in srgb,var(--ivory) 2%,transparent);border:1px dashed color-mix(in srgb,var(--ivory) 12%,transparent)}
+    .srx__coming-row:hover{border-color:var(--brass)}
+    .srx__coming-name{font-family:var(--font-display);font-size:var(--step-sm);color:var(--ivory)}
+    .srx__coming-blurb{flex:1 1 auto;font-family:var(--font-sans);font-size:var(--step-xs);color:var(--ivory-dim)}
+    .srx__coming-chip{font-family:var(--font-mono);font-size:var(--step-xs);color:var(--brass-bright)}
+    .srx__milestone{display:flex;align-items:center;gap:.8rem;margin:1.4rem 0 .3rem;padding-top:1rem;border-top:1px solid color-mix(in srgb,var(--ivory) 10%,transparent)}
+    .srx__milestone-label{font-family:var(--font-mono);font-size:var(--step-xs);color:var(--ivory-dim)}
     /* Hand / register anchor hint above the staff */
     .srx__hint{font-family:var(--font-mono);font-size:var(--step-sm);color:var(--brass-bright);
       min-height:1.2em;margin-bottom:.4rem;letter-spacing:.02em}
