@@ -18,6 +18,7 @@ import { PianoEngine, PIANO_MIN_MIDI, PIANO_MAX_MIDI } from './pianoEngine.js';
 import { Viewport } from './viewport.js';
 import { MidiRouter } from './midiRouter.js';
 import { getAudioContext, unlockAudio, isAudioSupported } from './audioContext.js';
+import { runWelcomeExperience, getDisplayName, flourishEnabled } from './welcomeExperience.js';
 import { Synth } from './synth.js';
 import { Scheduler } from './scheduler.js';
 import { Metronome } from './metronome.js';
@@ -165,6 +166,24 @@ class KeyMasterApp {
 
     // Enter whatever route the URL points at (deep links work on first load).
     await this._handleRoute();
+
+    // Experience layer: brief synchronized welcome over the dashboard. Fire and
+    // forget — it must never block or break boot.
+    this._runWelcome();
+  }
+
+  /**
+   * Show the opening welcome (visual greeting + B-major flourish), then dissolve
+   * into the dashboard. The flourish is attempted at the synchronized moment; if
+   * audio is still autoplay-locked, the first user gesture plays it instead.
+   */
+  _runWelcome() {
+    try {
+      runWelcomeExperience({
+        displayName: getDisplayName(),
+        onFlourish: () => { try { unlockAudio(); } catch { /* ignore */ } this._playFlourish(); },
+      });
+    } catch { /* experience layer must never break boot */ }
   }
 
   /* ---- DOM ------------------------------------------------------------- */
@@ -277,7 +296,7 @@ class KeyMasterApp {
   _wireSound() {
     let unlocked = false;
     const ensureAudio = () => {
-      if (!unlocked) { unlockAudio(); unlocked = true; this._welcomeChord(); }
+      if (!unlocked) { unlockAudio(); unlocked = true; this._playFlourish(); }
     };
     // Any first gesture is enough to unlock; key presses are the common one.
     window.addEventListener('pointerdown', ensureAudio, { once: true });
@@ -295,17 +314,26 @@ class KeyMasterApp {
   }
 
   /**
-   * A short, warm welcome chord played once, on the first audio unlock. Browser
-   * autoplay policy forbids sound before a gesture, so "on init" is honoured as
-   * "the moment audio first becomes available".
+   * The B-major startup flourish — B–D♯–F♯(–B), soft, lightly rolled, with a
+   * little natural velocity variation and a warm decay, like a pianist gently
+   * touching the keys before practice. Idempotent and self-gating: it only sounds
+   * once, only when the AudioContext is actually running (browser autoplay keeps
+   * it suspended until a gesture, so a cold-load attempt simply waits for the
+   * first interaction to retry), and only when the flourish setting is enabled.
    */
-  _welcomeChord() {
-    if (!this.synth) return;
+  _playFlourish() {
+    if (!this.synth || this._flourishPlayed) return;
+    if (!flourishEnabled()) return;
+    const ctx = this.synth.ctx;
+    if (!ctx || ctx.state !== 'running') return;     // not yet unlocked → a later gesture retries
+    this._flourishPlayed = true;
     try {
-      const t = this.synth.ctx.currentTime + 0.05;
-      [60, 64, 67, 72].forEach((m, i) => {       // soft Cmaj, gently rolled
-        this.synth.noteOn(m, 34, t + i * 0.05);
-        this.synth.noteOff(m, t + 1.8);
+      const t = ctx.currentTime + 0.04;
+      // B3, D#4, F#4, B4 — soft velocities, gently rolled, shared warm decay (< 2s).
+      const NOTES = [[59, 50], [63, 44], [66, 54], [71, 40]];
+      NOTES.forEach(([m, v], i) => {
+        this.synth.noteOn(m, v, t + i * 0.06);        // ~60ms roll between notes
+        this.synth.noteOff(m, t + 1.5);               // realistic decay, ends near the visual fade
       });
     } catch { /* audio not ready; ignore */ }
   }
