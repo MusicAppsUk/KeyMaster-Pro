@@ -44,6 +44,20 @@ function fingerOf(names, clef = 'treble', fixed = false) {
   return assignFingering(dia, hands, { fixedPosition: fixed });
 }
 
+// Frame-anchored fixed-position mode (Stage 1). Mirrors handModel: the anchor is
+// the LESSON FRAME low note, and fingering is hidden when the frame is wider than
+// a fifth or the clef is grand. C4 → diatonic 28; grand splits hands at C4.
+const C4_DIA = LETTER_INDEX.C + 7 * 4;
+function diaOf(name) { const p = parseName(name); return LETTER_INDEX[p.letter] + 7 * p.octave; }
+function fingerOfFrame(names, frame, clef = 'treble') {
+  const dia = names.map(diaOf);
+  const hands = dia.map((d) => (clef === 'treble' ? 'R' : clef === 'bass' ? 'L' : d >= C4_DIA ? 'R' : 'L'));
+  const anchorDia = diaOf(frame.low);
+  const span = diaOf(frame.high) - anchorDia;
+  const hideFingering = clef === 'grand' || span > 4;
+  return assignFingering(dia, hands, { fixedPosition: true, anchorDia, hideFingering });
+}
+
 // --- Assertions --------------------------------------------------------------
 let pass = 0, fail = 0;
 const eq = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
@@ -89,15 +103,42 @@ expect(['G4', 'F4', 'E4', 'D4', 'C4', 'B3'], 'treble', [5, 4, 3, 2, 1, 1]);
 console.log('\n--- left hand anatomy: low -> 5, high -> 1 ---');
 expect(['C3', 'E3', 'G3', 'F3', 'E3'], 'bass', [5, 3, 1, 2, 3]);
 
-console.log('\n--- COGNITIVE fixed-position mode (Stage 1): no shift, no thumb-under ---');
-// The motivating phrase: a 7th span stays in ONE position, pinky holds the top.
-expect(['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'A4'], 'treble', [1, 2, 3, 4, 5, 5, 5, 5], true);
-expectNoShift(['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'A4'], 'treble', true);
-// Within a fifth: fixed mode matches the range-aware result (anchor = lowest).
-expect(['E4', 'G4', 'F4', 'E4', 'C4'], 'treble', [3, 5, 4, 3, 1], true);
-// Left hand fixed: low -> 5, clamp the top to thumb (1), no crossing.
-expect(['C3', 'D3', 'E3', 'F3', 'G3', 'A3'], 'bass', [5, 4, 3, 2, 1, 1], true);
-// CONTRAST — range-aware (advanced) STILL shifts on the same 7th-span phrase:
+console.log('\n--- COGNITIVE fixed-position (Stage 1): FRAME-ANCHORED, stable within the frame ---');
+function expectFrame(names, frame, clef, expected) {
+  const { fingers } = fingerOfFrame(names, frame, clef);
+  const ok = eq(fingers, expected);
+  console.log(`${ok ? 'PASS' : 'FAIL'}  [frame ${frame.low}-${frame.high}] ${names.join(' ').padEnd(20)} -> ${fingers.join(' ')}` +
+    (ok ? '' : `   (expected ${expected.join(' ')})`));
+  ok ? pass++ : fail++;
+}
+function expectHidden(names, frame, clef) {
+  const { fingers } = fingerOfFrame(names, frame, clef);
+  const ok = fingers.every((f) => f === null);
+  console.log(`${ok ? 'PASS' : 'FAIL'}  hidden(${clef} ${frame.low}-${frame.high}): ${names.join(' ')} -> ${fingers.join(' ')}`);
+  ok ? pass++ : fail++;
+}
+function expectNoShiftFrame(names, frame, clef) {
+  const { shifts } = fingerOfFrame(names, frame, clef);
+  const ok = !shifts.some(Boolean);
+  console.log(`${ok ? 'PASS' : 'FAIL'}  no-shift(frame): ${names.join(' ')}`);
+  ok ? pass++ : fail++;
+}
+// C4-G4 frame (a fifth): always 1 2 3 4 5; the SAME note keeps the SAME finger
+// regardless of which notes the exercise actually contains, finger 5 only on G4.
+expectFrame(['C4', 'D4', 'E4', 'F4', 'G4'], { low: 'C4', high: 'G4' }, 'treble', [1, 2, 3, 4, 5]);
+expectFrame(['E4', 'G4', 'F4', 'E4', 'C4'], { low: 'C4', high: 'G4' }, 'treble', [3, 5, 4, 3, 1]);
+expectFrame(['D4', 'E4', 'F4', 'G4'],       { low: 'C4', high: 'G4' }, 'treble', [2, 3, 4, 5]);  // no C4 → still anchored on C4 (was 1 2 3 4)
+expectFrame(['E4', 'F4', 'G4'],             { low: 'C4', high: 'G4' }, 'treble', [3, 4, 5]);      // stable (was 1 2 3)
+expectFrame(['G4', 'E4', 'G4', 'E4'],       { low: 'C4', high: 'G4' }, 'treble', [5, 3, 5, 3]);   // repeats show the SAME finger, no drift
+expectNoShiftFrame(['E4', 'G4', 'F4', 'E4', 'C4'], { low: 'C4', high: 'G4' }, 'treble');
+// Frames WIDER than a fifth → fingering hidden entirely (no clamped/repeated 5s).
+expectHidden(['C4', 'D4', 'E4', 'F4', 'G4', 'A4'], { low: 'C4', high: 'A4' }, 'treble');           // a 6th
+expectHidden(['C4', 'E4', 'G4', 'A5', 'C6'],       { low: 'C4', high: 'C6' }, 'treble');           // ledger/register
+// Grand-staff fixed lessons → hidden (coordination/reading, not technique).
+expectHidden(['G3', 'C4', 'D4'], { low: 'G3', high: 'D4' }, 'grand');
+// Left-hand frame (bass within a fifth): low → 5, high → 1, anchored on frame low.
+expectFrame(['C3', 'E3', 'G3', 'F3', 'E3'], { low: 'C3', high: 'G3' }, 'bass', [5, 3, 1, 2, 3]);
+// CONTRAST — range-aware (advanced, Stage 2/3) path is UNCHANGED and still shifts:
 expect(['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'A4'], 'treble', [1, 2, 3, 4, 5, 1, 2, 1], false);
 
 console.log(`\n${fail === 0 ? 'ALL PASS' : 'FAILURES PRESENT'} — ${pass} passed, ${fail} failed`);
