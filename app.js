@@ -331,17 +331,18 @@ class KeyMasterApp {
       // Schedule well in the future so each voice's envelope ramps up from silence
       // cleanly (a near-"now" start collapses the attack ramp into an onset click).
       const t = ctx.currentTime + 0.12;
-      // [midi, velocity, offAtSec]. B3, D#4, F#4, B4 — soft, gently rolled.
-      // The note-OFFs are STAGGERED (not all at one instant): four coherent
-      // releases + simultaneous oscillator stops sum into an end-of-flourish click,
-      // so instead the hand "lifts" note by note — the soft top B first, the root
-      // last — giving a gentle, gradual fade. Velocities stay low so the summed
-      // decay never reaches the limiter. Latest tail (~1.35 + release) stays < 2s.
+      // [midi, velocity, offAtSec]. B3, D#4, F#4, B4 — soft, gently rolled, with
+      // STAGGERED releases (no coincident stops). The shared release decays a voice
+      // to ~1% before its oscillator stops, and the LAST voice to stop is unmasked,
+      // so its tiny residual is what ticks. We therefore make the last voice to stop
+      // the SOFTEST (the root, lingering quietly) and keep every velocity low, which
+      // pushes that final stop step down to the synth's floor (~-65 dB). Onsets roll
+      // low→high; the soft top B lifts first, the quiet root rings out last and fades.
       const NOTES = [
-        [59, 38, 1.35],   // B3  (root)  — rings longest
-        [63, 32, 1.20],   // D#4         — lifts third
-        [66, 38, 1.05],   // F#4         — lifts second
-        [71, 22, 0.92],   // B4  (top)   — softest, lifts first
+        [59, 14, 1.34],   // B3  (root) — softest, rings out LAST → quietest final stop
+        [63, 28, 1.06],   // D#4        — body
+        [66, 32, 1.20],   // F#4        — body
+        [71, 18, 0.92],   // B4  (top)  — soft shimmer, lifts first
       ];
       NOTES.forEach(([m, v, off], i) => {
         this.synth.noteOn(m, v, t + i * 0.085);       // ~85ms roll between onsets
