@@ -20,6 +20,27 @@ const LETTER_INDEX = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
 const TREBLE_TOP = 38; // F5 — top line of treble
 const BASS_TOP = 26;   // A3 — top line of bass
 
+// Canonical engraved pitch for each key-signature accidental, per clef — the
+// exact staff positions used in printed music (mirrors keySignaturePanel.js).
+// Indexed in circle-of-fifths order, matching keySignature().letters.
+const KEYSIG_PITCH = {
+  sharp: {
+    treble: { F: 'F5', C: 'C5', G: 'G5', D: 'D5', A: 'A4', E: 'E5', B: 'B4' },
+    bass:   { F: 'F3', C: 'C3', G: 'G3', D: 'D3', A: 'A2', E: 'E3', B: 'B2' },
+  },
+  flat: {
+    treble: { B: 'B4', E: 'E5', A: 'A4', D: 'D5', G: 'G4', C: 'C5', F: 'F4' },
+    bass:   { B: 'B2', E: 'E3', A: 'A2', D: 'D3', G: 'G2', C: 'C3', F: 'F3' },
+  },
+};
+// Default header geometry, in --staff-space units (see notation.css). When a key
+// signature is shown, the time-sig, start-barline, gutter and playhead all shift
+// right by the signature's width so the conventional order clef → key sig →
+// time sig → notes is preserved and scroll alignment (gutter↔playhead gap) holds.
+const HDR = { timeSig: 4.6, startBar: 6.3, gutter: 7.6, playhead: 10 };
+const KS_START = 3.4;   // first accidental sits just right of the clef
+const KS_STEP = 0.78;   // horizontal gap between successive accidentals
+
 export function createStaffView({ compact = false } = {}) {
   const el = document.createElement('div');
   el.className = `notation${compact ? ' notation--compact' : ''}`;
@@ -55,7 +76,7 @@ export function createStaffView({ compact = false } = {}) {
     // instead of splitting across both staves.
     const staff = forceClef || (midi >= 60 ? 'treble' : 'bass');
     const topLine = staff === 'treble' ? TREBLE_TOP : BASS_TOP;
-    return { staff, off: (topLine - diatonic) / 2, accidental, midi };
+    return { staff, off: (topLine - diatonic) / 2, accidental, midi, letter };
   }
 
   function ledgerOffsets(off) {
@@ -88,7 +109,66 @@ export function createStaffView({ compact = false } = {}) {
 
   function clearNotes() {
     [treble, bass, trebleTrack, bassTrack].forEach((s) =>
-      s && s.querySelectorAll('.note, .ledger, .barline, .rest').forEach((n) => n.remove()));
+      s && s.querySelectorAll('.note, .ledger, .barline, .rest, .staff__keysig').forEach((n) => n.remove()));
+  }
+
+  // ---- Key signature (opt-in; Scales only) ---------------------------------
+  // True when a notehead accidental is already implied by the key signature, so
+  // its glyph should be suppressed (e.g. every F#/C#/… in B major). Out-of-key
+  // accidentals (different sign, or a letter not in the signature) still draw.
+  function suppressedByKeySig(p, keySig) {
+    if (!keySig) return false;
+    const sign = keySig.kind === 'flat' ? -1 : keySig.kind === 'sharp' ? 1 : 0;
+    return sign !== 0 && p.accidental === sign && keySig.letters.includes(p.letter);
+  }
+
+  // Draw the sharps/flats after each clef in canonical engraved positions.
+  // Glyphs go on the FIXED staff (not the scroll track) so they stay put while
+  // the music scrolls. Returns the signature width in --staff-space units.
+  function drawKeySignature(sig) {
+    const glyph = sig.kind === 'flat' ? '\u266D' : '\u266F';
+    for (const clef of ['treble', 'bass']) {
+      const host = clef === 'treble' ? treble : bass;
+      sig.letters.forEach((letter, i) => {
+        const pitch = KEYSIG_PITCH[sig.kind]?.[clef]?.[letter];
+        if (!pitch) return;
+        const p = place(pitch, clef);
+        const acc = document.createElement('span');
+        acc.className = 'staff__keysig';
+        acc.textContent = glyph;
+        acc.style.cssText =
+          `position:absolute;z-index:3;pointer-events:none;line-height:1;` +
+          `color:var(--ink);font-size:calc(var(--staff-space) * 2.6);` +
+          `left:calc(var(--staff-space) * ${(KS_START + i * KS_STEP).toFixed(3)});` +
+          `top:calc(var(--staff-space) * ${p.off.toFixed(3)});transform:translateY(-50%);`;
+        host.appendChild(acc);
+      });
+    }
+    return sig.letters.length * KS_STEP + 0.6; // accidental run + trailing gap
+  }
+
+  // Restore the default header geometry (used every render before optionally
+  // re-applying a shift; a no-op for SR/Chord, which never shift it).
+  function resetHeaderShift() {
+    el.style.removeProperty('--gutter');
+    el.style.removeProperty('--playhead');
+    for (const s of [treble, bass]) {
+      const t = s.querySelector('.time-sig'); if (t) t.style.left = '';
+      const b = s.querySelector('.staff__startbar'); if (b) b.style.left = '';
+    }
+  }
+
+  // Shift the time-sig, start-barline, gutter and playhead right by `w` spaces so
+  // the key signature has room and clef → key sig → time sig → notes is in order.
+  // Gutter and playhead move together, preserving the scroll alignment gap.
+  function applyHeaderShift(w) {
+    const sp = (v) => `calc(var(--staff-space) * ${(v).toFixed(3)})`;
+    el.style.setProperty('--gutter', sp(HDR.gutter + w));
+    el.style.setProperty('--playhead', sp(HDR.playhead + w));
+    for (const s of [treble, bass]) {
+      const t = s.querySelector('.time-sig'); if (t) t.style.left = sp(HDR.timeSig + w);
+      const b = s.querySelector('.staff__startbar'); if (b) b.style.left = sp(HDR.startBar + w);
+    }
   }
 
   /**
@@ -99,12 +179,22 @@ export function createStaffView({ compact = false } = {}) {
    *   opts.scroll       lay notes on the fixed pixel grid for scrolling
    */
   function setSequence(names, opts = {}) {
-    const { lower = null, fingers = null, lowerFingers = null, scroll = false, pan = false, beatsPerBar = 4, showRests = false } = opts;
+    const { lower = null, fingers = null, lowerFingers = null, scroll = false, pan = false, beatsPerBar = 4, showRests = false, keySignature = null } = opts;
     scrolling = scroll;
     el.classList.toggle('notation--scroll', scroll);
     el.classList.toggle('notation--pan', pan && !scroll);
     if (scroll) ensureTracks();
     clearNotes();
+
+    // Conventional key signature — OPT-IN (default null → identical behaviour for
+    // Sight-Reading and Chord, which never pass it). When supplied, draw the
+    // sharps/flats after each clef and shift the header (time-sig, start-barline,
+    // gutter, playhead) right by the signature width so the order is clef → key
+    // sig → time sig → notes; in-key notehead accidentals are then suppressed.
+    resetHeaderShift();
+    const keySig = (keySignature && keySignature.kind && keySignature.kind !== 'none'
+      && Array.isArray(keySignature.letters) && keySignature.letters.length) ? keySignature : null;
+    if (keySig) applyHeaderShift(drawKeySignature(keySig));
 
     const n = names.length;
     // Visual rests are PAGE-mode only and OPT-IN. When on, notes sit on a whole-bar
@@ -130,11 +220,11 @@ export function createStaffView({ compact = false } = {}) {
     model = names.map((name, i) => {
       const x = xFor(i);
       const p = place(name);
-      const node = engrave(p, x, fingers ? fingers[i] : null);
+      const node = engrave(p, x, fingers ? fingers[i] : null, { keySig });
       const entry = { name, midi: p.midi, off: p.off, staff: p.staff, el: node, lower: null };
       if (lower && lower[i] != null) {
         const lp = place(lower[i]);
-        const lnode = engrave(lp, x, lowerFingers ? lowerFingers[i] : null);
+        const lnode = engrave(lp, x, lowerFingers ? lowerFingers[i] : null, { keySig });
         entry.lower = { name: lower[i], midi: lp.midi, off: lp.off, staff: lp.staff, el: lnode };
       }
       return entry;
@@ -225,7 +315,7 @@ export function createStaffView({ compact = false } = {}) {
     note.className = `note ${p.off < 2 ? 'note--stem-down' : ''}`.trim();
     note.style.left = xCss;
     note.style.top = `calc(var(--staff-space) * ${p.off} - var(--note-head) / 2)`;
-    if (p.accidental) {
+    if (p.accidental && !suppressedByKeySig(p, opts.keySig)) {
       const a = document.createElement('span');
       a.className = 'note__accidental';
       a.textContent = p.accidental > 0 ? '\u266F' : '\u266D';

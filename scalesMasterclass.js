@@ -29,7 +29,7 @@ import { unlockAudio, perfToContextTime } from './audioContext.js';
 import { createStaffView } from './staffView.js';
 import { noteName } from './notes.js';
 import { createInfoPanel } from './infoPanel.js';
-import { createKeySignaturePanel } from './keySignaturePanel.js';
+import { createKeySignaturePanel, keySignature } from './keySignaturePanel.js';
 import { WHY_B_MAJOR_HTML } from './infoCopy.js';
 import { EventBridge } from './eventBridge.js';
 
@@ -40,7 +40,34 @@ const TYPES = [
   ['harmonic_minor', 'Harmonic minor'],
   ['melodic_minor', 'Melodic minor'],
 ];
-const START_OCT = { RH: 4, LH: 3 };
+// --- Register centring -------------------------------------------------------
+// Place the RH tonic in whichever octave puts it CLOSEST to Middle C (C4 = MIDI
+// 60); ties resolve downward. The LH plays exactly one octave below the RH, so
+// Both-Hands keeps the conventional octave gap. This replaces the old fixed
+// START_OCT = {RH:4, LH:3}, which pushed higher-root scales (B, A, G, F#) too
+// high — e.g. B major began on B4 instead of B3, and two octaves reached B6.
+const LETTER_PC = { C: 0, D: 2, E: 4, F: 5, G: 7, A: 9, B: 11 };
+function tonicPitchClass(tonicName) {
+  const { letter, accidental } = parseTonic(tonicName);
+  return ((((LETTER_PC[letter] ?? 0) + accidental) % 12) + 12) % 12;
+}
+function rhBaseOctave(tonicName) {
+  const pc = tonicPitchClass(tonicName);
+  let best = null;
+  for (let o = 2; o <= 6; o++) {
+    const midi = 12 * (o + 1) + pc;          // scientific octave → MIDI (C4 = 60)
+    const dist = Math.abs(midi - 60);
+    if (!best || dist < best.dist || (dist === best.dist && midi < best.midi)) {
+      best = { o, midi, dist };
+    }
+  }
+  return best.o;
+}
+function baseOctaveFor(hand, tonicName) {
+  const rh = rhBaseOctave(tonicName);
+  return hand === 'LH' ? rh - 1 : rh;        // hands stay one octave apart
+}
+
 const CLEAN_RUN_ACCURACY = 0.9; // threshold to unlock the Tempo Climb
 
 export default function createView(ctx) {
@@ -104,17 +131,17 @@ export default function createView(ctx) {
     const steps = [];
     if (sel.type === 'major') {
       const f = majorFingering(sel.tonic, hand, {
-        octaves: sel.octaves, startOctave: START_OCT[hand],
+        octaves: sel.octaves, startOctave: baseOctaveFor(hand, sel.tonic),
       });
       f.notes.forEach((n) => steps.push({ midi: n.midi, finger: n.finger, degree: n.degree }));
       if (hand === primaryHand()) ui.fingerNote.textContent = f.reviewed ? '' : (f.note ?? '');
     } else {
       const scale = buildScale(parseTonic(sel.tonic), sel.type);
       for (let o = 0; o < sel.octaves; o++) {
-        scale.midiAt(START_OCT[hand] + o).forEach((m, i) =>
+        scale.midiAt(baseOctaveFor(hand, sel.tonic) + o).forEach((m, i) =>
           steps.push({ midi: m, finger: null, degree: i + 1 }));
       }
-      steps.push({ midi: scale.midiAt(START_OCT[hand] + sel.octaves)[0], finger: null, degree: 1 });
+      steps.push({ midi: scale.midiAt(baseOctaveFor(hand, sel.tonic) + sel.octaves)[0], finger: null, degree: 1 });
       if (hand === primaryHand()) ui.fingerNote.textContent =
         'Fingering for minor scales is pending verification — practising on notes only.';
     }
@@ -182,7 +209,7 @@ export default function createView(ctx) {
       lowerNames = cols.map((col) => noteName(lowerOf(col).midi, { accidental: pref }));
       lowerFingers = cols.map((col) => lowerOf(col)?.finger ?? null);
     }
-    staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers, pan: true });
+    staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers, pan: true, keySignature: keySignature(sel.tonic, sel.type) });
     staff.setFingersVisible(staffFingers);
     staff.setFingersFaded(false);
     staffMap = new Map();
@@ -263,7 +290,7 @@ export default function createView(ctx) {
       lowerNames = repCols.map((col) => noteName(lowerOf(col).midi, { accidental: pref }));
       lowerFingers = repCols.map((col) => lowerOf(col)?.finger ?? null);
     }
-    staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers, scroll: true });
+    staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers, scroll: true, keySignature: keySignature(sel.tonic, sel.type) });
     staff.setFingersVisible(staffFingers);
     staff.setFingersFaded(false);
     keyboard.clearFingers();
