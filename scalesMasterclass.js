@@ -209,7 +209,9 @@ export default function createView(ctx) {
       lowerNames = cols.map((col) => noteName(lowerOf(col).midi, { accidental: pref }));
       lowerFingers = cols.map((col) => lowerOf(col)?.finger ?? null);
     }
-    staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers, pan: true, keySignature: keySignature(sel.tonic, sel.type) });
+    const grand = sel.hand === 'Both';
+    staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers, pan: true,
+      keySignature: grand ? keySignature(sel.tonic, sel.type) : null, forceVoiceClefs: grand });
     staff.setFingersVisible(staffFingers);
     staff.setFingersFaded(false);
     staffMap = new Map();
@@ -290,7 +292,9 @@ export default function createView(ctx) {
       lowerNames = repCols.map((col) => noteName(lowerOf(col).midi, { accidental: pref }));
       lowerFingers = repCols.map((col) => lowerOf(col)?.finger ?? null);
     }
-    staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers, scroll: true, keySignature: keySignature(sel.tonic, sel.type) });
+    const grand = sel.hand === 'Both';
+    staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers, scroll: true,
+      keySignature: grand ? keySignature(sel.tonic, sel.type) : null, forceVoiceClefs: grand });
     staff.setFingersVisible(staffFingers);
     staff.setFingersFaded(false);
     keyboard.clearFingers();

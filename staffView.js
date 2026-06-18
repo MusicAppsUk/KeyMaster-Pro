@@ -179,7 +179,7 @@ export function createStaffView({ compact = false } = {}) {
    *   opts.scroll       lay notes on the fixed pixel grid for scrolling
    */
   function setSequence(names, opts = {}) {
-    const { lower = null, fingers = null, lowerFingers = null, scroll = false, pan = false, beatsPerBar = 4, showRests = false, keySignature = null } = opts;
+    const { lower = null, fingers = null, lowerFingers = null, scroll = false, pan = false, beatsPerBar = 4, showRests = false, keySignature = null, forceVoiceClefs = false } = opts;
     scrolling = scroll;
     el.classList.toggle('notation--scroll', scroll);
     el.classList.toggle('notation--pan', pan && !scroll);
@@ -217,13 +217,20 @@ export function createStaffView({ compact = false } = {}) {
       el.style.setProperty('--content-w', `calc(var(--gutter) + var(--col-w) * ${(n + 0.5).toFixed(2)})`);
     }
 
+    // When forceVoiceClefs is set (Scales Both-Hands), keep the RH (primary)
+    // voice on the treble staff and the LH (lower) voice on the bass staff —
+    // conventional grand-staff layout — instead of letting pitch alone decide
+    // (which would strand a low RH note like B3 on the bass clef). Default off,
+    // so pitch-based placement is unchanged for single-hand, SR, and Chord.
+    const primaryClef = forceVoiceClefs ? 'treble' : null;
+    const lowerClef = forceVoiceClefs ? 'bass' : null;
     model = names.map((name, i) => {
       const x = xFor(i);
-      const p = place(name);
+      const p = place(name, primaryClef);
       const node = engrave(p, x, fingers ? fingers[i] : null, { keySig });
       const entry = { name, midi: p.midi, off: p.off, staff: p.staff, el: node, lower: null };
       if (lower && lower[i] != null) {
-        const lp = place(lower[i]);
+        const lp = place(lower[i], lowerClef);
         const lnode = engrave(lp, x, lowerFingers ? lowerFingers[i] : null, { keySig });
         entry.lower = { name: lower[i], midi: lp.midi, off: lp.off, staff: lp.staff, el: lnode };
       }
