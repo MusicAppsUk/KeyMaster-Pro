@@ -19,6 +19,7 @@ import { toMidi } from './notes.js';
 const LETTER_INDEX = { C: 0, D: 1, E: 2, F: 3, G: 4, A: 5, B: 6 };
 const TREBLE_TOP = 38; // F5 — top line of treble
 const BASS_TOP = 26;   // A3 — top line of bass
+const MIDDLE_C = 60;   // bridge point: lower voice reads bass below, treble at/above
 
 // Canonical engraved pitch for each key-signature accidental, per clef — the
 // exact staff positions used in printed music (mirrors keySignaturePanel.js).
@@ -109,7 +110,7 @@ export function createStaffView({ compact = false } = {}) {
 
   function clearNotes() {
     [treble, bass, trebleTrack, bassTrack].forEach((s) =>
-      s && s.querySelectorAll('.note, .ledger, .barline, .rest, .staff__keysig').forEach((n) => n.remove()));
+      s && s.querySelectorAll('.note, .ledger, .barline, .rest, .staff__keysig, .staff__inlineclef').forEach((n) => n.remove()));
   }
 
   // ---- Key signature (opt-in; Scales only) ---------------------------------
@@ -171,15 +172,37 @@ export function createStaffView({ compact = false } = {}) {
     }
   }
 
+  // Inline clef-change glyph on the LOWER (LH) staff, drawn ON the scroll track so
+  // it travels with the music. Overlay only — it consumes no grid width, so the
+  // uniform column spacing the playhead/glide rely on is untouched. Scales-only.
+  function drawInlineClef(clefName, xCss) {
+    const host = containerFor('bass');
+    const span = document.createElement('span');
+    span.className = 'staff__inlineclef';
+    // 𝄞 treble (U+1D11E), 𝄢 bass (U+1D122) — \u surrogate pairs (never octal).
+    span.textContent = clefName === 'treble' ? '\uD834\uDD1E' : '\uD834\uDD22';
+    const vtop = clefName === 'treble' ? 2.6 : 1.2; // approximate body centring per clef
+    span.style.cssText =
+      `position:absolute;z-index:3;pointer-events:none;line-height:1;color:var(--ink);` +
+      `font-size:var(--clef-size);` +
+      `left:calc(${xCss} - var(--staff-space) * 2.3);` +
+      `top:calc(var(--staff-space) * ${vtop});transform:translateY(-50%);`;
+    host.appendChild(span);
+  }
+
   /**
    * Render a sequence.
-   *   opts.lower        second voice (same length) → grand-staff Both-Hands
-   *   opts.fingers      fingering numbers under each primary note
-   *   opts.lowerFingers fingering numbers under each lower note
-   *   opts.scroll       lay notes on the fixed pixel grid for scrolling
+   *   opts.lower           second voice (same length) → grand-staff Both-Hands
+   *   opts.fingers         fingering numbers under each primary note
+   *   opts.lowerFingers    fingering numbers under each lower note
+   *   opts.scroll          lay notes on the fixed pixel grid for scrolling
+   *   opts.lowerClefSwitch (Scales Both-Hands, opt-in) let the LOWER voice change
+   *                        clef per note on its own staff — bass below middle C,
+   *                        a temporary treble clef at/above it — to avoid a stack
+   *                        of bass-clef ledger lines on a two-octave LH passage.
    */
   function setSequence(names, opts = {}) {
-    const { lower = null, fingers = null, lowerFingers = null, scroll = false, pan = false, beatsPerBar = 4, showRests = false, keySignature = null, forceVoiceClefs = false } = opts;
+    const { lower = null, fingers = null, lowerFingers = null, scroll = false, pan = false, beatsPerBar = 4, showRests = false, keySignature = null, forceVoiceClefs = false, lowerClefSwitch = false } = opts;
     scrolling = scroll;
     el.classList.toggle('notation--scroll', scroll);
     el.classList.toggle('notation--pan', pan && !scroll);
@@ -224,15 +247,30 @@ export function createStaffView({ compact = false } = {}) {
     // so pitch-based placement is unchanged for single-hand, SR, and Chord.
     const primaryClef = forceVoiceClefs ? 'treble' : null;
     const lowerClef = forceVoiceClefs ? 'bass' : null;
+    let prevLowerClef = 'bass';                 // the LH staff starts in bass (header clef)
     model = names.map((name, i) => {
       const x = xFor(i);
       const p = place(name, primaryClef);
       const node = engrave(p, x, fingers ? fingers[i] : null, { keySig });
       const entry = { name, midi: p.midi, off: p.off, staff: p.staff, el: node, lower: null };
       if (lower && lower[i] != null) {
-        const lp = place(lower[i], lowerClef);
-        const lnode = engrave(lp, x, lowerFingers ? lowerFingers[i] : null, { keySig });
-        entry.lower = { name: lower[i], midi: lp.midi, off: lp.off, staff: lp.staff, el: lnode };
+        let lclef = lowerClef;
+        let trebleSpan = false;
+        if (lowerClefSwitch) {
+          // midi is clef-independent; choose the LH reading clef by pitch, draw an
+          // inline clef glyph at each change, and stay on the LH (bass) staff.
+          const lmidi = place(lower[i], 'bass').midi;
+          lclef = lmidi >= MIDDLE_C ? 'treble' : 'bass';
+          trebleSpan = lclef === 'treble';
+          if (lclef !== prevLowerClef) { drawInlineClef(lclef, x); prevLowerClef = lclef; }
+        }
+        const lp = place(lower[i], lclef);
+        // In a temporary-treble span the header (bass-clef) key signature no longer
+        // governs these notes, so show explicit accidentals to keep them readable.
+        const lnode = engrave(lp, x, lowerFingers ? lowerFingers[i] : null,
+          { keySig, domStaff: lowerClefSwitch ? 'bass' : undefined, forceAccidental: trebleSpan });
+        entry.lower = { name: lower[i], midi: lp.midi, off: lp.off,
+          staff: lowerClefSwitch ? 'bass' : lp.staff, el: lnode };
       }
       return entry;
     });
@@ -310,7 +348,7 @@ export function createStaffView({ compact = false } = {}) {
   }
 
   function engrave(p, xCss, finger, opts = {}) {
-    const host = containerFor(p.staff);
+    const host = containerFor(opts.domStaff || p.staff);
     for (const k of ledgerOffsets(p.off)) {
       const led = document.createElement('div');
       led.className = 'ledger';
@@ -322,7 +360,7 @@ export function createStaffView({ compact = false } = {}) {
     note.className = `note ${p.off < 2 ? 'note--stem-down' : ''}`.trim();
     note.style.left = xCss;
     note.style.top = `calc(var(--staff-space) * ${p.off} - var(--note-head) / 2)`;
-    if (p.accidental && !suppressedByKeySig(p, opts.keySig)) {
+    if (p.accidental && (opts.forceAccidental || !suppressedByKeySig(p, opts.keySig))) {
       const a = document.createElement('span');
       a.className = 'note__accidental';
       a.textContent = p.accidental > 0 ? '\u266F' : '\u266D';

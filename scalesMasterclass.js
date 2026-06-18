@@ -211,7 +211,7 @@ export default function createView(ctx) {
     }
     const grand = sel.hand === 'Both';
     staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers, pan: true,
-      keySignature: grand ? keySignature(sel.tonic, sel.type) : null, forceVoiceClefs: grand });
+      keySignature: grand ? keySignature(sel.tonic, sel.type) : null, forceVoiceClefs: grand, lowerClefSwitch: grand });
     staff.setFingersVisible(staffFingers);
     staff.setFingersFaded(false);
     staffMap = new Map();
@@ -256,7 +256,7 @@ export default function createView(ctx) {
     }
     const grand = sel.hand === 'Both';
     staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers, scroll: true,
-      keySignature: grand ? keySignature(sel.tonic, sel.type) : null, forceVoiceClefs: grand });
+      keySignature: grand ? keySignature(sel.tonic, sel.type) : null, forceVoiceClefs: grand, lowerClefSwitch: grand });
     staff.setFingersVisible(staffFingers);
     staff.setFingersFaded(false);
     staff.scrollToIndex(0, false);     // first note parked at the playhead
@@ -283,7 +283,12 @@ export default function createView(ctx) {
       timers.push(setTimeout(() => {
         if (token !== playToken || mode !== 'listening') return;
         const now = synth.ctx.currentTime;
-        col.forEach((c) => { synth.noteOn(c.midi, 90, now); synth.noteOff(c.midi, now + dt * 0.92); });
+        // Listen self-playback level. Lower than the previous fixed 90 for clean
+        // headroom, with extra reduction when a column sounds two voices at once
+        // (Both-Hands), so the summed peak stays under the synth limiter and does
+        // not crackle. Learner-play volume is unaffected (separate path).
+        const vel = col.length > 1 ? 52 : 72;
+        col.forEach((c) => { synth.noteOn(c.midi, vel, now); synth.noteOff(c.midi, now + dt * 0.92); });
         keyboard.clearHighlight('target');
         keyboard.highlight(colMidis(col), 'target');
         staff.scrollToIndex(i, true);     // glide this note under the fixed playhead
@@ -334,7 +339,7 @@ export default function createView(ctx) {
     }
     const grand = sel.hand === 'Both';
     staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers, scroll: true,
-      keySignature: grand ? keySignature(sel.tonic, sel.type) : null, forceVoiceClefs: grand });
+      keySignature: grand ? keySignature(sel.tonic, sel.type) : null, forceVoiceClefs: grand, lowerClefSwitch: grand });
     staff.setFingersVisible(staffFingers);
     staff.setFingersFaded(false);
     keyboard.clearFingers();

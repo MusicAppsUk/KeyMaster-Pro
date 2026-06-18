@@ -151,6 +151,35 @@ event shape: `{ midiNote, velocity, timestamp, source }`.
   staff/keyboard untouched. Render/MIDI/audio behaviour flagged UNVERIFIED without a
   device — logic + module-mode parse verified headlessly only.
 
+- **rc2-38 — Scales audio + two-octave LH notation (Scales-only, opt-in).**
+  *Issue 1 (Listen crackle):* the only mode that self-sounds the scale is Listen; it
+  fired `noteOn(midi, 90)` per column with no per-hand gain compensation, so Both-Hands
+  doubled the simultaneous voice energy into the limiter. Fix lives only in
+  `scalesMasterclass.listen()`: Listen self-playback velocity lowered to 72, with extra
+  reduction to 52 when a column sounds two voices (Both-Hands). No synth internals
+  touched; learner-play volume unchanged (separate path). Stacking was already prevented
+  (self-cancelling toggle + `stopAll()` bumps the play token, clears timers,
+  `panic()`+`allNotesOff()`).
+  *Issue 2 (LH bass-clef ledger clutter):* in Both-Hands `forceVoiceClefs` pinned the
+  LH (lower) voice to bass for the whole two-octave passage, so its top octave stacked
+  up to 4 ledger lines above the bass staff. New OPT-IN `lowerClefSwitch` (staffView)
+  lets the LOWER voice change clef per note ON ITS OWN STAFF: bass below middle C, a
+  temporary treble clef at/above it, switching back on descent — verified by sim: clef
+  change at C#4 up / B3 down, max ledger lines 4 -> 1, scale MIDIs unchanged. An inline
+  clef glyph is drawn on the LH track at each change (overlay only — consumes no grid
+  width, so the playhead/glide alignment is preserved). The flag is passed only by Scales
+  Both-Hands (paint/Listen/Practice); SR, Chord and single-hand never pass it, so their
+  behaviour is byte-identical (engrave's new `domStaff`/`forceAccidental` default to the
+  old path).
+  KEY-SIGNATURE RESTATEMENT — DELIBERATELY NOT SHIPPED: a restated 5-sharp B-major
+  signature (~7.8 staff-spaces ≈ 1.7 columns at --col-w 4.6) cannot fit the uniform
+  scroll grid without overlapping notes or breaking the glide. Instead the temporary-
+  treble LH notes carry explicit (courtesy) accidentals, keeping them correctly readable.
+  The full inline key-sig block remains a reported OPEN DECISION.
+  ONLY scalesMasterclass.js + staffView.js changed (+ ?v= bump). B-major register
+  (B3/B4/B5), scale generation, fingering, MIDI, evaluator untouched. Audio quality and
+  the inline clef's exact vertical centring are DEVICE-VERIFY-ONLY (not renderable here).
+
 ## RELEASE CHECKLIST (canonical — run before reporting ANY build complete)
 A correct source file is NOT sufficient; the shipped zip must be verified against
 current source every release. Steps:
