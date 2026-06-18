@@ -111,15 +111,18 @@ function savePrefs(prefs) {
 const VIEW_REGISTRY = {
   scales: {
     slot: 'scales',
-    load: () => import('./scalesMasterclass.js?v=rc2-29'),
+    src: './scalesMasterclass.js?v=rc2-30',
+    load: () => import('./scalesMasterclass.js?v=rc2-30'),
   },
   sightreading: {
     slot: 'sightreading',
-    load: () => import('./sightReading.js?v=rc2-29'),
+    src: './sightReading.js?v=rc2-30',
+    load: () => import('./sightReading.js?v=rc2-30'),
   },
   chords: {
     slot: 'chords',
-    load: () => import('./chordMasterclass.js?v=rc2-29'),
+    src: './chordMasterclass.js?v=rc2-30',
+    load: () => import('./chordMasterclass.js?v=rc2-30'),
   },
 };
 
@@ -701,32 +704,38 @@ class KeyMasterApp {
         const mod = await def.load();
         record.factory = mod.default;
       } catch (err) {
-        // Controller not built yet (or failed to load): show a placeholder
-        // and keep the instrument playable.
+        // Controller failed to load. Keep the instrument playable AND surface a
+        // readable on-screen diagnostic so the failure can be reported without
+        // browser dev tools.
         console.info(`[KeyMaster] "${viewId}" controller unavailable:`, err?.message ?? err);
-        renderPlaceholder(slot, viewId);
+        renderPlaceholder(slot, viewId, { err, src: def.src });
         return;
       }
     }
 
     if (!record.factory) { renderPlaceholder(slot, viewId); return; }
 
-    if (!record.instance) {
-      record.instance = record.factory({
-        mount: slot,
-        store: this.store,
-        keyboard: this.keyboard,
-        viewport: this.viewport,
-        midi: this.midi,
-        input: this.input,
-        evaluator: this.evaluator,
-        synth: this.synth,
-        scheduler: this.scheduler,
-        metronome: this.metronome,
-        nav: this._makeNav(viewId),
-      });
+    try {
+      if (!record.instance) {
+        record.instance = record.factory({
+          mount: slot,
+          store: this.store,
+          keyboard: this.keyboard,
+          viewport: this.viewport,
+          midi: this.midi,
+          input: this.input,
+          evaluator: this.evaluator,
+          synth: this.synth,
+          scheduler: this.scheduler,
+          metronome: this.metronome,
+          nav: this._makeNav(viewId),
+        });
+      }
+      record.instance.enter?.();
+    } catch (err) {
+      console.info(`[KeyMaster] "${viewId}" controller failed to mount:`, err?.message ?? err);
+      renderPlaceholder(slot, viewId, { err, src: def.src, phase: 'mount' });
     }
-    record.instance.enter?.();
   }
 
   async _exitView(viewId) {
@@ -743,17 +752,56 @@ class KeyMasterApp {
  * 5. Helpers
  * ========================================================================= */
 
-/** Render a graceful "coming online" panel for an unbuilt view. */
-function renderPlaceholder(slot, viewId) {
-  const label = viewId === 'scales' ? 'Scales Masterclass' : 'Cognitive Sight-Reading';
+/** Render a graceful panel for an unbuilt view, or — when a load/mount error is
+ *  supplied — an on-screen diagnostic so failures can be reported without dev tools. */
+function renderPlaceholder(slot, viewId, info = {}) {
+  const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  const label = MODULE_NAME[viewId] ?? viewId;          // correct per-route label
   slot.replaceChildren();
   const panel = document.createElement('div');
   panel.className = 'placeholder';
-  panel.innerHTML =
-    `<p class="placeholder__title">${label}</p>` +
-    `<p class="placeholder__note">This vector is being wired up. ` +
-    `The keyboard below is live — play freely.</p>`;
+
+  if (info.err) {
+    const err = info.err;
+    const src = info.src ? info.src.replace(/^\.\//, '') : '(unknown module)';
+    const token = (src.match(/\?v=([^&]+)/) || [])[1] || '(none)';
+    const phase = info.phase === 'mount' ? 'while starting (after download)' : 'while loading (download/parse)';
+    const msg = String(err && err.message ? err.message : err);
+    const name = err && err.name ? err.name : 'Error';
+    const kind = classifyLoadError(err);
+    const diag =
+      `Route:     #/${viewId}\n` +
+      `Requested: ${src}\n` +
+      `Version:   ${token}\n` +
+      `Failed:    ${phase}\n` +
+      `Cause:     ${kind}\n` +
+      `Error:     ${name}: ${msg}`;
+    panel.classList.add('placeholder--error');
+    panel.innerHTML =
+      `<p class="placeholder__title">${esc(label)} failed to load.</p>` +
+      `<pre style="text-align:left;white-space:pre-wrap;word-break:break-word;` +
+      `font-family:var(--font-mono,monospace);font-size:.82rem;line-height:1.55;` +
+      `background:rgba(0,0,0,.28);color:var(--ivory,#eee);padding:.75rem .85rem;` +
+      `border-radius:8px;max-width:100%;overflow-x:auto;margin:.6rem 0">${esc(diag)}</pre>` +
+      `<p class="placeholder__note">The keyboard below is still live. ` +
+      `Please report the lines above — other lessons are unaffected.</p>`;
+  } else {
+    panel.innerHTML =
+      `<p class="placeholder__title">${esc(label)}</p>` +
+      `<p class="placeholder__note">This vector is being wired up. ` +
+      `The keyboard below is live — play freely.</p>`;
+  }
   slot.appendChild(panel);
+}
+
+/** Best-effort, dev-tools-free classification of a dynamic-import failure. */
+function classifyLoadError(err) {
+  const name = err && err.name ? err.name : '';
+  const m = String(err && err.message ? err.message : err).toLowerCase();
+  if (name === 'SyntaxError' || m.includes('unexpected') || m.includes('syntax')) return 'Syntax error in the module (server copy differs from source).';
+  if (m.includes('does not provide an export') || m.includes('export named')) return 'Missing/mismatched export in the module or a dependency.';
+  if (m.includes('failed to fetch') || m.includes('dynamically imported module') || m.includes('404') || m.includes('not found') || m.includes('network')) return 'Module file not served (likely 404 — not deployed, wrong case, or stale cache).';
+  return 'Unrecognised load error — read the Error line below.';
 }
 
 /** Only persist known-safe preference keys back into the store at boot. */
