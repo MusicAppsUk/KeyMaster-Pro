@@ -31,9 +31,11 @@
 //     scale (Gb / Db / Ab / Eb respectively). This is the real "topography
 //     anchor" the spec was reaching for — but it lives in the FLAT keys.
 //
-//   • B major (LH): fingering 4 3 2 1 4 3 2 1 — the 4th finger anchors the
-//     tonic and the 4th degree (B and F#), and the cell restarts on 4 at each
-//     octave. Verified for multi-octave: it chains as 4 3 2 1 4 3 2 (repeat) … 1.
+//   • B major (LH): one-octave fingering 4 3 2 1 4 3 2 1 — the 4th finger anchors
+//     the bottom tonic and the 4th degree (B and F#); the octave tonic is the thumb
+//     (1). For multi-octave the bottom 4 is played ONCE and interior octave tonics
+//     take the thumb, like every other LH major: e.g. two octaves chain as
+//     4 3 2 1 4 3 2 1 3 2 1 4 3 2 1 (the interior B is 1, not a re-anchor on 4).
 //     B is a special case, but not in the way the original spec described, and
 //     it does not change how the other scales are fingered.
 //
@@ -62,7 +64,7 @@ const MAJOR_FINGERINGS = Object.freeze({
   A:  entry([1, 2, 3, 1, 2, 3, 4, 5], [5, 4, 3, 2, 1, 3, 2, 1], true,  true),
   E:  entry([1, 2, 3, 1, 2, 3, 4, 5], [5, 4, 3, 2, 1, 3, 2, 1], true,  true),
   F:  entry([1, 2, 3, 4, 1, 2, 3, 4], [5, 4, 3, 2, 1, 3, 2, 1], true,  true),
-  B:  entry([1, 2, 3, 1, 2, 3, 4, 5], [4, 3, 2, 1, 4, 3, 2, 1], true,  true), // LH cell restarts on 4 each octave
+  B:  entry([1, 2, 3, 1, 2, 3, 4, 5], [4, 3, 2, 1, 4, 3, 2, 1], true,  true), // LH: 4 anchors the bottom tonic once; interior octave tonics are the thumb (1)
   'F#': entry([2, 3, 4, 1, 2, 3, 1, 2], [4, 3, 2, 1, 3, 2, 1, 4], true, true),
   Db: entry([2, 3, 1, 2, 3, 4, 1, 2], [3, 2, 1, 4, 3, 2, 1, 3], true,  true),
   Ab: entry([3, 4, 1, 2, 3, 1, 2, 3], [3, 2, 1, 4, 3, 2, 1, 3], true,  true),
@@ -166,14 +168,15 @@ export function majorFingering(tonicName, hand, opts = {}) {
 /**
  * Multi-octave join.
  *
- * RIGHT HAND, and LEFT HAND scales whose first finger recurs each octave
- * (e.g. B major LH = 4 3 2 1 4 3 2 1): the single-octave cell minus its top
- * note repeats once per octave, then the final top note caps the sequence.
- * For B major LH that yields 4 3 2 1 4 3 2 · 4 3 2 1 4 3 2 · 1 (ends on 1).
+ * RIGHT HAND: cell-restart — the single-octave cell minus its shared top tonic
+ * repeats once per octave, then the final top note caps the sequence. RH boundary
+ * tonics are the thumb by construction.
  *
- * LEFT HAND scales that begin on the pinky (C/G/D/A/E/F LH start on 5): the 5
- * is a bottom-only finger used exactly once; every octave above reuses the
- * inner run, whose last value is the internal-tonic finger.
+ * LEFT HAND (all majors): the bottom note plays the leading finger ONCE; every
+ * octave above reuses the inner run p[1..7], whose last value is the internal-tonic
+ * finger. So interior octave-boundary tonics are the thumb-side finger — e.g.
+ * B major LH chains as 4 3 2 1 4 3 2 · 1 · 3 2 1 4 3 2 1 (the octave B is the thumb,
+ * 1, not a re-anchor on 4); C/G/D/A/E/F LH likewise play their bottom 5 only once.
  *
  * @param {readonly number[]} p  8-finger single-octave pattern.
  * @param {'RH'|'LH'} hand
@@ -182,19 +185,22 @@ export function majorFingering(tonicName, hand, opts = {}) {
  */
 function chainFingers(p, hand, octaves) {
   const out = [];
-  const pinkyStart = hand === 'LH' && p[0] === 5;
-
-  if (!pinkyStart) {
-    // Cell-restart: repeat the octave cell (minus its shared top), then cap.
-    // Used by every RH scale and by LH scales like B major that re-anchor the
-    // first finger at each octave boundary.
-    for (let o = 0; o < octaves; o++) out.push(...p.slice(0, 7));
-    out.push(p[7]);
-  } else {
-    // Pinky-once: the bottom 5 is played a single time; octaves above reuse the
-    // inner run p[1..7], ending each octave on the internal-tonic finger.
+  if (hand === 'LH') {
+    // LEFT HAND: the bottom note plays the leading finger ONCE; every octave above
+    // reuses the inner run p[1..7], whose final value is the internal-tonic finger.
+    // So an interior octave-boundary tonic takes the THUMB-side finger (e.g. B major
+    // LH boundary = 1), never a spurious re-anchor on the bottom finger. This applies
+    // to ALL LH majors: the pinky-start scales (C/G/D/A/E/F) already worked this way;
+    // B major LH (which starts on 4, not 5) needs the same rule — its earlier
+    // cell-restart wrongly re-anchored the octave tonic on 4 instead of the thumb.
     out.push(p[0]);
     for (let o = 0; o < octaves; o++) out.push(...p.slice(1, 8));
+  } else {
+    // RIGHT HAND: cell-restart — repeat the octave cell (minus its shared top tonic)
+    // then cap with the top note. RH boundary tonics are the thumb by construction,
+    // so this is correct for every RH major.
+    for (let o = 0; o < octaves; o++) out.push(...p.slice(0, 7));
+    out.push(p[7]);
   }
   return out;
 }

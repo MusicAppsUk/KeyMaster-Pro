@@ -202,6 +202,23 @@ event shape: `{ midiNote, velocity, timestamp, source }`.
   (artifact gone? warmer? clean on 1-oct / 2-oct / both-hands?) is DEVICE-VERIFY-BY-EAR
   only — not renderable here.
 
+- **rc2-40 — B major LH octave-boundary fingering fix (Scales-only).** Device report:
+  two-octave LH B major showed the interior octave B as finger 4 instead of the thumb
+  (1). ROOT CAUSE: `fingeringEngine.chainFingers` gated its "leading-finger-once"
+  branch on `p[0] === 5`, so only the pinky-start LH scales (C/G/D/A/E/F) used it; B
+  major LH starts on 4, fell into the RH-style cell-restart branch, and that re-anchored
+  the octave tonic on the bottom finger (4) instead of the thumb. FIX: route ALL LH
+  majors through leading-finger-once (bottom note plays the leading finger once; each
+  octave above reuses the inner run, ending interior octave tonics on the thumb-side
+  finger). The two branches differ ONLY at the octave boundary (`p[0]` vs `p[7]`), so
+  this changes ONLY B major LH (boundary 4 -> 1); every other LH key has `p[0] === p[7]`
+  and is byte-identical, and RH stays on cell-restart (verified by direct engine test:
+  B LH 1-oct 4 3 2 1 4 3 2 1 unchanged; B LH 2-oct now 4 3 2 1 4 3 2 1 3 2 1 4 3 2 1;
+  B RH, C/Db/F# LH all unchanged). ONLY fingeringEngine.js changed (+ ?v= bump). Scale
+  notes, B-major register, MIDI targets, evaluator, notation/clef switch, audio, and
+  scalesMasterclass.js are untouched — fingeringEngine is imported only by Scales.
+  One-octave was already correct in source; the visible bug was the two-octave boundary.
+
 ## RELEASE CHECKLIST (canonical — run before reporting ANY build complete)
 A correct source file is NOT sufficient; the shipped zip must be verified against
 current source every release. Steps:
