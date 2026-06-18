@@ -118,6 +118,22 @@ event shape: `{ midiNote, velocity, timestamp, source }`.
   STANDING RULE: re-zip = rm + fresh zip, then diff zip vs flat (0 stale) before
   presenting.
 
+- **rc2-31 — CURRENT WORKING BASELINE (confirmed loading on the live test site).**
+  Chord Masterclass loads correctly via #/chords. The chord era rc2-26..rc2-31 in
+  brief: rc2-26 restored the active trainer (Teach/Demonstrate → Follow Me → Try →
+  Review/Assess/Unit Review); rc2-27 made Try Yourself a partial-support retrieval
+  step (root anchor only) + a unified cockpit heading; rc2-28 added the always-
+  visible (disabled-until-played) primary, honest per-shape review, and accessible
+  sizing/aria-live; rc2-29 added the colour-feedback layer (emerald-glow ✓ success,
+  soft-rose ○ correction, additive palette tokens); rc2-30 added the on-screen
+  route-failure diagnostic (viewId / requested URL / token / error / cause) + fixed
+  renderPlaceholder to label each route correctly; rc2-31 fixed a template-literal
+  OCTAL-ESCAPE SyntaxError in the chord feedback glyphs (`\2713`/`\25CB`/`\00a0` →
+  `\u2713`/`\u25CB`/`\u00A0`) that broke #/chords on the live site. Lesson logged:
+  script-mode `node --check` gives false passes; module-mode parse is now a
+  mandatory release step (see step 7 below). Reserved/untouched: Musical Sight
+  Reading isolated stub, timing/rhythm pillar, Scales, Cognitive Sight-Reading.
+
 ## RELEASE CHECKLIST (canonical — run before reporting ANY build complete)
 A correct source file is NOT sufficient; the shipped zip must be verified against
 current source every release. Steps:
@@ -129,3 +145,23 @@ current source every release. Steps:
   5. Confirm stale-file count (zip vs flat) is ZERO.
   6. Confirm the live route loads the intended module (app.js import token + the
      dashboard card link in index.html).
+  7. MODULE-MODE PARSE every shipped JS module (browser-equivalent). `node --check
+     file.js` parses as a non-strict SCRIPT and gives FALSE PASSES for errors that
+     only surface when the browser loads the file as a strict ES module (it is
+     loaded via `import()`). Verify each module the way the browser will:
+       for f in *.js; do cp "$f" /tmp/m.mjs; node --check /tmp/m.mjs || echo "FAIL $f"; done
+     (Equivalently `node --input-type=module --check` from stdin, or any real
+     browser-module parse.) A clean script-mode `node --check` is NOT sufficient.
+
+## Release-process lessons
+- **rc2-31 — module-mode parsing is mandatory.** rc2-29 shipped CSS glyph escapes
+  inside an `injectStyles` template literal as `content:"\2713…"` / `"\25CB…"` /
+  `"\00a0"`. In a template string `\2…` / `\0…` are OCTAL escapes — illegal — so the
+  browser threw `SyntaxError: Octal escape sequences are not allowed in template
+  strings` and `#/chords` failed to load. `node --check chordMasterclass.js`
+  (script mode) PASSED and hid it; a `.mjs` module-mode check reproduced the
+  failure exactly. Fix: use `\u` escapes (`\u2713`, `\u25CB`, `\u00A0`) or literal
+  glyphs in template literals; never backslash-digit. Verification now includes
+  step 7 above. (The on-screen route-failure diagnostic in app.js — viewId /
+  requested URL / token / error / cause — is what surfaced this from the device
+  without dev tools; keep it.)
