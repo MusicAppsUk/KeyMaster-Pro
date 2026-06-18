@@ -134,6 +134,23 @@ event shape: `{ midiNote, velocity, timestamp, source }`.
   mandatory release step (see step 7 below). Reserved/untouched: Musical Sight
   Reading isolated stub, timing/rhythm pillar, Scales, Cognitive Sight-Reading.
 
+- **rc2-37 — Chord Masterclass teaching-flow (Phase 1, Unit 1 B major).** Turned the
+  module from a card/Continue flow into a guided auto-flow: Teach → Demonstrate →
+  Follow Me → Try Yourself → next shape now advance BY THEMSELVES once the demo has
+  finished or the learner has played the chord correctly and the success glow has
+  registered. Manual Continue remains ONLY at the three reflection boundaries (into
+  Review, into Assessment, into Unit Review) and to restart/leave the unit — verified
+  by logic sim: 17 auto transitions, 3 manual gates. Added calm pacing (demo→follow
+  2.0s, follow→try 1.9s, try→next shape 2.3s with a "Next: …" transition cue; resume
+  0.8s) — no pressure timer, no fail-on-slow, waits indefinitely on a slow learner.
+  New lesson controls (additive): Pause (freezes the pending auto-advance and offers
+  Continue as an override; never interrupts a demo — demo uses its own timer), Repeat
+  (re-runs the current step / re-demos), Back (previous step). Skip stays subtle.
+  Colour-feedback principle preserved (emerald glow / soft-rose correction). ONLY
+  chordMasterclass.js changed (+ ?v= bump). Engine/evaluator/NoteInput/EventBridge/
+  staff/keyboard untouched. Render/MIDI/audio behaviour flagged UNVERIFIED without a
+  device — logic + module-mode parse verified headlessly only.
+
 ## RELEASE CHECKLIST (canonical — run before reporting ANY build complete)
 A correct source file is NOT sufficient; the shipped zip must be verified against
 current source every release. Steps:

@@ -51,6 +51,17 @@ function fingeringText(hand) {
 function clefForHand(hand) { return hand === 'LH' ? 'bass' : 'treble'; }   // BOTH (later) -> grand
 function handWord(hand) { return hand === 'LH' ? 'left hand' : 'right hand'; }
 function invLabel(inv) { const f = INVERSIONS.find(([v]) => v === inv); return f ? f[1] : 'Root position'; }
+// Calm teaching pace (ms). Auto-advance NEVER fires before the learner has
+// either watched a full demonstration or successfully played the chord; these
+// delays only govern how long the success/shape state is allowed to "breathe"
+// before the lesson moves itself forward. No pressure timer, no fail-on-slow.
+const PACE = Object.freeze({
+  demoToFollow: 2000,   // after a demonstration finishes -> Follow Me
+  followToTry: 1900,    // after a correct Follow Me      -> Try Yourself
+  tryToShape: 2300,     // after a correct Try Yourself    -> next shape (hand/inversion change cue)
+  resume: 800,          // gentle re-start after Resume
+});
+
 function modeLabel(kind) {
   return { teach: 'Teach', followme: 'Follow Me', try: 'Try Yourself', review: 'Review', assess: 'Assessment', unitreview: 'Unit Review' }[kind] || '';
 }
@@ -71,7 +82,10 @@ export default function createView(ctx) {
   let subIx = 0;
   let stepDone = false;
   let praiseIx = 0;
-  let advanceTimer = null;
+  let advanceTimer = null;             // post-success / post-demo auto-advance
+  let demoTimer = null;                // demonstration's own internal stepping
+  let paused = false;                  // learner-controlled freeze of auto-advance
+  let resumeAction = null;             // the pending advance held when paused / offered as override
   let demoToken = 0;
   let expectedSet = new Set();
   let chordMidis = [];
@@ -131,15 +145,27 @@ export default function createView(ctx) {
     exNote.textContent = 'Pick any chord to explore freely. Use Back to the lesson to return to the course.';
     ui.explore.append(sm, controls, exNote);
 
-    // Sticky action bar — always visible above the keyboard
+    // Sticky action bar — always visible above the keyboard.
+    // Lesson controls (Back / Repeat / Pause) support the auto-flow without driving
+    // it; Skip stays subtle; the primary (Continue) appears only at boundaries or as
+    // an override while paused.
     ui.actionbar = el('div', { class: 'cmx__actionbar' });
     ui.progress = el('span', { class: 'cmx__progresstext' });
+    ui.back = el('button', { class: 'cmx__ctl', type: 'button' });
+    ui.back.textContent = '\u2039 Back';
+    ui.back.addEventListener('click', onBack);
+    ui.repeat = el('button', { class: 'cmx__ctl', type: 'button' });
+    ui.repeat.textContent = '\u21BB Repeat';
+    ui.repeat.addEventListener('click', onRepeat);
+    ui.pause = el('button', { class: 'cmx__ctl', type: 'button' });
+    ui.pause.textContent = 'Pause';
+    ui.pause.addEventListener('click', onPause);
     ui.skip = el('button', { class: 'cmx__skip', type: 'button' });
     ui.skip.textContent = 'Skip for now';
     ui.skip.addEventListener('click', onSkip);
     ui.primary = el('button', { class: 'cmx__primary', type: 'button' });
     ui.primary.addEventListener('click', onPrimary);
-    ui.actionbar.append(ui.progress, ui.skip, ui.primary);
+    ui.actionbar.append(ui.progress, ui.back, ui.repeat, ui.pause, ui.skip, ui.primary);
 
     root.append(ui.lesson, ui.summary, ui.explore, ui.actionbar);
     mount.replaceChildren(root);
@@ -181,26 +207,30 @@ export default function createView(ctx) {
     const support = kind === 'assess' ? 'reduced' : kind === 'try' ? 'partial' : 'full';
     showSpec(subSeq[0], support);
 
-    // Step tag + how the action bar behaves per kind.
+    // Step tag + action bar per kind. During ACTIVE steps the primary stays HIDDEN:
+    // the lesson advances itself (auto-flow) or surfaces Continue only on completion
+    // at a boundary. Back / Repeat / Pause stay available throughout.
+    showControls(true);
     if (kind === 'teach') {
       ui.step.textContent = 'Teach \u00b7 watch';
-      demonstrate();
-      setAction({ primary: 'Let\u2019s try it \u203a', primaryReady: true, skip: false });
+      demonstrate();                       // auto-advances into Follow Me when done
+      beginActiveStep(false);
     } else if (kind === 'followme') {
       ui.step.textContent = 'Follow me \u00b7 one note at a time';
       followMeUpdate();
-      setAction({ primary: 'Next \u203a', primaryReady: false, skip: true });
+      beginActiveStep(true);
     } else if (kind === 'try') {
       ui.step.textContent = 'Try yourself';
       ui.prompt.textContent = `Play ${promptName(subSeq[0])} - all notes together.`;
       ui.status.textContent = 'Only the root note is marked - recall the full shape and play it.';
-      setAction({ primary: 'Continue \u203a', primaryReady: false, skip: true });
+      beginActiveStep(true);
     } else if (kind === 'review') {
       ui.step.textContent = 'Review \u00b7 same chord, three shapes';
-      setAction({ primary: 'Continue \u203a', primaryReady: false, skip: true });
+      ui.prompt.textContent = `Play ${promptName(subSeq[0])}.`;
+      beginActiveStep(true);
     } else if (kind === 'assess') {
       ui.step.textContent = 'Assessment \u00b7 fewer hints';
-      setAction({ primary: 'See your review \u203a', primaryReady: false, skip: true });
+      beginActiveStep(true);
     }
   }
 
@@ -262,13 +292,17 @@ export default function createView(ctx) {
       keyboard.highlight(chordMidis.slice(0, i + 1), 'target');
       ui.status.textContent = `${FINGER_WORD[fng[i]] || 'finger'} on ${names[i]}`;
       i++;
-      if (i < chordMidis.length) { advanceTimer = setTimeout(stepDemo, 650); }
+      if (i < chordMidis.length) { demoTimer = setTimeout(stepDemo, 650); }
       else {
-        advanceTimer = setTimeout(() => {
+        demoTimer = setTimeout(() => {
           if (token !== demoToken) return;
           keyboard.highlight(chordMidis, 'target');
           keyboard.highlight([chordMidis[0]], 'root');
-          ui.status.textContent = 'That is the shape. Tap \u201cLet\u2019s try it\u201d to play it yourself.';
+          setStatusState('');
+          ui.status.textContent = 'That is the shape.';
+          ui.prompt.textContent = 'Now you \u2014 follow the notes one at a time.';
+          // Teacher-led: move into Follow Me by itself once the shape has been shown.
+          autoOrManualAdvance(() => loadStep(stepIx + 1), PACE.demoToFollow);
         }, 650);
       }
     };
@@ -326,32 +360,86 @@ export default function createView(ctx) {
     const more = subIx < subSeq.length - 1;
     if ((kind === 'review' || kind === 'assess') && more) {
       ui.status.textContent = kind === 'review' ? 'Same chord - new shape.' : 'Good - next chord.';
-      clearAdvance();
-      advanceTimer = setTimeout(() => { subIx++; showSpec(subSeq[subIx], kind === 'assess' ? 'reduced' : 'full'); if (kind === 'review') ui.prompt.textContent = `Play ${promptName(subSeq[subIx])}.`; }, evaluator.FLASH_MS + 250);
+      autoOrManualAdvance(() => {
+        subIx++;
+        showSpec(subSeq[subIx], kind === 'assess' ? 'reduced' : 'full');
+        if (kind === 'review') ui.prompt.textContent = `Play ${promptName(subSeq[subIx])}.`;
+      }, evaluator.FLASH_MS + 250);
       return;
     }
 
-    stepDone = true;
-    if (kind === 'followme') ui.status.textContent = 'That is the full chord - B major, well shaped.';
-    else if (kind === 'try') ui.status.textContent = PRAISE[praiseIx++ % PRAISE.length];
-    else if (kind === 'review') ui.status.textContent = 'All three shapes - well played.';
-    else if (kind === 'assess') ui.status.textContent = 'Assessment complete. Tap below to see your review.';
-    else if (kind === 'teach') { ui.status.textContent = 'That is it. Tap \u201cLet\u2019s try it\u201d to continue.'; return; }
-    enablePrimary();
-    ui.skip.hidden = true;
+    // Terminal completion of this step. Auto-advance through the teaching steps;
+    // surface a manual Continue only at the genuine reflection boundaries.
+    const nextIx = stepIx + 1;
+    const nextKind = UNIT1.steps[nextIx] && UNIT1.steps[nextIx].kind;
+    const intoBoundary = nextKind === 'review' || nextKind === 'assess' || nextKind === 'unitreview';
+
+    if (kind === 'followme') {
+      ui.status.textContent = 'That is the full chord \u2014 B major, well shaped.';
+      autoOrManualAdvance(() => loadStep(nextIx), PACE.followToTry);          // -> Try (same shape)
+    } else if (kind === 'try') {
+      if (intoBoundary) {
+        ui.status.textContent = 'You have played all six shapes \u2014 take a breath, then continue to the review.';
+        boundaryAdvance(() => loadStep(nextIx));
+      } else {
+        ui.status.textContent = PRAISE[praiseIx++ % PRAISE.length];
+        announceNextShape(nextIx);                                            // gentle transition cue
+        autoOrManualAdvance(() => loadStep(nextIx), PACE.tryToShape);         // -> next shape's Teach
+      }
+    } else if (kind === 'review') {
+      ui.status.textContent = 'All three shapes \u2014 well played. Continue to a mixed check.';
+      boundaryAdvance(() => loadStep(nextIx));
+    } else if (kind === 'assess') {
+      ui.status.textContent = 'Assessment complete \u2014 see your review.';
+      boundaryAdvance(() => loadStep(findUnitReview()));
+    }
   }
-  // Primary stays VISIBLE throughout (no hidden NEXT button); it simply becomes
-  // enabled + highlighted once the step's action is done.
-  function enablePrimary() {
+  // Gentle "what's coming" cue shown during the pause between shapes.
+  function announceNextShape(nextIx) {
+    const S = UNIT1.steps[nextIx];
+    if (!S || S.kind !== 'teach') return;
+    ui.prompt.textContent = `Next: B major \u2014 ${invLabel(S.inversion).toLowerCase()} \u00b7 ${handWord(S.hand)}.`;
+  }
+  /* ---- auto-flow / controls ----------------------------------------- */
+  // Move the lesson forward by itself after a calm pause. If paused, the move is
+  // held and Continue is offered as a manual override (accessibility / "more time").
+  function autoOrManualAdvance(fn, delay) {
+    if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; }
+    resumeAction = fn;
+    if (paused) { showContinue('Continue \u203a'); return; }
+    hidePrimary();
+    advanceTimer = setTimeout(runResume, delay);
+  }
+  function runResume() {
+    advanceTimer = null;
+    const a = resumeAction; resumeAction = null;
+    if (a) a();
+  }
+  // A genuine reflection boundary (into Review / Assessment / Unit Review): always
+  // wait for a manual Continue.
+  function boundaryAdvance(fn) {
+    resumeAction = fn;
+    stepDone = true;
+    ui.skip.hidden = true;
+    showContinue('Continue \u203a');
+  }
+  function showContinue(label) {
+    ui.primary.textContent = label;
+    ui.primary.hidden = false;
     ui.primary.disabled = false;
     ui.primary.setAttribute('aria-disabled', 'false');
     ui.primary.classList.add('is-ready');
   }
+  function hidePrimary() { ui.primary.hidden = true; ui.primary.classList.remove('is-ready'); }
+  function beginActiveStep(skip) { hidePrimary(); ui.skip.hidden = !skip; }
+  function showControls(on) { for (const b of [ui.back, ui.repeat, ui.pause]) if (b) b.hidden = !on; }
 
   /* ---- advancing ----------------------------------------------------- */
   function onPrimary() {
     if (view === 'explore') { loadStep(stepIx); return; }
     if (view === 'summary') { resetStats(); loadStep(0); return; }
+    // Boundary Continue, or override while paused: run the held move.
+    if (resumeAction) { const a = resumeAction; clearAdvance(); a(); return; }
     if (kind === 'assess') { loadStep(findUnitReview()); return; }
     loadStep(stepIx + 1);
   }
@@ -360,21 +448,35 @@ export default function createView(ctx) {
     if (kind !== 'teach' && subSeq[subIx]) shapeRec(subSeq[subIx]).skipped++;   // honest: record skips
     loadStep(stepIx + 1);
   }
-  function findUnitReview() { return UNIT1.steps.findIndex((s) => s.kind === 'unitreview'); }
-
-  function setAction({ primary, primaryReady, skip }) {
-    ui.primary.textContent = primary;
-    ui.primary.hidden = false;                         // never hidden — accessibility: no hidden NEXT
-    ui.primary.disabled = !primaryReady;               // active steps: visible but disabled until played
-    ui.primary.setAttribute('aria-disabled', String(!primaryReady));
-    ui.primary.classList.toggle('is-ready', !!primaryReady);
-    ui.skip.hidden = !skip;
+  function onBack() {
+    if (view === 'summary' || view === 'explore') { loadStep(stepIx); return; }
+    loadStep(Math.max(0, stepIx - 1));
   }
+  function onRepeat() {
+    if (view === 'explore') { enterExplore(); return; }
+    if (view === 'summary') { showSummary(); return; }
+    loadStep(stepIx);                       // re-demonstrates Teach; re-arms play steps
+  }
+  function onPause() {
+    paused = !paused;
+    ui.pause.textContent = paused ? 'Resume' : 'Pause';
+    ui.pause.classList.toggle('is-active', paused);
+    if (paused) {
+      if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; }   // freeze pending move only (not a demo)
+      if (resumeAction) { showContinue('Continue \u203a'); ui.status.textContent = 'Paused \u2014 continue when you are ready.'; }
+    } else if (resumeAction) {
+      const fn = resumeAction; resumeAction = null;
+      autoOrManualAdvance(fn, PACE.resume);  // resume the held move, gently
+    }
+  }
+  function findUnitReview() { return UNIT1.steps.findIndex((s) => s.kind === 'unitreview'); }
 
   /* ---- explore (advanced, demoted) ----------------------------------- */
   function enterExplore() {
     view = 'explore';
     clearAdvance(); demoToken++;
+    resetPaceState();
+    showControls(false);
     ui.summary.hidden = true; ui.lesson.hidden = false;
     ui.eyebrow.textContent = 'Free explore';
     ui.step.textContent = 'Free explore';
@@ -405,6 +507,8 @@ export default function createView(ctx) {
   function showSummary() {
     view = 'summary';
     clearAdvance(); demoToken++;
+    resetPaceState();
+    showControls(false);
     evaluator.clear();
     for (const v of ['target', 'root', 'match', 'mismatch']) keyboard.clearHighlight(v);
     ui.lesson.hidden = true; ui.explore.hidden = true; ui.summary.hidden = false;
@@ -446,7 +550,15 @@ export default function createView(ctx) {
   }
 
   function resetStats() { shapeStats.clear(); }
-  function clearAdvance() { if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; } }
+  function clearAdvance() {
+    if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; }
+    if (demoTimer) { clearTimeout(demoTimer); demoTimer = null; }
+    resumeAction = null;
+  }
+  function resetPaceState() {
+    paused = false; resumeAction = null;
+    if (ui.pause) { ui.pause.textContent = 'Pause'; ui.pause.classList.remove('is-active'); }
+  }
   // Feedback state: success glows (emerald + check); correction guides (soft rose +
   // outline marker). Glyphs are a non-colour cue (accessibility), set via CSS ::before.
   function setStatusState(s) {
@@ -464,6 +576,7 @@ export default function createView(ctx) {
     },
     exit() {
       clearAdvance(); demoToken++;
+      resetPaceState();
       evaluator.clear(); staff.clearMarks();
       for (const v of ['target', 'root', 'match', 'mismatch']) keyboard.clearHighlight(v);
     },
@@ -545,6 +658,13 @@ function injectStyles() {
     .cmx__exnote{margin:0 0 .4rem;font-size:var(--step-xs);color:var(--ivory-faint)}
     .cmx__actionbar{position:sticky;bottom:0;z-index:2;display:flex;align-items:center;gap:.7rem;margin-top:.2rem;padding:.7rem .2rem;background:linear-gradient(to top,var(--ebony,#1A1820) 70%,transparent);backdrop-filter:blur(2px)}
     .cmx__progresstext{font-family:var(--font-mono);font-size:var(--step-xs);color:var(--ivory-faint);letter-spacing:.05em}
+    .cmx__ctl{background:transparent;color:var(--ivory-dim);border:1px solid color-mix(in srgb,var(--ivory) 16%,transparent);
+      border-radius:999px;padding:8px 14px;font-size:var(--step-sm);font-family:var(--font-sans);cursor:pointer;
+      min-height:44px;transition:color .12s ease,border-color .12s ease,background .12s ease}
+    .cmx__ctl:hover{color:var(--ivory);border-color:color-mix(in srgb,var(--ivory) 30%,transparent)}
+    .cmx__ctl.is-active{color:var(--ivory);border-color:var(--brass);background:color-mix(in srgb,var(--brass) 14%,transparent)}
+    .cmx__ctl[hidden]{display:none}
+    @media (prefers-reduced-motion:reduce){ .cmx__ctl{transition:none} }
     .cmx__skip{margin-left:auto;background:transparent;color:var(--ivory-faint);border:0;text-decoration:underline;
       font-size:var(--step-sm);cursor:pointer;padding:10px 8px;min-height:44px}
     .cmx__skip:hover{color:var(--ivory-dim)}
