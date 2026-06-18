@@ -459,10 +459,30 @@ export function createStaffView({ compact = false } = {}) {
 
   function clear() { clearNotes(); model = []; }
 
+  // A calm, momentary pulse of the playhead bar — used by Scales as a visual
+  // count-in cue ("see the pulse before the first note"). Inert unless a caller
+  // invokes it AND a playhead exists (scroll mode only), so Sight-Reading and
+  // Chord, which never call it, are unaffected. Pure inline styling — no shared
+  // CSS or stylesheet change.
+  function flashPlayhead() {
+    for (const s of [treble, bass]) {
+      const ph = s && s.querySelector('.staff__playhead');
+      if (!ph) continue;
+      ph.style.transition = 'none';
+      ph.style.opacity = '1';
+      ph.style.boxShadow = '0 0 9px 2px var(--amber-glow, rgba(224,169,75,0.40))';
+      requestAnimationFrame(() => {
+        ph.style.transition = 'opacity 0.42s ease-out, box-shadow 0.42s ease-out';
+        ph.style.opacity = '';        // back to the stylesheet default (0.7 in scroll)
+        ph.style.boxShadow = 'none';
+      });
+    }
+  }
+
   return {
     el, treble, bass,
     setSequence, setChord, mark, markVoice, unmark, unmarkVoice, voiceHasState, clearMarks, clearCursor, setAnchor,
-    setFingersVisible, setFingersFaded, scrollToIndex, clear,
+    setFingersVisible, setFingersFaded, scrollToIndex, flashPlayhead, clear,
     get model() { return model; },
     get scrolling() { return scrolling; },
   };

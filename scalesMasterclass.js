@@ -228,35 +228,75 @@ export default function createView(ctx) {
     const token = playToken;           // capture this session; stopAll() bumped it
     mode = 'listening';
     unlockAudio();
-    paintScale('ghost');
+
     const cols = activeColumns();
+    if (!cols.length) { mode = 'idle'; setButtons(); return; }
     const midis = cols.flatMap(colMidis);
+
+    // Keyboard context: a dim "ghost" of the whole scale plus fingering badges.
+    keyboard.clearHighlight('target');
+    keyboard.clearHighlight('ghost');
+    keyboard.clearFingers();
+    keyboard.highlight(midis, 'ghost');
+    cols.forEach((col) => col.forEach((c) => { if (c.finger != null) keyboard.setFinger(c.midi, c.finger); }));
     viewport?.frame(midis);
 
+    // Notation in SCROLL mode so the fixed playhead bar is shown and the notes
+    // glide under it in tempo — the SAME timing line as Practice. Both-Hands
+    // keeps the rc2-34 key signature + forced clefs. This is a visual timing aid
+    // only: no expected notes are set, so nothing is scored.
+    const scale = buildScale(parseTonic(sel.tonic), sel.type);
+    const pref = scale.degrees.some((d) => d.name.includes('b')) ? 'flat' : 'sharp';
+    const primaryNames = cols.map((col) => noteName(primaryOf(col).midi, { accidental: pref }));
+    const primaryFingers = cols.map((col) => primaryOf(col).finger);
+    let lowerNames = null, lowerFingers = null;
+    if (sel.hand === 'Both') {
+      lowerNames = cols.map((col) => noteName(lowerOf(col).midi, { accidental: pref }));
+      lowerFingers = cols.map((col) => lowerOf(col)?.finger ?? null);
+    }
+    const grand = sel.hand === 'Both';
+    staff.setSequence(primaryNames, { lower: lowerNames, fingers: primaryFingers, lowerFingers, scroll: true,
+      keySignature: grand ? keySignature(sel.tonic, sel.type) : null, forceVoiceClefs: grand });
+    staff.setFingersVisible(staffFingers);
+    staff.setFingersFaded(false);
+    staff.scrollToIndex(0, false);     // first note parked at the playhead
+
     const dt = scheduler.secondsPerBeat;
+    const dtMs = Math.max(1, dt * 1000);
+    const countBeats = Math.max(1, scheduler.beatsPerBar || 4);
     const timers = [];
-    // Each column is scheduled JUST-IN-TIME through a setTimeout that is (a) in the
-    // disposer list and (b) gated by the session token — so a Stop both clears the
-    // timer AND neutralises any callback that already fired its way past clearing.
-    // No audio is pre-loaded into the Web Audio graph ahead of Stop.
-    cols.forEach((col, i) => {
-      const ms = Math.max(0, i * dt * 1000);
+    // Each callback is gated by the session token AND mode, so Stop both clears
+    // the timer and neutralises any callback that fired its way past clearing.
+
+    // Visual count-in: pulse the playhead once per beat (no audio) so the learner
+    // SEES the pulse and feels exactly when the first note will arrive.
+    for (let b = 0; b < countBeats; b++) {
       timers.push(setTimeout(() => {
-        if (token !== playToken || mode !== 'listening') return;   // stale → silent
+        if (token !== playToken || mode !== 'listening') return;
+        staff.flashPlayhead();
+        ui.status.textContent = `Count-in\u2026 ${b + 1}/${countBeats}`;
+      }, b * dtMs));
+    }
+
+    // Demonstration: each column sounds on its beat and glides under the bar.
+    cols.forEach((col, i) => {
+      timers.push(setTimeout(() => {
+        if (token !== playToken || mode !== 'listening') return;
         const now = synth.ctx.currentTime;
-        col.forEach((c) => {
-          synth.noteOn(c.midi, 90, now);
-          synth.noteOff(c.midi, now + dt * 0.92);
-        });
+        col.forEach((c) => { synth.noteOn(c.midi, 90, now); synth.noteOff(c.midi, now + dt * 0.92); });
         keyboard.clearHighlight('target');
         keyboard.highlight(colMidis(col), 'target');
-        markStaff(primaryOf(col).midi, 'current');
-      }, ms));
+        staff.scrollToIndex(i, true);     // glide this note under the fixed playhead
+        staff.clearCursor();
+        staff.mark(i, 'current');
+        ui.status.textContent = `Listening \u00b7 ${displayTonic(sel.tonic)} ${typeLabel(sel.type)}`;
+      }, (countBeats + i) * dtMs));
     });
-    const endMs = cols.length * dt * 1000;
+
+    const endMs = (countBeats + cols.length) * dtMs;
     timers.push(setTimeout(() => {
       if (token !== playToken) return;
-      keyboard.clearHighlight('target'); staff.clearMarks(); mode = 'idle'; setButtons();
+      stopToIdle();   // restore the static (pan) preview + free practice, like Stop
     }, endMs));
 
     disposers.push(() => timers.forEach(clearTimeout));
@@ -328,6 +368,7 @@ export default function createView(ctx) {
         if (token !== playToken) return;
         if (M.started) return;
         countBeats += 1;
+        staff.flashPlayhead();   // visual count-in pulse — show the pulse before the first note
         ui.status.textContent = `Count-in… ${Math.min(countBeats, scheduler.beatsPerBar)}/${scheduler.beatsPerBar}`;
       });
       const offBar = scheduler.onBar(() => {
