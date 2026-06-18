@@ -41,7 +41,7 @@ export function createStaffView({ compact = false } = {}) {
 
   let model = [];
 
-  function place(name) {
+  function place(name, forceClef = null) {
     const m = /^([A-Ga-g])(##|bb|[#b]|x)?(-?\d+)$/.exec(String(name).trim());
     if (!m) throw new Error(`staffView: unparseable note "${name}"`);
     const letter = m[1].toUpperCase();
@@ -49,7 +49,11 @@ export function createStaffView({ compact = false } = {}) {
     const octave = parseInt(m[3], 10);
     const diatonic = LETTER_INDEX[letter] + 7 * octave;
     const midi = toMidi(letter, accidental, octave);
-    const staff = midi >= 60 ? 'treble' : 'bass';
+    // Default placement is by pitch (midi ≥ 60 → treble). A forced clef (opt-in,
+    // used only by single-hand chord lessons) keeps EVERY note on the chosen
+    // staff, so e.g. a left-hand chord stays on the bass clef with ledger lines
+    // instead of splitting across both staves.
+    const staff = forceClef || (midi >= 60 ? 'treble' : 'bass');
     const topLine = staff === 'treble' ? TREBLE_TOP : BASS_TOP;
     return { staff, off: (topLine - diatonic) / 2, accidental, midi };
   }
@@ -174,14 +178,20 @@ export function createStaffView({ compact = false } = {}) {
    * setSequence — used by the Chord Masterclass; Scales/Sight-Reading never call it.
    */
   function setChord(names, opts = {}) {
-    const { fingers = null } = opts;
+    const { fingers = null, clef = 'grand' } = opts;
     scrolling = false;
     el.classList.remove('notation--scroll', 'notation--pan');
+    // Opt-in single-clef display for hand-specific chord lessons. Default 'grand'
+    // leaves the two-staff layout exactly as before (Scales/Sight-Reading never
+    // pass `clef`, so they are unaffected).
+    const forceClef = clef === 'treble' ? 'treble' : clef === 'bass' ? 'bass' : null;
+    el.classList.toggle('notation--treble-only', clef === 'treble');
+    el.classList.toggle('notation--bass-only', clef === 'bass');
     clearNotes();
 
     const x = '50%';
     model = names.map((name, i) => {
-      const p = place(name);
+      const p = place(name, forceClef);
       const node = engrave(p, x, fingers ? fingers[i] : null, { stem: false });
       return { name, midi: p.midi, off: p.off, staff: p.staff, el: node, lower: null };
     });

@@ -364,3 +364,15 @@
   overflow-x: clip;
   overflow-y: visible;
 }
+
+/* --------------------------------------------------------------------------
+   Opt-in single-clef chord display (Chord Masterclass only). Default grand
+   staff is unaffected; these rules apply only when the controller sets
+   `clef: 'treble' | 'bass'` on setChord.
+   -------------------------------------------------------------------------- */
+.notation--treble-only .staff--bass,
+.notation--bass-only .staff--treble { display: none; }
+.notation--treble-only .grand-staff__brace,
+.notation--bass-only .grand-staff__brace,
+.notation--treble-only .grand-staff__spine,
+.notation--bass-only .grand-staff__spine { display: none; }
