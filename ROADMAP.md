@@ -315,6 +315,74 @@ alignment, and a provenance gate for any future public-domain entry). No route, 
 engine change, no cache bump. Building an actual Musical Sight Reading route is a
 separate, approved phase.
 
+## Canonical Pillar — Musical Foundations: Healthy Technique & Ergonomics (FUTURE / RESERVED — NOT YET IMPLEMENTED)
+
+*Design/planning only. Captured as the authoritative intent for a future Musical
+Foundations expansion. No runtime, audio, route, or engine change is implied by this
+section; building the cards/visuals below is a separate, approved phase.*
+
+**Governing principle — "Natural, supported, flexible — never forced."**
+KeyMaster PRO teaches a healthy playing *mechanism*, not a decorative hand shape. It
+must NOT teach a rigid "curl your fingers as if holding a ball" pose — that phrase
+tends to produce a stiff claw, raised knuckles, a tight wrist, and finger/forearm
+strain. Instead:
+
+- The hand has a **natural arch**, not a rigid claw.
+- The wrist stays **free and aligned**, not collapsed or locked.
+- Forearm, wrist, hand, and the playing finger **work together** as one mechanism.
+- The **thumb stays relaxed and close** to the keys (quiet thumb).
+- The **longer fingers are allowed to live comfortably on the black keys**.
+- Hand shape is **shaped by the music and keyboard geography**, never frozen into one pose.
+
+**Injury-prevention principle.** Help learners avoid unnecessary hand, finger, wrist,
+forearm, shoulder, and neck tension; healthy alignment matters from the very beginning
+for anyone practising regularly. Avoid all language that encourages force, gripping,
+clawing, stretching, or holding tension. The aim is **not** limp relaxation — it is
+*efficient use*: only the muscles needed, only as much as needed. Approved teaching
+language: easy shoulders · free wrist · supported hand · natural arch · quiet thumb ·
+long fingers on black keys · no gripping · no clawing · no forcing · no pain.
+
+**Safety / scope-of-advice stance (important).** If a learner reports pain, strain,
+numbness, or persistent discomfort, the app advises **stopping** and seeking help from
+a **qualified teacher or health professional**. The app does **not** diagnose injury or
+present itself as a medical authority.
+
+**Modern pedagogy — why B major, not C.** Many older beginner methods start in C
+because it is visually simple (no sharps/flats) and easy to explain on the page — but
+that is not necessarily the easiest key for the *hand*. KeyMaster PRO deliberately
+begins with **B major** following the Chopin-inspired ergonomic idea: the longer fingers
+fall naturally on the black keys while the shorter thumb and fifth finger sit on white
+keys. Explain this gently. *Suggested learner wording:* "Many books begin with C because
+it is easy to see. KeyMaster PRO begins with B major because it is kind to the hand. The
+long fingers naturally reach the black keys, and the shorter fingers stay close to the
+white keys."
+
+**Terminology care (Chopin key point).** The historical/teaching reference pairs
+**B major for the right hand** with **D-flat major for the left hand** — *not* B-flat
+major. Do not overburden beginners with enharmonic theory, but add a gentle note to
+reduce confusion. *Suggested learner wording:* "B major, B-flat major, B-sharp major,
+and D-flat major are different names and different spellings. Some notes can sound the
+same but be written differently. You do not need to master that yet. For now, notice the
+hand shape: long fingers like the black keys."
+
+**Possible future Foundations cards** (each Explain → Show → (optional) Try, in the
+existing calm Foundations style): (1) how to sit at the piano; (2) how the arm hangs
+naturally; (3) natural hand shape, not claw shape; (4) why the wrist must stay free;
+(5) how the thumb rests near the keys; (6) why B major fits the hand; (7) what tension
+feels like; (8) when to stop practising; (9) why slow practice protects the hand;
+(10) how posture supports reading and rhythm.
+
+**Future-ready video placeholders** (placeholders only — no actual videos until
+approved). Candidate titles: "How to sit at the piano", "Natural hand shape", "Why B
+major fits the hand", "Relaxed wrist and supported fingers", "What not to do — clawing,
+gripping, collapsing". Hard rules for any future video layer: videos are **optional** and
+**must never block the lesson**; need captions/transcript; should be short; learners can
+skip/replay; **no autoplay with sound**; **no large assets yet**; **no external
+copyrighted clips**. AI-generated stills/animations may serve as interim placeholders or
+visual supports, but **final** posture/hand-shape teaching should be based on real
+filmed/photographed reference or expert-checked material — **no AI-generated anatomy used
+as final authority without expert review**.
+
 ---
 
 *This document is a specification only. Implementing any module above is a
