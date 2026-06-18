@@ -180,6 +180,28 @@ event shape: `{ midiNote, velocity, timestamp, source }`.
   (B3/B4/B5), scale generation, fingering, MIDI, evaluator untouched. Audio quality and
   the inline clef's exact vertical centring are DEVICE-VERIFY-ONLY (not renderable here).
 
+- **rc2-39 — Scales Listen articulation fix + scoped warmer demo voice (code-only).**
+  *Option A (shared synth release):* the "doot/cutoff" was the Voice stopping its
+  oscillators while gain was still ~1% (a non-zero-sample click), plus a fragile
+  `cancelScheduledValues`+`setValueAtTime(g.value)` re-anchor that could jump. New
+  release uses `cancelAndHoldAtTime(t)` (with a `cancelScheduledValues`+re-anchor
+  FALLBACK for browsers/mobile without it), an exponential tail to 0.0008, then a
+  short LINEAR ramp to TRUE zero before the oscillators stop -> no end click. Benefits
+  ALL synth use (learner-play, flourish, Listen, SR); `panic()`/`allNotesOff()` and
+  voice cleanup/`onended` teardown preserved; no stuck notes (finite stopAt). This is
+  an articulation bug fix, not a timbre change — the default voice is byte-identical.
+  *Option B (scoped demo voice):* added an opt-in `tone` arg to `Voice`/`noteOn`;
+  `tone==='demo'` builds a warmer, more piano-like voice (triangle+sine core, filter
+  envelope bright->mellow over 0.26s, clean 4ms attack, faster 0.5s decay, low 0.22
+  sustain, peak matched to default so no loudness jump). ONLY `scalesMasterclass.listen()`
+  passes 'demo'. Learner key-press, the flourish, Chord (plays via keyboard->default
+  voice), Foundations, and SR self-play all omit the arg -> default voice UNCHANGED.
+  SR self-playback intentionally left on the default voice (not changed without report).
+  ONLY synth.js + scalesMasterclass.js changed (+ ?v= bump). rc2-38 clef/notation fix,
+  B-major register, scale notes/MIDI/fingering/evaluator untouched. FINAL AUDIO QUALITY
+  (artifact gone? warmer? clean on 1-oct / 2-oct / both-hands?) is DEVICE-VERIFY-BY-EAR
+  only — not renderable here.
+
 ## RELEASE CHECKLIST (canonical — run before reporting ANY build complete)
 A correct source file is NOT sufficient; the shipped zip must be verified against
 current source every release. Steps:

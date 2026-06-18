@@ -288,7 +288,7 @@ export default function createView(ctx) {
         // (Both-Hands), so the summed peak stays under the synth limiter and does
         // not crackle. Learner-play volume is unaffected (separate path).
         const vel = col.length > 1 ? 52 : 72;
-        col.forEach((c) => { synth.noteOn(c.midi, vel, now); synth.noteOff(c.midi, now + dt * 0.92); });
+        col.forEach((c) => { synth.noteOn(c.midi, vel, now, 'demo'); synth.noteOff(c.midi, now + dt * 0.92); });
         keyboard.clearHighlight('target');
         keyboard.highlight(colMidis(col), 'target');
         staff.scrollToIndex(i, true);     // glide this note under the fixed playhead
