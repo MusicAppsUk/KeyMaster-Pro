@@ -527,9 +527,9 @@ function injectStyles() {
     /* Success glows (emerald + check). Correction guides (soft rose + outline mark).
        Glyphs are a non-colour cue; success is intentionally more luminous than error. */
     .cmx__status.is-good{color:var(--emerald,#46C08A);text-shadow:0 0 14px var(--emerald-glow,rgba(70,192,138,.45))}
-    .cmx__status.is-good::before{content:"\2713\00a0\00a0";font-weight:700}
+    .cmx__status.is-good::before{content:"\u2713\u00A0\u00A0";font-weight:700}
     .cmx__status.is-warn{color:var(--rose,#D98A92)}
-    .cmx__status.is-warn::before{content:"\25CB\00a0\00a0";font-weight:600;opacity:.85}
+    .cmx__status.is-warn::before{content:"\u25CB\u00A0\u00A0";font-weight:600;opacity:.85}
     .cmx__reviewbody{display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem;max-width:640px}
     .cmx__reviewbody p{margin:0;font-family:var(--font-sans);font-size:var(--step-md,1.05rem);color:var(--ivory);line-height:1.6}
     .cmx__rec{font-weight:600}
