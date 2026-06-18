@@ -109,20 +109,25 @@ function savePrefs(prefs) {
  * shell stays usable and the keyboard remains playable.
  */
 const VIEW_REGISTRY = {
+  foundations: {
+    slot: 'foundations',
+    src: './foundations.js?v=rc2-35',
+    load: () => import('./foundations.js?v=rc2-35'),
+  },
   scales: {
     slot: 'scales',
-    src: './scalesMasterclass.js?v=rc2-34',
-    load: () => import('./scalesMasterclass.js?v=rc2-34'),
+    src: './scalesMasterclass.js?v=rc2-35',
+    load: () => import('./scalesMasterclass.js?v=rc2-35'),
   },
   sightreading: {
     slot: 'sightreading',
-    src: './sightReading.js?v=rc2-34',
-    load: () => import('./sightReading.js?v=rc2-34'),
+    src: './sightReading.js?v=rc2-35',
+    load: () => import('./sightReading.js?v=rc2-35'),
   },
   chords: {
     slot: 'chords',
-    src: './chordMasterclass.js?v=rc2-34',
-    load: () => import('./chordMasterclass.js?v=rc2-34'),
+    src: './chordMasterclass.js?v=rc2-35',
+    load: () => import('./chordMasterclass.js?v=rc2-35'),
   },
 };
 
@@ -130,6 +135,7 @@ const VIEW_REGISTRY = {
 const ROUTES = {
   '': 'home',
   '/': 'home',
+  '/foundations': 'foundations',
   '/scales': 'scales',
   '/sightreading': 'sightreading',
   '/chords': 'chords',
@@ -145,6 +151,7 @@ const ROUTES = {
  */
 const KEYBOARD_HIDDEN_DEFAULT = {
   home: false,
+  foundations: false,
   scales: true,
   sightreading: true,
   chords: false,
@@ -159,6 +166,7 @@ const KEYBOARD_HIDDEN_DEFAULT = {
  */
 const FINGERING_HIDDEN_DEFAULT = {
   home: false,
+  foundations: false,
   scales: false,
   sightreading: false,
   chords: false,
@@ -171,6 +179,7 @@ const FINGERING_HIDDEN_DEFAULT = {
  * the optional `ctx.nav` helper.
  */
 const MODULE_NAME = {
+  foundations: 'Musical Foundations',
   scales: 'Scales Masterclass',
   sightreading: 'Cognitive Sight-Reading',
   chords: 'Chord Masterclass',

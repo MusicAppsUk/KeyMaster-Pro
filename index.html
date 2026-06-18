@@ -101,9 +101,17 @@
             <p class="dashboard__eyebrow">KeyMaster PRO</p>
             <h1 id="launcher-heading" class="dashboard__title">The Curriculum</h1>
             <p class="dashboard__sub">Process music like an expert reader and performer.</p>
+            <p class="dashboard__hint" style="margin:0.4rem 0 0;font-size:0.9rem;color:var(--ivory-dim,#B9B2A6);">New to music reading? <a href="#/foundations" style="color:var(--champagne,#E8C57E);">Start with Musical Foundations</a>.</p>
           </header>
 
           <nav class="launcher" aria-label="Training modules">
+            <a class="vector vector--foundations" href="#/foundations">
+              <span class="vector__status vector__status--active">Foundation</span>
+              <span class="vector__eyebrow">00 — Foundations</span>
+              <span class="vector__title">Musical Foundations</span>
+              <span class="vector__blurb">Understand the notes, keys, rhythm, and symbols before you practise.</span>
+            </a>
+
             <a class="vector vector--scales" href="#/scales">
               <span class="vector__status vector__status--active">Active</span>
               <span class="vector__eyebrow">01 — Technique</span>
@@ -151,6 +159,7 @@
           </nav>
 
           <ol class="launcher__flow" aria-label="Curriculum flow">
+            <li>Foundations</li>
             <li>Scales</li>
             <li>Sight-Reading</li>
             <li>Chords</li>
@@ -159,6 +168,17 @@
             <li>Organ / Pedalboard</li>
           </ol>
         </div>
+      </section>
+
+      <!-- Musical Foundations mount (optional onboarding layer). -->
+      <section
+        class="view view--foundations"
+        data-view="foundations"
+        aria-labelledby="foundations-heading"
+        hidden
+      >
+        <h1 id="foundations-heading" class="view__title">Musical Foundations</h1>
+        <div class="view__body" data-slot="foundations"></div>
       </section>
 
       <!-- Scales Masterclass mount. Its controller renders into [data-slot]. -->
@@ -215,6 +235,6 @@
 
   <!-- Single module entry point. Absolute path so it resolves regardless of
        the route in the hash. -->
-  <script type="module" src="app.js?v=rc2-34"></script>
+  <script type="module" src="app.js?v=rc2-35"></script>
 </body>
 </html>
