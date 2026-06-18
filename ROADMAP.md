@@ -84,6 +84,19 @@ the Event Bridge, staff rendering, progression gating, feedback, transport, or
 any stable module. Existing display-only crotchet rests in Sight-Reading are the
 first visible step of this pillar; everything else is future work.
 
+**Canonically accepted; reserved.** This pillar is accepted into the R1
+specification. It stays **documented and reserved** until a *deliberately begun,
+separate, isolated build phase* — RC2 stability is the standing priority until
+then. When that phase starts, the **natural first step is silent rhythm
+recognition** (recognition before execution), not live tempo scoring. The
+prohibited-for-now list is explicit: no rhythm scoring, no metronome
+*enforcement*, no held-note/duration detection, and no tempo-based pass/fail.
+`rhythmModel.js` must remain unwired until that phase begins. The future Practice
+Review timing dimensions are fixed as: **Pulse Stability · Rhythm Recognition ·
+Note Duration · Continuity · Rest Awareness.** Every timing increment must pass
+the Golden Rule — *does this help the musician process music more like an expert
+reader and performer?*
+
 ## Curriculum flow
 
 Scales → Cognitive Sight-Reading → Chords → Arpeggios → Pattern Reading →
@@ -129,20 +142,51 @@ would need a new generator knob (repeated notes, ascending/descending split,
 isolated 4ths/5ths, notes below Middle C) are intentionally **out of scope** and
 omitted; the pathway stays fully data-driven on the current engine.
 
-## Chord Masterclass (future)
+## Chord Masterclass — interactive training (Phase 1 ACTIVE)
 
-Purpose: instant recognition and execution of chord structures.
+Purpose: train the musician to **recognise, understand, and execute** chords — a
+chord is a single harmonic object (a sound, a shape, a spelling, a hand position,
+a function, a movable structure), not three isolated notes. Governed by the
+Golden Rule and by *Recognition before Execution*. **Design note:** the founder
+found chord learning slow, so chords are taught patiently — visually, physically,
+and repeatedly — never assuming "simple" chords are obvious.
 
-- **Stage 1 — Chord Recognition:** major / minor / diminished / augmented triads. Recognise and play quickly.
-- **Stage 2 — Inversions:** root, first, second. Understand shapes in all positions.
-- **Stage 3 — Speed & Fluency:** random chord drills, timed execution, fast recognition.
-- **Stage 4 — Four-Note Chords:** major 7, minor 7, dominant 7, half-diminished. Practical harmonic fluency.
+**Phase 1 — shipped (additive, non-breaking).** The chord view is now an
+interactive learning loop, not passive display. Scope: **major triads, B major as
+the canonical first chord** (root B-D#-F#, first D#-F#-B, second F#-B-D#), root /
+1st / 2nd inversion, Right or Left hand (Both hands reserved), MIDI **and**
+on-screen input, green/red per-note feedback, calm teacher-style messaging. Built
+entirely on existing infrastructure — `chordEngine.buildChord`, the self-contained
+`chordEvaluator` (shared NoteInput hub; not the single-note evaluator; no Event
+Bridge), `staffView.setChord`, keyboard highlights. Three modes:
+- **Learn** — understand the chord (notes, keyboard, staff, recommended fingering); the prior display behaviour, preserved.
+- **Guided Practice** — "Play *chord* — *inversion* — *hand*"; play it, green/red, calm success.
+- **Inversion Trainer** — root → first → second, teaching *"Same chord — new shape"*: a chord is a harmonic identity that can move.
 
-**Fingering philosophy — "Recommended Fingering", not "Correct Fingering".**
-Unlike scales there is often no single correct fingering. Focus on thumb anchors,
-thumb shifts, and thumb-under movements; allow flexibility for fingers 2/3/4 as
-real players adapt. Recognition and shape understanding take priority over strict
-fingering.
+Recognition Mode (show-and-identify) is **reserved/stubbed** for a later phase.
+
+**Fingering philosophy — "Recommended Fingering", not "Correct Fingering".** There
+is often no single correct chord fingering. Phase 1 recommends a reliable,
+low-movement triad shape (RH 1·3·5, LH 5·3·1, low→high) to build dependable hand
+shapes and avoid unnecessary movement; fingers stay flexible as real players adapt.
+
+**Curriculum ladder (long-term — only Level 1 / Phase 1 is started):**
+1. **Major triads** — root, 1st, 2nd; hands separately. *(Phase 1 in progress)*
+2. **Minor triads** — root, 1st, 2nd.
+3. **Diminished & augmented triads** — recognise altered fifths; compare shapes.
+4. **Primary chords** — I, IV, V; chord families within a key.
+5. **Chord progressions** — I–IV–V–I, ii–V–I, I–vi–IV–V.
+6. **Seventh chords** — dominant, major, minor, diminished, half-diminished.
+7. **Extended & colour chords** — 9ths, 11ths, 13ths, added-note, suspended.
+8. **Slash chords & voicings** — bass vs upper chord; LH bass / RH harmony; slash-chord decoder.
+9. **Harmonic fluency** — recognition in context, efficient movement, pattern-based harmonic reading.
+
+**Practice Review (future, educational — never game stats).** Reserved chord
+dimensions: Chord Recognition · Chord Spelling · Inversion Awareness · Hand Shape ·
+Fingering Confidence · Left-Hand Fluency · Right-Hand Fluency · Harmonic
+Understanding (e.g. *Inversion Awareness: Good · Hand Shape: Needs attention*). Not
+implemented in Phase 1; reserved here to keep future review lines on-voice. No
+badges, points, scores, or arcade language anywhere in Chord Masterclass.
 
 ## Arpeggio Masterclass (future)
 

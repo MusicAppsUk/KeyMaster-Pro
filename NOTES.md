@@ -94,3 +94,38 @@ event shape: `{ midiNote, velocity, timestamp, source }`.
   rendering, gating, feedback, transport, or any stable module. The display-only
   crotchet rests already in Sight-Reading are the only visible part of this
   pillar; all else is future, re-approval-gated work.
+
+- **DECISION — Timing pillar canonically accepted into R1; reserved.** Stays
+  documented only until a deliberately begun, separate, isolated build phase.
+  First step when started = silent rhythm recognition (recognition before
+  execution), NOT live tempo scoring. Prohibited until then: rhythm scoring,
+  metronome enforcement, held-note/duration detection, tempo-based pass/fail.
+  rhythmModel.js remains unwired. Fixed Practice-Review timing dimensions: Pulse
+  Stability · Rhythm Recognition · Note Duration · Continuity · Rest Awareness.
+  All timing work bound by the Golden Rule. No runtime change; no version bump.
+
+- **PACKAGING FIX (rc2-24) — interactive Chord Masterclass was never shipped.**
+  Live testing showed the chord view as display-only (no Learn / Guided Practice
+  / Inversion Trainer tabs). Root cause: the zip held an OLD 191-line
+  chordMasterclass.js ("Stage 1 prototype"), while flat/ had the 315-line
+  INTERACTIVE version. Cause of drift: `zip -rq` UPDATES only files whose mtime
+  is newer, so it silently skipped the (older-mtime) interactive chord file and a
+  stale ROADMAP.md. FIX: always rebuild the zip FROM SCRATCH (`rm` then `zip`),
+  never incremental update. Bumped rc2-23 → rc2-24 to force browsers to re-fetch
+  the chord module (same-token cache would serve the old file). No service worker
+  exists; cache-busting is via the ?v= token only. No feature code rebuilt — the
+  interactive modes already existed in source; this was a shipping + cache fix.
+  STANDING RULE: re-zip = rm + fresh zip, then diff zip vs flat (0 stale) before
+  presenting.
+
+## RELEASE CHECKLIST (canonical — run before reporting ANY build complete)
+A correct source file is NOT sufficient; the shipped zip must be verified against
+current source every release. Steps:
+  1. Rebuild the zip FROM SCRATCH (`rm` the zip, then `zip -rq` fresh) — never
+     update-in-place (incremental zip skips files whose mtime isn't newer).
+  2. Verify chordMasterclass.js in the zip matches source.
+  3. Verify changed docs (e.g. ROADMAP.md) are refreshed in the zip.
+  4. Verify the cache/version token (?v=) is bumped whenever live behaviour changes.
+  5. Confirm stale-file count (zip vs flat) is ZERO.
+  6. Confirm the live route loads the intended module (app.js import token + the
+     dashboard card link in index.html).
