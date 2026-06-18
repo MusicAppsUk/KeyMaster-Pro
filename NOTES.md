@@ -219,6 +219,22 @@ event shape: `{ midiNote, velocity, timestamp, source }`.
   scalesMasterclass.js are untouched — fingeringEngine is imported only by Scales.
   One-octave was already correct in source; the visible bug was the two-octave boundary.
 
+- **rc2-41 — Scales Listen demo-voice articulation polish (Listen-scoped).** Third audio
+  pass for the residual intermittent ping/click. Root suspects: the demo voice SNAPPED
+  its filter to a high cutoff at t0 (a pitch-dependent onset transient) feeding the
+  shared limiter on both-hands/overlap peaks. Fix — all inside the Voice `demo` branch
+  (tone==='demo', Scales Listen only): (1) ONSET softened — the filter now starts mellow
+  (fFloor) and BLOOMS up to fPeak over ~10ms, then settles (was an instant snap); fPeak
+  base lowered 1700+v*3200 -> 1500+v*2600; amp attack 4ms -> 9ms. (2) RELEASE tightened
+  0.30 -> 0.20s to cut tail overlap between consecutive notes (still musical, not
+  staccato). NO velocity trim (goal was artifact removal, not loudness — left 72/52 as
+  rc2-39). DELIBERATELY UNCHANGED: the shared limiter/compressor (threshold -6, ratio 12,
+  attack 3ms, release 0.18), the default voice, and the shared release() fade-to-zero —
+  so Chord, learner key-press, Foundations, SR self-play and the flourish are byte-
+  identical. ONLY synth.js changed (+ ?v= bump). rc2-40 fingering, rc2-38 clef notation,
+  B-register, evaluator untouched. Whether the ping is fully gone and the voice still
+  reads warm/premium on 1-oct / 2-oct / both-hands is DEVICE-VERIFY-BY-EAR only.
+
 ## RELEASE CHECKLIST (canonical — run before reporting ANY build complete)
 A correct source file is NOT sufficient; the shipped zip must be verified against
 current source every release. Steps:

@@ -71,22 +71,25 @@ class Voice {
 
     if (demo) {
       // Scales-Listen demonstration voice (scoped — only used when tone==='demo').
-      // Warmer + more piano-like than the default: a brighter onset that quickly
-      // settles via a filter envelope, over a triangle+sine core, with a faster
-      // piano-ish decay and a lower sustain so notes don't drone or overlap muddily.
+      // Warmer + more piano-like than the default. The brightness is EASED IN over
+      // ~10ms (mellow → bloom → settle) rather than snapped to a high cutoff at t0,
+      // which removed the pitch-dependent onset ping/beep. A gentler amp attack and a
+      // tighter release reduce the remaining transient and tail overlap.
       this.oscA.type = 'triangle';
       this.oscB.type = 'sine';
       this.oscB.detune.value = -4;
       this.filter.Q.value = 0.7;
-      const fPeak = 1700 + v * 3200;   // bright at onset
+      const fPeak = 1500 + v * 2600;   // onset brightness (bloomed in, not snapped)
       const fTail = 650 + v * 900;     // mellow once settled
-      this.filter.frequency.setValueAtTime(fPeak, t0);
-      this.filter.frequency.exponentialRampToValueAtTime(Math.max(fTail, 200), t0 + 0.26);
+      const fFloor = Math.max(fTail, 200);
+      this.filter.frequency.setValueAtTime(fFloor, t0);                 // start mellow
+      this.filter.frequency.linearRampToValueAtTime(fPeak, t0 + 0.010); // bloom over ~10ms
+      this.filter.frequency.exponentialRampToValueAtTime(fFloor, t0 + 0.26); // settle
       const peak = 0.06 + v * 0.32;    // ~matches default level — no loudness jump
       const sustain = peak * 0.22;     // piano-ish: decays rather than holding
-      g.linearRampToValueAtTime(peak, t0 + 0.004);              // clean, not sharp
-      g.exponentialRampToValueAtTime(Math.max(sustain, 0.0002), t0 + 0.004 + 0.5);
-      this._releaseTime = 0.30;
+      g.linearRampToValueAtTime(peak, t0 + 0.009);                     // gentler onset (was 4ms)
+      g.exponentialRampToValueAtTime(Math.max(sustain, 0.0002), t0 + 0.009 + 0.5);
+      this._releaseTime = 0.20;        // tighter tail → less overlap (was 0.30), still musical
     } else {
       // --- Default voice (unchanged) ---
       this.oscA.type = 'triangle';
