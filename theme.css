@@ -44,6 +44,20 @@
   --warn:         #D8A24A;
   --bad:          var(--felt-bright);
 
+  /* ---- Expanded teaching palette (colour as a feedback language) ----
+     Additive: nothing above changes. "Success should glow; mistakes should
+     guide." Correct states are emotionally warmer/more luminous than errors.
+     --midnight / --ivory-warm are reserved for the future Day/Night theme work. */
+  --midnight:     #1B2742;                      /* structural depth (reserved) */
+  --champagne:    var(--brass-bright);          /* gold accent alias */
+  --amber:        #E0A94B;                       /* guidance / current target */
+  --amber-glow:   rgba(224, 169, 75, 0.40);
+  --emerald:      #46C08A;                       /* success — brighter than --good */
+  --emerald-glow: rgba(70, 192, 138, 0.45);
+  --rose:         #D98A92;                       /* gentle correction — softer than --bad */
+  --rose-edge:    rgba(217, 138, 146, 0.55);
+  --ivory-warm:   #F6F0E4;                       /* warm reading text (reserved for Day) */
+
   /* ---- Type ---- */
   --font-display: 'Fraunces', Georgia, 'Times New Roman', serif;
   --font-ui: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;

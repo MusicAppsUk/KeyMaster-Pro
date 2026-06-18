@@ -218,5 +218,65 @@ Extend beyond piano/keyboard:
 
 ---
 
+## Canonical Principle — Colour & Feedback (Teaching Language)
+
+Colour in KeyMaster PRO is a teaching language, not decoration. The governing
+rule: **success should glow; mistakes should guide.** Correct states are
+emotionally warmer and more luminous than error states are loud. Getting it
+right should feel rewarding ("Yes — that is it"); getting it wrong should feel
+instructional ("Check this note and try again"), never punished.
+
+**Expanded palette** (tokens in theme.css, additive over the ebony/brass base):
+midnight blue (structure), champagne/gold (accent), warm amber (guidance /
+current target), bright emerald (success), soft rose (gentle correction), warm
+ivory (reading text). Emerald is brighter than the legacy `--good`; rose is
+softer than the legacy `--bad`.
+
+**Correct** — bright emerald, a gentle glow, calm positive wording, and a
+**check (✓)** as a non-colour cue. **Incorrect** — soft rose (not harsh red), an
+**outline marker (○)** and a gentle treatment rather than alarm, with calm
+instructional wording and no shame language. **Current target** — warm amber/
+gold. **Missing** — subtle neutral/amber.
+
+**Accessibility (hard rule): never rely on colour alone.** Every correct/wrong
+state must also carry text, shape/icon, border, or position so the system works
+for colour-blind users, children, older learners, and varied lighting.
+
+**Per-mode (Chord Masterclass):** Follow Me — target amber, held emerald glow,
+wrong soft-rose outline, missing neutral/amber. Try Yourself — reduced help, but
+correct still feels rewarding. Assess — minimal support, calm confirmation, no
+dramatic error state. Review — gold/ivory summary, emerald = secure, amber =
+developing, rose sparingly for "needs attention".
+
+**Visual identity:** *stage glow, not arcade glow* — premium, musical, luminous,
+calm, inviting. Not flashy, childish, neon, or gamified.
+
+### Reserved — Theme System (Day / Night / Auto)
+
+Three themes are the canonical target, gated behind a deliberate phase because a
+light theme requires auditing ~100+ hardcoded colour literals across keyboard.css,
+notation.css, and several module-injected styles (none render-verifiable headless):
+
+- **Night — Ebony Velvet** (current default): deep ebony, midnight blue, champagne
+  gold, amber, emerald success, soft-rose correction, ivory text. Premium,
+  cinematic, stage-like.
+- **Day — Studio Ivory**: warm ivory/cream ground, charcoal text, restrained gold,
+  midnight-blue structure, amber guidance, emerald/rose feedback. Clear, readable,
+  lesson-book quality for daytime and older learners.
+- **Auto**: follow the device `prefers-color-scheme`; the user may still force Day
+  or Night. Persisted locally.
+
+Theme must serve readability, accessibility, learner comfort, long sessions, and
+premium identity — never decoration. The feedback principle holds across both
+themes: correct feels more rewarding than incorrect feels punishing.
+
+*Status (rc2-29):* expanded palette tokens added (additive); the feedback
+principle is implemented inside Chord Masterclass (emerald-glow success with ✓,
+soft-rose correction with ○, amber target, colour-coded honest review). The
+shared keyboard/staff feedback recolour and the Day/Night/Auto theme mechanism
+remain reserved, deliberate phases.
+
+---
+
 *This document is a specification only. Implementing any module above is a
 separate, gated phase that must leave RC2 untouched.*

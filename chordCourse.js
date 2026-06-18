@@ -1,17 +1,29 @@
 // chordCourse.js
 //
-// Guided course DATA for Chord Masterclass (Phase 2). Pure data — no DOM, no
-// engine, no audio. The controller (chordMasterclass.js) reads this to drive a
-// Teach → Show → Shape → Try → Guide → Repeat → Review lesson flow. Chord MIDI
-// and fingering still come from chordEngine; this file only sequences the lessons
-// and supplies the patient teaching copy.
+// Guided course DATA for Chord Masterclass (Phase 2 / rc2-26). Pure data — no DOM,
+// no engine, no audio. The controller (chordMasterclass.js) reads this to drive an
+// ACTIVE training flow per shape:
 //
-// Unit 1 is intentionally small and safe: the B major triad, all three
-// inversions, both hands, a consolidation review, and a mixed assessment.
-// Roots/qualities are fixed for the unit (B major); each lesson varies only the
-// inversion and hand, or supplies its own sub-sequence for review/assessment.
+//   Teach/Demonstrate  → explain + brief visual highlight, then "Let's try it"
+//   Follow Me          → guide the hand note-by-note (uses evaluator progress)
+//   Try Yourself       → play the whole chord with less support
+//   ... then Inversion Review → Mixed Assessment → Unit Review
+//
+// Chord MIDI + fingering still come from chordEngine; this file only sequences the
+// steps and supplies the patient teaching copy. Unit 1 is the B major triad, all
+// three inversions, both hands. Each shape is taught as a 3-step action sequence,
+// so the learner is always led into PLAYING, never just reading.
 
-const SH = '\u266F'; // ♯
+const SH = '\u266F'; // sharp
+
+// One shape => three active steps (teach -> follow-me -> try).
+function shape(idBase, inversion, hand, teach) {
+  return [
+    { id: idBase,     kind: 'teach',    inversion, hand, teach },
+    { id: idBase + 1, kind: 'followme', inversion, hand },
+    { id: idBase + 2, kind: 'try',      inversion, hand },
+  ];
+}
 
 export const UNIT1 = Object.freeze({
   id: 'unit1-bmajor',
@@ -20,72 +32,61 @@ export const UNIT1 = Object.freeze({
   rootPc: 11,
   quality: 'major',
   intro: 'Today we are learning B major.',
-  lessons: Object.freeze([
+  steps: Object.freeze([
+    // 1-3  root, right hand
+    ...shape(1, 'root', 'RH', [
+      `B major is built from three notes: B, D${SH} and F${SH}.`,
+      `They are the 1st, 3rd and 5th of the chord - not three loose notes, but one shape.`,
+      `In root position the lowest note is B, the chord's own name. We'll start with the right hand.`,
+    ]),
+    // 4-6  root, left hand
+    ...shape(4, 'root', 'LH', [
+      `The same B major chord - now in the left hand.`,
+      `Still B, D${SH}, F${SH}, with B at the bottom. The shape feels the same; only the hand changes.`,
+    ]),
+    // 7-9  first inversion, right hand
+    ...shape(7, 'first', 'RH', [
+      `Same chord, new shape: B major in first inversion.`,
+      `The lowest note is now D${SH} (the 3rd), and B has moved to the top.`,
+      `It is still B major - a chord can move while keeping its identity.`,
+    ]),
+    // 10-12  first inversion, left hand
+    ...shape(10, 'first', 'LH', [
+      `First inversion again - left hand this time.`,
+      `Lowest note D${SH}; the same shape sits a little higher under the hand.`,
+    ]),
+    // 13-15  second inversion, right hand
+    ...shape(13, 'second', 'RH', [
+      `Second inversion: the lowest note is now F${SH} (the 5th).`,
+      `B and D${SH} sit above it - the same three notes, a third shape.`,
+    ]),
+    // 16-18  second inversion, left hand
+    ...shape(16, 'second', 'LH', [
+      `Second inversion, left hand.`,
+      `Lowest note F${SH}. You have now met all three shapes in both hands.`,
+    ]),
+    // 19  inversion review (right hand cycles the three shapes)
     {
-      id: 1, kind: 'lesson', inversion: 'root', hand: 'RH',
-      teach: [
-        `B major is built from three notes: B, D${SH} and F${SH}.`,
-        `They are the 1st, 3rd and 5th of the chord — not three random notes, but one shape.`,
-        `In root position the lowest note is B, the chord's own name.`,
-        `We'll play it with the right hand first.`,
-      ],
-    },
-    {
-      id: 2, kind: 'lesson', inversion: 'root', hand: 'LH',
-      teach: [
-        `The same B major chord — now in the left hand.`,
-        `Still B, D${SH}, F${SH}, with B at the bottom.`,
-        `The shape feels the same; only the hand changes.`,
-      ],
-    },
-    {
-      id: 3, kind: 'lesson', inversion: 'first', hand: 'RH',
-      teach: [
-        `Same chord, new shape: B major in first inversion.`,
-        `Now the lowest note is D${SH} (the 3rd), and B moves to the top.`,
-        `It is still B major — a chord can move while keeping its identity.`,
-      ],
-    },
-    {
-      id: 4, kind: 'lesson', inversion: 'first', hand: 'LH',
-      teach: [
-        `First inversion again — left hand this time.`,
-        `Lowest note D${SH}; the same shape sits a little higher under the hand.`,
-      ],
-    },
-    {
-      id: 5, kind: 'lesson', inversion: 'second', hand: 'RH',
-      teach: [
-        `Second inversion: the lowest note is now F${SH} (the 5th).`,
-        `B and D${SH} sit above it. Same three notes, a third shape.`,
-      ],
-    },
-    {
-      id: 6, kind: 'lesson', inversion: 'second', hand: 'LH',
-      teach: [
-        `Second inversion, left hand.`,
-        `Lowest note F${SH}. You have now met all three shapes in both hands.`,
-      ],
-    },
-    {
-      id: 7, kind: 'review', hand: 'RH',
-      sequence: ['root', 'first', 'second'],
+      id: 19, kind: 'review', hand: 'RH', sequence: ['root', 'first', 'second'],
       teach: [
         `You have met all three shapes of B major.`,
-        `Play each one in turn — same chord, new shape.`,
+        `Play each one in turn - same chord, new shape.`,
       ],
     },
+    // 20  mixed assessment (reduced support)
     {
-      id: 8, kind: 'assessment',
+      id: 20, kind: 'assess',
       sequence: [
         { inversion: 'root', hand: 'RH' },
         { inversion: 'first', hand: 'LH' },
         { inversion: 'second', hand: 'RH' },
       ],
       teach: [
-        `A mixed check — no teaching hints this time.`,
+        `A mixed check - fewer hints this time.`,
         `Play each B major chord as it is named.`,
       ],
     },
+    // 21  unit review (honest summary)
+    { id: 21, kind: 'unitreview' },
   ]),
 });
