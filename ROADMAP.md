@@ -278,5 +278,44 @@ remain reserved, deliberate phases.
 
 ---
 
+## Canonical Pillar — Musical Sight Reading / Repertoire (reserved)
+
+Cognitive Sight Reading trains the **eye**; Musical Sight Reading **applies** that
+skill to material that *sounds like music*. The goal is not infinite notes but
+infinite musical growth — the learner should finish a study thinking "that sounded
+beautiful, I want to play another," never "that was a random note drill."
+
+This is a separate, parallel source of material — it does **not** modify the stable
+Cognitive Sight-Reading engine (`sightReading.js`, `exerciseGenerator.js`,
+`lessonMatrix.js`). The existing levels are preserved; the musical layer is
+anchored to begin where the eye-training frames leave off (C4–G4 → five-finger →
+skips → full C major → two hands).
+
+**Music, not random notes.** Every study is a small *piece*: motif → phrase →
+contour → cadence → satisfying close, judged against an 8-question musicality gate
+(sound like music? pianistic? replayable? teaches the skill? phrase direction?
+satisfying ending? right level? legally safe?). If it sounds generated, reject it.
+
+**Legal safety (non-negotiable).** Three content categories: (1) verified
+public-domain works — composition **and** edition/engraving rights checked; (2)
+**original** genre-inspired studies — *inspired by genre, not derived from a
+protected song*, never "slightly adjusted" copyrighted songs; (3) properly
+licensed repertoire later. Phase-1 material is all original.
+
+**Data model.** Canonical = a simplified internal sequence (note-name events with
+`beats`, plus a parallel left-hand voice); MusicXML reserved as an import source
+converted to the internal form. See `MUSICAL_SIGHT_READING_PILLAR.md` for the full
+report (the seven investigation questions) and the staged build order.
+
+*Status (this build):* reserved pillar opened with a FROZEN, UNWIRED stub
+(`flat/musicalSightReading.js`, imported by nothing — like `rhythmModel.js`):
+the data model, five original micro-studies (classical/folk, Levels 1–5, two of
+them two-hand), and pure validators (shape, note-name, bar math, two-hand
+alignment, and a provenance gate for any future public-domain entry). No route, no
+engine change, no cache bump. Building an actual Musical Sight Reading route is a
+separate, approved phase.
+
+---
+
 *This document is a specification only. Implementing any module above is a
 separate, gated phase that must leave RC2 untouched.*
