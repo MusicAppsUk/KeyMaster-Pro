@@ -77,6 +77,7 @@ export const LEARN_STEPS = [
   },
   {
     eyebrow: 'Low and high', title: 'Low and high sounds', id: 'low-high',
+    cues: { labels: [{ midi: 50, text: 'low', place: 'below' }, { midi: 69, text: 'high', place: 'below' }] },
     explain: ['Keys on the left sound low. Keys on the right sound high.', 'Listen to the difference, then play one yourself.'],
     show: { kind: 'keys', midis: [48, 50, 52, 67, 69, 71], caption: 'Left is low; right is high.', label: 'low                          high' },
     demo: [48, 50, 52, 67, 69, 71], demoGap: 0.34,
@@ -172,6 +173,7 @@ export const LEARN_STEPS = [
   },
   {
     eyebrow: 'Direction', title: 'First direction: up and down', id: 'direction',
+    cues: { arrow: { from: 60, to: 62 } },
     explain: ['Moving right is going up. Moving left is going down.', 'Play two notes going up: C, then D.'],
     show: { kind: 'keys', midis: [60, 62], caption: 'C up to D \u2014 going up.', label: 'up \u2192' },
     demo: [60, 62], demoGap: 0.4,
@@ -181,6 +183,7 @@ export const LEARN_STEPS = [
   },
   {
     eyebrow: 'Notes in order', title: 'First scale idea', id: 'first-scale',
+    cues: { labels: [{ midi: 60, text: 'C', place: 'below' }, { midi: 62, text: 'D', place: 'below' }, { midi: 64, text: 'E', place: 'below' }] },
     explain: ['A scale is a ladder of notes climbing in order.', 'Climb the first three steps: C, D, E.'],
     show: { kind: 'keys', midis: [60, 62, 64], caption: 'C, D, E \u2014 step by step.', label: 'C \u2013 D \u2013 E' },
     demo: [60, 62, 64], demoGap: 0.3,

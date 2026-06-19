@@ -325,10 +325,15 @@
    learn mode (foundations.js), measured from real key geometry, never blocks input. */
 .mf-ovl { position: absolute; inset: 0; pointer-events: none; z-index: 6; overflow: visible; }
 .mf-ovl__svg { position: absolute; inset: 0; overflow: visible; }
-.mf-ovl__stroke { fill: none; stroke: var(--champagne, #E8C57E); stroke-width: 2; stroke-linecap: round; opacity: 0.9; }
-.mf-ovl__arrow { fill: none; stroke: var(--champagne, #E8C57E); stroke-width: 2; stroke-linecap: round; opacity: 0.95; }
+.mf-ovl__stroke { fill: none; stroke: var(--champagne, #E8C57E); stroke-width: 2; stroke-linecap: round; animation: mfOvlIn 0.34s ease both; }
+.mf-ovl__arrow { fill: none; stroke: var(--champagne, #E8C57E); stroke-width: 2; stroke-linecap: round; animation: mfOvlIn 0.34s ease both; }
 .mf-ovl__label {
   position: absolute; padding: 2px 9px; font-size: 0.72rem; font-weight: 650;
   color: #1a1206; background: var(--champagne, #E8C57E); border-radius: 7px;
   white-space: nowrap; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32);
+  animation: mfOvlIn 0.34s ease both;
+}
+@keyframes mfOvlIn { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) {
+  .mf-ovl__stroke, .mf-ovl__arrow, .mf-ovl__label { animation: none; }
 }
