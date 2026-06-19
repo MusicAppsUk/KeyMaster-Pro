@@ -421,3 +421,26 @@ arrows / pointers from black keys to C, and staff↔keyboard reading graphics. N
 **Device-verify-only:** all on-screen rendering (labels, glow, gated button), the scroll/
 self-centering feel, spoken voice (rc2-49, still awaiting your confirmation), demo audio,
 the proficiency-gate pacing, and bridge navigation.
+
+## rc2-51 — Master Training: Continuous Learning resume + graduated spoken feedback
+
+Three tutor-feel upgrades, all learn-mode only (plain /foundations byte-unchanged), all
+headlessly verifiable; no new blind visual work.
+
+- **Continuous Learning resume line.** The greeting now names the lesson actually last
+  reached, read from progressStore (`steps[learnLesson-1].title`): "Last time you reached
+  '…'. Ready to continue?" — factual only; falls back to "Ready to continue?" / "Let's begin"
+  when there's nothing true to say. No fabricated memory.
+- **Graduated, spoken correction (deterministic).** Per-step `wrongCount`: 1st miss shows the
+  specific hint; 2nd+ miss shows the step's calm `reteach` line ("Let's look again — find
+  Middle C first, then step one white key left for B"); a correct answer after a stumble is
+  acknowledged with "That's clearer now — …". Corrections and confirmations are also SPOKEN
+  in learn mode (gesture-bound via the key press, de-duped by id `guide:i:n` / `done:i`).
+  `reteach` added to the five geography steps (groups-of-two/three, Find C, Middle C, B).
+  All branches gated by `learnMode`, so guide()/complete() are identical in plain Foundations.
+- **videoCue/visualCue scaffold (data-model only).** Optional fields reserved in the
+  LEARN_STEPS schema for a later captioned-demo phase; no step uses them, no rendering added.
+
+Tokens rc2-50 → rc2-51 (app.js + index.html); tutorVoice intra-import stays rc2-49 (unchanged).
+**Device-verify-only:** spoken correction/confirmation timing, the resume line wording in
+context, and everything from rc2-49/rc2-50 still pending device confirmation.

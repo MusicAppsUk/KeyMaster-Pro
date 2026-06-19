@@ -55,7 +55,10 @@ export function greetingFor(date, name) {
 // learn mode; /foundations keeps the original CARDS below, untouched. Each step
 // teaches: explain → demonstrate (visual + sound) → ask → wait → confirm/correct.
 // `label` is an on-screen pointer caption; `bridge` turns a step into a doorway
-// into a specialist practice room.
+// into a specialist practice room; `reteach` is the calm second-miss re-teach line.
+// RESERVED (scaffold for a later phase, no step uses these yet): an optional
+// `videoCue` / `visualCue` may carry a short, captioned, same-voice demonstration
+// clip or richer visual; rendering is intentionally deferred until that phase.
 export const LEARN_STEPS = [
   {
     eyebrow: 'The keyboard', title: 'Meet the keyboard',
@@ -81,6 +84,7 @@ export const LEARN_STEPS = [
     tryPrompt: 'Tap one of the two black keys in the highlighted group.', targets: [61, 63], mode: 'oneof',
     okMsg: 'Yes \u2014 that\u2019s a black key in a group of two.',
     hint: 'The group of two is highlighted \u2014 tap either black key.',
+    reteach: 'Look again \u2014 the two black keys sit close together, with a wider gap before the next group. Tap either one.',
   },
   {
     eyebrow: 'Finding your way', title: 'Black-key groups of three',
@@ -90,6 +94,7 @@ export const LEARN_STEPS = [
     tryPrompt: 'Tap one of the three black keys in the highlighted group.', targets: [66, 68, 70], mode: 'oneof',
     okMsg: 'Yes \u2014 that\u2019s a black key in a group of three.',
     hint: 'The group of three is highlighted \u2014 tap any of them.',
+    reteach: 'Look again \u2014 the group of three is the wider cluster. Tap any one of the three.',
   },
   {
     eyebrow: 'The landmark C', title: 'Find C',
@@ -99,6 +104,7 @@ export const LEARN_STEPS = [
     tryPrompt: 'Find and press a C \u2014 just left of a group of two black keys.', targets: [60], mode: 'one',
     okMsg: 'Exactly \u2014 that\u2019s C, just left of the two black keys.',
     hint: 'C is the white key immediately left of a group of two black keys.',
+    reteach: 'Let\u2019s look again \u2014 first find a group of two black keys, then the white key just to their left is C.',
   },
   {
     eyebrow: 'Your home note', title: 'Find exact Middle C',
@@ -108,6 +114,7 @@ export const LEARN_STEPS = [
     tryPrompt: 'Press Middle C \u2014 the highlighted key near the centre.', targets: [60], exact: true, mode: 'one',
     okMsg: 'Exactly \u2014 that\u2019s Middle C (C4).',
     hint: 'Middle C is the highlighted key, near the centre.',
+    reteach: 'Let\u2019s look again \u2014 Middle C is near the centre, the white key just left of the two black keys there.',
   },
   {
     eyebrow: 'Where B major begins', title: 'Find B below Middle C',
@@ -117,6 +124,7 @@ export const LEARN_STEPS = [
     tryPrompt: 'Press the B just below Middle C \u2014 one white key to the left.', targets: [59], exact: true, mode: 'one',
     okMsg: 'Exactly \u2014 that\u2019s B, just below Middle C. This is where B major lives.',
     hint: 'B is the white key immediately left of Middle C.',
+    reteach: 'Let\u2019s look again \u2014 find Middle C first, then step one white key to the left for B.',
   },
   {
     eyebrow: 'Direction', title: 'First direction: up and down',
@@ -375,6 +383,7 @@ export default function createView(ctx) {
   let suppressSpeakOnce = false;  // first render after greeting must not cut it off
   let pendingGreeting = null;     // greeting+intro awaiting the first user gesture (mobile autoplay)
   let stepAttempts = 0;           // learn: interactions on the current step (gentle progression gate)
+  let wrongCount = 0;             // learn: wrong attempts on the current step (graduated re-teach)
   let gateTimer = null;           // learn: failsafe so the learner is never trapped
 
   injectStyles();
@@ -586,6 +595,7 @@ export default function createView(ctx) {
   function gateStep(c) {
     if (gateTimer) { clearTimeout(gateTimer); gateTimer = null; }
     stepAttempts = 0;
+    wrongCount = 0;
     const interactive = !!(c && c.mode && c.mode !== 'none');
     if (!interactive) { enableContinue(); return; }
     contBtn.disabled = true;
@@ -727,15 +737,29 @@ export default function createView(ctx) {
   function complete(msg) {
     if (!tryState || tryState.done) return;
     tryState.done = true;
-    tryStatus.textContent = `\u2713 ${msg || 'Correct.'}`;
+    let shown = msg || 'Correct.';
+    // Acknowledge a correct answer that came after a stumble (deterministic, not flattery).
+    if (learnMode && wrongCount > 0) shown = `That\u2019s clearer now \u2014 ${shown}`;
+    tryStatus.textContent = `\u2713 ${shown}`;
     tryStatus.classList.remove('is-wrong');
     tryStatus.classList.add('is-done');
-    if (learnMode) enableContinue();
+    if (learnMode) {
+      enableContinue();
+      if (voice && voiceOn) voice.speak(shown, `done:${index}`);
+    }
   }
   function guide(msg) {          // calm correction — guides, never punishes
+    // Graduated re-teach (learn only): 1st miss = the specific hint; 2nd+ = the step's
+    // re-teach line if it has one. Rule-based and legible — no opaque adaptation.
+    if (learnMode) {
+      wrongCount += 1;
+      const c = steps[index];
+      if (wrongCount >= 2 && c && c.reteach) msg = c.reteach;
+    }
     tryStatus.textContent = msg;
     tryStatus.classList.remove('is-done');
     tryStatus.classList.add('is-wrong');
+    if (learnMode && voice && voiceOn) voice.speak(msg, `guide:${index}:${wrongCount}`);
   }
   function neutral(msg) {        // progress within an attempt (not yet complete)
     tryStatus.textContent = msg;
@@ -774,9 +798,13 @@ export default function createView(ctx) {
         const g = greetingFor(new Date(), LEARNER_NAME);
         const started = !!(progress && (((progress.get('learnLesson') || 0) > 0)
           || (Array.isArray(progress.get('learnCompleted')) && progress.get('learnCompleted').length > 0)));
-        const greetText = started
-          ? `${g} Ready to continue?`
-          : `${g} Let\u2019s begin your piano training.`;
+        // Continuous Learning: name the lesson actually last reached (factual, from progressStore).
+        const lastTitle = (index > 0 && steps[index - 1]) ? steps[index - 1].title : null;
+        const greetText = !started
+          ? `${g} Let\u2019s begin your piano training.`
+          : (lastTitle
+            ? `${g} Last time you reached \u201C${lastTitle}\u201D. Ready to continue?`
+            : `${g} Ready to continue?`);
         if (greetingEl) greetingEl.textContent = greetText;
         if (!greeted) {
           const c0 = steps[index];
