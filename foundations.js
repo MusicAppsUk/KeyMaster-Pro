@@ -539,6 +539,7 @@ export default function createView(ctx) {
   const demoVoices = [];     // teaching-audio Voice instances we own
   let demoToken = 0;         // cancels a pending demo when the card changes
   let demoTimer = null;
+  let autoAdvTimer = null;   // learn: auto-advance after a simple completed task
   function audioReady() { return !!(synth && synth.ctx && synth.ctx.state === 'running'); }
   function playDemoVoice(midi, vel, durSec, atSec) {
     if (!audioReady()) return;
@@ -652,10 +653,8 @@ export default function createView(ctx) {
     if (index === 0) { goHome(); return; }
     index -= 1; render();
   });
-  contBtn.addEventListener('click', () => {
-    voice?.unlock?.();
-    speakPending();                               // tutor arrives on the first primary tap
-    if (learnMode && contBtn.disabled) return;   // proficiency gate (learn only)
+  function advanceStep() {
+    if (autoAdvTimer) { clearTimeout(autoAdvTimer); autoAdvTimer = null; }
     if (learnMode && progress && steps[index]) {
       progress.addToSet('foundationsCompleted', steps[index].title);
       progress.addToSet('learnCompleted', steps[index].title);
@@ -663,6 +662,12 @@ export default function createView(ctx) {
     }
     if (index >= steps.length - 1) { goHome(); return; }
     index += 1; render();
+  }
+  contBtn.addEventListener('click', () => {
+    voice?.unlock?.();
+    speakPending();                               // tutor arrives on the first primary tap
+    if (learnMode && contBtn.disabled) return;   // proficiency gate (learn only)
+    advanceStep();
   });
   replayBtn.addEventListener('click', () => { voice?.unlock?.(); demoCard(steps[index]); });
 
@@ -772,6 +777,7 @@ export default function createView(ctx) {
     const c = steps[index];
     stopPulse();
     stopDemoAudio();
+    if (autoAdvTimer) { clearTimeout(autoAdvTimer); autoAdvTimer = null; }
     demoToken += 1;
     keyboard?.clearHighlight?.('target');
     overlay?.clear?.();
@@ -919,6 +925,18 @@ export default function createView(ctx) {
         const sid = (steps[index] && steps[index].id) ? steps[index].id : `i${index}`;
         audio.say(wrongCount > 0 ? `${sid}.correct-retry` : `${sid}.correct`, shown);
       }
+      // Course flow: for a simple completed task the tutor gently moves the
+      // lesson forward after a calm pause, so the learner never has to find
+      // Continue behind the on-screen keyboard. A step can opt out with
+      // hold:true (reflective steps that want the learner to dwell); mode
+      // 'none' reading steps never reach here and keep manual Continue.
+      if (!(steps[index] && steps[index].hold)) {
+        const at = index;
+        if (autoAdvTimer) clearTimeout(autoAdvTimer);
+        autoAdvTimer = setTimeout(() => {
+          if (index === at && tryState && tryState.done) advanceStep();
+        }, 1300);
+      }
     }
   }
   function guide(msg) {          // calm correction — guides, never punishes
@@ -1009,6 +1027,7 @@ export default function createView(ctx) {
       if (unsub) { unsub(); unsub = null; }
       audio?.cancel?.();
       if (gateTimer) { clearTimeout(gateTimer); gateTimer = null; }
+      if (autoAdvTimer) { clearTimeout(autoAdvTimer); autoAdvTimer = null; }
       stopPulse();
       stopDemoAudio();
       keyboard?.clearHighlight?.('target');

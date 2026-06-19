@@ -812,7 +812,7 @@ a.vector:hover .vector__open { color: var(--ivory); }
    prefers-reduced-motion. Self-contained — cannot affect any view's layout.
    ========================================================================== */
 .frontdoor {
-  position: fixed; inset: 0; z-index: 1000;
+  position: fixed; inset: var(--bar-h, 56px) 0 0 0; z-index: 900;
   display: grid; place-items: center; padding: 2rem;
   overflow: hidden; isolation: isolate;
   color: var(--ivory);
@@ -916,4 +916,73 @@ a.vector:hover .vector__open { color: var(--ivory); }
   content: ""; position: absolute; left: 0; top: 0.5em;
   width: 0.5rem; height: 0.5rem; border-radius: 50%;
   background: var(--amber); box-shadow: 0 0 10px 2px var(--amber-glow);
+}
+
+/* ==========================================================================
+   VISUAL DRAFT 2 — front-door polish + Course controls safe area
+   ========================================================================== */
+
+/* Full-screen setup hint — reads as part of the setup, not a debug note. */
+.frontdoor__sub { margin: 0.15rem 0 0.55rem; }
+.frontdoor__hint {
+  margin: 0 0 1.6rem; max-width: 25rem; line-height: 1.5;
+  font-size: 0.92rem; color: var(--ivory-dim);
+}
+.frontdoor__hint strong { color: var(--champagne); font-weight: 600; }
+.frontdoor__hint-ico { color: var(--champagne); margin-right: 0.2rem; }
+
+/* More colour life — a restrained cool accent alongside the warm light. */
+.frontdoor__atmos {
+  background:
+    radial-gradient(40% 36% at 17% 15%, rgba(79, 176, 168, 0.10), transparent 70%),
+    radial-gradient(58% 48% at 50% 36%, color-mix(in srgb, var(--brass) 18%, transparent), transparent 70%),
+    radial-gradient(85% 60% at 50% 112%, var(--amber-glow), transparent 62%);
+}
+
+/* A slow light sweep across the keyboard motif so the screen is never static. */
+.frontdoor__keys::after {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(100deg, transparent 32%, rgba(232,197,126,0.18) 50%, transparent 68%);
+  animation: fd-sweep 6.5s var(--ease) infinite;
+}
+@keyframes fd-sweep { 0% { transform: translateX(-42%); } 100% { transform: translateX(42%); } }
+
+/* Staggered, more premium content entrance. */
+.frontdoor__inner { animation: none; }
+.frontdoor__inner > * { animation: fd-rise 0.7s var(--ease) both; }
+.frontdoor__eyebrow   { animation-delay: 0.05s; }
+.frontdoor__wordmark  { animation-delay: 0.14s; }
+.frontdoor__greeting  { animation-delay: 0.26s; }
+.frontdoor__sub       { animation-delay: 0.36s; }
+.frontdoor__hint      { animation-delay: 0.46s; }
+.frontdoor__enter     { animation-delay: 0.56s; position: relative; }
+.frontdoor__secondary { animation-delay: 0.66s; }
+
+/* A gentle glow pulse draws the eye to the one clear action. */
+.frontdoor__enter::after {
+  content: ""; position: absolute; inset: -4px; border-radius: inherit;
+  pointer-events: none; animation: fd-pulse 2.8s var(--ease) infinite;
+}
+@keyframes fd-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(232,197,126,0); }
+  50%      { box-shadow: 0 0 26px 5px var(--brass-glow); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frontdoor__keys::after,
+  .frontdoor__enter::after,
+  .frontdoor__inner > * { animation: none; }
+}
+
+/* ----- Course: scrollable room + controls pinned above the keyboard -----
+   The on-screen keyboard must never hide Continue/Back. The room scrolls and
+   the footer sticks in a safe area just above the dock. Scoped to learn. */
+.view[data-view="learn"] { height: auto; min-height: 100%; }
+.view[data-view="learn"] .mf { padding-bottom: 0.5rem; }
+.view[data-view="learn"] .mf__footer {
+  position: sticky; bottom: 0; z-index: 5;
+  margin-top: 1.4rem;
+  padding: 0.85rem 0 calc(0.55rem + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, transparent 0%, var(--ebony-sink) 42%);
+  -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
 }
