@@ -346,7 +346,7 @@ const CARDS = [
     demo: [55, 60, 67], demoGap: 0.5,
     tryPrompt: 'Press any key to hear where you are.',
     mode: 'any',
-    okMsg: 'Good \u2014 you\u2019ve made the piano sound. Keys to the left sound lower; to the right, higher.',
+    okMsg: 'Good. That is your first landmark: sound moves across the keyboard from low to high.',
   },
   {
     eyebrow: 'Finding your way',

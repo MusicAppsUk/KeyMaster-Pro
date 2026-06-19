@@ -802,3 +802,118 @@ a.vector:hover .vector__open { color: var(--ivory); }
 @media (prefers-reduced-motion: reduce) {
   .view[data-view="learn"] .mf__card { animation: none; }
 }
+
+/* ==========================================================================
+   VISUAL DRAFT 1 — FRONT DOOR (arrival experience)
+   A full-screen opaque overlay shown on a home landing. Not a sign-in: no
+   account system, just a warm greeting that opens the Course. Atmospheric
+   depth (midnight -> ebony) + warm light pools + an original keyboard-
+   silhouette motif. Motion is transform/opacity only and is disabled under
+   prefers-reduced-motion. Self-contained — cannot affect any view's layout.
+   ========================================================================== */
+.frontdoor {
+  position: fixed; inset: 0; z-index: 1000;
+  display: grid; place-items: center; padding: 2rem;
+  overflow: hidden; isolation: isolate;
+  color: var(--ivory);
+  background:
+    linear-gradient(180deg,
+      var(--midnight) 0%,
+      color-mix(in srgb, var(--midnight) 42%, var(--ebony)) 40%,
+      var(--ebony-sink) 100%);
+  transition: opacity 0.48s var(--ease), transform 0.48s var(--ease);
+}
+.frontdoor[hidden] { display: none; }
+.frontdoor.is-leaving { opacity: 0; transform: scale(1.03); pointer-events: none; }
+
+/* breathing warm light */
+.frontdoor__atmos {
+  position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(58% 48% at 50% 36%, color-mix(in srgb, var(--brass) 16%, transparent), transparent 70%),
+    radial-gradient(85% 60% at 50% 112%, var(--amber-glow), transparent 62%);
+  animation: fd-breathe 7s var(--ease) infinite;
+}
+@keyframes fd-breathe { 0%,100% { opacity: 0.72; } 50% { opacity: 1; } }
+
+/* original keyboard-silhouette motif along the foot — the instrument, hinted */
+.frontdoor__keys {
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 0;
+  height: 22vh; max-height: 190px;
+  background:
+    repeating-linear-gradient(90deg,
+      color-mix(in srgb, var(--ivory) 13%, transparent) 0 calc(100% / 28 - 2px),
+      transparent calc(100% / 28 - 2px) calc(100% / 28));
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 70%);
+  mask-image: linear-gradient(180deg, transparent 0%, #000 70%);
+  opacity: 0.55;
+}
+
+.frontdoor__inner {
+  position: relative; z-index: 2; text-align: center;
+  max-width: 32rem; display: flex; flex-direction: column; align-items: center; gap: 0.3rem;
+  animation: fd-rise 0.7s var(--ease) both;
+}
+@keyframes fd-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
+
+.frontdoor__eyebrow {
+  margin: 0; font-size: 0.78rem; letter-spacing: 0.24em; text-transform: uppercase;
+  color: var(--champagne);
+}
+.frontdoor__wordmark {
+  margin: 0.2rem 0 0.5rem; font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(2.6rem, 12vw, 4.4rem); line-height: 0.95; letter-spacing: -0.02em;
+  color: var(--ivory);
+}
+.frontdoor__wordmark span { color: var(--champagne); margin-left: 0.12em; }
+.frontdoor__greeting {
+  margin: 0.4rem 0 0; font-family: var(--font-display);
+  font-size: clamp(1.2rem, 5vw, 1.7rem);
+  color: color-mix(in srgb, var(--ivory) 92%, var(--champagne));
+}
+.frontdoor__sub { margin: 0.15rem 0 1.6rem; color: var(--ivory-dim); font-size: 1rem; }
+
+.frontdoor__enter {
+  font-family: var(--font-ui); font-size: 1.05rem; font-weight: 600; color: #1b1407;
+  padding: 0.95rem 2.3rem; border: 0; border-radius: 999px; cursor: pointer;
+  background: linear-gradient(180deg, var(--brass-bright), var(--brass));
+  box-shadow: 0 10px 30px -10px var(--brass-glow), inset 0 1px 0 rgba(255,255,255,0.4);
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+  touch-action: manipulation;
+}
+.frontdoor__enter:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 42px -12px var(--brass-glow), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+.frontdoor__enter:active { transform: translateY(0); }
+.frontdoor__secondary {
+  margin-top: 1rem; background: transparent; border: 0; cursor: pointer;
+  color: var(--ivory-dim); font-size: 0.92rem;
+  text-decoration: underline; text-underline-offset: 4px;
+  text-decoration-color: color-mix(in srgb, var(--champagne) 40%, transparent);
+  touch-action: manipulation;
+}
+.frontdoor__secondary:hover { color: var(--ivory); }
+.frontdoor__build {
+  position: absolute; bottom: 1rem; left: 0; right: 0; z-index: 2;
+  margin: 0; text-align: center; font-size: 0.72rem; letter-spacing: 0.08em;
+  color: var(--ivory-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frontdoor__atmos, .frontdoor__inner { animation: none; }
+  .frontdoor { transition: opacity 0.2s linear; }
+  .frontdoor.is-leaving { transform: none; }
+}
+
+/* ----- Course room: final Visual Draft 1 touches ----- */
+/* Remove the weak interim media placeholder from the main Course entirely;
+   real teaching panels are a later package. No "coming soon" blocks. */
+.view[data-view="learn"] .mf__media { display: none; }
+/* Tutor presence — a small warm dot marks the tutor's spoken line. */
+.view[data-view="learn"] .mf__greeting { position: relative; padding-left: 1.1rem; }
+.view[data-view="learn"] .mf__greeting::before {
+  content: ""; position: absolute; left: 0; top: 0.5em;
+  width: 0.5rem; height: 0.5rem; border-radius: 50%;
+  background: var(--amber); box-shadow: 0 0 10px 2px var(--amber-glow);
+}

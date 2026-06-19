@@ -35,9 +35,9 @@
   />
 
   <!-- Separated styling layers (theme tokens first, then component sheets). -->
-  <link rel="stylesheet" href="theme.css?v=rc2-64" />
-  <link rel="stylesheet" href="keyboard.css?v=rc2-64" />
-  <link rel="stylesheet" href="notation.css?v=rc2-64" />
+  <link rel="stylesheet" href="theme.css?v=rc2-65" />
+  <link rel="stylesheet" href="keyboard.css?v=rc2-65" />
+  <link rel="stylesheet" href="notation.css?v=rc2-65" />
 
   <!-- The only inline style: hide the shell until the app flips data-boot,
        preventing an unstyled flash before the module graph resolves. -->
@@ -233,6 +233,23 @@
 
   </div>
 
+  <!-- Front door. A full-screen arrival experience shown on entry; it is not a
+       sign-in (no account system) — it greets the learner and opens the Course.
+       app.js (_mountFrontDoor) fills the greeting and wires the actions. -->
+  <div id="frontdoor" class="frontdoor" hidden>
+    <div class="frontdoor__atmos" aria-hidden="true"></div>
+    <div class="frontdoor__keys" aria-hidden="true"></div>
+    <div class="frontdoor__inner" role="dialog" aria-labelledby="fd-title" aria-modal="false">
+      <p class="frontdoor__eyebrow">The KeyMaster PRO Course</p>
+      <h1 class="frontdoor__wordmark" id="fd-title">KeyMaster<span>PRO</span></h1>
+      <p class="frontdoor__greeting" id="fd-greeting">Good afternoon.</p>
+      <p class="frontdoor__sub" id="fd-sub">Your tutor is ready.</p>
+      <button type="button" class="frontdoor__enter" id="fd-enter">Enter the Course</button>
+      <button type="button" class="frontdoor__secondary" id="fd-rooms">Browse practice rooms</button>
+    </div>
+    <p class="frontdoor__build" id="fd-build"></p>
+  </div>
+
   <noscript>
     <p style="color:#F4EFE6;background:#14131A;padding:1rem;margin:0;font:1rem system-ui">
       KeyMaster PRO needs JavaScript to run the instrument engine.
@@ -241,6 +258,6 @@
 
   <!-- Single module entry point. Absolute path so it resolves regardless of
        the route in the hash. -->
-  <script type="module" src="app.js?v=rc2-64"></script>
+  <script type="module" src="app.js?v=rc2-65"></script>
 </body>
 </html>
