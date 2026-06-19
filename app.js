@@ -26,7 +26,7 @@ import { NoteInput } from './noteInput.js';
 import { createMidiEvaluator } from './midiEvaluator.js';
 import { createDevReadout, isDevMode } from './devReadout.js';
 import { createProgressStore } from './progressStore.js';
-import { STAGES, COURSE_NAME } from './courseMap.js?v=rc2-74';
+import { STAGES, COURSE_NAME } from './courseMap.js?v=rc2-75';
 
 // rc2-61: discreet build tag, sourced from this module's own cache token (?v=).
 const BUILD = (() => { try { return new URL(import.meta.url).searchParams.get('v') || 'dev'; } catch { return 'dev'; } })();
@@ -116,29 +116,29 @@ function savePrefs(prefs) {
 const VIEW_REGISTRY = {
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-74',
-    load: () => import('./foundations.js?v=rc2-74'),
+    src: './foundations.js?v=rc2-75',
+    load: () => import('./foundations.js?v=rc2-75'),
   },
   scales: {
     slot: 'scales',
-    src: './scalesMasterclass.js?v=rc2-74',
-    load: () => import('./scalesMasterclass.js?v=rc2-74'),
+    src: './scalesMasterclass.js?v=rc2-75',
+    load: () => import('./scalesMasterclass.js?v=rc2-75'),
   },
   sightreading: {
     slot: 'sightreading',
-    src: './sightReading.js?v=rc2-74',
-    load: () => import('./sightReading.js?v=rc2-74'),
+    src: './sightReading.js?v=rc2-75',
+    load: () => import('./sightReading.js?v=rc2-75'),
   },
   chords: {
     slot: 'chords',
-    src: './chordMasterclass.js?v=rc2-74',
-    load: () => import('./chordMasterclass.js?v=rc2-74'),
+    src: './chordMasterclass.js?v=rc2-75',
+    load: () => import('./chordMasterclass.js?v=rc2-75'),
   },
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-74',
-    load: () => import('./foundations.js?v=rc2-74'),
+    src: './foundations.js?v=rc2-75',
+    load: () => import('./foundations.js?v=rc2-75'),
   },
 };
 
@@ -289,7 +289,7 @@ class KeyMasterApp {
       const greetEl = document.getElementById('fd-greeting');
       if (greetEl) greetEl.textContent = `${part}, ${name}.`;
       const buildEl = document.getElementById('fd-build');
-      if (buildEl) buildEl.textContent = `KeyMaster PRO \u00B7 Substantial Alpha Course \u00B7 ${BUILD}`;
+      if (buildEl) buildEl.textContent = `KeyMaster PRO \u00B7 Complete Course Path \u00B7 ${BUILD}`;
 
       let returning = false;
       try { returning = !!loadPrefs().lastView || this._hasCourseProgress(); } catch { /* ignore */ }
@@ -866,7 +866,7 @@ class KeyMasterApp {
   _updateDashboardHero() {
     try {
       const set = (sel, txt) => { const e = this.root.querySelector(sel); if (e && txt != null) e.textContent = txt; };
-      set('#build-tag', `KeyMaster PRO \u00B7 Substantial Alpha Course \u00B7 ${BUILD}`);
+      set('#build-tag', `KeyMaster PRO \u00B7 Complete Course Path \u00B7 ${BUILD}`);
       const lesson = this.progress?.get?.('learnLesson');
       const completed = this.progress?.get?.('learnCompleted');
       const started = (Number.isInteger(lesson) && lesson > 0)
@@ -874,8 +874,7 @@ class KeyMasterApp {
       const cta = this.root.querySelector('#learn-cta');
       if (cta) cta.textContent = started ? 'Continue the Course' : 'Start the KeyMaster PRO Course';
       set('#course-hero-title', started ? 'Continue the KeyMaster PRO Course' : COURSE_NAME);
-      const stageCount = (Array.isArray(STAGES) && STAGES.length) || 10;
-      import('./foundations.js?v=rc2-74').then((F) => {
+      import('./foundations.js?v=rc2-75').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
         const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
@@ -883,8 +882,16 @@ class KeyMasterApp {
         if (idx < 0 || idx > steps.length - 1) idx = 0;
         const stepTitle = (steps[idx] && steps[idx].title) ? steps[idx].title : '';
         const lead = started ? 'Your next step' : 'Your first step';
-        set('#hero-next', stepTitle ? `Stage 1 \u00B7 ${lead}: ${stepTitle}` : `Stage 1 \u00B7 ${lead}.`);
-        set('#hero-progress', steps.length ? `Lesson ${idx + 1} of ${steps.length} \u00B7 Stage 1 of ${stageCount}` : '');
+        const ch = (typeof F.chapterAtIndex === 'function') ? F.chapterAtIndex(idx) : null;
+        if (ch && ch.name) {
+          set('#hero-next', stepTitle ? `${ch.name} \u00B7 ${lead}: ${stepTitle}` : `${ch.name} \u00B7 ${lead}.`);
+          set('#hero-progress', steps.length
+            ? `Chapter ${ch.chIdx} of ${ch.chTotal} \u00B7 Lesson ${idx + 1} of ${steps.length}`
+            : '');
+        } else {
+          set('#hero-next', stepTitle ? `${lead}: ${stepTitle}` : `${lead}.`);
+          set('#hero-progress', steps.length ? `Lesson ${idx + 1} of ${steps.length}` : '');
+        }
       }).catch((err) => { console.info('[KeyMaster] hero enrich skipped:', err?.message ?? err); });
     } catch (err) {
       console.info('[KeyMaster] dashboard hero update skipped:', err?.message ?? err);

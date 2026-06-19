@@ -417,39 +417,39 @@ export const LEARN_STEPS = [
     autoNext: 3200,
   },
   {
-    eyebrow: 'Reading', title: 'Read and play: E', id: 'read-play-e',
+    eyebrow: 'Reading', title: 'Name and play: E', id: 'read-play-e',
     say: [
-      { text: 'Reading is recognising a note, then playing it.', pauseAfter: 560, tone: 'warm' },
+      { text: 'Reading music means knowing a note, then playing it.', pauseAfter: 560, tone: 'warm' },
       { text: 'The note is E. Find it and play it.', pauseAfter: 300, tone: 'instruct', emphasis: 'E' },
     ],
-    explain: ['Reading begins with recognising a note, then finding it on the keyboard.', 'The note is E \u2014 just right of the two black keys. Play it.'],
-    show: { kind: 'keys', midis: [64], caption: 'Read: E.', label: 'E' },
+    explain: ['Reading music means recognising a note, then finding it on the keyboard.', 'The note is E \u2014 just right of the two black keys. Play it.'],
+    show: { kind: 'keys', midis: [64], caption: 'The note is E.', label: 'E' },
     demo: [64], demoGap: 0.45,
-    tryPrompt: 'Read the name, then play it: E.', targets: [64], mode: 'one',
-    okMsg: 'Exactly \u2014 you recognised E and played it. That is reading.',
+    tryPrompt: 'The note is E \u2014 find it and play it.', targets: [64], mode: 'one',
+    okMsg: 'Exactly \u2014 you knew E and played it. That is the start of reading music.',
     hint: 'E is just right of the two black keys.',
   },
   {
-    eyebrow: 'Reading', title: 'Read and play: G', id: 'read-play-g',
+    eyebrow: 'Reading', title: 'Name and play: G', id: 'read-play-g',
     say: [
       { text: 'One more. The note is G.', pauseAfter: 520, tone: 'warm', emphasis: 'G' },
       { text: 'Find it and play it.', pauseAfter: 300, tone: 'instruct' },
     ],
-    explain: ['Recognise the note, then play it.', 'The note is G \u2014 just right of F.'],
-    show: { kind: 'keys', midis: [67], caption: 'Read: G.', label: 'G' },
+    explain: ['Know the note, then play it.', 'The note is G \u2014 just right of F.'],
+    show: { kind: 'keys', midis: [67], caption: 'The note is G.', label: 'G' },
     demo: [67], demoGap: 0.45,
-    tryPrompt: 'Read the name, then play it: G.', targets: [67], mode: 'one',
-    okMsg: 'Good \u2014 recognise, then play. Cognitive Sight-Reading takes this much further.',
+    tryPrompt: 'The note is G \u2014 find it and play it.', targets: [67], mode: 'one',
+    okMsg: 'Good \u2014 know it, then play it. Cognitive Sight-Reading takes this much further.',
     hint: 'G is just right of F.',
   },
   {
     eyebrow: 'Reading', title: 'First reading idea', id: 'first-reading',
     say: [
       { text: 'Written music lives on lines and spaces \u2014 the staff.', pauseAfter: 560, tone: 'warm' },
-      { text: 'Middle C is the shared landmark between your two hands, the note we read outward from.', pauseAfter: 620 },
+      { text: 'Middle C is the shared landmark between your two hands, the note we count outward from.', pauseAfter: 620 },
       { text: 'You already know it on the keys. Play Middle C now, and hold it as your anchor.', pauseAfter: 320, tone: 'instruct' },
     ],
-    explain: ['Written music lives on a staff \u2014 lines and spaces. Middle C is the shared landmark between the hands, the note we read outward from.', 'You already know it on the keys. Play Middle C \u2014 your reading anchor.'],
+    explain: ['Written music lives on a staff \u2014 lines and spaces. Middle C is the shared landmark between the hands, the note we count outward from.', 'You already know it on the keys. Play Middle C \u2014 your reading anchor.'],
     show: { kind: 'keys', midis: [60], caption: 'Middle C \u2014 your anchor, on the keys and on the page.', label: 'Middle C' },
     media: { kind: 'image', topic: 'staff', caption: 'Middle C on the staff \u2014 notation view coming' },
     demo: [60], demoGap: 0.45,
@@ -534,10 +534,10 @@ export const LEARN_STEPS = [
     eyebrow: 'The road ahead', title: 'You\u2019ve begun', id: 'course-closing',
     say: [
       { text: 'You\u2019ve come a long way already.', pauseAfter: 560, tone: 'warm' },
-      { text: 'You can name the white keys, climb a scale up and down, play two chords, read a note and play it, and hold a steady pulse.', pauseAfter: 700 },
+      { text: 'You can name the white keys, climb a scale up and down, play two chords, name a note and play it, and hold a steady pulse.', pauseAfter: 700 },
       { text: 'Next, the masterclasses go deeper: Scales, Chords, and Cognitive Sight-Reading. I\u2019ll be with you the whole way.', pauseAfter: 360, tone: 'warm' },
     ],
-    explain: ['You\u2019ve oriented the keyboard, named the white keys, climbed a scale both directions, played two chords, read notes and played them, and held a steady pulse.', 'What comes next: the Scales Masterclass, Chord Masterclass, and Cognitive Sight-Reading develop each of these in depth \u2014 reach them any time from the practice rooms below.'],
+    explain: ['You\u2019ve oriented the keyboard, named the white keys, climbed a scale both directions, played two chords, named notes and played them, and held a steady pulse.', 'What comes next: the Scales Masterclass, Chord Masterclass, and Cognitive Sight-Reading develop each of these in depth \u2014 reach them any time from the practice rooms below.'],
     bridge: { label: 'Open a practice room to go deeper', hash: '#/scales' },
     mode: 'none',
   },
@@ -563,7 +563,7 @@ const COURSE_CHAPTERS = [
   { name: 'Harmony', ids: ['first-chord', 'chord-g', 'bridge-chords'],
     intro: 'Notes sounded together make chords \u2014 the colour of music.' },
   { name: 'Reading', ids: ['read-play-e', 'read-play-g', 'first-reading', 'bridge-sightreading'],
-    intro: 'Reading is recognising a note, then playing it.' },
+    intro: 'Reading music means knowing a note, then playing it.' },
   { name: 'Rhythm', ids: ['first-pulse', 'pulse-eight'],
     intro: 'Music sits on a steady pulse \u2014 an even beat underneath the notes.' },
   { name: 'Checkpoint', ids: ['review-c', 'review-scale', 'review-chord'],
@@ -581,6 +581,20 @@ function chapterFor(stepId) {
     }
   }
   return null;
+}
+
+// Public helpers so the dashboard can show the REAL Course shape (11 chapters /
+// 34 lessons) instead of a misleading single-stage count.
+export const COURSE_CHAPTER_COUNT = COURSE_CHAPTERS.length;
+export function chapterAtIndex(idx) {
+  const step = LEARN_STEPS[idx];
+  const ch = step ? chapterFor(step.id) : null;
+  return {
+    chIdx: ch ? ch.chIdx : 1,
+    chTotal: COURSE_CHAPTERS.length,
+    name: ch ? ch.name : '',
+    lessonsTotal: LEARN_STEPS.length,
+  };
 }
 
 /**
