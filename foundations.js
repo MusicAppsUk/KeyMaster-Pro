@@ -467,30 +467,30 @@ export const LEARN_STEPS = [
     autoNext: 3200,
   },
   {
-    eyebrow: 'Rhythm', title: 'First rhythm idea', id: 'first-pulse',
+    eyebrow: 'Rhythm', title: 'Feel the pulse', id: 'first-pulse',
     media: { kind: 'video', topic: 'pulse', caption: 'Keeping a steady pulse \u2014 guided demonstration coming' },
     say: [
-      { text: 'Music moves in time, over a steady pulse \u2014 a calm, even heartbeat under the notes.', pauseAfter: 580, tone: 'warm' },
-      { text: 'Feel four steady beats: one, two, three, four.', pauseAfter: 600, emphasis: 'four' },
-      { text: 'Now play four notes of your own, one on each beat. Don\u2019t rush.', pauseAfter: 320, tone: 'instruct' },
+      { text: 'Music moves in time, over a steady pulse \u2014 a calm, even heartbeat under the notes.', pauseAfter: 560, tone: 'warm' },
+      { text: 'Music groups beats in different ways. A very common pattern is four beats: one, two, three, four. We\u2019ll start there.', pauseAfter: 640 },
+      { text: 'Listen to the count first, then play a note on each beat. Don\u2019t rush.', pauseAfter: 320, tone: 'instruct' },
     ],
-    explain: ['Music moves in time, over a steady pulse \u2014 a calm, even heartbeat underneath the notes.', 'Feel four steady beats, then play a note on each: one, two, three, four.'],
-    show: { kind: 'pulse', caption: 'A steady pulse \u2014 one, two, three, four.' },
-    tryPrompt: 'Play four notes, one on each steady beat.', mode: 'count', count: 4,
+    explain: ['Music moves over a steady pulse \u2014 an even heartbeat under the notes.', 'Beats group in different ways; a very common one is four: 1, 2, 3, 4. Listen to the count first, then play a note on each beat.'],
+    show: { kind: 'pulse', caption: 'A steady count of four: 1 2 3 4.' },
+    tryPrompt: 'After the count, play four notes \u2014 one on each beat.', mode: 'count', count: 4,
     okMsg: 'Good \u2014 that\u2019s pulse: an even beat you can rely on. Every piece you play sits on it.',
-    hint: 'Play any four notes, evenly spaced \u2014 don\u2019t rush.',
+    hint: 'Wait for the count to finish, then play any four notes, evenly spaced \u2014 don\u2019t rush.',
     progressKey: 'rhythm:first-pulse',
   },
   {
     eyebrow: 'Rhythm', title: 'Eight steady beats', id: 'pulse-eight',
     say: [
-      { text: 'Let\u2019s hold the pulse a little longer.', pauseAfter: 520, tone: 'warm' },
-      { text: 'Play eight even notes \u2014 one on each steady beat.', pauseAfter: 300, tone: 'instruct' },
+      { text: 'Let\u2019s hold the pulse a little longer \u2014 two groups of four.', pauseAfter: 540, tone: 'warm' },
+      { text: 'Listen to the count, then play eight even notes \u2014 one on each beat.', pauseAfter: 300, tone: 'instruct' },
     ],
-    explain: ['Keep the pulse steady and even \u2014 not rushing, not dragging.', 'Play eight notes, one on each beat.'],
-    show: { kind: 'pulse', caption: 'Eight steady beats.' },
-    tryPrompt: 'Play eight notes, one on each steady beat.', mode: 'count', count: 8,
-    okMsg: 'Good \u2014 a steady pulse you can rely on. Every piece sits on this.',
+    explain: ['Keep the pulse steady and even \u2014 not rushing, not dragging.', 'Eight beats, grouped as two fours: 1 2 3 4 \u00B7 1 2 3 4. Play a note on each.'],
+    show: { kind: 'pulse', caption: 'Two groups of four: 1 2 3 4 \u00B7 1 2 3 4.' },
+    tryPrompt: 'After the count, play eight notes \u2014 one on each beat.', mode: 'count', count: 8,
+    okMsg: 'Good \u2014 a steady pulse you can rely on. Other music counts in twos, threes, sixes and more, but a steady four is a strong place to start.',
   },
   {
     eyebrow: 'Checkpoint', title: 'Checkpoint: Middle C', id: 'review-c',
@@ -531,14 +531,144 @@ export const LEARN_STEPS = [
     hint: 'Press the three highlighted keys together: C, E and G.',
   },
   {
-    eyebrow: 'The road ahead', title: 'You\u2019ve begun', id: 'course-closing',
+    eyebrow: 'Stage 1 complete', title: 'Foundations complete', id: 'stage1-complete',
     say: [
-      { text: 'You\u2019ve come a long way already.', pauseAfter: 560, tone: 'warm' },
+      { text: 'That\u2019s Stage 1 complete \u2014 the foundations are yours.', pauseAfter: 600, tone: 'warm' },
       { text: 'You can name the white keys, climb a scale up and down, play two chords, name a note and play it, and hold a steady pulse.', pauseAfter: 700 },
-      { text: 'Next, the masterclasses go deeper: Scales, Chords, and Cognitive Sight-Reading. I\u2019ll be with you the whole way.', pauseAfter: 360, tone: 'warm' },
+      { text: 'The Course now continues into Stage 2, where we start to make music. The masterclasses are there too, any time, for deeper practice.', pauseAfter: 360, tone: 'warm' },
     ],
-    explain: ['You\u2019ve oriented the keyboard, named the white keys, climbed a scale both directions, played two chords, named notes and played them, and held a steady pulse.', 'What comes next: the Scales Masterclass, Chord Masterclass, and Cognitive Sight-Reading develop each of these in depth \u2014 reach them any time from the practice rooms below.'],
-    bridge: { label: 'Open a practice room to go deeper', hash: '#/scales' },
+    explain: ['Stage 1 complete \u2014 you\u2019ve built the foundations: the keyboard, the white keys, movement, scales, B major, harmony, naming notes, and a steady pulse.', 'Next is Stage 2, where these foundations become music. Continue the Course below \u2014 the masterclasses stay available any time for deeper practice.'],
+    bridge: { label: 'Optional \u2014 open a practice room for deeper practice', hash: '#/scales' },
+    mode: 'none',
+  },
+
+  // ===========================================================================
+  // STAGE 2 \u2014 Making Music. Applied music built on the Stage 1 foundations:
+  // short phrases, pulse inside music, scale shape, harmony, pattern recognition,
+  // a first melody. Same gating / captions-first / demo-sweep engine; no timing
+  // is scored. Masterclasses remain optional deeper practice, never the Course.
+  // ===========================================================================
+  {
+    eyebrow: 'Stage 2 \u00B7 Making music', title: 'Welcome to Stage 2', id: 'stage2-welcome',
+    say: [
+      { text: 'Welcome to Stage 2. In Stage 1 you learned the keyboard. Now we begin to make music with it.', pauseAfter: 620, tone: 'warm' },
+      { text: 'Short phrases, a little harmony, and a steady pulse underneath \u2014 one small step at a time.', pauseAfter: 360 },
+    ],
+    explain: ['Welcome to Stage 2 \u2014 making music. You\u2019ll play short phrases, a little harmony, and feel pulse inside music.', 'Nothing here is graded for timing. We\u2019re building musicianship, one small step at a time.'],
+    show: { kind: 'keys', midis: [60, 64, 67], caption: 'From notes to music.', label: 'Stage 2' },
+    mode: 'none',
+  },
+  {
+    eyebrow: 'Making music', title: 'A phrase, going up', id: 'phrase-up',
+    say: [
+      { text: 'A phrase is a few notes that belong together \u2014 a small musical idea.', pauseAfter: 540, tone: 'warm' },
+      { text: 'Play C, then D, then E \u2014 three steps up.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['A phrase is a few notes that belong together \u2014 a small musical idea.', 'Play three steps up: C, D, E.'],
+    show: { kind: 'keys', midis: [60, 62, 64], caption: 'Up: C, D, E.', label: 'C D E' },
+    demo: [60, 62, 64], demoGap: 0.5,
+    tryPrompt: 'Play C, then D, then E \u2014 in order.', targets: [60, 62, 64], mode: 'sequence',
+    okMsg: 'That\u2019s a phrase \u2014 three notes rising. Small, but it\u2019s music.',
+    hint: 'Start on C, then the next white key, then the next: C, D, E.',
+  },
+  {
+    eyebrow: 'Making music', title: 'A phrase, coming down', id: 'phrase-down',
+    say: [
+      { text: 'Now the same idea, coming back down.', pauseAfter: 520, tone: 'warm' },
+      { text: 'Play E, then D, then C.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['Now reverse it \u2014 a phrase coming down.', 'Play E, then D, then C.'],
+    show: { kind: 'keys', midis: [64, 62, 60], caption: 'Down: E, D, C.', label: 'E D C' },
+    demo: [64, 62, 60], demoGap: 0.5,
+    tryPrompt: 'Play E, then D, then C \u2014 in order.', targets: [64, 62, 60], mode: 'sequence',
+    okMsg: 'Up and down \u2014 a phrase has shape. You\u2019re shaping music now.',
+    hint: 'Start on E, then the next white key down, then the next: E, D, C.',
+  },
+  {
+    eyebrow: 'Rhythm in music', title: 'Play on the pulse', id: 'play-on-pulse',
+    say: [
+      { text: 'Now let\u2019s put notes on the pulse.', pauseAfter: 520, tone: 'warm' },
+      { text: 'Listen to the count of four, then play a note on each beat \u2014 four notes, steady.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['Music is notes over a steady pulse. Let\u2019s feel that together.', 'Listen to the count: 1, 2, 3, 4. Then play a note on each beat \u2014 any notes, kept steady.'],
+    show: { kind: 'pulse', caption: 'A note on each beat: 1 2 3 4.' },
+    tryPrompt: 'After the count, play a note on each of the four beats.', mode: 'count', count: 4,
+    okMsg: 'That\u2019s music on a pulse \u2014 notes riding a steady beat. No rush, nothing scored \u2014 just the feel of it.',
+    hint: 'Wait for the count to finish, then play four notes, evenly spaced.',
+  },
+  {
+    eyebrow: 'Scale shape', title: 'The scale as a shape', id: 'scale-shape-up',
+    say: [
+      { text: 'A scale isn\u2019t just notes \u2014 it\u2019s a shape your hand learns.', pauseAfter: 560, tone: 'warm' },
+      { text: 'Climb the C scale all the way up to the next C: C, D, E, F, G, A, B, C.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['A scale is a shape \u2014 the same pattern of steps your hand can learn to feel.', 'Climb from C up to the next C: C, D, E, F, G, A, B, C.'],
+    show: { kind: 'keys', midis: [60, 62, 64, 65, 67, 69, 71, 72], caption: 'C up to the next C.', label: 'C \u2192 C' },
+    demo: [60, 62, 64, 65, 67, 69, 71, 72], demoGap: 0.34,
+    tryPrompt: 'Climb the white keys from C up to the next C.', targets: [60, 62, 64, 65, 67, 69, 71, 72], mode: 'sequence',
+    okMsg: 'That\u2019s the scale shape \u2014 a full octave. The Scales Masterclass takes this much further whenever you want it.',
+    hint: 'Start on Middle C and play each white key in turn, up to the next C.',
+  },
+  {
+    eyebrow: 'Harmony in music', title: 'Chord, then arpeggio', id: 'arpeggio-c',
+    say: [
+      { text: 'You\u2019ve played C, E and G together \u2014 a chord.', pauseAfter: 520, tone: 'warm' },
+      { text: 'Now play the same three notes one at a time: C, then E, then G. That\u2019s an arpeggio.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['A chord is notes sounded together; the same notes one at a time make an arpeggio.', 'Play C, then E, then G \u2014 one after another.'],
+    show: { kind: 'keys', midis: [60, 64, 67], caption: 'One at a time: C, E, G.', label: 'C \u2192 E \u2192 G' },
+    demo: [60, 64, 67], demoGap: 0.5,
+    tryPrompt: 'Play C, then E, then G \u2014 one at a time.', targets: [60, 64, 67], mode: 'sequence',
+    okMsg: 'That\u2019s an arpeggio \u2014 a chord spread out in time. Same notes, different feel.',
+    hint: 'Play the three chord notes one after another: C, E, G.',
+  },
+  {
+    eyebrow: 'Pattern recognition', title: 'Hear it, play it back', id: 'motif-echo',
+    say: [
+      { text: 'Music is full of small patterns you start to recognise.', pauseAfter: 540, tone: 'warm' },
+      { text: 'Listen to this little shape, then play it back: G, E, C.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['Recognising small patterns is the heart of fluency \u2014 hear the shape, then play it.', 'The shape is G, E, C \u2014 coming down. Play it back.'],
+    show: { kind: 'keys', midis: [67, 64, 60], caption: 'G, E, C.', label: 'G E C' },
+    demo: [67, 64, 60], demoGap: 0.5,
+    tryPrompt: 'Play the shape back: G, then E, then C.', targets: [67, 64, 60], mode: 'sequence',
+    okMsg: 'You heard the pattern and played it back \u2014 that\u2019s musical recognition at work.',
+    hint: 'Start high on G, then E, then C: G, E, C.',
+  },
+  {
+    eyebrow: 'Your first phrase', title: 'A little melody', id: 'first-phrase',
+    say: [
+      { text: 'Let\u2019s put it together into a small melody.', pauseAfter: 540, tone: 'warm' },
+      { text: 'Play C, E, G, then the C above \u2014 a rising phrase that lands home.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['A melody is a phrase with shape and a sense of arrival.', 'Play C, E, G, then the C above \u2014 rising, then landing home.'],
+    show: { kind: 'keys', midis: [60, 64, 67, 72], caption: 'C, E, G, C.', label: 'C E G C' },
+    demo: [60, 64, 67, 72], demoGap: 0.46,
+    tryPrompt: 'Play C, E, G, then the C above \u2014 in order.', targets: [60, 64, 67, 72], mode: 'sequence',
+    okMsg: 'That\u2019s a melody \u2014 your first real phrase. Rising, then home. This is making music.',
+    hint: 'C, then E, then G, then the next C higher up.',
+  },
+  {
+    eyebrow: 'Stage 2 review', title: 'Checkpoint: your phrase', id: 'review-phrase',
+    say: [
+      { text: 'A calm checkpoint \u2014 no new ideas.', pauseAfter: 520, tone: 'warm' },
+      { text: 'Play your melody once more, from memory: C, E, G, C.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['From memory \u2014 the melody you just learned.', 'Play C, E, G, then the C above.'],
+    show: { kind: 'keys', midis: [60, 64, 67, 72], caption: 'C, E, G, C.', label: 'C E G C' },
+    demo: [60, 64, 67, 72], demoGap: 0.46,
+    tryPrompt: 'Play the melody: C, E, G, then the C above.', targets: [60, 64, 67, 72], mode: 'sequence',
+    okMsg: 'Held together from memory \u2014 a phrase that\u2019s yours now.',
+    hint: 'C, E, G, then the next C higher up.',
+  },
+  {
+    eyebrow: 'The Course continues', title: 'More music ahead', id: 'stage2-onward',
+    say: [
+      { text: 'That\u2019s the start of Stage 2 \u2014 you\u2019re making music now, not just finding keys.', pauseAfter: 600, tone: 'warm' },
+      { text: 'There\u2019s more Course ahead: longer phrases, more harmony, real reading and rhythm. And the masterclasses are always here for deeper practice.', pauseAfter: 360, tone: 'warm' },
+    ],
+    explain: ['You\u2019ve begun making music \u2014 phrases, harmony, pattern, and pulse. This is the start of Stage 2, not the end of the Course.', 'More is coming: longer phrases, deeper harmony, real reading and rhythm. The masterclasses stay available any time for deeper practice.'],
+    bridge: { label: 'Optional \u2014 open a practice room for deeper practice', hash: '#/scales' },
     mode: 'none',
   },
 ];
@@ -549,26 +679,38 @@ export const LEARN_STEPS = [
 // (the structure benchmark apps use). This is presentation only — it maps over
 // the existing LEARN_STEPS by id and changes nothing about the steps themselves.
 const COURSE_CHAPTERS = [
-  { name: 'Orientation', ids: ['welcome', 'meet-keyboard', 'low-high'] },
-  { name: 'Black keys', ids: ['black-keys-two', 'black-keys-three'],
+  { stage: 1, name: 'Orientation', ids: ['welcome', 'meet-keyboard', 'low-high'] },
+  { stage: 1, name: 'Black keys', ids: ['black-keys-two', 'black-keys-three'],
     intro: 'The black keys come in groups of two and three \u2014 your signposts.' },
-  { name: 'White keys', ids: ['find-c', 'find-d', 'find-e', 'find-f', 'find-g', 'find-a', 'middle-c', 'b-below'],
+  { stage: 1, name: 'White keys', ids: ['find-c', 'find-d', 'find-e', 'find-f', 'find-g', 'find-a', 'middle-c', 'b-below'],
     intro: 'Now we name the white keys, using the black-key groups to find them.' },
-  { name: 'Movement', ids: ['direction', 'step-skip'],
+  { stage: 1, name: 'Movement', ids: ['direction', 'step-skip'],
     intro: 'Music moves \u2014 up and down, by steps and by skips.' },
-  { name: 'Scales', ids: ['first-scale', 'c-scale-five', 'c-scale-down'],
+  { stage: 1, name: 'Scales', ids: ['first-scale', 'c-scale-five', 'c-scale-down'],
     intro: 'A scale is steps in order \u2014 a ladder of pitch you can climb and descend.' },
-  { name: 'B major', ids: ['first-b-scale', 'b-major-why', 'bridge-scales'],
+  { stage: 1, name: 'B major', ids: ['first-b-scale', 'b-major-why', 'bridge-scales'],
     intro: 'A first taste of the B-major pathway, and why it fits the hand.' },
-  { name: 'Harmony', ids: ['first-chord', 'chord-g', 'bridge-chords'],
+  { stage: 1, name: 'Harmony', ids: ['first-chord', 'chord-g', 'bridge-chords'],
     intro: 'Notes sounded together make chords \u2014 the colour of music.' },
-  { name: 'Reading', ids: ['read-play-e', 'read-play-g', 'first-reading', 'bridge-sightreading'],
+  { stage: 1, name: 'Reading', ids: ['read-play-e', 'read-play-g', 'first-reading', 'bridge-sightreading'],
     intro: 'Reading music means knowing a note, then playing it.' },
-  { name: 'Rhythm', ids: ['first-pulse', 'pulse-eight'],
+  { stage: 1, name: 'Rhythm', ids: ['first-pulse', 'pulse-eight'],
     intro: 'Music sits on a steady pulse \u2014 an even beat underneath the notes.' },
-  { name: 'Checkpoint', ids: ['review-c', 'review-scale', 'review-chord'],
+  { stage: 1, name: 'Checkpoint', ids: ['review-c', 'review-scale', 'review-chord'],
     intro: 'A calm checkpoint \u2014 just the things you already know.' },
-  { name: 'Onward', ids: ['course-closing'] },
+  { stage: 1, name: 'Stage 1 complete', ids: ['stage1-complete'] },
+  { stage: 2, name: 'Making music', ids: ['stage2-welcome', 'phrase-up', 'phrase-down'],
+    intro: 'Stage 2 \u2014 the foundations become music: short phrases you can play.' },
+  { stage: 2, name: 'Rhythm in music', ids: ['play-on-pulse'],
+    intro: 'Notes over a steady pulse \u2014 the feel of music in time.' },
+  { stage: 2, name: 'Scale shape', ids: ['scale-shape-up'],
+    intro: 'A scale as a shape your hand learns \u2014 a full octave.' },
+  { stage: 2, name: 'Harmony in music', ids: ['arpeggio-c'],
+    intro: 'A chord spread out in time becomes an arpeggio.' },
+  { stage: 2, name: 'Patterns & phrases', ids: ['motif-echo', 'first-phrase'],
+    intro: 'Recognise a small pattern, then play your first melody.' },
+  { stage: 2, name: 'Stage 2 review', ids: ['review-phrase', 'stage2-onward'],
+    intro: 'A calm review, and the road ahead.' },
 ];
 function chapterFor(stepId) {
   for (let i = 0; i < COURSE_CHAPTERS.length; i += 1) {
@@ -576,6 +718,7 @@ function chapterFor(stepId) {
     if (pos >= 0) {
       return {
         chIdx: i + 1, chTotal: COURSE_CHAPTERS.length, name: COURSE_CHAPTERS[i].name,
+        stage: COURSE_CHAPTERS[i].stage || 1,
         pos: pos + 1, len: COURSE_CHAPTERS[i].ids.length, intro: COURSE_CHAPTERS[i].intro || null,
       };
     }
@@ -593,6 +736,7 @@ export function chapterAtIndex(idx) {
     chIdx: ch ? ch.chIdx : 1,
     chTotal: COURSE_CHAPTERS.length,
     name: ch ? ch.name : '',
+    stage: ch ? ch.stage : 1,
     lessonsTotal: LEARN_STEPS.length,
   };
 }
@@ -1174,6 +1318,11 @@ export default function createView(ctx) {
     };
     const doDemo = () => {
       if (!alive()) return;
+      if (c.show && c.show.kind === 'pulse') {   // rhythm: listen-first count-in, then play
+        cue('\u266A  Listen first \u2014 count: 1, 2, 3, 4.');
+        runCountIn(c, () => { if (alive()) cue('Now you try \u2014 play a note on each beat.'); });
+        return;
+      }
       if (c.demo && c.demo.length) {
         cue('\u266A  Listen \u2014 watch the keyboard.');
         demoCard(c);
@@ -1222,6 +1371,7 @@ export default function createView(ctx) {
   function render() {
     const c = steps[index];
     stopPulse();
+    clearCountIn();
     stopDemoAudio();
     if (autoAdvTimer) { clearTimeout(autoAdvTimer); autoAdvTimer = null; }
     if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
@@ -1281,7 +1431,10 @@ export default function createView(ctx) {
       sharps.style.display = '';
     } else if (s.kind === 'pulse') {
       pulse.style.display = '';
-      startPulse();
+      buildPulse((c.mode === 'count' && c.count) ? c.count : 4);
+      // Learn mode runs a listen-first count-in (see runLearnSequence); plain
+      // Foundations has no tutor turn-taking, so the pulse animates right away.
+      if (!learnMode) startPulse();
     }
 
     // Video-ready media slot (rc2-63): honest placeholder; hidden unless the step opts in.
@@ -1392,6 +1545,7 @@ export default function createView(ctx) {
         guide(`That was ${name}. ${c.hint || 'Start again from C.'}`);
       }
     } else if (c.mode === 'count') {
+      if (countInActive) return;   // count-in is listen-first; presses don't count yet
       tryState.count += 1;
       const remaining = (c.count || 4) - tryState.count;
       if (remaining > 0) neutral(`${remaining} more\u2026`);
@@ -1452,8 +1606,33 @@ export default function createView(ctx) {
   }
 
   // ---- Rhythm pulse ---------------------------------------------------------
+  // ---- Pulse / count-in -----------------------------------------------------
+  // Beats now carry visible numbers (1 2 3 4), groups of four are separated by a
+  // mid-dot (1 2 3 4 · 1 2 3 4), and a "listen-first" count-in runs before the
+  // learner plays. The gate still only counts presses — no timing is scored.
+  let countInActive = false;     // true during the listen-first count-in
+  let countInTimers = [];
+  function pulseBeats() { return [...pulse.querySelectorAll('.mf__beat')]; }
+  function buildPulse(n) {
+    const total = (Number.isInteger(n) && n > 0) ? n : 4;
+    pulse.replaceChildren();
+    for (let i = 0; i < total; i += 1) {
+      if (i > 0 && i % 4 === 0) {
+        pulse.appendChild(el('span', { class: 'mf__beatsep', 'aria-hidden': 'true' }, ['\u00B7']));
+      }
+      const b = el('span', { class: 'mf__beat' });
+      b.textContent = String((i % 4) + 1);   // 1 2 3 4 within each group of four
+      pulse.appendChild(b);
+    }
+  }
+  function clearCountIn() {
+    countInActive = false;
+    countInTimers.forEach((t) => clearTimeout(t));
+    countInTimers = [];
+  }
   function startPulse() {
-    const beats = [...pulse.children];
+    const beats = pulseBeats();
+    if (!beats.length) return;
     let b = 0;
     const tick = () => {
       beats.forEach((node, i) => node.classList.toggle('is-on', i === b));
@@ -1464,7 +1643,33 @@ export default function createView(ctx) {
   }
   function stopPulse() {
     if (pulseTimer != null) { clearInterval(pulseTimer); pulseTimer = null; }
-    [...pulse.children].forEach((n) => n.classList.remove('is-on'));
+    pulseBeats().forEach((n) => n.classList.remove('is-on'));
+  }
+  // Listen-first count-in: highlight beat 1, 2, 3, 4 in time, with input ignored,
+  // then hand the steady pulse to the learner. Device-verify: motion + timing.
+  function runCountIn(c, onReady) {
+    clearCountIn();
+    stopPulse();
+    const total = (c && c.mode === 'count' && c.count) ? c.count : 4;
+    buildPulse(total);
+    const beats = pulseBeats();
+    if (!beats.length) { if (typeof onReady === 'function') onReady(); return; }
+    countInActive = true;
+    const seqToken = demoToken;
+    const beatMs = 600;
+    const groupLen = Math.min(4, beats.length);
+    for (let i = 0; i < groupLen; i += 1) {
+      countInTimers.push(setTimeout(() => {
+        if (seqToken !== demoToken) return;
+        beats.forEach((node, j) => node.classList.toggle('is-on', j === i));
+      }, i * beatMs));
+    }
+    countInTimers.push(setTimeout(() => {
+      if (seqToken !== demoToken) return;
+      countInActive = false;
+      startPulse();   // the steady pulse the learner plays along with
+      if (typeof onReady === 'function') onReady();
+    }, groupLen * beatMs + 220));
   }
 
   // ---- Lifecycle ------------------------------------------------------------
@@ -1520,6 +1725,7 @@ export default function createView(ctx) {
       if (autoAdvTimer) { clearTimeout(autoAdvTimer); autoAdvTimer = null; }
       if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
       stopPulse();
+      clearCountIn();
       stopDemoAudio();
       keyboard?.clearHighlight?.('target');
       overlay?.destroy?.();

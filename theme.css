@@ -763,6 +763,38 @@ a.vector:hover .vector__open { color: var(--ivory); }
 .view[data-view="learn"] .mf__keylabel { color: var(--ivory); }
 .view[data-view="learn"] .mf__showcap { color: var(--ivory-dim); }
 
+/* Rhythm pulse — visible numbered beats with a listen-first count-in. The current
+   beat lights amber; groups of four are separated by a mid-dot (1 2 3 4 · 1 2 3 4).
+   Device-verify: motion + count-in timing can only be confirmed on a real device. */
+.view[data-view="learn"] .mf__pulse {
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
+  gap: 0.5rem 0.55rem; margin: 0.2rem 0 0.6rem;
+}
+.view[data-view="learn"] .mf__beat {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2.1rem; height: 2.1rem; border-radius: 50%;
+  font-size: 1rem; font-variant-numeric: tabular-nums; font-weight: 600;
+  color: var(--ivory-dim);
+  background: color-mix(in srgb, var(--ebony-edge) 60%, transparent);
+  border: 1px solid var(--ebony-edge);
+  transition: transform 140ms ease, background-color 140ms ease, color 140ms ease, box-shadow 140ms ease;
+}
+.view[data-view="learn"] .mf__beat.is-on {
+  color: #1a1206;
+  background: var(--amber-glow);
+  border-color: color-mix(in srgb, var(--amber-glow) 70%, white 10%);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--amber-glow) 24%, transparent),
+              0 4px 14px -4px color-mix(in srgb, var(--amber-glow) 60%, transparent);
+  transform: translateY(-2px) scale(1.08);
+}
+.view[data-view="learn"] .mf__beatsep {
+  color: var(--ivory-dim); opacity: 0.5; font-weight: 700; padding: 0 0.1rem;
+}
+@media (prefers-reduced-motion: reduce) {
+  .view[data-view="learn"] .mf__beat { transition: background-color 120ms ease, color 120ms ease; }
+  .view[data-view="learn"] .mf__beat.is-on { transform: none; }
+}
+
 /* Media slot — make the (interim) teaching-visual area read as intentional,
    recessed and framed rather than an unfinished box. Full premium panels
    are WP4. */
