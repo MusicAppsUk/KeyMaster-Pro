@@ -35,12 +35,13 @@ import { createStaffView } from './staffView.js';
 import { noteName, SHARP_NAMES, FLAT_NAMES } from './notes.js';
 import { buildChord, chordSymbol, INVERSIONS } from './chordEngine.js';
 import { createChordEvaluator } from './chordEvaluator.js';
+import { createChordVoice } from './chordVoice.js';
 import { UNIT1 } from './chordCourse.js';
 
 const QUALITY_OPTIONS = [['major', 'Major']];          // Phase 2: major triads only
 const HAND_OPTIONS = [['RH', 'Right hand'], ['LH', 'Left hand'], ['BOTH', 'Both hands - later', true]];
 const PRAISE = ['Yes - that\u2019s it.', 'Correct - nicely shaped.', 'Excellent recognition.', 'Confidently played.'];
-const FINGER_WORD = { 1: 'thumb', 2: 'index finger', 3: 'middle finger', 4: 'ring finger', 5: 'little finger' };
+const FINGER_WORD = { 1: 'thumb', 2: 'second finger', 3: 'third finger', 4: 'fourth finger', 5: 'fifth finger' };
 
 function triadFingering(hand) { return hand === 'LH' ? [5, 3, 1] : [1, 3, 5]; }   // low -> high
 function fingeringText(hand) {
@@ -73,6 +74,11 @@ export default function createView(ctx) {
   const pref = keyboard && keyboard.accidental === 'flat' ? 'flat' : 'sharp';
   const ROOT_NAMES = pref === 'flat' ? FLAT_NAMES : SHARP_NAMES;
   const ROOT_OPTIONS = ROOT_NAMES.map((n, pc) => [String(pc), n]);
+
+  // Tutor voice (Chord-only, optional). Phrases parallel the on-screen captions.
+  const voice = createChordVoice();
+  const spokenNote = (m) => noteName(m, { accidental: pref }).replace('\u266F', ' sharp').replace('\u266D', ' flat');
+  const spokenFinger = (f) => FINGER_WORD[f] || 'finger';
 
   // ---- state -----------------------------------------------------------
   let view = 'course';                 // 'course' | 'explore' | 'summary'
@@ -167,12 +173,24 @@ export default function createView(ctx) {
     ui.pause = el('button', { class: 'cmx__ctl', type: 'button' });
     ui.pause.textContent = 'Pause';
     ui.pause.addEventListener('click', onPause);
+    ui.voice = el('button', { class: 'cmx__ctl', type: 'button' });
+    ui.voice.textContent = 'Voice on';
+    ui.voice.setAttribute('aria-pressed', 'true');
+    ui.voice.addEventListener('click', () => {
+      voice.unlock();
+      const on = !voice.isEnabled();
+      voice.setEnabled(on);
+      ui.voice.textContent = on ? 'Voice on' : 'Voice off';
+      ui.voice.setAttribute('aria-pressed', String(on));
+      ui.voice.classList.toggle('is-active', !on);
+    });
+    if (!voice.available()) ui.voice.hidden = true;
     ui.skip = el('button', { class: 'cmx__skip', type: 'button' });
     ui.skip.textContent = 'Skip for now';
     ui.skip.addEventListener('click', onSkip);
     ui.primary = el('button', { class: 'cmx__primary', type: 'button' });
     ui.primary.addEventListener('click', onPrimary);
-    ui.actionbar.append(ui.progress, ui.back, ui.repeat, ui.pause, ui.skip, ui.primary);
+    ui.actionbar.append(ui.progress, ui.back, ui.repeat, ui.pause, ui.voice, ui.skip, ui.primary);
 
     root.append(ui.lesson, ui.summary, ui.explore, ui.actionbar);
     mount.replaceChildren(root);
@@ -230,13 +248,16 @@ export default function createView(ctx) {
       ui.step.textContent = 'Try yourself';
       ui.prompt.textContent = `Play ${promptName(subSeq[0])} - all notes together.`;
       ui.status.textContent = 'Only the root note is marked - recall the full shape and play it.';
+      voice.speak('Try for yourself. Find the shape on your own. Use Repeat if you would like to hear it again.', `try-${stepIx}`);
       beginActiveStep(true);
     } else if (kind === 'review') {
       ui.step.textContent = 'Review \u00b7 same chord, three shapes';
       ui.prompt.textContent = `Play ${promptName(subSeq[0])}.`;
+      voice.speak('Now let us review. Play each shape as it is shown.', `review-${stepIx}`);
       beginActiveStep(true);
     } else if (kind === 'assess') {
       ui.step.textContent = 'Assessment \u00b7 fewer hints';
+      voice.speak('Now, recognise each shape from the staff, with fewer hints.', `assess-${stepIx}`);
       beginActiveStep(true);
     }
   }
@@ -293,6 +314,7 @@ export default function createView(ctx) {
     const fng = triadFingering(spec.hand);
     const token = demoToken;
     ui.prompt.textContent = `Watch the shape build: ${names.join(' \u2192 ')}.`;
+    voice.speak(`${ROOT_NAMES[UNIT1.rootPc]} major. ${invLabel(spec.inversion).toLowerCase()}. ${handWord(spec.hand)}. Listen first.`, `teach-${stepIx}`);
     let i = 0;
     const stepDemo = () => {
       if (token !== demoToken) return;                 // cancelled by advancing
@@ -311,6 +333,7 @@ export default function createView(ctx) {
           ui.status.textContent = 'That is the shape.';
           ui.prompt.textContent = 'Now you \u2014 follow the notes one at a time.';
           playDemoRoll(chordMidis, A.chordVel, A.roll, A.chordDur);   // soft rolled full chord
+          voice.speak('Now, the full chord.', `teach-full-${stepIx}`);
           // Teacher-led: move into Follow Me by itself once the shape has been shown.
           autoOrManualAdvance(() => loadStep(stepIx + 1), PACE.demoToFollow);
         }, 650);
@@ -325,7 +348,13 @@ export default function createView(ctx) {
     const fng = triadFingering(spec.hand);
     const held = evaluator.held || new Set();
     const wrong = [...held].some((m) => !expectedSet.has(m));
-    if (wrong) { setStatusState('warn'); ui.status.textContent = 'Check this note - it is not part of the chord. Lift it gently and keep the others down.'; return; }
+    if (wrong) {
+      setStatusState('warn');
+      ui.status.textContent = 'Check this note - it is not part of the chord. Lift it gently and keep the others down.';
+      const need = chordMidis.find((m) => !held.has(m));
+      voice.speak(`That note is not in this shape. Keep the notes you have, and look for ${need != null ? spokenNote(need) : 'the next note'}.`, `fm-wrong-${stepIx}-${subIx}`);
+      return;
+    }
     // Gentle per-note confirm: chime each correct chord tone once, as it lands.
     for (const m of chordMidis) {
       if (held.has(m) && expectedSet.has(m) && !confirmedSet.has(m)) {
@@ -339,8 +368,13 @@ export default function createView(ctx) {
     setStatusState('');
     if (nextI === -1) return;                            // all down -> onComplete handles it
     const fw = FINGER_WORD[fng[nextI]] || 'finger';
-    if (nextI === 0) ui.prompt.textContent = `Place your ${fw} on ${names[0]}.`;
-    else ui.prompt.textContent = `Good. Now add ${names[nextI]} (${fw}).`;
+    if (nextI === 0) {
+      ui.prompt.textContent = `Place your ${fw} on ${names[0]}.`;
+      voice.speak(`${handWord(spec.hand)}. Place your ${spokenFinger(fng[0])} on ${spokenNote(chordMidis[0])}.`, `fm-${stepIx}-${subIx}-0`);
+    } else {
+      ui.prompt.textContent = `Good. Now add ${names[nextI]} (${fw}).`;
+      voice.speak(`Good. Now add your ${spokenFinger(fng[nextI])} on ${spokenNote(chordMidis[nextI])}.`, `fm-${stepIx}-${subIx}-${nextI}`);
+    }
     const downCount = chordMidis.filter((m) => held.has(m)).length;
     ui.status.textContent = downCount === 0 ? 'Press and hold the note.' : `Holding ${downCount} of ${chordMidis.length} - keep them down.`;
   }
@@ -368,6 +402,10 @@ export default function createView(ctx) {
     const S = UNIT1.steps[stepIx];
     setStatusState('good');
     playDemoRoll(chordMidis, A.successVel, A.successRoll, A.successDur);   // calm completion cue
+    if (kind !== 'teach') {
+      const spec = subSeq[subIx] || subSeq[0];
+      voice.speak(`Exactly. That is ${ROOT_NAMES[UNIT1.rootPc]} major, ${invLabel(spec.inversion).toLowerCase()}.`, `complete-${stepIx}-${subIx}`);
+    }
     // Record only playable steps (not the watch-only Teach card).
     if (kind !== 'teach') {
       const rec = shapeRec(subSeq[subIx]);
@@ -450,10 +488,11 @@ export default function createView(ctx) {
   }
   function hidePrimary() { ui.primary.hidden = true; ui.primary.classList.remove('is-ready'); }
   function beginActiveStep(skip) { hidePrimary(); ui.skip.hidden = !skip; }
-  function showControls(on) { for (const b of [ui.back, ui.repeat, ui.pause]) if (b) b.hidden = !on; }
+  function showControls(on) { for (const b of [ui.back, ui.repeat, ui.pause, ui.voice]) if (b) b.hidden = !on; if (ui.voice && !voice.available()) ui.voice.hidden = true; }
 
   /* ---- advancing ----------------------------------------------------- */
   function onPrimary() {
+    voice.unlock();
     if (view === 'explore') { loadStep(stepIx); return; }
     if (view === 'summary') { resetStats(); loadStep(0); return; }
     // Boundary Continue, or override while paused: run the held move.
@@ -462,24 +501,29 @@ export default function createView(ctx) {
     loadStep(stepIx + 1);
   }
   function onSkip() {
+    voice.unlock();
     if (view !== 'course') return;
     if (kind !== 'teach' && subSeq[subIx]) shapeRec(subSeq[subIx]).skipped++;   // honest: record skips
     loadStep(stepIx + 1);
   }
   function onBack() {
+    voice.unlock();
     if (view === 'summary' || view === 'explore') { loadStep(stepIx); return; }
     loadStep(Math.max(0, stepIx - 1));
   }
   function onRepeat() {
+    voice.unlock();
     if (view === 'explore') { enterExplore(); return; }
     if (view === 'summary') { showSummary(); return; }
     loadStep(stepIx);                       // re-demonstrates Teach; re-arms play steps
   }
   function onPause() {
+    voice.unlock();
     paused = !paused;
     ui.pause.textContent = paused ? 'Resume' : 'Pause';
     ui.pause.classList.toggle('is-active', paused);
     if (paused) {
+      voice.cancel();
       if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; }   // freeze pending move only (not a demo)
       if (resumeAction) { showContinue('Continue \u203a'); ui.status.textContent = 'Paused \u2014 continue when you are ready.'; }
     } else if (resumeAction) {
@@ -603,6 +647,7 @@ export default function createView(ctx) {
     if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; }
     if (demoTimer) { clearTimeout(demoTimer); demoTimer = null; }
     stopDemoAudio();
+    voice.cancel();
     resumeAction = null;
   }
   function resetPaceState() {

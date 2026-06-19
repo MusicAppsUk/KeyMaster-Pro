@@ -111,23 +111,23 @@ function savePrefs(prefs) {
 const VIEW_REGISTRY = {
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-45',
-    load: () => import('./foundations.js?v=rc2-45'),
+    src: './foundations.js?v=rc2-46',
+    load: () => import('./foundations.js?v=rc2-46'),
   },
   scales: {
     slot: 'scales',
-    src: './scalesMasterclass.js?v=rc2-45',
-    load: () => import('./scalesMasterclass.js?v=rc2-45'),
+    src: './scalesMasterclass.js?v=rc2-46',
+    load: () => import('./scalesMasterclass.js?v=rc2-46'),
   },
   sightreading: {
     slot: 'sightreading',
-    src: './sightReading.js?v=rc2-45',
-    load: () => import('./sightReading.js?v=rc2-45'),
+    src: './sightReading.js?v=rc2-46',
+    load: () => import('./sightReading.js?v=rc2-46'),
   },
   chords: {
     slot: 'chords',
-    src: './chordMasterclass.js?v=rc2-45',
-    load: () => import('./chordMasterclass.js?v=rc2-45'),
+    src: './chordMasterclass.js?v=rc2-46',
+    load: () => import('./chordMasterclass.js?v=rc2-46'),
   },
 };
 
