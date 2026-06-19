@@ -106,13 +106,13 @@ export const LEARN_STEPS = [
     say: [
       { text: 'The keyboard is laid out by pitch.', pauseAfter: 500, tone: 'warm' },
       { text: 'Keys to the left sound lower; keys to the right sound higher.', pauseAfter: 560 },
-      { text: 'Play one, and notice where its sound sits.', pauseAfter: 300, tone: 'instruct' },
+      { text: 'Play a low note on the left \u2014 then a high note on the right.', pauseAfter: 300, tone: 'instruct' },
     ],
-    explain: ['The keyboard is laid out by pitch \u2014 keys to the left sound lower, keys to the right higher.', 'Play one, and notice where it sits.'],
+    explain: ['The keyboard is laid out by pitch \u2014 keys to the left sound lower, keys to the right higher.', 'Play a low note on the left, then a high note on the right.'],
     show: { kind: 'keys', midis: [48, 50, 52, 67, 69, 71], caption: 'Left is low; right is high.', label: 'low                          high' },
     demo: [48, 50, 52, 67, 69, 71], demoGap: 0.34,
-    tryPrompt: 'Play any key, and notice where its sound sits \u2014 lower or higher.', mode: 'any',
-    okMsg: 'Good \u2014 left is lower, right is higher. You\u2019re hearing the shape of the keyboard.',
+    tryPrompt: 'Play a low note on the left, then a high note on the right.', mode: 'lowhigh',
+    okMsg: 'Good \u2014 low on the left, high on the right. You\u2019re hearing the shape of the keyboard.',
   },
   {
     eyebrow: 'Finding your way', title: 'Black-key groups of two', id: 'black-keys-two',
@@ -543,6 +543,31 @@ export default function createView(ctx) {
   let demoToken = 0;         // cancels a pending demo when the card changes
   let demoTimer = null;
   let autoAdvTimer = null;   // learn: auto-advance after a simple completed task
+  let seqTimer = null;       // learn: drives the speak -> pause -> demo -> pause chain
+
+  // Teaching-rhythm pacing (learn). The tutor and keyboard take turns; nothing
+  // overlaps and the tutor is never cut off. Calm, human, not sluggish.
+  const PAUSE_AFTER_SPEECH  = 550;   // tutor finishes speaking -> keyboard demonstrates
+  const PAUSE_AFTER_DEMO    = 700;   // demonstration ends -> learner plays / bridge advances
+  const PAUSE_AFTER_SUCCESS = 1500;  // confirmation finishes -> next step (calm beat)
+
+  // Rough duration of a card's demonstration, so the chain can wait it out.
+  function demoDurationMs(c) {
+    if (!c || !Array.isArray(c.demo) || !c.demo.length) return 0;
+    const gap = c.demoGap ?? 0.4;
+    const tail = (gap <= 0.12) ? 1.10 : Math.max(0.42, gap * 1.05);
+    return Math.round((c.demo.length * gap + tail) * 1000);
+  }
+  // Generous upper bound on how long the spoken instruction can take, used only
+  // as a failsafe so a missed end-event can never stall the lesson.
+  function speechBudgetMs(c) {
+    if (!c) return 1200;
+    if (Array.isArray(c.say) && c.say.length) {
+      return c.say.reduce((t, b) => t + ((b.text || '').length * 55) + (b.pauseAfter || 360), 0) + 1500;
+    }
+    const txt = (Array.isArray(c.explain) ? c.explain.join(' ') : '') + (c.tryPrompt || '');
+    return Math.min(12000, txt.length * 55 + 1500);
+  }
   function audioReady() { return !!(synth && synth.ctx && synth.ctx.state === 'running'); }
   function playDemoVoice(midi, vel, durSec, atSec) {
     if (!audioReady()) return;
@@ -552,6 +577,7 @@ export default function createView(ctx) {
   }
   function stopDemoAudio() {
     if (demoTimer) { clearTimeout(demoTimer); demoTimer = null; }
+    if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
     if (!demoVoices.length) return;
     const now = synth && synth.ctx ? synth.ctx.currentTime : 0;
     for (const v of demoVoices.splice(0)) { try { v.release(now); } catch (_) { /* no-op */ } }
@@ -634,7 +660,14 @@ export default function createView(ctx) {
     startBtn.addEventListener('click', () => { voice?.unlock?.(); speakPending(); });
     voiceBtn.addEventListener('click', () => { voice?.unlock?.(); setVoice(!voiceOn); speakPending(); });
     pauseBtn.addEventListener('click', () => { audio?.cancel?.(); stopDemoAudio(); stopPulse(); });
-    repeatBtn.addEventListener('click', () => { voice?.unlock?.(); demoCard(steps[index]); speakCard(steps[index]); });
+    repeatBtn.addEventListener('click', () => {
+      voice?.unlock?.();
+      demoToken += 1;                                   // cancel any pending sequence
+      if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
+      if (demoTimer) { clearTimeout(demoTimer); demoTimer = null; }
+      audio?.cancel?.();
+      runLearnSequence(steps[index], false);            // speak, then demonstrate — never both at once
+    });
     resetBtn.addEventListener('click', onReset);
     if (typeof window !== 'undefined') window.addEventListener('resize', () => overlay?.reflow?.());
     bridgeBtn.addEventListener('click', () => {
@@ -731,19 +764,52 @@ export default function createView(ctx) {
     setVoice(true);
     render();
   }
-  function speakCard(c) {
-    if (!voice || !voiceOn || !c) return;
-    const id = `narr:${c.title}`;
+  function speakCard(c, onDone) {
+    let fired = false;
+    const done = () => { if (fired) return; fired = true; if (typeof onDone === 'function') onDone(); };
+    if (!voice || !voiceOn || !c) { done(); return; }
+    // Failsafe: never let a dropped end-event stall the lesson.
+    const fs = setTimeout(done, speechBudgetMs(c));
+    const wrapped = () => { clearTimeout(fs); done(); };
     if (Array.isArray(c.say) && c.say.length) {
-      audio.sayBeats(`${c.id}.say`, c.say);   // performed as short, paced beats
+      audio.sayBeats(`${c.id}.say`, c.say, { onDone: wrapped });   // performed as short, paced beats
     } else {
       const parts = [];
       if (Array.isArray(c.explain) && c.explain[0]) parts.push(c.explain[0]);
       if (c.mode && c.mode !== 'none' && c.tryPrompt) parts.push(c.tryPrompt);
       const text = parts.join(' ');
-      if (text) audio.say(`${c.id}.explain`, text);
+      if (text) audio.say(`${c.id}.explain`, text, { onDone: wrapped });
+      else wrapped();
     }
-    if (progress) progress.addToSet('heardNarration', id);
+    if (progress) progress.addToSet('heardNarration', `narr:${c.title}`);
+  }
+
+  // The teaching rhythm: tutor speaks -> pause -> keyboard demonstrates -> pause.
+  // Nothing overlaps; the demo waits for the voice; reflective 'come next' bridge
+  // steps then advance along the main Course path. Cancels cleanly if the card
+  // changes (demoToken, bumped by render()).
+  function runLearnSequence(c, skipSpeech) {
+    const seqToken = demoToken;
+    const alive = () => seqToken === demoToken;
+    const afterDemo = () => {
+      if (!alive()) return;
+      if (c.autoNext) {   // reflective bridge: move along the main path after a calm pause
+        if (autoAdvTimer) clearTimeout(autoAdvTimer);
+        autoAdvTimer = setTimeout(() => { if (alive()) advanceStep(); }, PAUSE_AFTER_DEMO + 400);
+      }
+    };
+    const doDemo = () => {
+      if (!alive()) return;
+      if (c.demo && c.demo.length) {
+        demoCard(c);
+        seqTimer = setTimeout(afterDemo, demoDurationMs(c) + PAUSE_AFTER_DEMO);
+      } else {
+        afterDemo();
+      }
+    };
+    const afterSpeech = () => { if (alive()) seqTimer = setTimeout(doDemo, PAUSE_AFTER_SPEECH); };
+    if (skipSpeech) afterSpeech();
+    else speakCard(c, afterSpeech);
   }
 
   // ---- Proficiency gate (learn only): an interactive step holds Continue until the
@@ -783,6 +849,7 @@ export default function createView(ctx) {
     stopPulse();
     stopDemoAudio();
     if (autoAdvTimer) { clearTimeout(autoAdvTimer); autoAdvTimer = null; }
+    if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
     demoToken += 1;
     keyboard?.clearHighlight?.('target');
     overlay?.clear?.();
@@ -826,9 +893,12 @@ export default function createView(ctx) {
     if (c.media) { mediaEl.replaceChildren(buildMediaSlot(c.media)); mediaEl.style.display = ''; }
     else { mediaEl.replaceChildren(); mediaEl.style.display = 'none'; }
 
-    // Demonstration sound — show first, then sound a moment later (tutor cadence).
+    // Demonstration sound. In plain Foundations there's no tutor voice, so the
+    // demo plays shortly after the card appears. In learn mode the demo is driven
+    // by the teaching sequence below (after the tutor finishes), so it never
+    // overlaps the voice.
     replayBtn.style.display = (c.demo && c.demo.length) ? '' : 'none';
-    if (c.demo && c.demo.length) {
+    if (!learnMode && c.demo && c.demo.length) {
       const myToken = demoToken;
       demoTimer = setTimeout(() => { if (myToken === demoToken) demoCard(c); }, 340);
     }
@@ -857,19 +927,14 @@ export default function createView(ctx) {
         else { bridgeBtn.style.display = 'none'; }
       }
       if (progress) progress.set('learnLesson', index);
-      if (suppressSpeakOnce) suppressSpeakOnce = false;  // greeting already covered this step
-      else speakCard(c);
+      // Teaching rhythm: tutor speaks, then (after a pause) the keyboard
+      // demonstrates. Step 0's speech is covered by the greeting, so we skip
+      // straight to the demonstration there.
+      const skipSpeech = suppressSpeakOnce;
+      if (suppressSpeakOnce) suppressSpeakOnce = false;
+      runLearnSequence(c, skipSpeech);
       // Gently bring the active teaching area into view (device-tuned; never jumps if visible).
       try { card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) { /* no-op */ }
-      // Reflective bridge steps ('...come next') keep the Course flowing: after a
-      // calm pause the tutor advances along the main path. Continue stays visible
-      // (sticky) and the optional masterclass link stays secondary; a deliberate
-      // tap on either takes precedence (both clear this timer).
-      if (c.autoNext && Number.isFinite(c.autoNext)) {
-        const at = index;
-        if (autoAdvTimer) clearTimeout(autoAdvTimer);
-        autoAdvTimer = setTimeout(() => { if (index === at) advanceStep(); }, c.autoNext);
-      }
     }
   }
 
@@ -886,6 +951,17 @@ export default function createView(ctx) {
 
     if (c.mode === 'any') {
       complete(c.okMsg);
+    } else if (c.mode === 'lowhigh') {
+      // Require BOTH a low and a high note (split at Middle C). One alone is not enough.
+      const side = midi < 60 ? 'low' : 'high';
+      tryState.pressed.add(side);
+      if (tryState.pressed.has('low') && tryState.pressed.has('high')) {
+        complete(c.okMsg);
+      } else if (side === 'low') {
+        neutral('Good \u2014 that\u2019s a low note. Now play a high note, well to the right.');
+      } else {
+        neutral('Good \u2014 that\u2019s a high note. Now play a low note, well to the left.');
+      }
     } else if (c.mode === 'one') {
       const target = c.targets[0];
       const hit = c.exact ? (midi === target) : (pc === pcOf(target));
@@ -935,21 +1011,22 @@ export default function createView(ctx) {
     tryStatus.classList.add('is-done');
     if (learnMode) {
       enableContinue();
-      if (voice && voiceOn) {
-        const sid = (steps[index] && steps[index].id) ? steps[index].id : `i${index}`;
-        audio.say(wrongCount > 0 ? `${sid}.correct-retry` : `${sid}.correct`, shown);
-      }
-      // Course flow: for a simple completed task the tutor gently moves the
-      // lesson forward after a calm pause, so the learner never has to find
-      // Continue behind the on-screen keyboard. A step can opt out with
-      // hold:true (reflective steps that want the learner to dwell); mode
-      // 'none' reading steps never reach here and keep manual Continue.
-      if (!(steps[index] && steps[index].hold)) {
+      // Advance only AFTER the spoken confirmation finishes, then a calm pause —
+      // so the tutor is never cut off and the lesson doesn't rush. A step can opt
+      // out with hold:true; mode 'none' reading steps never reach here.
+      const scheduleAdvance = () => {
+        if (steps[index] && steps[index].hold) return;
         const at = index;
         if (autoAdvTimer) clearTimeout(autoAdvTimer);
         autoAdvTimer = setTimeout(() => {
           if (index === at && tryState && tryState.done) advanceStep();
-        }, 1300);
+        }, PAUSE_AFTER_SUCCESS);
+      };
+      if (voice && voiceOn) {
+        const sid = (steps[index] && steps[index].id) ? steps[index].id : `i${index}`;
+        audio.say(wrongCount > 0 ? `${sid}.correct-retry` : `${sid}.correct`, shown, { onDone: scheduleAdvance });
+      } else {
+        scheduleAdvance();   // captions-first: a calm pause to read the confirmation
       }
     }
   }
@@ -1042,6 +1119,7 @@ export default function createView(ctx) {
       audio?.cancel?.();
       if (gateTimer) { clearTimeout(gateTimer); gateTimer = null; }
       if (autoAdvTimer) { clearTimeout(autoAdvTimer); autoAdvTimer = null; }
+      if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
       stopPulse();
       stopDemoAudio();
       keyboard?.clearHighlight?.('target');

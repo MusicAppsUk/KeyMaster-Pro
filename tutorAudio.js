@@ -70,9 +70,10 @@ export function createTutorAudio(options = {}) {
   // fallback (and shown by the caller). `opts.dedupe` defaults true; opts.volume sets
   // the premium-file volume.
   function say(lineId, text, opts = {}) {
+    const done = (typeof opts.onDone === 'function') ? opts.onDone : null;
     if (seqActive) cancelSeq();   // a single line interrupts a beat sequence
     const dedupe = opts.dedupe !== false;
-    if (dedupe && lineId != null && lineId === lastId) return;
+    if (dedupe && lineId != null && lineId === lastId) { if (done) done(); return; }
     lastId = (lineId != null) ? lineId : null;
 
     const url = HAS_AUDIO ? urlFor(lineId) : null;
@@ -83,8 +84,9 @@ export function createTutorAudio(options = {}) {
         a.volume = (opts.volume != null) ? opts.volume : 0.9;
         current = a;
         // If the premium file is missing or fails, fall back to TTS so we are never silent.
-        const fallback = () => { current = null; voice?.speak?.(text, lineId); };
+        const fallback = () => { current = null; if (voice) voice.speak(text, lineId, done); else if (done) done(); };
         a.addEventListener('error', fallback, { once: true });
+        if (done) a.addEventListener('ended', () => { current = null; done(); }, { once: true });
         const p = a.play?.();
         if (p && typeof p.catch === 'function') p.catch(fallback);
         return;
@@ -92,7 +94,8 @@ export function createTutorAudio(options = {}) {
         current = null;   // fall through to TTS
       }
     }
-    voice?.speak?.(text, lineId);   // prototype / fallback
+    if (voice) voice.speak(text, lineId, done);   // prototype / fallback — calls done reliably
+    else if (done) done();
   }
 
   // Speak a line as a SEQUENCE of short beats with real pauses between them, so the
@@ -104,15 +107,16 @@ export function createTutorAudio(options = {}) {
   // them). A premium file per beat resolves at `${baseId}.${i}`; otherwise the beat is
   // spoken by the TTS prototype and the next beat is chained on its completion.
   function sayBeats(baseId, beats, opts = {}) {
+    const done = (typeof opts.onDone === 'function') ? opts.onDone : null;
     cancelSeq();
-    if (!Array.isArray(beats) || !beats.length) return;
-    if (opts.dedupe !== false && baseId != null && baseId === lastId) return;
+    if (!Array.isArray(beats) || !beats.length) { if (done) done(); return; }
+    if (opts.dedupe !== false && baseId != null && baseId === lastId) { if (done) done(); return; }
     lastId = (baseId != null) ? baseId : null;
     seqActive = true;
     let i = 0;
     const run = () => {
       if (!seqActive) return;
-      if (i >= beats.length) { seqActive = false; return; }
+      if (i >= beats.length) { seqActive = false; if (done) done(); return; }
       const beat = beats[i] || {};
       const bid = `${baseId}.${i}`;
       i += 1;

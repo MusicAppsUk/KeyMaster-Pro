@@ -65,7 +65,7 @@ export function overlayGeometry(cues, rectOf) {
       const x1 = from.cx;
       const y1 = from.bottom + OVL.arrowGap;
       const x2 = to.cx;
-      const y2 = to.top + (to.bottom - to.top) * 0.42;   // aim into the upper-middle of the target
+      const y2 = to.top + (to.bottom - to.top) * 0.80;   // aim at the front/lower press area
       out.strokes.push({ kind: 'arrow', x1, y1, x2, y2, head: OVL.arrowHead });
     }
   }

@@ -1040,3 +1040,23 @@ html[data-view="learn"] .key.hl-target::after {
   opacity: 1;
 }
 html[data-view="learn"] .key--black.hl-target::after { bottom: 5%; }
+
+/* ==========================================================================
+   VISUAL DRAFT 4 — action arrow aligned to the press target
+   The pointing arrow indicates the CURRENT ACTION, so it now matches the
+   emerald press target (brackets/labels stay amber for landmarks/context).
+   html[data-view] prefix outranks the keyboard.css arrow rule WITHOUT editing
+   keyboard.css; the fade-in is preserved and a calm pulse added.
+   ========================================================================== */
+html[data-view="learn"] .mf-ovl__arrow {
+  stroke: var(--emerald);
+  filter: drop-shadow(0 0 3px var(--emerald-glow));
+  animation: mfOvlIn 0.34s ease both, ovlArrowPulse 1.9s ease-in-out 0.4s infinite;
+}
+@keyframes ovlArrowPulse {
+  0%, 100% { opacity: 0.82; }
+  50%      { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-view="learn"] .mf-ovl__arrow { animation: mfOvlIn 0.34s ease both; }
+}
