@@ -566,3 +566,56 @@ courseMap/tutorVoice/tutorAudio imports unchanged.
 **Device-verify-only & FIRST PASS:** the exact look — bracket/arrow sizes, label offsets, whether
 anything clips or crowds. All sizes are tunable constants in `learnOverlay.js` (OVL) — tune from
 what you see. The positioning is computed from real geometry, so it should land; polish is the iteration.
+
+## rc2-57 — Stage 1 visual cues extended + gentle fade-in
+- Extended teaching overlay cues to 3 more Stage-1 interactive steps (8 cue steps total):
+  - low-high: "low"/"high" label pills below the low (midi 50) and high (midi 69) clusters
+  - direction: arrow from C (60) up to D (62)
+  - first-scale: "C"/"D"/"E" label pills below the three keys
+- Subtle fade-in: overlay strokes, arrows and labels now ease in over 0.34s (@keyframes mfOvlIn);
+  disabled under prefers-reduced-motion.
+- Same confirmed blind-geometry mechanism (overlayGeometry) Tim verified on-device in rc2-56 — no new pixels hardcoded.
+- CSS-only change to keyboard.css (link token bumped) + foundations cues. learnOverlay.js unchanged (import stays rc2-56).
+- Verified: all JS module-mode parse clean (source + zip), 0-stale zip diff, store 25/25, cues 4/4 (8 cue steps, direction arrow→62, scale 3 labels, 14 steps intact), all protected invariants intact.
+- DEVICE-VERIFY: the look of the new low/high + C-D-E cues and the fade-in timing.
+
+## rc2-58 — Stage 1 visual language completed (meet-keyboard cue)
+- Added the final keyboard-orientation cue: meet-keyboard now shows "low"/"high" label pills under the
+  physical extremes of the shown keyboard (midi 48 lowest, midi 72 highest) — anchoring the low→high span.
+- Deliberately placed at the EXTREMES (whole-instrument orientation) to stay distinct from low-high's
+  cluster pills (listening comparison). Same vocabulary, different placement, different teaching moment.
+- Cue layer now covers 9 of 14 Stage-1 steps. The remaining 5 are intentionally cue-free:
+  bridge-scales / bridge-chords / bridge-sightreading (navigation transitions, no geography),
+  first-chord (harmony — belongs to the First-chords stage), first-reading (staff — Stage 2, deferred).
+- No new fade-in work: rc2-57's mfOvlIn fade applies to these labels automatically.
+- foundations.js (cue) + token bump only. keyboard.css/learnOverlay.js unchanged; foundations intra-module
+  import tokens preserved (tutorVoice rc2-54, tutorAudio rc2-54, courseMap rc2-55, learnOverlay rc2-56).
+- Verified: all JS module-mode parse clean (source + zip), 0-stale zip diff, store 25/25, cues 5/5
+  (9 cue steps, meet-keyboard anchored 48/72, 14 intact), all protected invariants intact. Scales audio untouched.
+- DEVICE-VERIFY: the look of the low/high pills at the keyboard extremes on meet-keyboard.
+
+## rc2-59 — Course flow: masterclass doorways demoted to optional links
+- CORRECTION (Tim): the Course is the lesson, not a launcher. The three bridge steps were rendering a
+  full-width PRIMARY brass bar ("Go to Scales/Chord/Sight-Reading Masterclass") alongside an already-enabled
+  Continue — making the Course feel like a menu that bounces the learner out to separate apps.
+- ROOT CAUSE: bridgeBtn built as `mf__btn mf__btn--primary mf__bridge` (width:100%) + doorway-framed step copy
+  ("step into X Masterclass to build...", titles "Into X Masterclass").
+- FIX (surgical, additive, non-breaking):
+  - bridgeBtn restyled to `mf__bridgelink` — a quiet, centered, secondary text link (champagne, 0.82rem,
+    opacity 0.72, underline on hover/focus). No longer a primary bar.
+  - Labels reworded to optional-practice phrasing: "For deeper scale practice, open Scales Masterclass" /
+    "For extra chord practice, open Chord Masterclass" / "For more reading drills, open Cognitive Sight-Reading".
+  - Step copy reframed so the COURSE owns each topic: eyebrow "Looking ahead"; titles "Scales/Chords/Reading
+    come next"; explain now "<topic> has its own stage further on in the Course. For ... any time, the
+    Masterclass is always open." No "step into" doorway language remains.
+  - Primary action on these steps stays Continue (gateStep enables it immediately for mode:'none').
+- PRESERVED: all masterclass routes/hashes (#/scales, #/chords, #/sightreading) and the click navigation;
+  the in-step demos (B major shape, C major chord, Middle C) still play — the Course demonstrates internally.
+  Dashboard Practice Rooms access unchanged. Engines untouched.
+- Verified: all JS module-mode parse (source + zip), 0-stale zip, store 25/25, integrity 9/9 (14 steps,
+  9 cue steps, 3 routes preserved, labels reworded, no doorway copy, demos intact), all protected invariants
+  intact incl. rc2-57 fade-in. Scales audio untouched.
+- DEVICE-VERIFY: the demoted link's look/placement under Continue, and that the three steps now read as the
+  Course continuing (not a launcher).
+- DEFERRED to a report-first Phase B (Tim to approve): genuine in-course teaching of scales/chords/reading as
+  real interactive lessons reusing the masterclass engines, so bridges become lessons rather than previews.

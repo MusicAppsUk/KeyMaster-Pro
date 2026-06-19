@@ -27,6 +27,7 @@ import { createTutorVoice } from './tutorVoice.js?v=rc2-54';
 import { createTutorAudio } from './tutorAudio.js?v=rc2-54';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-56';
+import { buildScale } from './scaleEngine.js';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
 const pcOf = (m) => ((m % 12) + 12) % 12;
@@ -66,9 +67,16 @@ export function greetingFor(date, name) {
 // RESERVED (scaffold for a later phase, no step uses these yet): an optional
 // `videoCue` / `visualCue` may carry a short, captioned, same-voice demonstration
 // clip or richer visual; rendering is intentionally deferred until that phase.
+// rc2-60: the Course teaches a first scale fragment internally, sourced from the
+// pure scaleEngine (no masterclass flow). B major from B3 = [59,61,63] = B, C#, D#.
+const B_MAJOR_SCALE = buildScale({ letter: 'B' }, 'major');
+const B_FRAGMENT = B_MAJOR_SCALE.midiAt(3).slice(0, 3);
+const B_FRAGMENT_NAMES = B_MAJOR_SCALE.degrees.slice(0, 3).map((d) => d.name);
+
 export const LEARN_STEPS = [
   {
     eyebrow: 'The keyboard', title: 'Meet the keyboard', id: 'meet-keyboard',
+    cues: { labels: [{ midi: 48, text: 'low', place: 'below' }, { midi: 72, text: 'high', place: 'below' }] },
     explain: ['This is the piano keyboard \u2014 one long row of keys. Lower sounds sit to the left, higher to the right.', 'I\u2019ll show you, then you try.'],
     show: { kind: 'keys', midis: [48, 55, 60, 67, 72], caption: 'One row \u2014 low on the left, high on the right.', label: 'Low \u2190                      \u2192 High' },
     demo: [48, 60, 72], demoGap: 0.5,
@@ -192,11 +200,23 @@ export const LEARN_STEPS = [
     hint: 'In order on the white keys: C, then D, then E.',
   },
   {
-    eyebrow: 'Practice room', title: 'Into Scales Masterclass', id: 'bridge-scales',
-    explain: ['You\u2019ve found C and climbed your first steps.', 'When you\u2019re ready, step into Scales Masterclass to build the B major shape.'],
+    eyebrow: 'A new shape', title: 'A taste of B major', id: 'first-b-scale',
+    progressKey: 'scale:b-major-fragment',
+    cues: { labels: B_FRAGMENT.map((m, i) => ({ midi: m, text: B_FRAGMENT_NAMES[i], place: 'below' })) },
+    explain: ['Those notes moved upward. Now hear a different shape \u2014 the opening of B major.', `Copy these three: ${B_FRAGMENT_NAMES.join(', then ')}.`],
+    show: { kind: 'keys', midis: B_FRAGMENT, caption: `${B_FRAGMENT_NAMES.join(', ')} \u2014 the first steps of B major.`, label: B_FRAGMENT_NAMES.join(' \u2013 ') },
+    demo: B_FRAGMENT, demoGap: 0.32,
+    tryPrompt: `Copy the shape: ${B_FRAGMENT_NAMES.join(', then ')}.`, targets: B_FRAGMENT, mode: 'sequence',
+    okMsg: `That\u2019s the opening of B major \u2014 ${B_FRAGMENT_NAMES.join(', ')}.`,
+    hint: 'In order: B, then the black key C#, then the black key D#.',
+    reteach: 'B is the white key just left of the two black keys. Climb: B, C#, D#.',
+  },
+  {
+    eyebrow: 'Looking ahead', title: 'Scales come next', id: 'bridge-scales',
+    explain: ['You found C and climbed your first steps upward \u2014 the beginning of a scale.', 'Scales have their own stage further on in the Course. For deeper practice any time, the Scales Masterclass is always open.'],
     show: { kind: 'keys', midis: [59, 61, 63, 64, 66, 68, 70, 71], caption: 'B major sits naturally under the hand.' },
     demo: [59, 61, 63, 64, 66, 68, 70, 71], demoGap: 0.26, mode: 'none',
-    bridge: { label: 'Go to Scales Masterclass', hash: '#/scales' },
+    bridge: { label: 'For deeper scale practice, open Scales Masterclass', hash: '#/scales' },
   },
   {
     eyebrow: 'Notes together', title: 'First chord idea', id: 'first-chord',
@@ -208,11 +228,11 @@ export const LEARN_STEPS = [
     hint: 'Press the three highlighted keys together: C, E and G.',
   },
   {
-    eyebrow: 'Practice room', title: 'Into Chord Masterclass', id: 'bridge-chords',
-    explain: ['You\u2019ve sounded your first chord.', 'When you\u2019re ready, step into Chord Masterclass to build B major, hand by hand.'],
+    eyebrow: 'Looking ahead', title: 'Chords come next', id: 'bridge-chords',
+    explain: ['You sounded your first chord \u2014 three notes ringing together.', 'Chords have their own stage further on in the Course. For extra practice any time, the Chord Masterclass is always open.'],
     show: { kind: 'keys', midis: [60, 64, 67], caption: 'Chords are built from stacked notes.' },
     demo: [60, 64, 67], demoGap: 0.08, mode: 'none',
-    bridge: { label: 'Go to Chord Masterclass', hash: '#/chords' },
+    bridge: { label: 'For extra chord practice, open Chord Masterclass', hash: '#/chords' },
   },
   {
     eyebrow: 'Reading', title: 'First reading idea', id: 'first-reading',
@@ -221,11 +241,11 @@ export const LEARN_STEPS = [
     demo: [60], demoGap: 0.45, mode: 'none',
   },
   {
-    eyebrow: 'Practice room', title: 'Into Cognitive Sight-Reading', id: 'bridge-sightreading',
-    explain: ['Reading grows from recognising landmarks and patterns.', 'When you\u2019re ready, step into Cognitive Sight-Reading.'],
+    eyebrow: 'Looking ahead', title: 'Reading comes next', id: 'bridge-sightreading',
+    explain: ['Reading grows from recognising landmarks like Middle C, then the patterns around them.', 'Reading has its own stage further on in the Course. For more drills any time, Cognitive Sight-Reading is always open.'],
     show: { kind: 'keys', midis: [60], caption: 'Start reading from Middle C.' },
     demo: [60], demoGap: 0.45, mode: 'none',
-    bridge: { label: 'Go to Cognitive Sight-Reading', hash: '#/sightreading' },
+    bridge: { label: 'For more reading drills, open Cognitive Sight-Reading', hash: '#/sightreading' },
   },
 ];
 
@@ -533,7 +553,7 @@ export default function createView(ctx) {
     root.insertBefore(greetingEl, head);
     root.insertBefore(ctrls, dots);
     root.insertBefore(statusEl, dots);
-    bridgeBtn = el('button', { class: 'mf__btn mf__btn--primary mf__bridge', type: 'button' });
+    bridgeBtn = el('button', { class: 'mf__bridgelink', type: 'button' });
     bridgeBtn.style.display = 'none';
     card.appendChild(bridgeBtn);
 
@@ -568,6 +588,7 @@ export default function createView(ctx) {
     if (learnMode && progress && steps[index]) {
       progress.addToSet('foundationsCompleted', steps[index].title);
       progress.addToSet('learnCompleted', steps[index].title);
+      if (steps[index].progressKey) progress.addToSet('courseConcepts', steps[index].progressKey);
     }
     if (index >= steps.length - 1) { goHome(); return; }
     index += 1; render();
@@ -967,7 +988,8 @@ function injectStyles() {
     .mf__voicestatus { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--ivory-faint, #7E7A72); }
     .mf__keylabel { margin: 0 0 0.35rem; font-size: 0.98rem; font-weight: 650; letter-spacing: 0.02em; color: var(--amber, #E0A94B); }
     .mf__btn.is-gated, .mf__btn:disabled { opacity: 0.45; cursor: not-allowed; }
-    .mf__bridge { margin-top: 1.1rem; width: 100%; }
+    .mf__bridgelink { display: block; width: fit-content; margin: 0.95rem auto 0; padding: 0.3rem 0.4rem; background: none; border: 0; cursor: pointer; font: inherit; font-size: 0.82rem; color: var(--champagne, #E8C57E); opacity: 0.72; }
+    .mf__bridgelink:hover, .mf__bridgelink:focus-visible { opacity: 1; text-decoration: underline; }
     @media (max-width: 520px) {
       .mf__card { padding: 1rem 1rem 1.15rem; }
       .mf__explain p { font-size: 0.98rem; }
