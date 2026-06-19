@@ -69,7 +69,7 @@ function shapeLabel(s) { return `${invLabel(s.inversion).toLowerCase()}, ${handW
 function cap(t) { return t ? t[0].toUpperCase() + t.slice(1) : t; }
 
 export default function createView(ctx) {
-  const { mount, keyboard, viewport, input, evaluator: globalEvaluator } = ctx;
+  const { mount, keyboard, viewport, input, synth, evaluator: globalEvaluator } = ctx;
   const pref = keyboard && keyboard.accidental === 'flat' ? 'flat' : 'sharp';
   const ROOT_NAMES = pref === 'flat' ? FLAT_NAMES : SHARP_NAMES;
   const ROOT_OPTIONS = ROOT_NAMES.map((n, pc) => [String(pc), n]);
@@ -90,6 +90,13 @@ export default function createView(ctx) {
   let expectedSet = new Set();
   let chordMidis = [];
   let wrongThisChord = false;
+  // --- Chord teaching audio (rc2-44) -------------------------------------
+  // Demo/confirm/success notes use the shared synth's existing gentle 'demo'
+  // voice (rc2-41). We keep references to the exact Voice instances we start so
+  // we can release THOSE and never the learner's own held notes (the voice model
+  // stacks one Voice per noteOn, so same-pitch demo + learner notes coexist).
+  const demoVoices = [];               // live teaching-audio voices we own
+  const confirmedSet = new Set();      // notes already given a Follow-Me confirm chime
   let currentStepId = 1;               // for the unified cockpit heading
   let cockpitMode = 'Teach';
   const sel = { rootPc: 11, quality: 'major', inversion: 'root', hand: 'RH' };  // explore
@@ -241,6 +248,7 @@ export default function createView(ctx) {
     chordMidis = chord.midis.slice();
     expectedSet = new Set(chord.midis);
     wrongThisChord = false;
+    confirmedSet.clear();
     const names = chord.midis.map((m) => noteName(m, { accidental: pref }));
     const staffFingers = triadFingering(spec.hand).map((f) => (f === 1 ? 1 : null));
 
@@ -291,6 +299,7 @@ export default function createView(ctx) {
       for (const v of ['target', 'root']) keyboard.clearHighlight(v);
       keyboard.highlight(chordMidis.slice(0, i + 1), 'target');
       ui.status.textContent = `${FINGER_WORD[fng[i]] || 'finger'} on ${names[i]}`;
+      playDemoVoice(chordMidis[i], A.noteVel, A.noteDur);   // hear the note as it is shown
       i++;
       if (i < chordMidis.length) { demoTimer = setTimeout(stepDemo, 650); }
       else {
@@ -301,6 +310,7 @@ export default function createView(ctx) {
           setStatusState('');
           ui.status.textContent = 'That is the shape.';
           ui.prompt.textContent = 'Now you \u2014 follow the notes one at a time.';
+          playDemoRoll(chordMidis, A.chordVel, A.roll, A.chordDur);   // soft rolled full chord
           // Teacher-led: move into Follow Me by itself once the shape has been shown.
           autoOrManualAdvance(() => loadStep(stepIx + 1), PACE.demoToFollow);
         }, 650);
@@ -316,6 +326,13 @@ export default function createView(ctx) {
     const held = evaluator.held || new Set();
     const wrong = [...held].some((m) => !expectedSet.has(m));
     if (wrong) { setStatusState('warn'); ui.status.textContent = 'Check this note - it is not part of the chord. Lift it gently and keep the others down.'; return; }
+    // Gentle per-note confirm: chime each correct chord tone once, as it lands.
+    for (const m of chordMidis) {
+      if (held.has(m) && expectedSet.has(m) && !confirmedSet.has(m)) {
+        confirmedSet.add(m);
+        playDemoVoice(m, A.confirmVel, A.confirmDur);
+      }
+    }
     // ascending expected; find first not yet held
     let nextI = chordMidis.findIndex((m) => !held.has(m));
     const names = chordMidis.map((m) => noteName(m, { accidental: pref }));
@@ -350,6 +367,7 @@ export default function createView(ctx) {
     if (view !== 'course') { ui.status.textContent = PRAISE[praiseIx++ % PRAISE.length]; setStatusState('good'); return; }
     const S = UNIT1.steps[stepIx];
     setStatusState('good');
+    playDemoRoll(chordMidis, A.successVel, A.successRoll, A.successDur);   // calm completion cue
     // Record only playable steps (not the watch-only Teach card).
     if (kind !== 'teach') {
       const rec = shapeRec(subSeq[subIx]);
@@ -550,9 +568,41 @@ export default function createView(ctx) {
   }
 
   function resetStats() { shapeStats.clear(); }
+  /* ---- Chord teaching audio (Phase A + B, rc2-44) -------------------- */
+  // Every sound here is the shared synth's gentle 'demo' voice (rc2-41) at
+  // reduced velocity, started STAGGERED so onsets never stack into a hard block
+  // attack. synth.js is NOT modified — we only call the existing voice — so the
+  // Scales Listen voice, the default learner-play voice, and the shared limiter
+  // are all untouched. We hold each Voice instance we start and release THAT
+  // instance, so teaching audio never cuts the learner's own held notes.
+  const A = {
+    noteVel: 60, noteDur: 0.52,                          // note-by-note build
+    chordVel: 50, chordDur: 1.10, roll: 0.07,            // soft rolled full chord (demo)
+    confirmVel: 46, confirmDur: 0.34,                    // Follow-Me per-note confirm
+    successVel: 46, successDur: 1.20, successRoll: 0.09, // calm completion cue
+  };
+  function audioReady() { return !!(synth && synth.ctx && synth.ctx.state === 'running'); }
+  function playDemoVoice(midi, vel, durSec, atSec) {
+    if (!audioReady()) return;
+    const t = atSec ?? synth.ctx.currentTime;
+    const v = synth.noteOn(midi, vel, t, 'demo');
+    if (v) { demoVoices.push(v); try { v.release(t + durSec); } catch (_) {} }
+  }
+  function playDemoRoll(midis, vel, rollSec, durSec) {
+    if (!audioReady()) return;
+    const t0 = synth.ctx.currentTime;
+    midis.forEach((m, i) => playDemoVoice(m, vel, durSec, t0 + i * rollSec));
+  }
+  function stopDemoAudio() {
+    if (!demoVoices.length) return;
+    const now = synth && synth.ctx ? synth.ctx.currentTime : 0;
+    for (const v of demoVoices.splice(0)) { try { v.release(now); } catch (_) {} }
+  }
+
   function clearAdvance() {
     if (advanceTimer) { clearTimeout(advanceTimer); advanceTimer = null; }
     if (demoTimer) { clearTimeout(demoTimer); demoTimer = null; }
+    stopDemoAudio();
     resumeAction = null;
   }
   function resetPaceState() {
