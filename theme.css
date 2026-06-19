@@ -1060,3 +1060,20 @@ html[data-view="learn"] .mf-ovl__arrow {
 @media (prefers-reduced-motion: reduce) {
   html[data-view="learn"] .mf-ovl__arrow { animation: mfOvlIn 0.34s ease both; }
 }
+
+/* Animated on-keyboard demonstration: each key lights warm as the tutor plays it.
+   Scoped to the Course and applied via the shared highlight API's `hl-demo`
+   variant, so keyboard.css is untouched. Distinct warm amber vs. the emerald
+   "your turn" target, so the learner can tell tutor-playing from their-turn. */
+html[data-view="learn"] .key.hl-demo {
+  box-shadow: inset 0 0 0 2px var(--amber, #E6B45A), 0 0 18px 4px rgba(230, 180, 90, 0.6);
+  z-index: 4;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html[data-view="learn"] .key.hl-demo { animation: mfDemoFlash 0.42s ease-out; }
+}
+@keyframes mfDemoFlash {
+  0%   { box-shadow: inset 0 0 0 2px var(--amber, #E6B45A), 0 0 4px 1px rgba(230, 180, 90, 0.3); }
+  40%  { box-shadow: inset 0 0 0 2px var(--amber, #E6B45A), 0 0 24px 7px rgba(230, 180, 90, 0.78); }
+  100% { box-shadow: inset 0 0 0 2px var(--amber, #E6B45A), 0 0 18px 4px rgba(230, 180, 90, 0.6); }
+}

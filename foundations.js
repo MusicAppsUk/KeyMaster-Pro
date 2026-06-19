@@ -118,12 +118,12 @@ export const LEARN_STEPS = [
     eyebrow: 'Finding your way', title: 'Black-key groups of two', id: 'black-keys-two',
     cues: { brackets: [{ midis: [61, 63], label: 'group of two' }] },
     say: [
-      { text: 'These black keys form groups.', pauseAfter: 520, tone: 'warm' },
-      { text: 'Here is a group of two.', pauseAfter: 520, tone: 'instruct', emphasis: 'two' },
-      { text: 'I\u2019ll play it first.', pauseAfter: 460 },
+      { text: 'A keyboard has white keys and black keys.', pauseAfter: 520, tone: 'warm' },
+      { text: 'The black keys sit in groups of two and three, and that pattern repeats \u2014 it helps you find your place.', pauseAfter: 580 },
+      { text: 'Here is a group of two.', pauseAfter: 460, tone: 'instruct', emphasis: 'two' },
       { text: 'Now you try \u2014 tap either black key.', pauseAfter: 300, tone: 'instruct' },
     ],
-    explain: ['The black keys sit in groups of two and three.', 'Here is a group of two.'],
+    explain: ['A keyboard has white keys and black keys. The black keys sit in groups of two and three, and that pattern repeats across the keyboard \u2014 it helps you find your place.', 'Here is a group of two.'],
     show: { kind: 'keys', midis: [61, 63], caption: 'A group of two black keys.', label: 'group of two' },
     demo: [61, 63], demoGap: 0.4,
     tryPrompt: 'Tap one of the two black keys in the highlighted group.', targets: [61, 63], mode: 'oneof',
@@ -144,7 +144,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [66, 68, 70], caption: 'A group of three black keys.', label: 'group of three' },
     demo: [66, 68, 70], demoGap: 0.34,
     tryPrompt: 'Tap one of the three black keys in the highlighted group.', targets: [66, 68, 70], mode: 'oneof',
-    okMsg: 'Good \u2014 that\u2019s the group of three. Twos and threes together map the whole keyboard.',
+    okMsg: 'Good \u2014 that\u2019s the group of three. The groups of two and three repeat across the keyboard, so you can always find your place.',
     hint: 'The group of three is highlighted \u2014 tap any of them.',
     reteach: 'Look again \u2014 the group of three is the wider cluster. Tap any one of the three.',
   },
@@ -184,20 +184,20 @@ export const LEARN_STEPS = [
     reteach: 'Let\u2019s look again \u2014 Middle C is near the centre, the white key just left of the two black keys there.',
   },
   {
-    eyebrow: 'Where B major begins', title: 'Find B below Middle C', id: 'b-below',
+    eyebrow: 'The note B', title: 'Find B below Middle C', id: 'b-below',
     cues: { arrow: { from: 60, to: 59 }, labels: [{ midi: 60, text: 'C', place: 'below' }, { midi: 59, text: 'B', place: 'below' }] },
     say: [
       { text: 'Start from Middle C.', pauseAfter: 500 },
       { text: 'Step one white key to the left.', pauseAfter: 540, tone: 'warm' },
       { text: 'That note is B \u2014 the B below Middle C.', pauseAfter: 560, emphasis: 'B' },
-      { text: 'This is where B major begins.', pauseAfter: 460, tone: 'warm' },
+      { text: 'Later, this B becomes the starting note of the B major scale.', pauseAfter: 460, tone: 'warm' },
       { text: 'Now you try.', pauseAfter: 300, tone: 'instruct' },
     ],
-    explain: ['Just to the left of Middle C is B \u2014 the B below Middle C.', 'KeyMaster PRO begins with B major around here.'],
+    explain: ['Step one white key to the left of Middle C. That note is B \u2014 the B below Middle C.', 'Later, this B will be the starting note of our B major scale.'],
     show: { kind: 'keys', midis: [59, 60], caption: 'B sits immediately left of Middle C.', label: 'C \u2192 one step left \u2192 B' },
     demo: [60, 59], demoGap: 0.5,
     tryPrompt: 'Press the B just below Middle C \u2014 one white key to the left.', targets: [59], exact: true, mode: 'one',
-    okMsg: 'Exactly \u2014 that\u2019s B, just below Middle C. This is where B major lives.',
+    okMsg: 'Exactly \u2014 that\u2019s B, just below Middle C.',
     hint: 'B is the white key immediately left of Middle C.',
     reteach: 'Let\u2019s look again \u2014 find Middle C first, then step one white key to the left for B.',
   },
@@ -320,6 +320,38 @@ export const LEARN_STEPS = [
   },
 ];
 
+// ---- Course chapters -------------------------------------------------------
+// The Course is one continuous path, but learners orient far better when that
+// path is grouped into named chapters with a sense of "where am I / what's next"
+// (the structure benchmark apps use). This is presentation only — it maps over
+// the existing LEARN_STEPS by id and changes nothing about the steps themselves.
+const COURSE_CHAPTERS = [
+  { name: 'Orientation', ids: ['welcome', 'meet-keyboard', 'low-high'] },
+  { name: 'Landmarks',   ids: ['black-keys-two', 'black-keys-three', 'find-c', 'middle-c', 'b-below'],
+    intro: 'These are the keys that help you find your place on the keyboard.' },
+  { name: 'Melody',      ids: ['direction', 'first-scale', 'first-b-scale', 'bridge-scales'],
+    intro: 'Now we put notes in order, and hear how a melody moves.' },
+  { name: 'Harmony',     ids: ['first-chord', 'bridge-chords'],
+    intro: 'Notes can also sound together \u2014 that\u2019s harmony.' },
+  { name: 'Reading',     ids: ['first-reading', 'bridge-sightreading'],
+    intro: 'Reading music starts from one note you already know.' },
+  { name: 'Rhythm',      ids: ['first-pulse'],
+    intro: 'Music also needs a steady pulse to sit on.' },
+  { name: 'Onward',      ids: ['course-closing'] },
+];
+function chapterFor(stepId) {
+  for (let i = 0; i < COURSE_CHAPTERS.length; i += 1) {
+    const pos = COURSE_CHAPTERS[i].ids.indexOf(stepId);
+    if (pos >= 0) {
+      return {
+        chIdx: i + 1, chTotal: COURSE_CHAPTERS.length, name: COURSE_CHAPTERS[i].name,
+        pos: pos + 1, len: COURSE_CHAPTERS[i].ids.length, intro: COURSE_CHAPTERS[i].intro || null,
+      };
+    }
+  }
+  return null;
+}
+
 /**
  * The foundation pathway. Each card is short by design:
  *   explain   one or two calm sentences (adult, precise, never childish)
@@ -394,11 +426,11 @@ const CARDS = [
     hint: 'Middle C is the highlighted key, near the centre of the keyboard.',
   },
   {
-    eyebrow: 'Where B major begins',
+    eyebrow: 'The note B',
     title: 'B below Middle C',
     explain: [
-      'Just to the left of Middle C is B \u2014 the B below Middle C.',
-      'KeyMaster PRO begins with B major around here, because its shape fits the hand.',
+      'Step one white key to the left of Middle C. That note is B \u2014 the B below Middle C.',
+      'Later, this B will be the starting note of our B major scale.',
     ],
     show: { kind: 'keys', midis: [59, 60], caption: 'B sits immediately left of Middle C.' },
     demo: [59], demoGap: 0.45,
@@ -406,7 +438,7 @@ const CARDS = [
     targets: [59],
     exact: true,
     mode: 'one',
-    okMsg: 'Exactly \u2014 that\u2019s B, just below Middle C. This is where B major lives.',
+    okMsg: 'Exactly \u2014 that\u2019s B, just below Middle C.',
     hint: 'B is the white key immediately to the left of Middle C \u2014 the highlighted key.',
   },
   {
@@ -519,11 +551,39 @@ export default function createView(ctx) {
   // Premium-voice-first layer: plays a licensed audio file per stable line ID when one
   // exists, else falls back to the browser TTS prototype above. No assets bundled yet.
   const audio = learnMode ? createTutorAudio({ voice, lang: 'en-GB' }) : null;
+  // Recorded-human voice pilot (route A). Maps the Course's stable opening line IDs
+  // to local audio files under voice/en-GB/. The architecture (premium file -> TTS
+  // -> captions) already lives in tutorAudio.js; this only supplies the manifest.
+  // GATED OFF until the real recordings exist, so behaviour is unchanged today: with
+  // no pack active, voice-on falls back to TTS and voice-off shows captions. Flip
+  // PREMIUM_VOICE_READY to true once the files in VOICE_SCRIPT.md are recorded and
+  // dropped into voice/en-GB/. (Full script + delivery brief: VOICE_SCRIPT.md.)
+  const PREMIUM_VOICE_READY = false;
+  const OPENING_VOICE_PACK = {
+    'welcome.0': 'welcome-0.ogg',
+    'welcome.1': 'welcome-1.ogg',
+    'welcome.2': 'welcome-2.ogg',
+    'welcome.3': 'welcome-3.ogg',
+    'meet-keyboard.0': 'meet-keyboard-0.ogg',
+    'meet-keyboard.1': 'meet-keyboard-1.ogg',
+    'meet-keyboard.2': 'meet-keyboard-2.ogg',
+    'meet-keyboard.correct': 'meet-keyboard-correct.ogg',
+    'low-high.0': 'low-high-0.ogg',
+    'low-high.1': 'low-high-1.ogg',
+    'low-high.2': 'low-high-2.ogg',
+    'low-high.correct': 'low-high-correct.ogg',
+    'find-c.0': 'find-c-0.ogg',
+    'find-c.1': 'find-c-1.ogg',
+    'find-c.2': 'find-c-2.ogg',
+    'find-c.3': 'find-c-3.ogg',
+    'find-c.correct': 'find-c-correct.ogg',
+  };
+  if (audio && PREMIUM_VOICE_READY) audio.setPack(OPENING_VOICE_PACK, 'en-GB');
   // Visual teaching cues (brackets / pointer / labels), measured from real key geometry.
   const overlay = learnMode ? createLearnOverlay(keyboard) : null;
   // Master Training uses its own curriculum; Foundations keeps the original cards.
   const steps = learnMode ? LEARN_STEPS : CARDS;
-  let voiceOn = true;
+  let voiceOn = false;   // captions-first: browser TTS is opt-in, not the default
   let greeted = false;            // speak the greeting at most once per session
   let suppressSpeakOnce = false;  // first render after greeting must not cut it off
   let pendingGreeting = null;     // greeting+intro awaiting the first user gesture (mobile autoplay)
@@ -540,6 +600,7 @@ export default function createView(ctx) {
 
   // ---- Demonstration audio (shared 'demo' voice; no synth.js change) --------
   const demoVoices = [];     // teaching-audio Voice instances we own
+  const demoSweepTimers = []; // visual highlight-sweep timers (animated guidance)
   let demoToken = 0;         // cancels a pending demo when the card changes
   let demoTimer = null;
   let autoAdvTimer = null;   // learn: auto-advance after a simple completed task
@@ -547,9 +608,26 @@ export default function createView(ctx) {
 
   // Teaching-rhythm pacing (learn). The tutor and keyboard take turns; nothing
   // overlaps and the tutor is never cut off. Calm, human, not sluggish.
-  const PAUSE_AFTER_SPEECH  = 550;   // tutor finishes speaking -> keyboard demonstrates
-  const PAUSE_AFTER_DEMO    = 700;   // demonstration ends -> learner plays / bridge advances
-  const PAUSE_AFTER_SUCCESS = 1500;  // confirmation finishes -> next step (calm beat)
+  const PAUSE_AFTER_SPEECH  = 600;   // voice on: tutor finishes -> keyboard demonstrates
+  const PAUSE_AFTER_DEMO    = 900;   // demonstration ends -> learner plays / bridge advances
+  const PAUSE_AFTER_SUCCESS = 1800;  // voice on: confirmation finishes -> next step (calm beat)
+
+  // Captions-first reading time for a line — used to pace the lesson when the
+  // voice is off (the default), so the learner has time to read before the demo
+  // and to read the confirmation before the Course moves on.
+  function readTimeMs(text) {
+    const n = (typeof text === 'string') ? text.length : 0;
+    return Math.max(2000, Math.min(7000, n * 48 + 900));
+  }
+  function instructionText(c) {
+    if (!c) return '';
+    if (Array.isArray(c.say) && c.say.length) return c.say.map((b) => b.text || '').join(' ');
+    return Array.isArray(c.explain) ? c.explain.join(' ') : '';
+  }
+  // Gap between the spoken/read instruction and the demonstration.
+  function gapBeforeDemo(c) {
+    return (voice && voiceOn) ? PAUSE_AFTER_SPEECH : readTimeMs(instructionText(c));
+  }
 
   // Rough duration of a card's demonstration, so the chain can wait it out.
   function demoDurationMs(c) {
@@ -558,15 +636,15 @@ export default function createView(ctx) {
     const tail = (gap <= 0.12) ? 1.10 : Math.max(0.42, gap * 1.05);
     return Math.round((c.demo.length * gap + tail) * 1000);
   }
-  // Generous upper bound on how long the spoken instruction can take, used only
-  // as a failsafe so a missed end-event can never stall the lesson.
+  // GENEROUS upper bound on spoken-instruction time — only a failsafe so a dropped
+  // end-event can never stall the lesson. Deliberately long so it NEVER pre-empts
+  // real speech (which would make the demo play over the voice).
   function speechBudgetMs(c) {
-    if (!c) return 1200;
-    if (Array.isArray(c.say) && c.say.length) {
-      return c.say.reduce((t, b) => t + ((b.text || '').length * 55) + (b.pauseAfter || 360), 0) + 1500;
-    }
-    const txt = (Array.isArray(c.explain) ? c.explain.join(' ') : '') + (c.tryPrompt || '');
-    return Math.min(12000, txt.length * 55 + 1500);
+    if (!c) return 8000;
+    const base = Array.isArray(c.say) && c.say.length
+      ? c.say.reduce((t, b) => t + ((b.text || '').length * 130) + (b.pauseAfter || 360), 0)
+      : (instructionText(c).length + (c.tryPrompt || '').length) * 130;
+    return Math.min(60000, base + 6000);
   }
   function audioReady() { return !!(synth && synth.ctx && synth.ctx.state === 'running'); }
   function playDemoVoice(midi, vel, durSec, atSec) {
@@ -578,6 +656,8 @@ export default function createView(ctx) {
   function stopDemoAudio() {
     if (demoTimer) { clearTimeout(demoTimer); demoTimer = null; }
     if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
+    if (demoSweepTimers.length) { for (const t of demoSweepTimers.splice(0)) clearTimeout(t); }
+    try { keyboard?.clearHighlight?.('demo'); } catch (_) { /* no-op */ }
     if (!demoVoices.length) return;
     const now = synth && synth.ctx ? synth.ctx.currentTime : 0;
     for (const v of demoVoices.splice(0)) { try { v.release(now); } catch (_) { /* no-op */ } }
@@ -592,6 +672,27 @@ export default function createView(ctx) {
     const dur = isChord ? 1.10 : Math.max(0.42, gap * 1.05);
     const t0 = synth.ctx.currentTime + 0.02;
     c.demo.forEach((m, i) => playDemoVoice(m, vel, dur, t0 + i * gap));
+    sweepDemoVisual(c.demo, gap, isChord, dur);   // light each key as the tutor plays it
+  }
+
+  // Original animated on-keyboard guidance: the keyboard lights each note as the
+  // tutor demonstrates it (the same idea Scales uses for its "Listen" sweep).
+  // Visual only — uses the existing keyboard highlight API with an 'hl-demo'
+  // variant styled in theme.css, so keyboard.css and the audio path are untouched.
+  function sweepDemoVisual(midis, gap, isChord, durSec) {
+    const clearAll = () => { try { keyboard?.clearHighlight?.('demo'); } catch (_) { /* no-op */ } };
+    if (isChord) {
+      demoSweepTimers.push(setTimeout(() => { try { keyboard?.highlight?.(midis, 'demo'); } catch (_) { /* no-op */ } }, 0));
+      demoSweepTimers.push(setTimeout(clearAll, Math.round(durSec * 1000) + 140));
+    } else {
+      midis.forEach((m, i) => {
+        demoSweepTimers.push(setTimeout(() => {
+          clearAll();
+          try { keyboard?.highlight?.([m], 'demo'); } catch (_) { /* no-op */ }
+        }, Math.round(i * gap * 1000)));
+      });
+      demoSweepTimers.push(setTimeout(clearAll, Math.round((midis.length * gap + durSec) * 1000)));
+    }
   }
 
   // ---- DOM scaffold (built once) -------------------------------------------
@@ -684,11 +785,17 @@ export default function createView(ctx) {
     dots.appendChild(d);
   });
 
-  backBtn.addEventListener('click', () => {
-    voice?.unlock?.(); audio?.cancel?.();
+  backBtn.addEventListener('click', () => { voice?.unlock?.(); goBack(); });
+  // Back stays INSIDE the Course (previous step). Only the very first step's Back
+  // is an explicit exit (clearly labelled "Exit Course"). The chrome Back is wired
+  // to this same handler in render(), so neither one ejects the learner mid-Course.
+  function goBack() {
+    audio?.cancel?.();
+    if (autoAdvTimer) { clearTimeout(autoAdvTimer); autoAdvTimer = null; }
+    if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
     if (index === 0) { goHome(); return; }
     index -= 1; render();
-  });
+  }
   function advanceStep() {
     if (autoAdvTimer) { clearTimeout(autoAdvTimer); autoAdvTimer = null; }
     if (learnMode && progress && steps[index]) {
@@ -708,6 +815,16 @@ export default function createView(ctx) {
   replayBtn.addEventListener('click', () => { voice?.unlock?.(); demoCard(steps[index]); });
 
   function goHome() { try { window.location.hash = '#/'; } catch { /* no-op */ } }
+
+  // Has every step in a given chapter been completed? Used to acknowledge a
+  // chapter as a real milestone when the next one opens (journey, not gamification).
+  function chapterComplete(chIdx) {
+    if (!progress || chIdx < 1 || chIdx > COURSE_CHAPTERS.length) return false;
+    return COURSE_CHAPTERS[chIdx - 1].ids.every((id) => {
+      const st = steps.find((s) => s.id === id);
+      return st ? progress.has('foundationsCompleted', st.title) : true;
+    });
+  }
 
   // ---- Learn-mode helpers (unused in plain mode) ----------------------------
   function setVoice(on) {
@@ -761,7 +878,7 @@ export default function createView(ctx) {
     if (progress) progress.reset();
     index = 0;
     greeted = false;
-    setVoice(true);
+    setVoice(false);
     render();
   }
   function speakCard(c, onDone) {
@@ -791,8 +908,20 @@ export default function createView(ctx) {
   function runLearnSequence(c, skipSpeech) {
     const seqToken = demoToken;
     const alive = () => seqToken === demoToken;
+    const interactive = !!(c.mode && c.mode !== 'none' && !c.autoNext);
+    // Captions-first turn-taking: with the voice off (the default) the learner
+    // still needs to know whose turn it is. (When voice is on, the spoken line
+    // carries this, so we stay quiet.) Writes only to the aria-live status line,
+    // so screen-reader users hear the hand-off too.
+    const cue = (text) => {
+      if (!alive() || !interactive || (voice && voiceOn)) return;
+      if (!tryState || tryState.done) return;
+      tryStatus.textContent = text;
+      tryStatus.classList.remove('is-wrong', 'is-done');
+    };
     const afterDemo = () => {
       if (!alive()) return;
+      cue('Your turn.');
       if (c.autoNext) {   // reflective bridge: move along the main path after a calm pause
         if (autoAdvTimer) clearTimeout(autoAdvTimer);
         autoAdvTimer = setTimeout(() => { if (alive()) advanceStep(); }, PAUSE_AFTER_DEMO + 400);
@@ -801,13 +930,14 @@ export default function createView(ctx) {
     const doDemo = () => {
       if (!alive()) return;
       if (c.demo && c.demo.length) {
+        cue('\u266A  Listen \u2014 watch the keyboard.');
         demoCard(c);
         seqTimer = setTimeout(afterDemo, demoDurationMs(c) + PAUSE_AFTER_DEMO);
       } else {
         afterDemo();
       }
     };
-    const afterSpeech = () => { if (alive()) seqTimer = setTimeout(doDemo, PAUSE_AFTER_SPEECH); };
+    const afterSpeech = () => { if (alive()) seqTimer = setTimeout(doDemo, gapBeforeDemo(c)); };
     if (skipSpeech) afterSpeech();
     else speakCard(c, afterSpeech);
   }
@@ -851,13 +981,33 @@ export default function createView(ctx) {
     if (autoAdvTimer) { clearTimeout(autoAdvTimer); autoAdvTimer = null; }
     if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
     demoToken += 1;
+    stopDemoAudio();                                  // stop any in-flight demo + its visual sweep
     keyboard?.clearHighlight?.('target');
+    keyboard?.clearHighlight?.('demo');
     overlay?.clear?.();
 
-    eyebrow.textContent = c.eyebrow;
-    stepLine.textContent = `${learnMode ? 'Lesson' : 'Step'} ${index + 1} of ${steps.length}`;
+    const ch = learnMode ? chapterFor(c.id) : null;
+    if (ch) {
+      // Journey framing: chapter + position. The title carries the specific step.
+      eyebrow.textContent = `Ch ${ch.chIdx} \u00B7 ${ch.name}`;
+      stepLine.textContent = `${ch.pos} of ${ch.len}`;
+    } else {
+      eyebrow.textContent = c.eyebrow;
+      stepLine.textContent = `${learnMode ? 'Lesson' : 'Step'} ${index + 1} of ${steps.length}`;
+    }
     title.textContent = c.title;
-    explain.replaceChildren(...c.explain.map((line) => {
+    // Chapter openings: acknowledge the previous chapter as a real milestone, then
+    // frame the new one — so the Course feels like a guided journey with progress,
+    // without any points/badges gamification.
+    const lead = [];
+    if (ch && ch.pos === 1) {
+      if (ch.chIdx > 1 && chapterComplete(ch.chIdx - 1)) {
+        lead.push(`\u2713 ${COURSE_CHAPTERS[ch.chIdx - 2].name} complete.`);
+      }
+      if (ch.intro) lead.push(ch.intro);
+    }
+    const explainLines = lead.length ? [...lead, ...c.explain] : c.explain;
+    explain.replaceChildren(...explainLines.map((line) => {
       const p = el('p'); p.textContent = line; return p;
     }));
 
@@ -915,7 +1065,7 @@ export default function createView(ctx) {
     }
 
     // Footer
-    backBtn.textContent = index === 0 ? 'Back to dashboard' : 'Back';
+    backBtn.textContent = index === 0 ? 'Exit Course' : 'Back';
     contBtn.textContent = index >= steps.length - 1 ? 'Finish' : 'Continue';
 
     // ---- Learn-mode: gate, bridge, memory, narration, self-centering ----------
@@ -927,6 +1077,9 @@ export default function createView(ctx) {
         else { bridgeBtn.style.display = 'none'; }
       }
       if (progress) progress.set('learnLesson', index);
+      // Own the chrome Back too: it now steps back through the Course instead of
+      // ejecting to the dashboard. (Exit/Home remain available via the chrome.)
+      try { ctx.nav?.set?.([{ label: 'Master Training', go: goBack }, { label: ch ? ch.name : `Lesson ${index + 1}` }]); } catch (_) { /* nav is non-critical */ }
       // Teaching rhythm: tutor speaks, then (after a pause) the keyboard
       // demonstrates. Step 0's speech is covered by the greeting, so we skip
       // straight to the demonstration there.
@@ -943,6 +1096,7 @@ export default function createView(ctx) {
     if (learnMode) { voice?.unlock?.(); speakPending(); }
     const c = steps[index];
     if (!c || !c.mode || c.mode === 'none' || !tryState || tryState.done) return;
+    stopDemoAudio();   // the learner is playing now — never let the demo ring under their input/feedback
     if (learnMode) { stepAttempts += 1; if (stepAttempts >= 3) enableContinue(); }
     const midi = ev.midiNote;
     const pc = pcOf(midi);
@@ -1011,22 +1165,22 @@ export default function createView(ctx) {
     tryStatus.classList.add('is-done');
     if (learnMode) {
       enableContinue();
-      // Advance only AFTER the spoken confirmation finishes, then a calm pause —
-      // so the tutor is never cut off and the lesson doesn't rush. A step can opt
-      // out with hold:true; mode 'none' reading steps never reach here.
-      const scheduleAdvance = () => {
+      // Advance only after the confirmation has been fully delivered, then a calm
+      // pause — never cut off, never rushed. Captions-led uses reading time.
+      const scheduleAdvance = (delay) => {
         if (steps[index] && steps[index].hold) return;
         const at = index;
         if (autoAdvTimer) clearTimeout(autoAdvTimer);
         autoAdvTimer = setTimeout(() => {
           if (index === at && tryState && tryState.done) advanceStep();
-        }, PAUSE_AFTER_SUCCESS);
+        }, delay);
       };
       if (voice && voiceOn) {
         const sid = (steps[index] && steps[index].id) ? steps[index].id : `i${index}`;
-        audio.say(wrongCount > 0 ? `${sid}.correct-retry` : `${sid}.correct`, shown, { onDone: scheduleAdvance });
+        audio.say(wrongCount > 0 ? `${sid}.correct-retry` : `${sid}.correct`, shown,
+          { onDone: () => scheduleAdvance(PAUSE_AFTER_SUCCESS) });
       } else {
-        scheduleAdvance();   // captions-first: a calm pause to read the confirmation
+        scheduleAdvance(readTimeMs(shown));   // captions-first: time to read the confirmation
       }
     }
   }
@@ -1075,7 +1229,7 @@ export default function createView(ctx) {
       if (learnMode) {
         if (progress) {
           const storedVoice = progress.get('voiceOn');
-          voiceOn = (storedVoice === undefined || storedVoice === null) ? true : !!storedVoice;
+          voiceOn = (storedVoice === undefined || storedVoice === null) ? false : !!storedVoice;
           let resume = progress.get('learnLesson');
           if (!Number.isInteger(resume) || resume < 0 || resume > steps.length - 1) resume = 0;
           index = resume;

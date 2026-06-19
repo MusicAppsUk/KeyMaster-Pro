@@ -26,7 +26,7 @@ import { NoteInput } from './noteInput.js';
 import { createMidiEvaluator } from './midiEvaluator.js';
 import { createDevReadout, isDevMode } from './devReadout.js';
 import { createProgressStore } from './progressStore.js';
-import { STAGES, COURSE_NAME } from './courseMap.js?v=rc2-68';
+import { STAGES, COURSE_NAME } from './courseMap.js?v=rc2-73';
 
 // rc2-61: discreet build tag, sourced from this module's own cache token (?v=).
 const BUILD = (() => { try { return new URL(import.meta.url).searchParams.get('v') || 'dev'; } catch { return 'dev'; } })();
@@ -116,29 +116,29 @@ function savePrefs(prefs) {
 const VIEW_REGISTRY = {
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-68',
-    load: () => import('./foundations.js?v=rc2-68'),
+    src: './foundations.js?v=rc2-73',
+    load: () => import('./foundations.js?v=rc2-73'),
   },
   scales: {
     slot: 'scales',
-    src: './scalesMasterclass.js?v=rc2-68',
-    load: () => import('./scalesMasterclass.js?v=rc2-68'),
+    src: './scalesMasterclass.js?v=rc2-73',
+    load: () => import('./scalesMasterclass.js?v=rc2-73'),
   },
   sightreading: {
     slot: 'sightreading',
-    src: './sightReading.js?v=rc2-68',
-    load: () => import('./sightReading.js?v=rc2-68'),
+    src: './sightReading.js?v=rc2-73',
+    load: () => import('./sightReading.js?v=rc2-73'),
   },
   chords: {
     slot: 'chords',
-    src: './chordMasterclass.js?v=rc2-68',
-    load: () => import('./chordMasterclass.js?v=rc2-68'),
+    src: './chordMasterclass.js?v=rc2-73',
+    load: () => import('./chordMasterclass.js?v=rc2-73'),
   },
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-68',
-    load: () => import('./foundations.js?v=rc2-68'),
+    src: './foundations.js?v=rc2-73',
+    load: () => import('./foundations.js?v=rc2-73'),
   },
 };
 
@@ -289,15 +289,27 @@ class KeyMasterApp {
       const greetEl = document.getElementById('fd-greeting');
       if (greetEl) greetEl.textContent = `${part}, ${name}.`;
       const buildEl = document.getElementById('fd-build');
-      if (buildEl) buildEl.textContent = `KeyMaster PRO \u00B7 Visual Draft 4 \u00B7 ${BUILD}`;
+      if (buildEl) buildEl.textContent = `KeyMaster PRO \u00B7 Alpha Candidate \u00B7 ${BUILD}`;
 
       let returning = false;
       try { returning = !!loadPrefs().lastView || this._hasCourseProgress(); } catch { /* ignore */ }
+      // Continuous Learning: name the chapter they'll resume in. Boundary table
+      // mirrors foundations.js COURSE_CHAPTERS (start index -> chapter name).
+      let resumeChapter = null;
+      try {
+        const raw = window.localStorage.getItem('keymaster.progress.v1');
+        const o = raw ? JSON.parse(raw) : null;
+        const li = (o && Number.isFinite(o.learnLesson)) ? o.learnLesson : null;
+        if (li !== null) {
+          const CH = [[0, 'Orientation'], [3, 'Landmarks'], [8, 'Melody'], [12, 'Harmony'], [14, 'Reading'], [16, 'Rhythm'], [17, 'Onward']];
+          for (const [start, nm] of CH) if (li >= start) resumeChapter = nm;
+        }
+      } catch { /* ignore */ }
       const enterEl = document.getElementById('fd-enter');
       const subEl = document.getElementById('fd-sub');
       if (enterEl) enterEl.textContent = returning ? 'Continue the Course' : 'Enter the Course';
       if (subEl) subEl.textContent = returning
-        ? 'Your tutor is ready. Pick up where you left off.'
+        ? (resumeChapter ? `Your tutor is ready. Continue in ${resumeChapter}.` : 'Your tutor is ready. Pick up where you left off.')
         : 'Your tutor is ready.';
 
       const leave = (toHash) => {
@@ -854,7 +866,7 @@ class KeyMasterApp {
   _updateDashboardHero() {
     try {
       const set = (sel, txt) => { const e = this.root.querySelector(sel); if (e && txt != null) e.textContent = txt; };
-      set('#build-tag', `KeyMaster PRO \u00B7 Visual Draft 4 \u00B7 ${BUILD}`);
+      set('#build-tag', `KeyMaster PRO \u00B7 Alpha Candidate \u00B7 ${BUILD}`);
       const lesson = this.progress?.get?.('learnLesson');
       const completed = this.progress?.get?.('learnCompleted');
       const started = (Number.isInteger(lesson) && lesson > 0)
@@ -863,7 +875,7 @@ class KeyMasterApp {
       if (cta) cta.textContent = started ? 'Continue the Course' : 'Start the KeyMaster PRO Course';
       set('#course-hero-title', started ? 'Continue the KeyMaster PRO Course' : COURSE_NAME);
       const stageCount = (Array.isArray(STAGES) && STAGES.length) || 10;
-      import('./foundations.js?v=rc2-68').then((F) => {
+      import('./foundations.js?v=rc2-73').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
         const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
