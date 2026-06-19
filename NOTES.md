@@ -619,3 +619,31 @@ what you see. The positioning is computed from real geometry, so it should land;
   Course continuing (not a launcher).
 - DEFERRED to a report-first Phase B (Tim to approve): genuine in-course teaching of scales/chords/reading as
   real interactive lessons reusing the masterclass engines, so bridges become lessons rather than previews.
+
+## rc2-60 — First in-Course scale fragment (B major), engine-sourced
+- The Course now TEACHES a scale fragment internally instead of pointing out to the masterclass.
+- NEW step `first-b-scale` ("A taste of B major"), inserted between `first-scale` and `bridge-scales`.
+  Flow: demonstrates B, C#, D# → highlights + overlay note pills → tutor voice explains → learner copies
+  (sequence mode) → onNote evaluates → graduated reteach on miss → course-scoped progress → Continue.
+- Fragment is GENERATED from the pure scaleEngine, not hardcoded:
+    const B_MAJOR_SCALE = buildScale({ letter: 'B' }, 'major');
+    const B_FRAGMENT = B_MAJOR_SCALE.midiAt(3).slice(0, 3);            // [59,61,63] = B, C#, D#
+    const B_FRAGMENT_NAMES = B_MAJOR_SCALE.degrees.slice(0,3).map(d=>d.name); // ['B','C#','D#']
+  Register [59,61,63] matches what bridge-scales already shows; B-register safety inherited from the
+  single-source engine (C4=60). New import: `import { buildScale } from './scaleEngine.js'` (untokenized —
+  stable pure module; pulls notes.js, also pure).
+- Evaluation: existing Course sequence-mode onNote (pitch-class match, advances on B→C#→D#, resets+hints on
+  miss). NO masterclass flow controllers, NO evaluator-controller imports.
+- Progress: generic new hook — any step with a `progressKey` records into the course-scoped set
+  `courseConcepts`. This step writes `scale:b-major-fragment`. Separate from masterclass scale progress.
+- Fingering: NO finger numbers shown (per Tim — doctrine review pending).
+- Step count 14 → 15; cue steps 9 → 10. Resume index is clamped (safe across the insert).
+- PRESERVED: rc2-59 secondary masterclass link (untouched, still #/scales), rc2-56/57 overlay+fade-in,
+  rc2-54 beats, rc2-53 premium-voice arch, rc2-48 progress wiring, /learn, Continue Learning CTA, Tim
+  greeting, progressStore, Scales audio (scaleEngine read-only, unmodified 140 lines), Chord voice/audio,
+  Foundations, Sight-Reading, MIDI routing, NoteInput, Event Bridge, route diagnostics, RC2 invariants.
+- Verified: all JS module-mode parse (source + zip), 0-stale zip, store 25/25, integrity 10/10, all
+  protected invariants intact. scalesMasterclass/chordMasterclass/sightReading untouched.
+- DEVICE-VERIFY: (1) the new step plays/teaches B-C#-D# and accepts the copied sequence; (2) FIRST cue case
+  with label pills under BLACK keys (C#, D#) — confirm the pill placement reads cleanly under the shorter
+  black keys; (3) tutor voice phrasing of the new lines.

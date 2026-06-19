@@ -43,7 +43,7 @@ const B_MAJOR_SHARPS = [66, 61, 68, 63, 70];
 // learning memory ONLY and must never carry personal data, so the name is NOT
 // persisted. Production will read a preferred display name from a profile hook
 // (welcomeExperience.getDisplayName is the natural future home).
-const LEARNER_NAME = 'Tim';
+export const LEARNER_NAME = 'Tim';
 
 // Time-of-day greeting from local device time. Pure + exported for headless tests.
 export function greetingFor(date, name) {

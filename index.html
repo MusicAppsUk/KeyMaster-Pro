@@ -35,9 +35,9 @@
   />
 
   <!-- Separated styling layers (theme tokens first, then component sheets). -->
-  <link rel="stylesheet" href="theme.css?v=rc2-60" />
-  <link rel="stylesheet" href="keyboard.css?v=rc2-60" />
-  <link rel="stylesheet" href="notation.css?v=rc2-60" />
+  <link rel="stylesheet" href="theme.css?v=rc2-61" />
+  <link rel="stylesheet" href="keyboard.css?v=rc2-61" />
+  <link rel="stylesheet" href="notation.css?v=rc2-61" />
 
   <!-- The only inline style: hide the shell until the app flips data-boot,
        preventing an unstyled flash before the module graph resolves. -->
@@ -94,38 +94,22 @@
       <section
         class="view view--launcher is-active"
         data-view="home"
-        aria-labelledby="launcher-heading"
+        aria-labelledby="course-hero-title"
       >
         <div class="dashboard">
-          <header class="dashboard__head">
-            <p class="dashboard__eyebrow">KeyMaster PRO</p>
-            <h1 id="launcher-heading" class="dashboard__title">The Curriculum</h1>
-            <p class="dashboard__sub">Process music like an expert reader and performer.</p>
-            <div class="dashboard__hero" style="margin:1.1rem 0 0.3rem;">
-              <p style="margin:0 0 0.5rem;font-size:0.78rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--champagne,#E8C57E);">The KeyMaster PRO Course</p>
-              <a id="learn-cta" href="#/learn" style="display:inline-block;padding:0.95rem 2rem;border-radius:13px;background:var(--brass,#C99A4B);color:#1a1206;font-weight:700;text-decoration:none;font-size:1.12rem;">Start Learning</a>
-            </div>
-            <p class="dashboard__hint" style="margin:0.55rem 0 0;font-size:0.9rem;color:var(--ivory-dim,#B9B2A6);">Learn piano step by step with the tutor, who takes you into Scales, Chords, and Sight-Reading when you're ready. <a href="#/foundations" style="color:var(--champagne,#E8C57E);">Musical Foundations</a> is also available on its own.</p>
-          </header>
+          <div class="course-hero">
+            <p class="course-hero__greeting" id="hero-greeting">Welcome.</p>
+            <p class="course-hero__eyebrow">The KeyMaster PRO Course</p>
+            <h1 class="course-hero__title" id="course-hero-title">The KeyMaster PRO Course</h1>
+            <p class="course-hero__next" id="hero-next">Stage 1 · Your first step.</p>
+            <a class="course-hero__cta" id="learn-cta" href="#/learn">Start the KeyMaster PRO Course</a>
+            <p class="course-hero__progress" id="hero-progress"></p>
+          </div>
 
-          <h2 class="launcher__section" style="margin:1.7rem 0 0.2rem;font-size:0.82rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--ivory-faint,#7E7A72);">The course</h2>
-          <p style="margin:0 0 0.7rem;font-size:0.9rem;color:var(--ivory-dim,#B9B2A6);">Ten stages, from your first keys to a developing musician. The tutor guides you through them in order — you only ever start where you are.</p>
-          <ol class="course-path" style="list-style:none;margin:0 0 0.4rem;padding:0;display:flex;flex-direction:column;gap:0.4rem;">
-            <li style="display:flex;justify-content:space-between;align-items:center;gap:0.8rem;padding:0.6rem 0.85rem;border-radius:10px;background:rgba(201,154,75,0.14);border:1px solid rgba(201,154,75,0.4);"><span style="color:var(--ivory,#EDE7DB);font-weight:600;">1 · Foundations of the keyboard</span><span style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--champagne,#E8C57E);">Now</span></li>
-            <li style="display:flex;justify-content:space-between;align-items:center;gap:0.8rem;padding:0.55rem 0.85rem;border-radius:10px;background:rgba(255,255,255,0.03);"><span style="color:var(--ivory-dim,#B9B2A6);">2 · First reading</span><span style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ivory-faint,#7E7A72);">Soon</span></li>
-            <li style="display:flex;justify-content:space-between;align-items:center;gap:0.8rem;padding:0.55rem 0.85rem;border-radius:10px;background:rgba(255,255,255,0.03);"><span style="color:var(--ivory-dim,#B9B2A6);">3 · First technique</span><span style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ivory-faint,#7E7A72);">Soon</span></li>
-            <li style="display:flex;justify-content:space-between;align-items:center;gap:0.8rem;padding:0.55rem 0.85rem;border-radius:10px;background:rgba(255,255,255,0.03);"><span style="color:var(--ivory-dim,#B9B2A6);">4 · First scales</span><span style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ivory-faint,#7E7A72);">Soon</span></li>
-            <li style="display:flex;justify-content:space-between;align-items:center;gap:0.8rem;padding:0.55rem 0.85rem;border-radius:10px;background:rgba(255,255,255,0.03);"><span style="color:var(--ivory-dim,#B9B2A6);">5 · First chords and harmony</span><span style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ivory-faint,#7E7A72);">Soon</span></li>
-            <li style="display:flex;justify-content:space-between;align-items:center;gap:0.8rem;padding:0.55rem 0.85rem;border-radius:10px;background:rgba(255,255,255,0.03);"><span style="color:var(--ivory-dim,#B9B2A6);">6 · Rhythm and pulse</span><span style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ivory-faint,#7E7A72);">Soon</span></li>
-            <li style="display:flex;justify-content:space-between;align-items:center;gap:0.8rem;padding:0.55rem 0.85rem;border-radius:10px;background:rgba(255,255,255,0.03);"><span style="color:var(--ivory-dim,#B9B2A6);">7 · Sight-reading fluency</span><span style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ivory-faint,#7E7A72);">Soon</span></li>
-            <li style="display:flex;justify-content:space-between;align-items:center;gap:0.8rem;padding:0.55rem 0.85rem;border-radius:10px;background:rgba(255,255,255,0.03);"><span style="color:var(--ivory-dim,#B9B2A6);">8 · Arpeggios and patterns</span><span style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ivory-faint,#7E7A72);">Soon</span></li>
-            <li style="display:flex;justify-content:space-between;align-items:center;gap:0.8rem;padding:0.55rem 0.85rem;border-radius:10px;background:rgba(255,255,255,0.03);"><span style="color:var(--ivory-dim,#B9B2A6);">9 · Applied music</span><span style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ivory-faint,#7E7A72);">Soon</span></li>
-            <li style="display:flex;justify-content:space-between;align-items:center;gap:0.8rem;padding:0.55rem 0.85rem;border-radius:10px;background:rgba(255,255,255,0.03);"><span style="color:var(--ivory-dim,#B9B2A6);">10 · Developing musician</span><span style="font-size:0.72rem;letter-spacing:0.08em;text-transform:uppercase;color:var(--ivory-faint,#7E7A72);">Soon</span></li>
-          </ol>
-
-          <h2 class="launcher__section" style="margin:1.7rem 0 0.2rem;font-size:0.82rem;letter-spacing:0.14em;text-transform:uppercase;color:var(--ivory-faint,#7E7A72);">Practice rooms</h2>
-          <p style="margin:0 0 0.9rem;font-size:0.9rem;color:var(--ivory-dim,#B9B2A6);">Specialist rooms — the tutor guides you into these at the right time, or you can enter one directly.</p>
-          <nav class="launcher" aria-label="Practice rooms">
+          <section class="practice-rooms" aria-labelledby="practice-rooms-heading">
+            <h2 class="practice-rooms__heading" id="practice-rooms-heading">Practice Rooms</h2>
+            <p class="practice-rooms__sub">Optional specialist rooms. The tutor guides you in at the right time — or step into one directly.</p>
+            <nav class="launcher" aria-label="Practice rooms">
             <a class="vector vector--scales" href="#/scales">
               <span class="vector__status vector__status--active">Active</span>
               <span class="vector__eyebrow">01 — Technique</span>
@@ -171,16 +155,9 @@
               <span class="vector__lock" aria-hidden="true">🔒</span>
             </div>
           </nav>
+          </section>
 
-          <ol class="launcher__flow" aria-label="Curriculum flow">
-            <li>Foundations</li>
-            <li>Scales</li>
-            <li>Sight-Reading</li>
-            <li>Chords</li>
-            <li>Arpeggios</li>
-            <li>Pattern Reading</li>
-            <li>Organ / Pedalboard</li>
-          </ol>
+          <p class="build-tag" id="build-tag">KeyMaster PRO</p>
         </div>
       </section>
 
@@ -261,6 +238,6 @@
 
   <!-- Single module entry point. Absolute path so it resolves regardless of
        the route in the hash. -->
-  <script type="module" src="app.js?v=rc2-60"></script>
+  <script type="module" src="app.js?v=rc2-61"></script>
 </body>
 </html>

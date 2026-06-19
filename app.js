@@ -26,6 +26,10 @@ import { NoteInput } from './noteInput.js';
 import { createMidiEvaluator } from './midiEvaluator.js';
 import { createDevReadout, isDevMode } from './devReadout.js';
 import { createProgressStore } from './progressStore.js';
+import { STAGES, COURSE_NAME } from './courseMap.js?v=rc2-61';
+
+// rc2-61: discreet build tag, sourced from this module's own cache token (?v=).
+const BUILD = (() => { try { return new URL(import.meta.url).searchParams.get('v') || 'dev'; } catch { return 'dev'; } })();
 
 /* ===========================================================================
  * 1. Observable store
@@ -112,29 +116,29 @@ function savePrefs(prefs) {
 const VIEW_REGISTRY = {
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-60',
-    load: () => import('./foundations.js?v=rc2-60'),
+    src: './foundations.js?v=rc2-61',
+    load: () => import('./foundations.js?v=rc2-61'),
   },
   scales: {
     slot: 'scales',
-    src: './scalesMasterclass.js?v=rc2-60',
-    load: () => import('./scalesMasterclass.js?v=rc2-60'),
+    src: './scalesMasterclass.js?v=rc2-61',
+    load: () => import('./scalesMasterclass.js?v=rc2-61'),
   },
   sightreading: {
     slot: 'sightreading',
-    src: './sightReading.js?v=rc2-60',
-    load: () => import('./sightReading.js?v=rc2-60'),
+    src: './sightReading.js?v=rc2-61',
+    load: () => import('./sightReading.js?v=rc2-61'),
   },
   chords: {
     slot: 'chords',
-    src: './chordMasterclass.js?v=rc2-60',
-    load: () => import('./chordMasterclass.js?v=rc2-60'),
+    src: './chordMasterclass.js?v=rc2-61',
+    load: () => import('./chordMasterclass.js?v=rc2-61'),
   },
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-60',
-    load: () => import('./foundations.js?v=rc2-60'),
+    src: './foundations.js?v=rc2-61',
+    load: () => import('./foundations.js?v=rc2-61'),
   },
 };
 
@@ -712,7 +716,7 @@ class KeyMasterApp {
       else this._setModuleTrail([{ label: MODULE_NAME[viewId] ?? viewId }]);
     } catch (err) { console.info('[KeyMaster] breadcrumb seed skipped:', err?.message ?? err); }
 
-    if (viewId === 'home') this._updateLearnCta();
+    if (viewId === 'home') this._updateDashboardHero();
     if (viewId !== 'home') await this._enterView(viewId);
   }
 
@@ -775,23 +779,37 @@ class KeyMasterApp {
   }
 
   /**
-   * Update the dashboard's primary call-to-action from learning memory:
-   * "Start Learning" when nothing's begun, otherwise "Continue Learning · Lesson N".
-   * Fully isolated — any failure leaves the static label untouched.
+   * Fill the dashboard hero from learning memory + the existing local-time greeting.
+   * The Course is the centre: greeting, course title, next step, one primary action,
+   * subtle progress, and a discreet build tag. Fully isolated — any failure leaves the
+   * static fallbacks in place. Foundations is imported lazily (non-blocking) so the
+   * dashboard never eager-loads the lesson chain.
    */
-  _updateLearnCta() {
+  _updateDashboardHero() {
     try {
-      const cta = this.root.querySelector('#learn-cta');
-      if (!cta) return;
+      const set = (sel, txt) => { const e = this.root.querySelector(sel); if (e && txt != null) e.textContent = txt; };
+      set('#build-tag', `KeyMaster PRO \u00B7 ${BUILD}`);
       const lesson = this.progress?.get?.('learnLesson');
       const completed = this.progress?.get?.('learnCompleted');
       const started = (Number.isInteger(lesson) && lesson > 0)
         || (Array.isArray(completed) && completed.length > 0);
-      cta.textContent = started
-        ? `Continue Learning \u00B7 Lesson ${(lesson || 0) + 1}`
-        : 'Start Learning';
+      const cta = this.root.querySelector('#learn-cta');
+      if (cta) cta.textContent = started ? 'Continue the Course' : 'Start the KeyMaster PRO Course';
+      set('#course-hero-title', started ? 'Continue the KeyMaster PRO Course' : COURSE_NAME);
+      const stageCount = (Array.isArray(STAGES) && STAGES.length) || 10;
+      import('./foundations.js?v=rc2-61').then((F) => {
+        const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
+        set('#hero-greeting', F.greetingFor(new Date(), name));
+        const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
+        let idx = Number.isInteger(lesson) ? lesson : 0;
+        if (idx < 0 || idx > steps.length - 1) idx = 0;
+        const stepTitle = (steps[idx] && steps[idx].title) ? steps[idx].title : '';
+        const lead = started ? 'Your next step' : 'Your first step';
+        set('#hero-next', stepTitle ? `Stage 1 \u00B7 ${lead}: ${stepTitle}` : `Stage 1 \u00B7 ${lead}.`);
+        set('#hero-progress', steps.length ? `Lesson ${idx + 1} of ${steps.length} \u00B7 Stage 1 of ${stageCount}` : '');
+      }).catch((err) => { console.info('[KeyMaster] hero enrich skipped:', err?.message ?? err); });
     } catch (err) {
-      console.info('[KeyMaster] learn CTA update skipped:', err?.message ?? err);
+      console.info('[KeyMaster] dashboard hero update skipped:', err?.message ?? err);
     }
   }
 }
