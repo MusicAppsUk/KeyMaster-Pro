@@ -25,6 +25,8 @@
 
 import { createTutorVoice } from './tutorVoice.js?v=rc2-54';
 import { createTutorAudio } from './tutorAudio.js?v=rc2-54';
+import { STAGES } from './courseMap.js?v=rc2-55';
+import { createLearnOverlay } from './learnOverlay.js?v=rc2-56';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
 const pcOf = (m) => ((m % 12) + 12) % 12;
@@ -83,6 +85,7 @@ export const LEARN_STEPS = [
   },
   {
     eyebrow: 'Finding your way', title: 'Black-key groups of two', id: 'black-keys-two',
+    cues: { brackets: [{ midis: [61, 63], label: 'group of two' }] },
     say: [
       { text: 'These black keys form groups.', pauseAfter: 520, tone: 'warm' },
       { text: 'Here is a group of two.', pauseAfter: 520, tone: 'instruct', emphasis: 'two' },
@@ -99,6 +102,7 @@ export const LEARN_STEPS = [
   },
   {
     eyebrow: 'Finding your way', title: 'Black-key groups of three', id: 'black-keys-three',
+    cues: { brackets: [{ midis: [66, 68, 70], label: 'group of three' }] },
     say: [
       { text: 'Next to the twos are groups of three.', pauseAfter: 520, tone: 'warm' },
       { text: 'Here is a group of three.', pauseAfter: 520, tone: 'instruct', emphasis: 'three' },
@@ -115,6 +119,7 @@ export const LEARN_STEPS = [
   },
   {
     eyebrow: 'The landmark C', title: 'Find C', id: 'find-c',
+    cues: { arrow: { from: [61, 63], to: 60 }, labels: [{ midi: 60, text: 'C', place: 'below' }] },
     say: [
       { text: 'Find a group of two black keys.', pauseAfter: 520 },
       { text: 'The white key just to their left is C.', pauseAfter: 560, tone: 'warm', emphasis: 'C' },
@@ -131,6 +136,7 @@ export const LEARN_STEPS = [
   },
   {
     eyebrow: 'Your home note', title: 'Find exact Middle C', id: 'middle-c',
+    cues: { arrow: { from: [61, 63], to: 60 }, labels: [{ midi: 60, text: 'Middle C', place: 'below' }] },
     say: [
       { text: 'Look near the centre of the keyboard.', pauseAfter: 520 },
       { text: 'Find the two black keys there.', pauseAfter: 520 },
@@ -148,6 +154,7 @@ export const LEARN_STEPS = [
   },
   {
     eyebrow: 'Where B major begins', title: 'Find B below Middle C', id: 'b-below',
+    cues: { arrow: { from: 60, to: 59 }, labels: [{ midi: 60, text: 'C', place: 'below' }, { midi: 59, text: 'B', place: 'below' }] },
     say: [
       { text: 'Start from Middle C.', pauseAfter: 500 },
       { text: 'Step one white key to the left.', pauseAfter: 540, tone: 'warm' },
@@ -418,6 +425,8 @@ export default function createView(ctx) {
   // Premium-voice-first layer: plays a licensed audio file per stable line ID when one
   // exists, else falls back to the browser TTS prototype above. No assets bundled yet.
   const audio = learnMode ? createTutorAudio({ voice, lang: 'en-GB' }) : null;
+  // Visual teaching cues (brackets / pointer / labels), measured from real key geometry.
+  const overlay = learnMode ? createLearnOverlay(keyboard) : null;
   // Master Training uses its own curriculum; Foundations keeps the original cards.
   const steps = learnMode ? LEARN_STEPS : CARDS;
   let voiceOn = true;
@@ -530,6 +539,7 @@ export default function createView(ctx) {
     pauseBtn.addEventListener('click', () => { audio?.cancel?.(); stopDemoAudio(); stopPulse(); });
     repeatBtn.addEventListener('click', () => { voice?.unlock?.(); demoCard(steps[index]); speakCard(steps[index]); });
     resetBtn.addEventListener('click', onReset);
+    if (typeof window !== 'undefined') window.addEventListener('resize', () => overlay?.reflow?.());
     bridgeBtn.addEventListener('click', () => {
       voice?.unlock?.();
       const b = steps[index]?.bridge;
@@ -656,6 +666,7 @@ export default function createView(ctx) {
     stopDemoAudio();
     demoToken += 1;
     keyboard?.clearHighlight?.('target');
+    overlay?.clear?.();
 
     eyebrow.textContent = c.eyebrow;
     stepLine.textContent = `${learnMode ? 'Lesson' : 'Step'} ${index + 1} of ${steps.length}`;
@@ -681,6 +692,7 @@ export default function createView(ctx) {
     if (s.kind === 'keys' && Array.isArray(s.midis)) {
       keyboard?.highlight?.(s.midis, 'target');
       viewport?.frame?.(s.midis);
+      overlay?.render?.(c.cues || null);
     } else if (s.kind === 'sharps' && Array.isArray(s.midis)) {
       keyboard?.highlight?.(s.midis, 'target');
       viewport?.frame?.(s.midis);
@@ -846,6 +858,9 @@ export default function createView(ctx) {
           let resume = progress.get('learnLesson');
           if (!Number.isInteger(resume) || resume < 0 || resume > steps.length - 1) resume = 0;
           index = resume;
+          // The Course is the centre: record which stage this path represents (Stage 1
+          // = Foundations of the keyboard) so the dashboard/course can resume truthfully.
+          if (learnMode) progress.set('courseStage', STAGES[0].id);
         }
         setVoice(voiceOn);
         // Warm opener + the existing time-of-day greeting. greetingFor's logic is
@@ -884,6 +899,7 @@ export default function createView(ctx) {
       stopPulse();
       stopDemoAudio();
       keyboard?.clearHighlight?.('target');
+      overlay?.destroy?.();
     },
   };
 }

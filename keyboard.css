@@ -320,3 +320,15 @@
 @media (prefers-reduced-motion: reduce) {
   [data-view="learn"] .key.hl-target::after { animation: none; }
 }
+
+/* The KeyMaster PRO Course — visual teaching cues (learn overlay). Created only in
+   learn mode (foundations.js), measured from real key geometry, never blocks input. */
+.mf-ovl { position: absolute; inset: 0; pointer-events: none; z-index: 6; overflow: visible; }
+.mf-ovl__svg { position: absolute; inset: 0; overflow: visible; }
+.mf-ovl__stroke { fill: none; stroke: var(--champagne, #E8C57E); stroke-width: 2; stroke-linecap: round; opacity: 0.9; }
+.mf-ovl__arrow { fill: none; stroke: var(--champagne, #E8C57E); stroke-width: 2; stroke-linecap: round; opacity: 0.95; }
+.mf-ovl__label {
+  position: absolute; padding: 2px 9px; font-size: 0.72rem; font-weight: 650;
+  color: #1a1206; background: var(--champagne, #E8C57E); border-radius: 7px;
+  white-space: nowrap; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.32);
+}

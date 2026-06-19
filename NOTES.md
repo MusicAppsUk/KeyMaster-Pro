@@ -520,3 +520,49 @@ teaches. True inflection/emphasis is a PREMIUM-audio capability (browser TTS ign
 Tokens rc2-53 → rc2-54; foundations' tutorVoice + tutorAudio imports both → rc2-54 (both changed);
 chordVoice untokenized import intact. **Device-verify-only:** how the paced beats actually sound
 on the tablet (the honest gain here is pacing, not true inflection — that waits for premium audio).
+
+## rc2-55 — The KeyMaster PRO Course: stage backbone + course identity
+
+Tim named the product "The KeyMaster PRO Course" and asked for the long-form course architecture
+(Stages 1–10) with the Course as the centre. Voice stays as the rc2-54 prototype for now (premium
+slots in later via the rc2-53/54 pack mechanism once provider/script are chosen).
+
+- **NEW `courseMap.js`** — canonical 10-stage map (data only). Stage 1 'Foundations of the
+  keyboard' is LIVE (its `units` map to the real LEARN_STEPS ids). Stages 2–10 ('First reading' …
+  'Developing musician') are scaffolded with real titles + summaries and status 'planned' — shape
+  and direction with NO weak filler. Helpers `currentStage(progress)` / `stageById`. Unit-tested 8/8.
+- **Course identity on the dashboard** — hero renamed to "The KeyMaster PRO Course"; a static
+  "The course" section lists all ten stages (Stage 1 = Now, 2–10 = Soon), mirroring the existing
+  static launcher pattern. Practice rooms section + Foundations-absorbed unchanged.
+- **progressStore** records `courseStage` (=1) on learn entry via the existing key-value API —
+  no store redesign. Stage-completion ('stagesCompleted') is read by currentStage for the future.
+
+The working lessons are untouched (LEARN_STEPS 14 intact, behaviour identical). Stages 2–10 gain
+real interactive lessons only when their teaching + any device-tuned visuals are ready — not built
+blind. Tokens rc2-54 → rc2-55; voice imports stay rc2-54 (unchanged); courseMap imported at rc2-55.
+**Device-verify-only:** the new dashboard "The course" section rendering on the tablet.
+
+## rc2-56 — Visual teaching cues: brackets + pointer + labels (geography lessons)
+
+Tim confirmed on device that self-centering works and the amber glow lands on the target key —
+so the keyboard's coordinate system is trustworthy, and the deferred SVG cue layer is now safe to build.
+
+- **NEW `learnOverlay.js`** — draws brackets around black-key groups, a pointer/arrow from one
+  key to another, and small amber labels. It hardcodes NO pixels: every shape is computed from
+  the REAL rendered key geometry (`getBoundingClientRect` relative to its own layer). The layer
+  lives inside `.piano` (position:relative; self-centres via CSS transform), so keys and overlay
+  translate together — positions stay correct even mid-centring-animation and at any width. The
+  geometry (`overlayGeometry`) is a PURE function, unit-tested headlessly (group spans, arrow
+  endpoints, label anchoring, unresolved-midi safety); the DOM drawing is thin and device-verified.
+  Never blocks input (pointer-events:none); only created in learn mode.
+- **Cues on the five geography steps:** black-keys-two/three → bracket + "group of two/three";
+  find-c → arrow from the two black keys to C + "C" label; middle-c → arrow + "Middle C" label;
+  b-below → arrow C→B + "C"/"B" labels. Cleared every render; rebuilt on resize; destroyed on exit.
+- **CSS** (`.mf-ovl*` in keyboard.css): thin champagne strokes, small amber label pills.
+
+Plain /foundations untouched (overlay learn-gated; cues only in LEARN_STEPS; CARDS clean).
+Tokens rc2-55 → rc2-56; keyboard.css + foundations bumped; learnOverlay imported at rc2-56;
+courseMap/tutorVoice/tutorAudio imports unchanged.
+**Device-verify-only & FIRST PASS:** the exact look — bracket/arrow sizes, label offsets, whether
+anything clips or crowds. All sizes are tunable constants in `learnOverlay.js` (OVL) — tune from
+what you see. The positioning is computed from real geometry, so it should land; polish is the iteration.
