@@ -23,11 +23,48 @@
 // ("Exactly — that is Middle C"), wrong notes are named and gently guided, and
 // only genuine free-exploration is acknowledged as exploration.
 
+import { createTutorVoice } from './tutorVoice.js';
+
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
 const pcOf = (m) => ((m % 12) + 12) % 12;
 
 // Sharp keys that spell B major's key signature (F# C# G# D# A#), near the centre.
 const B_MAJOR_SHARPS = [66, 61, 68, 63, 70];
+
+// ---- Master Training / Learn-mode additions (active only when ctx.route === 'learn').
+// Plain Musical Foundations (/foundations) never constructs any of the elements or
+// runs any of the behaviour below, so its rc2-45 experience is unchanged. ---------
+
+// Test-only personalisation. Hardcoded on purpose: progressStore holds musical-
+// learning memory ONLY and must never carry personal data, so the name is NOT
+// persisted. Production will read a preferred display name from a profile hook
+// (welcomeExperience.getDisplayName is the natural future home).
+const LEARNER_NAME = 'Tim';
+
+// Time-of-day greeting from local device time. Pure + exported for headless tests.
+export function greetingFor(date, name) {
+  const h = (date && typeof date.getHours === 'function') ? date.getHours() : 12;
+  let part;
+  if (h >= 5 && h < 12) part = 'Good morning';
+  else if (h >= 12 && h < 18) part = 'Good afternoon';
+  else part = 'Good evening';                       // 18:00–04:59
+  return name ? `${part}, ${name}.` : `${part}.`;
+}
+
+// Learn-mode bridges into the specialist practice rooms, keyed by the (stable) card
+// title so the shared CARDS array is never mutated.
+const LEARN_BRIDGES = {
+  'What is a scale?': {
+    label: 'Go to Scales Masterclass',
+    hash: '#/scales',
+    line: 'You now know the starting area. When you are ready, enter Scales Masterclass and begin the B major shape.',
+  },
+  'What is a chord?': {
+    label: 'Go to Chord Masterclass',
+    hash: '#/chords',
+    line: 'That is a chord. When you are ready, enter Chord Masterclass to build B major, hand by hand.',
+  },
+};
 
 /**
  * The foundation pathway. Each card is short by design:
@@ -218,6 +255,15 @@ const CARDS = [
 export default function createView(ctx) {
   const { mount, keyboard, viewport, input, synth } = ctx;
 
+  // Master Training / Learn mode is enabled purely by the route id; /foundations
+  // stays in plain mode with every learn-only branch below skipped.
+  const learnMode = ctx.route === 'learn';
+  const progress = (learnMode && ctx.progress) ? ctx.progress : null;
+  const voice = learnMode ? createTutorVoice() : null;
+  let voiceOn = true;
+  let greeted = false;            // speak the greeting at most once per session
+  let suppressSpeakOnce = false;  // first render after greeting must not cut it off
+
   injectStyles();
 
   let index = 0;
@@ -290,6 +336,30 @@ export default function createView(ctx) {
   root.append(head, dots, card, footer);
   mount.replaceChildren(root);
 
+  // ---- Learn-mode UI (greeting, voice toggle, reset, bridge) — built only in
+  // Master Training; plain Foundations never creates these. --------------------
+  let greetingEl = null, voiceBtn = null, bridgeBtn = null;
+  if (learnMode) {
+    greetingEl = el('p', { class: 'mf__greeting', 'aria-live': 'polite' });
+    voiceBtn = el('button', { class: 'mf__btn mf__btn--ghost mf__learnbtn', type: 'button' });
+    const resetBtn = el('button', { class: 'mf__btn mf__btn--ghost mf__learnbtn', type: 'button' });
+    resetBtn.textContent = 'Reset progress';
+    const ctrls = el('div', { class: 'mf__learnctrls' }, [voiceBtn, resetBtn]);
+    root.insertBefore(greetingEl, head);
+    root.insertBefore(ctrls, dots);
+    bridgeBtn = el('button', { class: 'mf__btn mf__btn--primary mf__bridge', type: 'button' });
+    bridgeBtn.style.display = 'none';
+    card.appendChild(bridgeBtn);
+
+    voiceBtn.addEventListener('click', () => { voice?.unlock?.(); setVoice(!voiceOn); });
+    resetBtn.addEventListener('click', onReset);
+    bridgeBtn.addEventListener('click', () => {
+      voice?.unlock?.();
+      const b = LEARN_BRIDGES[CARDS[index]?.title];
+      if (b) { voice?.cancel?.(); try { window.location.hash = b.hash; } catch (_) { /* no-op */ } }
+    });
+  }
+
   // Progress dots
   CARDS.forEach((_, i) => {
     const d = el('span', { class: 'mf__dot' });
@@ -298,16 +368,55 @@ export default function createView(ctx) {
   });
 
   backBtn.addEventListener('click', () => {
+    voice?.unlock?.(); voice?.cancel?.();
     if (index === 0) { goHome(); return; }
     index -= 1; render();
   });
   contBtn.addEventListener('click', () => {
+    voice?.unlock?.();
+    if (learnMode && progress && CARDS[index]) {
+      progress.addToSet('foundationsCompleted', CARDS[index].title);
+      progress.addToSet('learnCompleted', CARDS[index].title);
+    }
     if (index >= CARDS.length - 1) { goHome(); return; }
     index += 1; render();
   });
-  replayBtn.addEventListener('click', () => demoCard(CARDS[index]));
+  replayBtn.addEventListener('click', () => { voice?.unlock?.(); demoCard(CARDS[index]); });
 
   function goHome() { try { window.location.hash = '#/'; } catch { /* no-op */ } }
+
+  // ---- Learn-mode helpers (unused in plain mode) ----------------------------
+  function setVoice(on) {
+    voiceOn = !!on;
+    voice?.setEnabled?.(voiceOn);
+    if (voiceBtn) {
+      voiceBtn.textContent = voiceOn ? 'Voice: on' : 'Voice: off';
+      voiceBtn.setAttribute('aria-pressed', voiceOn ? 'true' : 'false');
+    }
+    if (progress) progress.set('voiceOn', voiceOn);
+  }
+  function onReset() {
+    const okToReset = (typeof window !== 'undefined' && typeof window.confirm === 'function')
+      ? window.confirm('Reset your learning progress on this device? This clears saved lessons and the voice preference.')
+      : true;
+    if (!okToReset) return;
+    voice?.cancel?.();
+    if (progress) progress.reset();
+    index = 0;
+    greeted = false;
+    setVoice(true);
+    render();
+  }
+  function speakCard(c) {
+    if (!voice || !voiceOn || !c) return;
+    const id = `narr:${c.title}`;
+    const parts = [];
+    if (Array.isArray(c.explain) && c.explain[0]) parts.push(c.explain[0]);
+    if (c.mode && c.mode !== 'none' && c.tryPrompt) parts.push(c.tryPrompt);
+    const text = parts.join(' ');
+    if (text) voice.speak(text, id);
+    if (progress) progress.addToSet('heardNarration', id);
+  }
 
   // ---- Per-card render ------------------------------------------------------
   function render() {
@@ -318,7 +427,7 @@ export default function createView(ctx) {
     keyboard?.clearHighlight?.('target');
 
     eyebrow.textContent = c.eyebrow;
-    stepLine.textContent = `Step ${index + 1} of ${CARDS.length}`;
+    stepLine.textContent = `${learnMode ? 'Lesson' : 'Step'} ${index + 1} of ${CARDS.length}`;
     title.textContent = c.title;
     explain.replaceChildren(...c.explain.map((line) => {
       const p = el('p'); p.textContent = line; return p;
@@ -370,6 +479,18 @@ export default function createView(ctx) {
     // Footer
     backBtn.textContent = index === 0 ? 'Back to dashboard' : 'Back';
     contBtn.textContent = index >= CARDS.length - 1 ? 'Finish' : 'Continue';
+
+    // ---- Learn-mode: bridge button, learning memory, spoken narration ---------
+    if (learnMode) {
+      const bridge = LEARN_BRIDGES[c.title];
+      if (bridgeBtn) {
+        if (bridge) { bridgeBtn.textContent = bridge.label; bridgeBtn.style.display = ''; }
+        else { bridgeBtn.style.display = 'none'; }
+      }
+      if (progress) progress.set('learnLesson', index);
+      if (suppressSpeakOnce) suppressSpeakOnce = false;  // greeting already covered this card
+      else speakCard(c);
+    }
   }
 
   // ---- Try detection — accurate, teaching feedback --------------------------
@@ -455,10 +576,38 @@ export default function createView(ctx) {
   return {
     enter() {
       if (!unsub && input?.subscribe) unsub = input.subscribe(onNote);
+      if (learnMode) {
+        if (progress) {
+          const storedVoice = progress.get('voiceOn');
+          voiceOn = (storedVoice === undefined || storedVoice === null) ? true : !!storedVoice;
+          let resume = progress.get('learnLesson');
+          if (!Number.isInteger(resume) || resume < 0 || resume > CARDS.length - 1) resume = 0;
+          index = resume;
+        }
+        setVoice(voiceOn);
+        const g = greetingFor(new Date(), LEARNER_NAME);
+        const started = !!(progress && (((progress.get('learnLesson') || 0) > 0)
+          || (Array.isArray(progress.get('learnCompleted')) && progress.get('learnCompleted').length > 0)));
+        const greetText = started
+          ? `${g} Ready to continue?`
+          : `${g} Let\u2019s begin your piano training.`;
+        if (greetingEl) greetingEl.textContent = greetText;
+        if (!greeted) {
+          greeted = true;
+          const c0 = CARDS[index];
+          const intro0 = (c0 && Array.isArray(c0.explain) && c0.explain[0]) ? c0.explain[0] : '';
+          const prompt0 = (c0 && c0.mode && c0.mode !== 'none' && c0.tryPrompt) ? c0.tryPrompt : '';
+          const combined = [greetText, intro0, prompt0].filter(Boolean).join(' ');
+          if (voice && voiceOn && combined) voice.speak(combined, 'greeting');
+          if (progress && c0) progress.addToSet('heardNarration', `narr:${c0.title}`);
+          suppressSpeakOnce = true;
+        }
+      }
       render();
     },
     exit() {
       if (unsub) { unsub(); unsub = null; }
+      voice?.cancel?.();
       stopPulse();
       stopDemoAudio();
       keyboard?.clearHighlight?.('target');
@@ -519,6 +668,10 @@ function injectStyles() {
     .mf__btn--ghost:hover { color: var(--ivory, #F4EFE6); border-color: rgba(244,239,230,0.4); }
     .mf__btn--primary { background: var(--brass, #C99A4B); color: #1a1206; }
     .mf__btn--primary:hover { filter: brightness(1.08); }
+    .mf__greeting { margin: 0 0 0.7rem; font-size: 1.08rem; font-weight: 600; color: var(--champagne, #E8C57E); }
+    .mf__learnctrls { display: flex; gap: 0.55rem; margin: 0 0 0.9rem; flex-wrap: wrap; }
+    .mf__learnbtn { padding: 0.42rem 0.95rem; min-height: 38px; font-size: 0.85rem; }
+    .mf__bridge { margin-top: 1.1rem; width: 100%; }
     @media (max-width: 520px) {
       .mf__card { padding: 1rem 1rem 1.15rem; }
       .mf__explain p { font-size: 0.98rem; }

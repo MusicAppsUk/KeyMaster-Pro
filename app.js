@@ -25,6 +25,7 @@ import { Metronome } from './metronome.js';
 import { NoteInput } from './noteInput.js';
 import { createMidiEvaluator } from './midiEvaluator.js';
 import { createDevReadout, isDevMode } from './devReadout.js';
+import { createProgressStore } from './progressStore.js';
 
 /* ===========================================================================
  * 1. Observable store
@@ -111,23 +112,29 @@ function savePrefs(prefs) {
 const VIEW_REGISTRY = {
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-46',
-    load: () => import('./foundations.js?v=rc2-46'),
+    src: './foundations.js?v=rc2-48',
+    load: () => import('./foundations.js?v=rc2-48'),
   },
   scales: {
     slot: 'scales',
-    src: './scalesMasterclass.js?v=rc2-46',
-    load: () => import('./scalesMasterclass.js?v=rc2-46'),
+    src: './scalesMasterclass.js?v=rc2-48',
+    load: () => import('./scalesMasterclass.js?v=rc2-48'),
   },
   sightreading: {
     slot: 'sightreading',
-    src: './sightReading.js?v=rc2-46',
-    load: () => import('./sightReading.js?v=rc2-46'),
+    src: './sightReading.js?v=rc2-48',
+    load: () => import('./sightReading.js?v=rc2-48'),
   },
   chords: {
     slot: 'chords',
-    src: './chordMasterclass.js?v=rc2-46',
-    load: () => import('./chordMasterclass.js?v=rc2-46'),
+    src: './chordMasterclass.js?v=rc2-48',
+    load: () => import('./chordMasterclass.js?v=rc2-48'),
+  },
+  // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
+  learn: {
+    slot: 'learn',
+    src: './foundations.js?v=rc2-48',
+    load: () => import('./foundations.js?v=rc2-48'),
   },
 };
 
@@ -139,6 +146,7 @@ const ROUTES = {
   '/scales': 'scales',
   '/sightreading': 'sightreading',
   '/chords': 'chords',
+  '/learn': 'learn',
 };
 
 /**
@@ -155,6 +163,7 @@ const KEYBOARD_HIDDEN_DEFAULT = {
   scales: true,
   sightreading: true,
   chords: false,
+  learn: false,
 };
 
 /**
@@ -170,6 +179,7 @@ const FINGERING_HIDDEN_DEFAULT = {
   scales: false,
   sightreading: false,
   chords: false,
+  learn: false,
 };
 
 /**
@@ -183,6 +193,7 @@ const MODULE_NAME = {
   scales: 'Scales Masterclass',
   sightreading: 'Cognitive Sight-Reading',
   chords: 'Chord Masterclass',
+  learn: 'Master Training',
 };
 
 /* ===========================================================================
@@ -198,6 +209,10 @@ class KeyMasterApp {
       register: '',
       ...pickPrefs(loadPrefs()),
     });
+
+    // Local learning memory (musical progress only). Construction never throws;
+    // on private-mode / corrupt storage it degrades to in-memory for the session.
+    this.progress = createProgressStore();
 
     /** @type {Map<string, {controller?: object, instance?: object}>} */
     this.views = new Map();
@@ -697,6 +712,7 @@ class KeyMasterApp {
       else this._setModuleTrail([{ label: MODULE_NAME[viewId] ?? viewId }]);
     } catch (err) { console.info('[KeyMaster] breadcrumb seed skipped:', err?.message ?? err); }
 
+    if (viewId === 'home') this._updateLearnCta();
     if (viewId !== 'home') await this._enterView(viewId);
   }
 
@@ -728,6 +744,8 @@ class KeyMasterApp {
       if (!record.instance) {
         record.instance = record.factory({
           mount: slot,
+          route: viewId,
+          progress: this.progress,
           store: this.store,
           keyboard: this.keyboard,
           viewport: this.viewport,
@@ -754,6 +772,27 @@ class KeyMasterApp {
     this.keyboard.clearFingers();
     this.keyboard.clearHighlight('target');
     this.keyboard.allNotesOff();
+  }
+
+  /**
+   * Update the dashboard's primary call-to-action from learning memory:
+   * "Start Learning" when nothing's begun, otherwise "Continue Learning · Lesson N".
+   * Fully isolated — any failure leaves the static label untouched.
+   */
+  _updateLearnCta() {
+    try {
+      const cta = this.root.querySelector('#learn-cta');
+      if (!cta) return;
+      const lesson = this.progress?.get?.('learnLesson');
+      const completed = this.progress?.get?.('learnCompleted');
+      const started = (Number.isInteger(lesson) && lesson > 0)
+        || (Array.isArray(completed) && completed.length > 0);
+      cta.textContent = started
+        ? `Continue Learning \u00B7 Lesson ${(lesson || 0) + 1}`
+        : 'Start Learning';
+    } catch (err) {
+      console.info('[KeyMaster] learn CTA update skipped:', err?.message ?? err);
+    }
   }
 }
 

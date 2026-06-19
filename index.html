@@ -35,9 +35,9 @@
   />
 
   <!-- Separated styling layers (theme tokens first, then component sheets). -->
-  <link rel="stylesheet" href="theme.css?v=rc2-46" />
-  <link rel="stylesheet" href="keyboard.css?v=rc2-46" />
-  <link rel="stylesheet" href="notation.css?v=rc2-46" />
+  <link rel="stylesheet" href="theme.css?v=rc2-48" />
+  <link rel="stylesheet" href="keyboard.css?v=rc2-48" />
+  <link rel="stylesheet" href="notation.css?v=rc2-48" />
 
   <!-- The only inline style: hide the shell until the app flips data-boot,
        preventing an unstyled flash before the module graph resolves. -->
@@ -101,7 +101,8 @@
             <p class="dashboard__eyebrow">KeyMaster PRO</p>
             <h1 id="launcher-heading" class="dashboard__title">The Curriculum</h1>
             <p class="dashboard__sub">Process music like an expert reader and performer.</p>
-            <p class="dashboard__hint" style="margin:0.4rem 0 0;font-size:0.9rem;color:var(--ivory-dim,#B9B2A6);">New to music reading? <a href="#/foundations" style="color:var(--champagne,#E8C57E);">Start with Musical Foundations</a>.</p>
+            <a id="learn-cta" href="#/learn" style="display:inline-block;margin:0.85rem 0 0.2rem;padding:0.72rem 1.5rem;border-radius:12px;background:var(--brass,#C99A4B);color:#1a1206;font-weight:650;text-decoration:none;font-size:1.02rem;">Start Learning</a>
+            <p class="dashboard__hint" style="margin:0.5rem 0 0;font-size:0.9rem;color:var(--ivory-dim,#B9B2A6);">Master Training is your guided course. The masterclasses below are specialist practice rooms. <a href="#/foundations" style="color:var(--champagne,#E8C57E);">Musical Foundations</a> is also available on its own.</p>
           </header>
 
           <nav class="launcher" aria-label="Training modules">
@@ -170,6 +171,18 @@
         </div>
       </section>
 
+      <!-- Master Training mount — the main tutor-led course. Reuses the
+           Foundations engine in "learn mode" (voice, memory, bridges). -->
+      <section
+        class="view view--foundations"
+        data-view="learn"
+        aria-labelledby="learn-heading"
+        hidden
+      >
+        <h1 id="learn-heading" class="view__title">Master Training</h1>
+        <div class="view__body" data-slot="learn"></div>
+      </section>
+
       <!-- Musical Foundations mount (optional onboarding layer). -->
       <section
         class="view view--foundations"
@@ -235,6 +248,6 @@
 
   <!-- Single module entry point. Absolute path so it resolves regardless of
        the route in the hash. -->
-  <script type="module" src="app.js?v=rc2-46"></script>
+  <script type="module" src="app.js?v=rc2-48"></script>
 </body>
 </html>

@@ -266,3 +266,82 @@ current source every release. Steps:
   step 7 above. (The on-screen route-failure diagnostic in app.js — viewId /
   requested URL / token / error / cause — is what surfaced this from the device
   without dev tools; keep it.)
+
+## rc2-47 — Master Training foundation (Stage 1 of the Learn build)
+Foundation-only release: two new files, no live-behaviour change, no `?v=` bump.
+
+- **progressStore.js (new)** — versioned local learning memory, namespace
+  `keymaster.progress.v1`, SCHEMA_VERSION 1. `createProgressStore()` →
+  `{ available, getAll, get, set, update, addToSet, has, incr, reset }`. Stores
+  musical-learning state ONLY (current Learn lesson, completed lessons/cards,
+  heard-narration ids, voice/keyboard/fingering prefs, opaque scales/chord/SR
+  slots, supportLevel + attempts for later). Best-effort: probes localStorage,
+  and on private-mode / corrupt JSON / unknown schema / write-throw it falls back
+  to in-memory for the session and NEVER throws into a lesson. `available()`
+  reports honestly whether anything persists. 25 headless unit tests pass
+  (persistence across instances, dedupe, incr, reset, corruption recovery, schema
+  reset, missing/unknown-field handling, no-LS + throwing-LS fallback).
+  NOT yet wired into any module — it is the foundation Stage 2 (/learn) builds on.
+
+- **tutorVoice.js (new)** — the rc2-46 SpeechSynthesis wrapper, generalised into a
+  shared `createTutorVoice()` (identical implementation). Single source of truth
+  for tutor voice across the app.
+
+- **chordVoice.js (edited → thin re-export)** — now
+  `export const createChordVoice = createTutorVoice;`. Chord Masterclass keeps
+  importing `createChordVoice` from `./chordVoice.js`; verified `createChordVoice
+  === createTutorVoice`, so rc2-46 Chord voice is behaviour-identical.
+
+No tokens bumped (Chord behaviour unchanged; new files unreferenced until Stage 2).
+Stage 2 = `/learn` route reusing the Foundations engine in a "learn mode" (voice
+from lesson 1, masterclass bridges, course framing, progress wiring) + dashboard
+"Master Training" CTA. Stage 3 = optional videoCue metadata + placeholder panel
+(no video assets). Protected invariants confirmed intact: HAND_FLOOR LH 47,
+amber chord cue, chord demo audio, Foundations okMsg (zero "Nicely done"), chord
+voice, synth demo voice, Scales fingering, synth.js untouched.
+
+## rc2-48 — Master Training Stage 2: the /learn route (tutor-led course)
+
+The first **/learn** ("Master Training") route ships, making rc2-47 progressStore a live
+consumer. /learn **reuses the Foundations engine** in "learn mode" (no copy): a new
+`learn` VIEW_REGISTRY entry points `src` at `foundations.js`, and `learnMode = ctx.route
+=== 'learn'` gates every addition. **/foundations runs every learn branch skipped and is
+byte-identical to rc2-45.**
+
+Added (learn-mode only):
+- **Greeting** — pure `greetingFor(date, name)` (exported, unit-tested) from local device
+  time: 05:00–11:59 morning / 12:00–17:59 afternoon / 18:00–04:59 evening. Shown at the top
+  of /learn; spoken once per session, merged with lesson 1's intro so it isn't cut off.
+  Name **hardcoded `LEARNER_NAME = 'Tim'` — NOT persisted** (progressStore stays personal-
+  data-free). `getDisplayName` noted as the future production hook.
+- **Voice** — `createTutorVoice()` speaks each lesson's first explanation + prompt; silent
+  no-op when SpeechSynthesis is unavailable. `unlock()` on every control tap.
+- **Memory writes** — `learnLesson` (on render), `foundationsCompleted` + `learnCompleted`
+  (on Continue), `heardNarration` (on narration), `voiceOn` (on toggle). On enter, /learn
+  **resumes** at the stored `learnLesson` and restores `voiceOn`.
+- **Bridges** — inline buttons on the scale card → Scales and the chord card → Chords
+  (learn-mode overlay keyed by card title; shared CARDS never mutated).
+- **Voice on/off** toggle (persisted) and **Reset progress** (window.confirm-gated →
+  `progress.reset()`, back to lesson 1, voice on).
+
+app.js: imports `createProgressStore`, builds one `this.progress` in the constructor, passes
+`ctx.route` + `ctx.progress`, adds `learn` to ROUTES / KEYBOARD_HIDDEN_DEFAULT /
+FINGERING_HIDDEN_DEFAULT / MODULE_NAME, and `_updateLearnCta()` sets the dashboard CTA to
+"Start Learning" or "Continue Learning · Lesson N". index.html: a brass **learn CTA** in the
+dashboard header and a `data-view="learn"` section/slot.
+
+**No duplicate persistence**: keyboard/fingering keep `kbHidden:`/`fingerHidden:`, lastView
+keeps `keymaster.prefs.v1`; progressStore's overlapping `keyboardVisible`/`fingeringVisible`/
+`route` fields remain unused. voiceOn is Learn-only this stage — Chord (rc2-46) stays
+session-only and untouched.
+
+Tokens bumped rc2-46 → rc2-48 (app.js + index.html). progressStore.js / tutorVoice.js /
+chordVoice.js unchanged from rc2-47.
+
+**Device-verify-only**: all rendering, spoken voice, demo audio, greeting-by-local-time,
+greeting-not-repeated, and bridge navigation. The rc2-44/45/46 by-ear voice/audio checks
+remain the gate, since /learn leans on the same browser TTS.
+
+**Deferred to the next Learn stage**: Lessons "Clefs and hands" + "First reading idea" and a
+Sight-Reading bridge (must use a learn-only overlay, never the shared CARDS). Then Stage 3 =
+videoCue metadata + placeholder panel (no assets).
