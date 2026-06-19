@@ -387,3 +387,23 @@ as final authority without expert review**.
 
 *This document is a specification only. Implementing any module above is a
 separate, gated phase that must leave RC2 untouched.*
+
+## Input: MIDI-first now, acoustic/microphone later (documentation note — not yet built)
+
+KeyMaster PRO is currently **MIDI and on-screen input first, by design**. MIDI gives the
+tutor exact note data for precise teaching — every note is unambiguous, with no false
+"wrong note" readings and no "play it louder" frustration. This precision is what lets the
+Course give honest, specific feedback (Recognition Latency, Resilience Index) rather than
+guessing.
+
+**Acoustic / microphone recognition is planned as a later, dedicated project**, not a quick
+add-on. Real-time pitch detection (especially polyphonic, in noisy rooms, with low latency)
+is a substantial engine; the market leaders rely on it but reviewers consistently report
+that microphone detection is less reliable than MIDI — misheard octaves, dropped notes in
+two-hand chords, and demoralising false negatives on soft or hesitant playing. When
+KeyMaster PRO adds an acoustic mode, it will be additive (a second input path), and MIDI/
+on-screen will remain the precise default. This is a confident product position, not a
+limitation: precise input, precise teaching.
+
+Sequencing: ship the premium Course opening, first-lesson tone, and in-Course musicianship
+first; treat acoustic input as a separate phase after those land.

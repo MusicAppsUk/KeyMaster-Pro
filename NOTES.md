@@ -647,3 +647,79 @@ what you see. The positioning is computed from real geometry, so it should land;
 - DEVICE-VERIFY: (1) the new step plays/teaches B-C#-D# and accepts the copied sequence; (2) FIRST cue case
   with label pills under BLACK keys (C#, D#) — confirm the pill placement reads cleanly under the shorter
   black keys; (3) tutor voice phrasing of the new lines.
+
+## rc2-61 — Phase 1: dashboard hero (the Course is the centre)
+- The dashboard was a catalogue (inline-styled hero + a 10-stage list + a practice-room grid + a flow list,
+  all competing). Reworked into a calm hero centred on the Course, with Practice Rooms as a quiet section below.
+- HERO (copy filled by JS from learning memory + existing greeting logic):
+  - greeting: `greetingFor(new Date(), name)` → "Good evening, Tim." (name = getDisplayName() || exported LEARNER_NAME)
+  - eyebrow: "The KeyMaster PRO Course"
+  - title: started → "Continue the KeyMaster PRO Course"; fresh → COURSE_NAME
+  - next line: "Stage 1 · Your next step: <LEARN_STEPS[resumeIndex].title>" (or "Your first step")
+  - primary button: started → "Continue the Course"; fresh → "Start the KeyMaster PRO Course"
+  - subtle progress: "Lesson N of <count> · Stage 1 of 10"
+- VERSION TAG: discreet `.build-tag` ("KeyMaster PRO · rc2-61"), filled by JS from this build's own cache
+  token via `new URL(import.meta.url).searchParams.get('v')` — single-sourced from the ?v= token, auto-syncs
+  with the release bump. Bottom of the dashboard, right-aligned (centered on narrow screens), mono, faint.
+- HIERARCHY: Course hero first; Practice Rooms below a hairline divider, framed as optional/secondary; the
+  vector cards are PRESERVED verbatim (Phase 2 may quiet them further). Removed from the dashboard: the verbose
+  10-stage "The course" list and the `launcher__flow` list (decluttering — stage data still lives in courseMap;
+  can be re-added subtly later if wanted). Foundations no longer appears as a competing block.
+- ARCHITECTURE: foundations stays LAZY — the hero updater dynamic-imports it (non-blocking), so the dashboard
+  never eager-loads the lesson chain. courseMap imported statically (light, pure) for STAGES/COURSE_NAME.
+  foundations: `LEARNER_NAME` is now exported (one word, additive) — Tim greeting otherwise untouched.
+- STYLE: additive theme.css classes using existing tokens only (ebony/ivory/brass/champagne, type + space
+  scales). No palette invented, no existing theme rules rewritten, no imagery/heavy assets. Skoove used only as
+  a feel reference — no copied layout/wording/imagery/flow.
+- FILES: index.html (home section rebuilt), app.js (courseMap import + BUILD const + _updateLearnCta →
+  _updateDashboardHero + call site), theme.css (hero classes appended), foundations.js (LEARNER_NAME export).
+- Verified: all JS module-mode parse (source + zip), 0-stale zip, store 25/25, runtime 6/6 (LEARNER_NAME export,
+  greeting formats, 15 steps intact, COURSE_NAME, 10 stages), home section well-formed (6 vector cards intact,
+  catalogue removed, all hero ids present), all protected invariants intact. Scales audio untouched.
+- NOT done (held): Phase 2 (page-level spacing across views) and Phase 3 (hero visual). No masterclass logic
+  touched, no broad reskin.
+- DEVICE-VERIFY: the hero look/spacing/hierarchy; greeting + next-step + progress fill correctly; the build tag
+  reads "KeyMaster PRO · rc2-61"; Practice Rooms read as clearly secondary below the hero.
+
+## rc2-62 — KeyMaster PRO Course first-impression reset
+- FIRST-LESSON TONE (the core fix): rewrote the opening Course steps from a basic/childlike
+  register into the Warm Precision adult tutor voice. Changed (LEARN_STEPS only, the /learn Course):
+  - meet-keyboard: "Press any key to make a sound" / "you've made the piano sound" → orientation +
+    landmark: "Let's orient the keyboard… play any key and listen to where its sound sits" / "Good. That
+    is your first landmark: sound moves across the keyboard, low to high." + 3 say-beats.
+  - low-high: pitch-layout framing + say-beats; adult okMsg.
+  - black-keys-two / -three: okMsg de-childed ("Good — that's one of the pair… anchor points" / "…map the
+    whole keyboard").
+  - direction: rise/fall framing + say-beats ("Direction is how a melody moves").
+  - first-scale: "steps in order — a ladder of pitch" + say-beats; mechanics (C-D-E sequence) unchanged.
+  - find-c / middle-c / b-below were already in the adult register (rich say-beats) — reviewed, left as-is.
+  - The separate standalone /foundations CARDS path still has its original copy (out of Course scope;
+    can be aligned later if wanted).
+- VOICE ARRIVAL: removed the technical "Start tutor voice" button as the first experience (status now
+  reads warmly: "Captions are on. The tutor begins speaking the moment you play or continue."; the Start
+  button is never shown). The greeting still appears as TEXT on arrival, and now also speaks on the first
+  Continue tap (added speakPending() in the contBtn handler) as well as the first key tap — so the tutor
+  "arrives" on the first primary gesture. Greeting reworded to the Warm Precision register via
+  greetingFor(date, LEARNER_NAME): fresh → "Good afternoon, Tim. Let's begin by orienting the keyboard.";
+  returning → "Good afternoon, Tim. Welcome back. Let's continue where you left off — <lesson>." Browser-
+  gesture limit respected (audio needs a user gesture); folded into the first natural tap, no settings feel.
+- MOTION (lightweight, GPU-friendly, reduced-motion-safe): dashboard hero fades/rises in once (heroRise,
+  opacity+transform), and the hero eyebrow has a slow subtle opacity breath (heroBreath). No video, no large
+  assets, no rAF loops. prefers-reduced-motion disables both.
+- PRACTICE ROOM TOUCH AFFORDANCE: each ACTIVE room card (the 3 <a> links) now shows an explicit "Open →"
+  cue (.vector__open) at the bottom — always visible, not hover-dependent, so it reads as tappable on
+  touch. Locked rooms (<div>) are excluded and keep their lock glyph + not-allowed.
+- DOCS: ONBOARDING_RESEARCH.md added to the repo (benchmark research: Skoove/Simply/Flowkey strengths,
+  what to learn, what NOT to copy, MIDI-first rationale, acoustic-input roadmap, KM differentiation;
+  paraphrased, source-noted, no copyrighted text). ROADMAP.md gained a confident MIDI-first / acoustic-
+  later note (documentation only — no mic code).
+- Files: foundations.js (tone + voice arrival), index.html (Open affordance + token), theme.css (motion +
+  affordance + token), ROADMAP.md, ONBOARDING_RESEARCH.md (new). app.js token bump only.
+- Verified: all JS module-mode parse (source + zip), 0-stale zip (51 files), store 25/25, runtime 10/10
+  (15 steps, adult tone, say-beats, mechanics + rc2-60 fragment + rc2-59 link intact, greeting format),
+  all protected invariants intact. Scales audio untouched.
+- NOT built (held): mic/audio recognition, staff-reading pilot, chord Course integration, broad reskin,
+  heavy animation, hero video, asset pipeline.
+- DEVICE-VERIFY: the opening tone reads adult/premium (not childish); the tutor voice arrives naturally on
+  the first tap (no "enable voice" step); the hero entrance + eyebrow breath feel alive but calm (and are
+  off under reduced-motion); the "Open →" cue makes the active Practice Rooms obviously tappable on touch.

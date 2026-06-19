@@ -75,22 +75,44 @@ const B_FRAGMENT_NAMES = B_MAJOR_SCALE.degrees.slice(0, 3).map((d) => d.name);
 
 export const LEARN_STEPS = [
   {
+    eyebrow: 'Welcome', title: 'Welcome to the Course', id: 'welcome',
+    media: { kind: 'video', topic: 'posture', caption: 'Sitting at the piano \u2014 guided demonstration coming' },
+    say: [
+      { text: 'Welcome to the KeyMaster PRO Course.', pauseAfter: 560, tone: 'warm' },
+      { text: 'I\u2019m your tutor. We\u2019ll go step by step, and you\u2019ll always know what to do next.', pauseAfter: 620 },
+      { text: 'Sit comfortably \u2014 both feet down, shoulders easy, hands relaxed over the keys. Natural, supported, never forced.', pauseAfter: 640, tone: 'warm' },
+      { text: 'When you\u2019re ready, we\u2019ll begin by orienting the keyboard.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['Welcome to the KeyMaster PRO Course. I\u2019m your tutor \u2014 we\u2019ll go step by step, and you\u2019ll always know what to do next.', 'Sit comfortably: both feet down, shoulders easy, hands relaxed over the keys. Natural, supported, never forced. When you\u2019re ready, we\u2019ll orient the keyboard.'],
+    mode: 'none',
+  },
+  {
     eyebrow: 'The keyboard', title: 'Meet the keyboard', id: 'meet-keyboard',
     cues: { labels: [{ midi: 48, text: 'low', place: 'below' }, { midi: 72, text: 'high', place: 'below' }] },
-    explain: ['This is the piano keyboard \u2014 one long row of keys. Lower sounds sit to the left, higher to the right.', 'I\u2019ll show you, then you try.'],
+    say: [
+      { text: 'Let\u2019s orient the keyboard first.', pauseAfter: 520, tone: 'warm' },
+      { text: 'Lower notes live to your left, higher notes to your right.', pauseAfter: 560 },
+      { text: 'Play any key, and listen to where its sound sits.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['Let\u2019s orient the keyboard first. Lower notes live to your left, higher notes to your right.', 'Play any key, and listen to where its sound sits.'],
     show: { kind: 'keys', midis: [48, 55, 60, 67, 72], caption: 'One row \u2014 low on the left, high on the right.', label: 'Low \u2190                      \u2192 High' },
     demo: [48, 60, 72], demoGap: 0.5,
-    tryPrompt: 'Press any key to make a sound.', mode: 'any',
-    okMsg: 'Good \u2014 you\u2019ve made the piano sound.',
+    tryPrompt: 'Play any key, and listen to where its sound sits on the keyboard.', mode: 'any',
+    okMsg: 'Good. That is your first landmark: sound moves across the keyboard, low to high.',
   },
   {
     eyebrow: 'Low and high', title: 'Low and high sounds', id: 'low-high',
     cues: { labels: [{ midi: 50, text: 'low', place: 'below' }, { midi: 69, text: 'high', place: 'below' }] },
-    explain: ['Keys on the left sound low. Keys on the right sound high.', 'Listen to the difference, then play one yourself.'],
+    say: [
+      { text: 'The keyboard is laid out by pitch.', pauseAfter: 500, tone: 'warm' },
+      { text: 'Keys to the left sound lower; keys to the right sound higher.', pauseAfter: 560 },
+      { text: 'Play one, and notice where its sound sits.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['The keyboard is laid out by pitch \u2014 keys to the left sound lower, keys to the right higher.', 'Play one, and notice where it sits.'],
     show: { kind: 'keys', midis: [48, 50, 52, 67, 69, 71], caption: 'Left is low; right is high.', label: 'low                          high' },
     demo: [48, 50, 52, 67, 69, 71], demoGap: 0.34,
-    tryPrompt: 'Press any key and listen to how low or high it is.', mode: 'any',
-    okMsg: 'That\u2019s it \u2014 left is lower, right is higher.',
+    tryPrompt: 'Play any key, and notice where its sound sits \u2014 lower or higher.', mode: 'any',
+    okMsg: 'Good \u2014 left is lower, right is higher. You\u2019re hearing the shape of the keyboard.',
   },
   {
     eyebrow: 'Finding your way', title: 'Black-key groups of two', id: 'black-keys-two',
@@ -105,7 +127,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [61, 63], caption: 'A group of two black keys.', label: 'group of two' },
     demo: [61, 63], demoGap: 0.4,
     tryPrompt: 'Tap one of the two black keys in the highlighted group.', targets: [61, 63], mode: 'oneof',
-    okMsg: 'Yes \u2014 that\u2019s a black key in a group of two.',
+    okMsg: 'Good \u2014 that\u2019s one of the pair. The groups of two are your first anchor points.',
     hint: 'The group of two is highlighted \u2014 tap either black key.',
     reteach: 'Look again \u2014 the two black keys sit close together, with a wider gap before the next group. Tap either one.',
   },
@@ -122,7 +144,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [66, 68, 70], caption: 'A group of three black keys.', label: 'group of three' },
     demo: [66, 68, 70], demoGap: 0.34,
     tryPrompt: 'Tap one of the three black keys in the highlighted group.', targets: [66, 68, 70], mode: 'oneof',
-    okMsg: 'Yes \u2014 that\u2019s a black key in a group of three.',
+    okMsg: 'Good \u2014 that\u2019s the group of three. Twos and threes together map the whole keyboard.',
     hint: 'The group of three is highlighted \u2014 tap any of them.',
     reteach: 'Look again \u2014 the group of three is the wider cluster. Tap any one of the three.',
   },
@@ -182,26 +204,37 @@ export const LEARN_STEPS = [
   {
     eyebrow: 'Direction', title: 'First direction: up and down', id: 'direction',
     cues: { arrow: { from: 60, to: 62 } },
-    explain: ['Moving right is going up. Moving left is going down.', 'Play two notes going up: C, then D.'],
+    say: [
+      { text: 'Moving to the right raises the pitch.', pauseAfter: 500, tone: 'warm' },
+      { text: 'Moving to the left lowers it.', pauseAfter: 480 },
+      { text: 'Play two notes that rise \u2014 C, then D.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['Moving right raises the pitch; moving left lowers it.', 'Play two notes that rise \u2014 C, then the next white key up, D.'],
     show: { kind: 'keys', midis: [60, 62], caption: 'C up to D \u2014 going up.', label: 'up \u2192' },
     demo: [60, 62], demoGap: 0.4,
-    tryPrompt: 'Play C, then D \u2014 two notes going up.', targets: [60, 62], mode: 'sequence',
-    okMsg: 'That\u2019s going up \u2014 C then D.',
+    tryPrompt: 'Play C, then D \u2014 two notes rising in pitch.', targets: [60, 62], mode: 'sequence',
+    okMsg: 'Good \u2014 that\u2019s motion upward, C to D. Direction is how a melody moves.',
     hint: 'Start on C, then the next white key to the right, D.',
   },
   {
     eyebrow: 'Notes in order', title: 'First scale idea', id: 'first-scale',
     cues: { labels: [{ midi: 60, text: 'C', place: 'below' }, { midi: 62, text: 'D', place: 'below' }, { midi: 64, text: 'E', place: 'below' }] },
-    explain: ['A scale is a ladder of notes climbing in order.', 'Climb the first three steps: C, D, E.'],
+    say: [
+      { text: 'A scale is steps in order \u2014 a ladder of pitch.', pauseAfter: 520, tone: 'warm' },
+      { text: 'Climb the first three.', pauseAfter: 460, tone: 'instruct' },
+      { text: 'C, then D, then E.', pauseAfter: 300 },
+    ],
+    explain: ['A scale is simply steps in order \u2014 a ladder of pitch.', 'Climb the first three: C, D, E.'],
     show: { kind: 'keys', midis: [60, 62, 64], caption: 'C, D, E \u2014 step by step.', label: 'C \u2013 D \u2013 E' },
     demo: [60, 62, 64], demoGap: 0.3,
-    tryPrompt: 'Climb the first three steps: C, then D, then E.', targets: [60, 62, 64], mode: 'sequence',
-    okMsg: 'That\u2019s the first three steps of a scale \u2014 C, D, E.',
+    tryPrompt: 'Climb the first three steps in order: C, D, then E.', targets: [60, 62, 64], mode: 'sequence',
+    okMsg: 'Good \u2014 C, D, E. That\u2019s the opening of a scale: three steps climbing.',
     hint: 'In order on the white keys: C, then D, then E.',
   },
   {
     eyebrow: 'A new shape', title: 'A taste of B major', id: 'first-b-scale',
     progressKey: 'scale:b-major-fragment',
+    media: { kind: 'video', topic: 'hand-shape', caption: 'The B major hand shape \u2014 guided demonstration coming' },
     cues: { labels: B_FRAGMENT.map((m, i) => ({ midi: m, text: B_FRAGMENT_NAMES[i], place: 'below' })) },
     explain: ['Those notes moved upward. Now hear a different shape \u2014 the opening of B major.', `Copy these three: ${B_FRAGMENT_NAMES.join(', then ')}.`],
     show: { kind: 'keys', midis: B_FRAGMENT, caption: `${B_FRAGMENT_NAMES.join(', ')} \u2014 the first steps of B major.`, label: B_FRAGMENT_NAMES.join(' \u2013 ') },
@@ -236,9 +269,19 @@ export const LEARN_STEPS = [
   },
   {
     eyebrow: 'Reading', title: 'First reading idea', id: 'first-reading',
-    explain: ['Written music places notes on lines and spaces. Middle C is a shared landmark between the hands.', 'We\u2019ll read outward from Middle C when you reach Sight-Reading.'],
-    show: { kind: 'keys', midis: [60], caption: 'Middle C \u2014 your reading anchor.', label: 'Middle C, on the page too' },
-    demo: [60], demoGap: 0.45, mode: 'none',
+    say: [
+      { text: 'Written music lives on lines and spaces \u2014 the staff.', pauseAfter: 560, tone: 'warm' },
+      { text: 'Middle C is the shared landmark between your two hands, the note we read outward from.', pauseAfter: 620 },
+      { text: 'You already know it on the keys. Play Middle C now, and hold it as your anchor.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['Written music lives on a staff \u2014 lines and spaces. Middle C is the shared landmark between the hands, the note we read outward from.', 'You already know it on the keys. Play Middle C \u2014 your reading anchor.'],
+    show: { kind: 'keys', midis: [60], caption: 'Middle C \u2014 your anchor, on the keys and on the page.', label: 'Middle C' },
+    media: { kind: 'image', topic: 'staff', caption: 'Middle C on the staff \u2014 notation view coming' },
+    demo: [60], demoGap: 0.45,
+    tryPrompt: 'Play Middle C \u2014 your reading anchor.', targets: [60], exact: true, mode: 'one',
+    okMsg: 'Good \u2014 that\u2019s your anchor. In Sight-Reading, every note is read from here.',
+    hint: 'Middle C is the white key just left of the two black keys, near the centre.',
+    progressKey: 'reading:middle-c-anchor',
   },
   {
     eyebrow: 'Looking ahead', title: 'Reading comes next', id: 'bridge-sightreading',
@@ -246,6 +289,31 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [60], caption: 'Start reading from Middle C.' },
     demo: [60], demoGap: 0.45, mode: 'none',
     bridge: { label: 'For more reading drills, open Cognitive Sight-Reading', hash: '#/sightreading' },
+  },
+  {
+    eyebrow: 'Rhythm', title: 'First rhythm idea', id: 'first-pulse',
+    media: { kind: 'video', topic: 'pulse', caption: 'Keeping a steady pulse \u2014 guided demonstration coming' },
+    say: [
+      { text: 'Music moves in time, over a steady pulse \u2014 a calm, even heartbeat under the notes.', pauseAfter: 580, tone: 'warm' },
+      { text: 'Feel four steady beats: one, two, three, four.', pauseAfter: 600, emphasis: 'four' },
+      { text: 'Now play four notes of your own, one on each beat. Don\u2019t rush.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['Music moves in time, over a steady pulse \u2014 a calm, even heartbeat underneath the notes.', 'Feel four steady beats, then play a note on each: one, two, three, four.'],
+    show: { kind: 'pulse', caption: 'A steady pulse \u2014 one, two, three, four.' },
+    tryPrompt: 'Play four notes, one on each steady beat.', mode: 'count', count: 4,
+    okMsg: 'Good \u2014 that\u2019s pulse: an even beat you can rely on. Every piece you play sits on it.',
+    hint: 'Play any four notes, evenly spaced \u2014 don\u2019t rush.',
+    progressKey: 'rhythm:first-pulse',
+  },
+  {
+    eyebrow: 'The road ahead', title: 'You\u2019ve begun', id: 'course-closing',
+    say: [
+      { text: 'That\u2019s the opening of the Course.', pauseAfter: 560, tone: 'warm' },
+      { text: 'You\u2019ve oriented the keyboard, found your landmarks, and touched scales, chords, reading, and pulse.', pauseAfter: 660 },
+      { text: 'From here the Course builds, stage by stage, toward real musicianship. I\u2019ll be with you the whole way.', pauseAfter: 360, tone: 'warm' },
+    ],
+    explain: ['That\u2019s the opening of the KeyMaster PRO Course. You\u2019ve oriented the keyboard, found your landmarks, and touched scales, chords, reading, and pulse.', 'From here the Course builds, stage by stage, toward real musicianship \u2014 and the practice rooms are always open when you want to go deeper.'],
+    mode: 'none',
   },
 ];
 
@@ -516,7 +584,9 @@ export default function createView(ctx) {
   const sharps = el('p', { class: 'mf__sharps', 'aria-hidden': 'true' });
   const replayBtn = el('button', { class: 'mf__replay mf__btn mf__btn--ghost', type: 'button' });
   replayBtn.textContent = 'Hear it again';
-  const showWrap = el('div', { class: 'mf__show' }, [keyLabel, pulse, sharps, showCaption, replayBtn]);
+  const mediaEl = el('div', { class: 'mf__media' });
+  mediaEl.style.display = 'none';
+  const showWrap = el('div', { class: 'mf__show' }, [keyLabel, pulse, sharps, mediaEl, showCaption, replayBtn]);
 
   const tryWrap = el('div', { class: 'mf__try' });
   const tryPrompt = el('p', { class: 'mf__tryprompt' });
@@ -584,6 +654,7 @@ export default function createView(ctx) {
   });
   contBtn.addEventListener('click', () => {
     voice?.unlock?.();
+    speakPending();                               // tutor arrives on the first primary tap
     if (learnMode && contBtn.disabled) return;   // proficiency gate (learn only)
     if (learnMode && progress && steps[index]) {
       progress.addToSet('foundationsCompleted', steps[index].title);
@@ -617,8 +688,8 @@ export default function createView(ctx) {
     } else if (!voiceOn) {
       msg = 'Tutor voice muted \u2014 captions only.';
     } else if (!voice.isUnlocked?.()) {
-      msg = 'Tap \u201CStart tutor voice\u201D to let the tutor speak.';
-      showStart = true;
+      msg = 'Captions are on. The tutor begins speaking the moment you play or continue.';
+      showStart = false;
     } else {
       msg = 'Tutor voice ready \u2014 device prototype (premium voice coming).';
     }
@@ -684,6 +755,19 @@ export default function createView(ctx) {
   }
 
   // ---- Per-card render ------------------------------------------------------
+  // Video-ready slot (rc2-63): an honest premium placeholder until real, licensed
+  // teaching assets ship. No fake or uncanny video — just a clean architecture.
+  function buildMediaSlot(media) {
+    const wrap = el('div', { class: 'mf__media-inner' });
+    const icon = el('span', { class: 'mf__media-icon', 'aria-hidden': 'true' });
+    icon.textContent = media.kind === 'video' ? '\u25B6' : '\u25A6';
+    const cap = el('p', { class: 'mf__media-cap' });
+    cap.textContent = media.caption || 'Guided demonstration \u2014 coming';
+    const sub = el('p', { class: 'mf__media-sub' });
+    sub.textContent = media.kind === 'video' ? 'Video teaching' : 'Notation view';
+    wrap.append(icon, cap, sub);
+    return wrap;
+  }
   function render() {
     const c = steps[index];
     stopPulse();
@@ -726,6 +810,10 @@ export default function createView(ctx) {
       pulse.style.display = '';
       startPulse();
     }
+
+    // Video-ready media slot (rc2-63): honest placeholder; hidden unless the step opts in.
+    if (c.media) { mediaEl.replaceChildren(buildMediaSlot(c.media)); mediaEl.style.display = ''; }
+    else { mediaEl.replaceChildren(); mediaEl.style.display = 'none'; }
 
     // Demonstration sound — show first, then sound a moment later (tutor cadence).
     replayBtn.style.display = (c.demo && c.demo.length) ? '' : 'none';
@@ -890,17 +978,18 @@ export default function createView(ctx) {
         // Warm opener + the existing time-of-day greeting. greetingFor's logic is
         // unchanged; called without a name so we place "Hello, Tim." in front cleanly,
         // giving e.g. "Hello, Tim. Good morning." (morning/afternoon/evening as before).
-        const timePart = greetingFor(new Date(), '');
-        const g = `Hello, ${LEARNER_NAME}. ${timePart}`;
+        // Greeting in the Warm Precision register: name + time of day, then a warm
+        // continuation. greetingFor(date, name) returns e.g. "Good afternoon, Tim."
+        const greet = greetingFor(new Date(), LEARNER_NAME);
         const started = !!(progress && (((progress.get('learnLesson') || 0) > 0)
           || (Array.isArray(progress.get('learnCompleted')) && progress.get('learnCompleted').length > 0)));
         // Continuous Learning: name the lesson actually last reached (factual, from progressStore).
         const lastTitle = (index > 0 && steps[index - 1]) ? steps[index - 1].title : null;
         const greetText = !started
-          ? `${g} Let\u2019s begin your piano training.`
+          ? `${greet} Let\u2019s begin by orienting the keyboard.`
           : (lastTitle
-            ? `${g} Last time you reached \u201C${lastTitle}\u201D. Ready to continue?`
-            : `${g} Ready to continue?`);
+            ? `${greet} Welcome back. Let\u2019s continue where you left off \u2014 ${lastTitle}.`
+            : `${greet} Welcome back. Let\u2019s continue where you left off.`);
         if (greetingEl) greetingEl.textContent = greetText;
         if (!greeted) {
           const c0 = steps[index];
@@ -990,6 +1079,11 @@ function injectStyles() {
     .mf__btn.is-gated, .mf__btn:disabled { opacity: 0.45; cursor: not-allowed; }
     .mf__bridgelink { display: block; width: fit-content; margin: 0.95rem auto 0; padding: 0.3rem 0.4rem; background: none; border: 0; cursor: pointer; font: inherit; font-size: 0.82rem; color: var(--champagne, #E8C57E); opacity: 0.72; }
     .mf__bridgelink:hover, .mf__bridgelink:focus-visible { opacity: 1; text-decoration: underline; }
+    .mf__media { margin: 0 0 0.85rem; }
+    .mf__media-inner { display: flex; flex-direction: column; align-items: center; gap: 0.35rem; padding: 1.15rem 1rem; border: 1px dashed rgba(232, 197, 126, 0.45); border-radius: 13px; background: linear-gradient(160deg, rgba(232, 197, 126, 0.07), rgba(27, 39, 66, 0.14)); }
+    .mf__media-icon { font-size: 1.55rem; line-height: 1; color: var(--champagne, #E8C57E); opacity: 0.92; }
+    .mf__media-cap { margin: 0; font-size: 0.92rem; color: var(--ivory, #F4EFE6); text-align: center; }
+    .mf__media-sub { margin: 0; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ivory-faint, #7E7A72); }
     @media (max-width: 520px) {
       .mf__card { padding: 1rem 1rem 1.15rem; }
       .mf__explain p { font-size: 0.98rem; }
