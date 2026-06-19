@@ -986,3 +986,57 @@ a.vector:hover .vector__open { color: var(--ivory); }
   background: linear-gradient(180deg, transparent 0%, var(--ebony-sink) 42%);
   -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
 }
+
+/* ==========================================================================
+   VISUAL DRAFT 3 — front-door Full Screen, voice state colours, press target
+   ========================================================================== */
+
+/* Prominent Full Screen action — clearly visible, large touch target, premium
+   (outlined champagne), staggered in, but secondary to the primary CTA. */
+.frontdoor__hint { margin: 0 0 0.9rem; font-size: 0.98rem; color: var(--ivory-dim); }
+.frontdoor__fs {
+  font-family: var(--font-ui); font-size: 1rem; font-weight: 600; color: var(--champagne);
+  display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer;
+  padding: 0.8rem 1.8rem; margin: 0 0 1.4rem; min-height: 48px; border-radius: 999px;
+  background: color-mix(in srgb, var(--champagne) 8%, transparent);
+  border: 1.5px solid color-mix(in srgb, var(--champagne) 55%, transparent);
+  transition: background var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease);
+  touch-action: manipulation; animation-delay: 0.5s;
+}
+.frontdoor__fs span { font-size: 1.2rem; line-height: 1; }
+.frontdoor__fs:hover {
+  background: color-mix(in srgb, var(--champagne) 16%, transparent);
+  border-color: var(--champagne); transform: translateY(-1px);
+}
+.frontdoor__fs:active { transform: translateY(0); }
+
+/* Voice control — unmistakable state: emerald ON, rose OFF (with a glowing dot). */
+.view[data-view="learn"] .mf__learnbtn.is-voice-on {
+  color: var(--emerald);
+  border-color: color-mix(in srgb, var(--emerald) 60%, transparent);
+  background: color-mix(in srgb, var(--emerald) 13%, transparent);
+}
+.view[data-view="learn"] .mf__learnbtn.is-voice-off {
+  color: var(--rose);
+  border-color: color-mix(in srgb, var(--rose) 55%, transparent);
+  background: color-mix(in srgb, var(--rose) 12%, transparent);
+}
+.view[data-view="learn"] .mf__learnbtn.is-voice-on::before,
+.view[data-view="learn"] .mf__learnbtn.is-voice-off::before {
+  content: ""; display: inline-block; width: 0.5rem; height: 0.5rem; border-radius: 50%;
+  margin-right: 0.45rem; vertical-align: middle; background: currentColor;
+  box-shadow: 0 0 8px 1px currentColor;
+}
+
+/* Course press target — emerald pulse near the FRONT (playable lip) of the key,
+   so a touch learner sees exactly where to press. Amber stays for masterclass
+   targets and teaching landmarks. The html[data-view] prefix outranks the
+   keyboard.css learn rule WITHOUT touching keyboard.css; its gentle breathe
+   pulse is preserved (now emerald). */
+html[data-view="learn"] .key.hl-target::after {
+  bottom: 7%;
+  background: radial-gradient(circle, var(--emerald), transparent 66%);
+  filter: drop-shadow(0 0 5px var(--emerald-glow)) drop-shadow(0 0 12px var(--emerald-glow));
+  opacity: 1;
+}
+html[data-view="learn"] .key--black.hl-target::after { bottom: 5%; }

@@ -250,6 +250,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [59, 61, 63, 64, 66, 68, 70, 71], caption: 'B major sits naturally under the hand.' },
     demo: [59, 61, 63, 64, 66, 68, 70, 71], demoGap: 0.26, mode: 'none',
     bridge: { label: 'For deeper scale practice, open Scales Masterclass', hash: '#/scales' },
+    autoNext: 4200,
   },
   {
     eyebrow: 'Notes together', title: 'First chord idea', id: 'first-chord',
@@ -266,6 +267,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [60, 64, 67], caption: 'Chords are built from stacked notes.' },
     demo: [60, 64, 67], demoGap: 0.08, mode: 'none',
     bridge: { label: 'For extra chord practice, open Chord Masterclass', hash: '#/chords' },
+    autoNext: 3200,
   },
   {
     eyebrow: 'Reading', title: 'First reading idea', id: 'first-reading',
@@ -289,6 +291,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [60], caption: 'Start reading from Middle C.' },
     demo: [60], demoGap: 0.45, mode: 'none',
     bridge: { label: 'For more reading drills, open Cognitive Sight-Reading', hash: '#/sightreading' },
+    autoNext: 3200,
   },
   {
     eyebrow: 'Rhythm', title: 'First rhythm idea', id: 'first-pulse',
@@ -680,6 +683,8 @@ export default function createView(ctx) {
     if (voiceBtn) {
       voiceBtn.textContent = voiceOn ? 'Voice: on' : 'Voice: off';
       voiceBtn.setAttribute('aria-pressed', voiceOn ? 'true' : 'false');
+      voiceBtn.classList.toggle('is-voice-on', voiceOn);
+      voiceBtn.classList.toggle('is-voice-off', !voiceOn);
     }
     if (progress) progress.set('voiceOn', voiceOn);
     updateVoiceStatus();
@@ -856,6 +861,15 @@ export default function createView(ctx) {
       else speakCard(c);
       // Gently bring the active teaching area into view (device-tuned; never jumps if visible).
       try { card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) { /* no-op */ }
+      // Reflective bridge steps ('...come next') keep the Course flowing: after a
+      // calm pause the tutor advances along the main path. Continue stays visible
+      // (sticky) and the optional masterclass link stays secondary; a deliberate
+      // tap on either takes precedence (both clear this timer).
+      if (c.autoNext && Number.isFinite(c.autoNext)) {
+        const at = index;
+        if (autoAdvTimer) clearTimeout(autoAdvTimer);
+        autoAdvTimer = setTimeout(() => { if (index === at) advanceStep(); }, c.autoNext);
+      }
     }
   }
 
