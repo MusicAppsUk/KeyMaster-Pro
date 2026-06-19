@@ -25,7 +25,13 @@ export const INVERSIONS = [
 ];
 
 // Comfortable lowest-note floor per hand; the chord's BASS note sits at/above it.
-const HAND_FLOOR = { RH: 60, LH: 48 }; // C4 / C3
+// LH floor is B2 (47), the bottom line of the bass staff: this keeps left-hand
+// root-position chords reading inside the bass clef rather than poking above
+// middle C. (rc2-42: was C3/48, which placed LH B-major root on B3 with D#4/F#4
+// spilling above middle C — and left root position sitting higher than its own
+// inversions. B2 floor moves only B's LH root: B3·D#4·F#4 -> B2·D#3·F#3, matching
+// the Scales LH B register; every other root and all of RH are unchanged.)
+const HAND_FLOOR = { RH: 60, LH: 47 }; // C4 / B2
 
 /**
  * Rotate a root-position triad to an inversion, keeping the stack ascending by
