@@ -444,3 +444,28 @@ headlessly verifiable; no new blind visual work.
 Tokens rc2-50 → rc2-51 (app.js + index.html); tutorVoice intra-import stays rc2-49 (unchanged).
 **Device-verify-only:** spoken correction/confirmation timing, the resume line wording in
 context, and everything from rc2-49/rc2-50 still pending device confirmation.
+
+## rc2-52 — Master Training: softer, warmer tutor voice + warm opener
+
+Device feedback (Chrome confirmed working; DuckDuckGo reports speech unavailable and is no
+longer the test browser): the spoken voice was too harsh/loud. The scripts already follow the
+calm doctrine (no "Wrong"/"Great job"), so this was DELIVERY, not wording.
+
+- **`createTutorVoice(opts)` is now configurable.** Defaults reproduce the original delivery
+  (rate 0.96 / pitch 1.0 / volume 1.0, en-GB, no female preference), so **Chord is unchanged** —
+  it reaches the wrapper via `createChordVoice()` with no args.
+- **Learn voice profile:** rate 0.9 (calmer, not patronising), pitch 0.96 (slight warmth),
+  volume 0.7 (softer, not in-your-face), **prefers a female UK-English voice** by name with
+  graceful fallback (accent+female → accent → any English+female → any English → device default).
+  Best-effort only: the Web Speech API exposes no reliable gender flag and voices are the
+  device's, so a female UK voice can't be guaranteed everywhere.
+- **Warm opener:** the greeting now leads with "Hello, Tim." in front of the existing
+  time-of-day phrase ("Hello, Tim. Good morning."). `greetingFor`'s time logic is UNCHANGED
+  (8/8) — it's just called without the name so the opener sits cleanly in front.
+- **Future seam (not built):** `lang`/`preferFemale` config is the natural home for later
+  UK/US/AU accent options and localisation; full translation remains a separate phase, and
+  tutor strings should not be hardcoded in a way that makes that painful.
+
+Tokens rc2-51 → rc2-52 (app.js + index.html); foundations' tutorVoice import → rc2-52 (dep changed);
+chordVoice's untokenized import left intact (Chord backward-compatible).
+**Device-verify-only:** which actual voice Chrome selects and whether it feels right to the ear.

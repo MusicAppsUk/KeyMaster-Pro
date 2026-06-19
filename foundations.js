@@ -23,7 +23,7 @@
 // ("Exactly — that is Middle C"), wrong notes are named and gently guided, and
 // only genuine free-exploration is acknowledged as exploration.
 
-import { createTutorVoice } from './tutorVoice.js?v=rc2-49';
+import { createTutorVoice } from './tutorVoice.js?v=rc2-52';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
 const pcOf = (m) => ((m % 12) + 12) % 12;
@@ -375,7 +375,9 @@ export default function createView(ctx) {
   // stays in plain mode with every learn-only branch below skipped.
   const learnMode = ctx.route === 'learn';
   const progress = (learnMode && ctx.progress) ? ctx.progress : null;
-  const voice = learnMode ? createTutorVoice() : null;
+  const voice = learnMode
+    ? createTutorVoice({ rate: 0.9, pitch: 0.96, volume: 0.7, lang: 'en-GB', preferFemale: true })
+    : null;
   // Master Training uses its own curriculum; Foundations keeps the original cards.
   const steps = learnMode ? LEARN_STEPS : CARDS;
   let voiceOn = true;
@@ -795,7 +797,11 @@ export default function createView(ctx) {
           index = resume;
         }
         setVoice(voiceOn);
-        const g = greetingFor(new Date(), LEARNER_NAME);
+        // Warm opener + the existing time-of-day greeting. greetingFor's logic is
+        // unchanged; called without a name so we place "Hello, Tim." in front cleanly,
+        // giving e.g. "Hello, Tim. Good morning." (morning/afternoon/evening as before).
+        const timePart = greetingFor(new Date(), '');
+        const g = `Hello, ${LEARNER_NAME}. ${timePart}`;
         const started = !!(progress && (((progress.get('learnLesson') || 0) > 0)
           || (Array.isArray(progress.get('learnCompleted')) && progress.get('learnCompleted').length > 0)));
         // Continuous Learning: name the lesson actually last reached (factual, from progressStore).

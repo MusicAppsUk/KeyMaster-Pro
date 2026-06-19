@@ -20,20 +20,44 @@ const AVAILABLE =
   'speechSynthesis' in window &&
   typeof window.SpeechSynthesisUtterance !== 'undefined';
 
-export function createTutorVoice() {
+export function createTutorVoice(opts = {}) {
+  // Delivery + voice-selection config. Defaults reproduce the ORIGINAL behaviour, so
+  // Chord (which reaches this via createChordVoice() with no args) is unchanged. The
+  // Master Training / Learn path passes a softer, warmer, female-preferring profile.
+  // Structured this way so future accent options (UK / US / AU English) and
+  // localisation can simply set `lang` here without touching call sites.
+  const cfg = {
+    rate: 0.96, pitch: 1.0, volume: 1.0,   // original delivery (Chord-preserving defaults)
+    lang: 'en-GB',                          // preferred language / accent tag
+    preferFemale: false,                    // prefer a female voice within that language
+    ...opts,
+  };
+
   let enabled = true;     // tutor voice on by default; muteable
   let unlocked = false;   // set once speech has run inside a user gesture
   let lastId = null;      // de-dupe: never repeat the same cue back-to-back
 
+  // Heuristic female-voice match by name (the Web Speech API exposes no reliable gender
+  // flag). Best-effort only — if a device ships no matching voice we fall back gracefully.
+  const FEMALE_RE = /(female|samantha|serena|kate|fiona|karen|moira|tessa|stephanie|amelie|am\u00e9lie|anna|ava|allison|susan|victoria|zira|hazel|sonia|libby|catherine|martha|emma|joana|google uk english female)/i;
+  function langMatch(v, tag) {
+    try { return new RegExp(tag.replace('-', '[-_]'), 'i').test(v.lang || ''); }
+    catch (_) { return false; }
+  }
   function pickVoice() {
     try {
       const vs = window.speechSynthesis.getVoices() || [];
-      // Prefer a calm English voice; fall back to any English, then default.
-      return (
-        vs.find((v) => /en[-_]GB/i.test(v.lang)) ||
-        vs.find((v) => /^en/i.test(v.lang)) ||
-        null
-      );
+      if (!vs.length) return null;
+      const fem = (v) => !cfg.preferFemale || FEMALE_RE.test(v.name || '');
+      // Preference order: accent+female → accent → any English+female → any English → default.
+      const pools = [
+        vs.filter((v) => langMatch(v, cfg.lang) && fem(v)),
+        vs.filter((v) => langMatch(v, cfg.lang)),
+        vs.filter((v) => /^en/i.test(v.lang || '') && fem(v)),
+        vs.filter((v) => /^en/i.test(v.lang || '')),
+      ];
+      for (const pool of pools) if (pool.length) return pool[0];
+      return null;   // let the device pick its own default voice
     } catch (_) { return null; }
   }
 
@@ -44,9 +68,9 @@ export function createTutorVoice() {
     try {
       window.speechSynthesis.cancel();         // never overlap / pile up
       const u = new window.SpeechSynthesisUtterance(text);
-      u.rate = 0.96;                            // calm, unhurried
-      u.pitch = 1.0;
-      u.volume = 1.0;
+      u.rate = cfg.rate;        // calmer, unhurried — beside the learner, not at them
+      u.pitch = cfg.pitch;      // slight warmth
+      u.volume = cfg.volume;    // softer, not in-your-face
       const v = pickVoice();
       if (v) u.voice = v;
       window.speechSynthesis.speak(u);
