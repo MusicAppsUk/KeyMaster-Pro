@@ -295,6 +295,12 @@ a { color: inherit; text-decoration: none; }
 }
 .view.is-active { display: block; }
 
+/* The dashboard is a tall navigation screen, not a fixed-height workspace.
+   Let it grow beyond one viewport and scroll inside .app__main (overflow:auto)
+   so the Practice Rooms below the hero are always reachable and tappable.
+   Scoped to home only — masterclass views keep their height:100% behaviour. */
+.view--launcher { height: auto; min-height: 100%; }
+
 .view__title {
   font-size: var(--step-xl);
   margin-bottom: var(--gap-6);
@@ -358,6 +364,7 @@ a { color: inherit; text-decoration: none; }
   border: 1px solid var(--ebony-edge);
   border-radius: var(--radius-lg);
   overflow: hidden;
+  touch-action: manipulation;
   transition: border-color var(--dur) var(--ease),
               transform var(--dur) var(--ease);
   isolation: isolate;
@@ -661,4 +668,137 @@ a.vector:hover .vector__open { color: var(--ivory); }
 @media (prefers-reduced-motion: reduce) {
   .course-hero { animation: none; }
   .course-hero__eyebrow { animation: none; opacity: 1; }
+}
+
+/* ==========================================================================
+   WP1 — LEARNING-ROOM VISUAL FOUNDATION (DRAFT)
+   Scoped ENTIRELY to the Course view (data-view="learn"). Re-skins the
+   existing .mf DOM — no structural/JS change — into a deep, luminous
+   "learning room": a depth-gradient stage with a warm light pool toward the
+   keyboard (the hero below), a floating glass teaching panel with champagne
+   edge-light, a distinct tutor caption, and a recessed active-teaching well.
+   Nothing here can reach /foundations, Scales, Sight-Reading, Chords, or the
+   shared keyboard.css — every selector is gated on [data-view="learn"].
+   Activates palette tokens previously reserved (--midnight, --champagne,
+   --amber/-glow). Robust, tablet-first CSS; no fragile positioning.
+   ========================================================================== */
+
+/* The stage — layered depth, warm light pooling low-centre as if the
+   instrument is lit from a low source just above the keys. */
+.view[data-view="learn"] {
+  background:
+    radial-gradient(115% 68% at 50% 116%, var(--amber-glow) 0%, transparent 55%),
+    radial-gradient(85% 55% at 50% 102%,
+      color-mix(in srgb, var(--brass) 20%, transparent) 0%, transparent 62%),
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--midnight) 52%, var(--ebony-sink)) 0%,
+      var(--ebony) 44%,
+      var(--ebony-sink) 100%);
+  padding-top: clamp(1.25rem, 4dvh, 2.75rem);
+}
+
+/* The room — more breathing space than a column of cards. */
+.view[data-view="learn"] .mf { max-width: 60rem; padding: 0.25rem 0 1.5rem; }
+
+/* Quiet top chrome. */
+.view[data-view="learn"] .mf__eyebrow {
+  font-size: 0.72rem; letter-spacing: 0.2em;
+  color: color-mix(in srgb, var(--champagne) 90%, transparent);
+}
+.view[data-view="learn"] .mf__step { color: var(--ivory-faint); }
+.view[data-view="learn"] .mf__dots { gap: 0.5rem; margin: 0.5rem 0 1.4rem; }
+
+/* The teaching panel — a luminous floating glass surface with champagne
+   edge-light and real depth, not a thin translucent rectangle. */
+.view[data-view="learn"] .mf__card {
+  position: relative;
+  background:
+    linear-gradient(165deg,
+      color-mix(in srgb, var(--ebony-raise) 90%, var(--midnight)) 0%,
+      var(--ebony-sink) 100%);
+  border: 1px solid color-mix(in srgb, var(--champagne) 26%, var(--ebony-edge));
+  border-radius: 22px;
+  padding: clamp(1.5rem, 3.5vw, 2.4rem);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--champagne) 20%, transparent),
+    0 24px 60px -28px rgba(0,0,0,0.78),
+    0 2px 20px -10px var(--brass-glow);
+  animation: mf-room-rise 0.5s var(--ease) both;
+}
+/* champagne light catching the top rim of the panel */
+.view[data-view="learn"] .mf__card::before {
+  content: ""; position: absolute; left: 8%; right: 8%; top: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--champagne), transparent);
+  opacity: 0.5;
+}
+
+/* Title — editorial display, more presence. */
+.view[data-view="learn"] .mf__title {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 5vw, 2.1rem);
+  line-height: 1.12; font-weight: 600; letter-spacing: -0.01em;
+  color: var(--ivory); margin: 0 0 0.9rem;
+}
+
+/* Tutor caption — the explain block reads as the tutor speaking: a warm
+   passage marked by a soft champagne rule. */
+.view[data-view="learn"] .mf__explain {
+  border-left: 2px solid color-mix(in srgb, var(--champagne) 55%, transparent);
+  padding-left: 1rem; margin: 0 0 0.4rem;
+}
+.view[data-view="learn"] .mf__explain p { font-size: 1.06rem; line-height: 1.62; }
+.view[data-view="learn"] .mf__explain p:first-child { color: var(--ivory); }
+
+/* Active-teaching well — a recessed surface with a faint amber inner glow
+   where the keyboard demo, sharps, pulse and captions are shown. */
+.view[data-view="learn"] .mf__show {
+  margin: 1.4rem 0 0.5rem; padding: 1.1rem 1.2rem; border-radius: 14px;
+  background:
+    radial-gradient(80% 120% at 50% 0%,
+      color-mix(in srgb, var(--amber-glow) 50%, transparent), transparent 70%),
+    var(--ebony-sink);
+  border: 1px solid var(--ebony-edge);
+  box-shadow: inset 0 2px 14px -6px rgba(0,0,0,0.7);
+}
+.view[data-view="learn"] .mf__keylabel { color: var(--ivory); }
+.view[data-view="learn"] .mf__showcap { color: var(--ivory-dim); }
+
+/* Media slot — make the (interim) teaching-visual area read as intentional,
+   recessed and framed rather than an unfinished box. Full premium panels
+   are WP4. */
+.view[data-view="learn"] .mf__media {
+  border: 1px solid color-mix(in srgb, var(--champagne) 16%, var(--ebony-edge));
+  border-radius: 14px;
+  background: linear-gradient(165deg,
+    color-mix(in srgb, var(--ebony-raise) 80%, var(--midnight)), var(--ebony-sink));
+}
+
+/* Try prompt — a clear, warm call to play. */
+.view[data-view="learn"] .mf__try { margin-top: 1.2rem; }
+.view[data-view="learn"] .mf__tryprompt { font-size: 1.05rem; color: var(--ivory); }
+
+/* Tutor greeting (learn mode) — warm display opening line. */
+.view[data-view="learn"] .mf__greeting {
+  font-family: var(--font-display);
+  font-size: clamp(1.05rem, 3vw, 1.25rem);
+  color: color-mix(in srgb, var(--ivory) 92%, var(--champagne));
+  margin: 0 0 0.6rem;
+}
+
+/* Demote the technical control buttons to quiet chrome so the room stays
+   calm and uncluttered (captions-first direction; full voice work is WP5). */
+.view[data-view="learn"] .mf__learnctrls { gap: 0.5rem; margin-top: 1rem; }
+.view[data-view="learn"] .mf__learnbtn {
+  font-size: 0.82rem; padding: 0.4rem 0.85rem;
+  background: transparent; border: 1px solid var(--ebony-edge);
+  color: var(--ivory-dim);
+}
+.view[data-view="learn"] .mf__footer { margin-top: 1.6rem; }
+
+@keyframes mf-room-rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .view[data-view="learn"] .mf__card { animation: none; }
 }

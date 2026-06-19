@@ -723,3 +723,30 @@ what you see. The positioning is computed from real geometry, so it should land;
 - DEVICE-VERIFY: the opening tone reads adult/premium (not childish); the tutor voice arrives naturally on
   the first tap (no "enable voice" step); the hero entrance + eyebrow breath feel alive but calm (and are
   off under reduced-motion); the "Open →" cue makes the active Practice Rooms obviously tappable on touch.
+
+## rc2-63 — Alpha Candidate: coherent Course build + video-ready architecture
+- The Course is now a coherent arc of 18 steps (was 15), not disconnected cards:
+  welcome → keyboard orientation → low/high → black-key groups → C → Middle C → B below → direction →
+  first scale → B-major fragment → (Scales room) → first chord → (Chord room) → first reading (now
+  INTERACTIVE: play Middle C as the reading anchor) → (Sight-Reading room) → first rhythm/pulse → closing.
+- NEW steps (proven engine pattern; voice-led adult copy, say-beats, progress keys):
+  - welcome: voice-led arrival + posture guidance (no medical claims; "natural, supported, never forced").
+  - first-reading: elevated from passive to interactive Middle-C reading anchor (mode 'one', exact),
+    progressKey reading:middle-c-anchor.
+  - first-pulse: first rhythm idea using the existing pulse animation (show.kind 'pulse') + count mode
+    (4 beats), progressKey rhythm:first-pulse. Honest: introduces pulse, doesn't yet grade timing.
+  - course-closing: warm close + forward to the stages, practice rooms framed as always-open.
+- VIDEO-READY ARCHITECTURE: new `media` field + honest premium placeholder slot (.mf__media) rendered in
+  the Course. No fake/uncanny video, no assets — a clean slot the Course can later accept licensed video
+  into. Slots on: welcome (posture), first-b-scale (B-major hand shape), first-reading (staff/notation),
+  first-pulse (pulse). Midnight-tinted champagne styling (enriches palette tastefully).
+- PRESERVED: rc2-62 adult tone + voice arrival, rc2-61 hero/build-tag/motion, rc2-60 B fragment (engine-
+  derived [59,61,63]), rc2-59 secondary masterclass links, rc2-57 fade-in, /learn, progressStore, Tim
+  greeting, premium-voice arch, beat sequencing, overlay, Scales audio (untouched), Scales/Chord/Sight-
+  Reading masterclasses, MIDI/NoteInput/Event Bridge, route diagnostics. theme.css NOT touched this pass
+  (media CSS lives in foundations' injected styles); index.html token bump only.
+- Red-team (headless): all JS module-mode parse (source + zip), 0-stale zip (51 files), store 25/25,
+  course coherence 16/16 (18 steps, all structurally valid, unique ids, modes valid, media on intended
+  steps only, course-scoped progress keys, no babyish/generic-praise copy), all protected invariants intact.
+- CANNOT self-verify (needs Tim's one alpha look): the rendered LOOK of the new steps + media placeholders,
+  the pulse animation, audio/voice delivery, and the overall premium visual feel.
