@@ -23,7 +23,7 @@
 // ("Exactly — that is Middle C"), wrong notes are named and gently guided, and
 // only genuine free-exploration is acknowledged as exploration.
 
-import { createTutorVoice } from './tutorVoice.js?v=rc2-54';
+import { createTutorVoice } from './tutorVoice.js?v=rc2-74';
 import { createTutorAudio } from './tutorAudio.js?v=rc2-54';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-56';
@@ -31,6 +31,15 @@ import { buildScale } from './scaleEngine.js';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
 const pcOf = (m) => ((m % 12) + 12) % 12;
+
+// Spoken/caption normaliser: show learner-friendly accidental names ("C sharp",
+// "B flat") in tutor copy, captions, hints and feedback — never "C#"/"hash".
+// (TTS gets the same treatment in tutorVoice.js. Visual notation keeps its symbols.)
+const RX_SHARP = /([A-G])(#|\u266F)/g;
+const RX_FLAT = /([A-G])(b|\u266D)(?=$|[\s.,;:!?)\]\u2014\u2013-])/g;
+function speakable(s) {
+  return (typeof s === 'string') ? s.replace(RX_SHARP, '$1 sharp').replace(RX_FLAT, '$1 flat') : s;
+}
 
 // Sharp keys that spell B major's key signature (F# C# G# D# A#), near the centre.
 const B_MAJOR_SHARPS = [66, 61, 68, 63, 70];
@@ -166,6 +175,76 @@ export const LEARN_STEPS = [
     reteach: 'Let\u2019s look again \u2014 first find a group of two black keys, then the white key just to their left is C.',
   },
   {
+    eyebrow: 'White-key names', title: 'Find D', id: 'find-d',
+    cues: { arrow: { from: [61, 63], to: 62 }, labels: [{ midi: 62, text: 'D', place: 'below' }] },
+    say: [
+      { text: 'D sits right between the two black keys.', pauseAfter: 540, tone: 'warm', emphasis: 'D' },
+      { text: 'Now you try \u2014 find a D.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['D sits in the middle of the group of two black keys \u2014 right between them.', 'Because the pattern repeats, there is a D in every group of two.'],
+    show: { kind: 'keys', midis: [62], caption: 'D \u2014 between the two black keys.', label: 'this is D' },
+    demo: [62], demoGap: 0.45,
+    tryPrompt: 'Find and press a D \u2014 between the two black keys.', targets: [62], mode: 'one',
+    okMsg: 'Exactly \u2014 that\u2019s D, between the two black keys.',
+    hint: 'D is the white key between the group of two black keys.',
+  },
+  {
+    eyebrow: 'White-key names', title: 'Find E', id: 'find-e',
+    cues: { labels: [{ midi: 64, text: 'E', place: 'below' }] },
+    say: [
+      { text: 'E sits just to the right of the two black keys.', pauseAfter: 540, tone: 'warm', emphasis: 'E' },
+      { text: 'Now you try \u2014 find an E.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['E is the white key just to the right of the two black keys.', 'C, D, E \u2014 the three white keys around the group of two.'],
+    show: { kind: 'keys', midis: [64], caption: 'E \u2014 just right of the two black keys.', label: 'this is E' },
+    demo: [64], demoGap: 0.45,
+    tryPrompt: 'Find and press an E \u2014 just right of the two black keys.', targets: [64], mode: 'one',
+    okMsg: 'Exactly \u2014 that\u2019s E, just right of the two black keys.',
+    hint: 'E is the white key immediately right of the group of two black keys.',
+  },
+  {
+    eyebrow: 'White-key names', title: 'Find F', id: 'find-f',
+    cues: { arrow: { from: [66, 68, 70], to: 65 }, labels: [{ midi: 65, text: 'F', place: 'below' }] },
+    say: [
+      { text: 'F sits just to the left of the three black keys.', pauseAfter: 540, tone: 'warm', emphasis: 'F' },
+      { text: 'Now you try \u2014 find an F.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['F is the white key just to the left of the group of three black keys.', 'The three black keys are your signpost for F.'],
+    show: { kind: 'keys', midis: [65], caption: 'F \u2014 just left of the three black keys.', label: 'this is F' },
+    demo: [65], demoGap: 0.45,
+    tryPrompt: 'Find and press an F \u2014 just left of the three black keys.', targets: [65], mode: 'one',
+    okMsg: 'Exactly \u2014 that\u2019s F, just left of the three black keys.',
+    hint: 'F is the white key immediately left of the group of three black keys.',
+  },
+  {
+    eyebrow: 'White-key names', title: 'Find G', id: 'find-g',
+    cues: { labels: [{ midi: 67, text: 'G', place: 'below' }] },
+    say: [
+      { text: 'After F comes G \u2014 the next white key up.', pauseAfter: 540, tone: 'warm', emphasis: 'G' },
+      { text: 'Now you try \u2014 find a G.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['G is the next white key to the right of F.', 'It sits between the first two of the three black keys.'],
+    show: { kind: 'keys', midis: [67], caption: 'G \u2014 just right of F.', label: 'this is G' },
+    demo: [67], demoGap: 0.45,
+    tryPrompt: 'Find and press a G \u2014 the white key just right of F.', targets: [67], mode: 'one',
+    okMsg: 'Exactly \u2014 that\u2019s G.',
+    hint: 'G is the next white key to the right of F.',
+  },
+  {
+    eyebrow: 'White-key names', title: 'Find A', id: 'find-a',
+    cues: { labels: [{ midi: 69, text: 'A', place: 'below' }] },
+    say: [
+      { text: 'After G comes A.', pauseAfter: 540, tone: 'warm', emphasis: 'A' },
+      { text: 'Now you try \u2014 find an A.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['A is the next white key to the right of G.', 'C, D, E, F, G, A \u2014 the white-key names climbing upward.'],
+    show: { kind: 'keys', midis: [69], caption: 'A \u2014 just right of G.', label: 'this is A' },
+    demo: [69], demoGap: 0.45,
+    tryPrompt: 'Find and press an A \u2014 the white key just right of G.', targets: [69], mode: 'one',
+    okMsg: 'Exactly \u2014 that\u2019s A. You can now name the white keys.',
+    hint: 'A is the next white key to the right of G.',
+  },
+  {
     eyebrow: 'Your home note', title: 'Find exact Middle C', id: 'middle-c',
     cues: { arrow: { from: [61, 63], to: 60 }, labels: [{ midi: 60, text: 'Middle C', place: 'below' }] },
     say: [
@@ -217,6 +296,21 @@ export const LEARN_STEPS = [
     hint: 'Start on C, then the next white key to the right, D.',
   },
   {
+    eyebrow: 'Movement', title: 'Steps and skips', id: 'step-skip',
+    cues: { labels: [{ midi: 60, text: 'C', place: 'below' }, { midi: 64, text: 'E', place: 'below' }] },
+    say: [
+      { text: 'Moving to the very next key is a step.', pauseAfter: 520 },
+      { text: 'Jumping over a key is a skip.', pauseAfter: 540, tone: 'warm' },
+      { text: 'Play C, then skip up to E.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['A step moves to the next note; a skip jumps over one.', 'Play C, then skip up to E \u2014 leaving D in between.'],
+    show: { kind: 'keys', midis: [60, 64], caption: 'C up to E \u2014 a skip.', label: 'C \u2013 E (a skip)' },
+    demo: [60, 64], demoGap: 0.5,
+    tryPrompt: 'Play C, then skip up to E.', targets: [60, 64], mode: 'sequence',
+    okMsg: 'Good \u2014 C to E is a skip. Steps and skips are how melodies move.',
+    hint: 'Play C first, then skip over D to E.',
+  },
+  {
     eyebrow: 'Notes in order', title: 'First scale idea', id: 'first-scale',
     cues: { labels: [{ midi: 60, text: 'C', place: 'below' }, { midi: 62, text: 'D', place: 'below' }, { midi: 64, text: 'E', place: 'below' }] },
     say: [
@@ -232,6 +326,34 @@ export const LEARN_STEPS = [
     hint: 'In order on the white keys: C, then D, then E.',
   },
   {
+    eyebrow: 'The C scale', title: 'Five steps up', id: 'c-scale-five',
+    say: [
+      { text: 'Let\u2019s climb further \u2014 five steps of the C scale.', pauseAfter: 560, tone: 'warm' },
+      { text: 'C, D, E, F, G \u2014 each the very next white key.', pauseAfter: 560 },
+      { text: 'I\u2019ll play it, then you climb it.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['A scale climbs by steps. Here are five: C, D, E, F, G.', 'Each note is the next white key to the right.'],
+    show: { kind: 'keys', midis: [60, 62, 64, 65, 67], caption: 'C, D, E, F, G \u2014 five steps up.', label: 'C D E F G' },
+    demo: [60, 62, 64, 65, 67], demoGap: 0.42,
+    tryPrompt: 'Climb the C scale: C, D, E, F, G.', targets: [60, 62, 64, 65, 67], mode: 'sequence',
+    okMsg: 'Good \u2014 C, D, E, F, G. The first five notes of the C major scale.',
+    hint: 'Start on C and play each next white key in turn: C, D, E, F, G.',
+  },
+  {
+    eyebrow: 'The C scale', title: 'And back down', id: 'c-scale-down',
+    say: [
+      { text: 'A scale comes down as well as up.', pauseAfter: 540, tone: 'warm' },
+      { text: 'From G, step down: G, F, E, D, C.', pauseAfter: 560 },
+      { text: 'Now you bring it home.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['Now descend the same five notes: G, F, E, D, C.', 'Down is just up, in reverse.'],
+    show: { kind: 'keys', midis: [67, 65, 64, 62, 60], caption: 'G, F, E, D, C \u2014 five steps down.', label: 'G F E D C' },
+    demo: [67, 65, 64, 62, 60], demoGap: 0.42,
+    tryPrompt: 'Come down the C scale: G, F, E, D, C.', targets: [67, 65, 64, 62, 60], mode: 'sequence',
+    okMsg: 'Good \u2014 up and down. You\u2019ve played your first scale, both directions.',
+    hint: 'Start on G and step down: G, F, E, D, C.',
+  },
+  {
     eyebrow: 'A new shape', title: 'A taste of B major', id: 'first-b-scale',
     progressKey: 'scale:b-major-fragment',
     media: { kind: 'video', topic: 'hand-shape', caption: 'The B major hand shape \u2014 guided demonstration coming' },
@@ -243,6 +365,16 @@ export const LEARN_STEPS = [
     okMsg: `That\u2019s the opening of B major \u2014 ${B_FRAGMENT_NAMES.join(', ')}.`,
     hint: 'In order: B, then the black key C#, then the black key D#.',
     reteach: 'B is the white key just left of the two black keys. Climb: B, C#, D#.',
+  },
+  {
+    eyebrow: 'Why B major', title: 'The B-major pathway', id: 'b-major-why',
+    say: [
+      { text: 'You just played the opening of B major.', pauseAfter: 540, tone: 'warm' },
+      { text: 'B major fits the hand beautifully \u2014 the black keys give your longer fingers natural resting points.', pauseAfter: 640 },
+      { text: 'That\u2019s why KeyMaster PRO grows your playing from a B-major home: it builds confident, ergonomic technique.', pauseAfter: 320 },
+    ],
+    explain: ['B major fits the hand well \u2014 the black keys give your longer fingers natural resting points, and the shorter fingers fall comfortably on the white keys.', 'That is why KeyMaster PRO uses a B-major pathway as a home for building technique. The Scales Masterclass takes this much further.'],
+    mode: 'none',
   },
   {
     eyebrow: 'Looking ahead', title: 'Scales come next', id: 'bridge-scales',
@@ -262,12 +394,53 @@ export const LEARN_STEPS = [
     hint: 'Press the three highlighted keys together: C, E and G.',
   },
   {
+    eyebrow: 'A second chord', title: 'G major chord', id: 'chord-g',
+    cues: { labels: [{ midi: 67, text: 'G', place: 'below' }, { midi: 71, text: 'B', place: 'below' }, { midi: 74, text: 'D', place: 'below' }] },
+    say: [
+      { text: 'You know one chord. Here is a second.', pauseAfter: 520, tone: 'warm' },
+      { text: 'G, B and D, played together, make a G major chord.', pauseAfter: 560, emphasis: 'G' },
+      { text: 'Press all three at once.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['Stack G, B and D and play them together \u2014 that is a G major chord.', 'Like C major, it is built from every-other white key.'],
+    show: { kind: 'keys', midis: [67, 71, 74], caption: 'G, B, D \u2014 a G major chord.', label: 'G \u2013 B \u2013 D' },
+    demo: [67, 71, 74], demoGap: 0.08,
+    tryPrompt: 'Press G, B and D together.', targets: [67, 71, 74], mode: 'set',
+    okMsg: 'That\u2019s a G major chord \u2014 G, B and D. You now have two chords.',
+    hint: 'Press the three highlighted keys together: G, B and D.',
+  },
+  {
     eyebrow: 'Looking ahead', title: 'Chords come next', id: 'bridge-chords',
     explain: ['You sounded your first chord \u2014 three notes ringing together.', 'Chords have their own stage further on in the Course. For extra practice any time, the Chord Masterclass is always open.'],
     show: { kind: 'keys', midis: [60, 64, 67], caption: 'Chords are built from stacked notes.' },
     demo: [60, 64, 67], demoGap: 0.08, mode: 'none',
     bridge: { label: 'For extra chord practice, open Chord Masterclass', hash: '#/chords' },
     autoNext: 3200,
+  },
+  {
+    eyebrow: 'Reading', title: 'Read and play: E', id: 'read-play-e',
+    say: [
+      { text: 'Reading is recognising a note, then playing it.', pauseAfter: 560, tone: 'warm' },
+      { text: 'The note is E. Find it and play it.', pauseAfter: 300, tone: 'instruct', emphasis: 'E' },
+    ],
+    explain: ['Reading begins with recognising a note, then finding it on the keyboard.', 'The note is E \u2014 just right of the two black keys. Play it.'],
+    show: { kind: 'keys', midis: [64], caption: 'Read: E.', label: 'E' },
+    demo: [64], demoGap: 0.45,
+    tryPrompt: 'Read the name, then play it: E.', targets: [64], mode: 'one',
+    okMsg: 'Exactly \u2014 you recognised E and played it. That is reading.',
+    hint: 'E is just right of the two black keys.',
+  },
+  {
+    eyebrow: 'Reading', title: 'Read and play: G', id: 'read-play-g',
+    say: [
+      { text: 'One more. The note is G.', pauseAfter: 520, tone: 'warm', emphasis: 'G' },
+      { text: 'Find it and play it.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['Recognise the note, then play it.', 'The note is G \u2014 just right of F.'],
+    show: { kind: 'keys', midis: [67], caption: 'Read: G.', label: 'G' },
+    demo: [67], demoGap: 0.45,
+    tryPrompt: 'Read the name, then play it: G.', targets: [67], mode: 'one',
+    okMsg: 'Good \u2014 recognise, then play. Cognitive Sight-Reading takes this much further.',
+    hint: 'G is just right of F.',
   },
   {
     eyebrow: 'Reading', title: 'First reading idea', id: 'first-reading',
@@ -309,13 +482,63 @@ export const LEARN_STEPS = [
     progressKey: 'rhythm:first-pulse',
   },
   {
+    eyebrow: 'Rhythm', title: 'Eight steady beats', id: 'pulse-eight',
+    say: [
+      { text: 'Let\u2019s hold the pulse a little longer.', pauseAfter: 520, tone: 'warm' },
+      { text: 'Play eight even notes \u2014 one on each steady beat.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['Keep the pulse steady and even \u2014 not rushing, not dragging.', 'Play eight notes, one on each beat.'],
+    show: { kind: 'pulse', caption: 'Eight steady beats.' },
+    tryPrompt: 'Play eight notes, one on each steady beat.', mode: 'count', count: 8,
+    okMsg: 'Good \u2014 a steady pulse you can rely on. Every piece sits on this.',
+  },
+  {
+    eyebrow: 'Checkpoint', title: 'Checkpoint: Middle C', id: 'review-c',
+    say: [
+      { text: 'A quick checkpoint \u2014 no new ideas, just what you know.', pauseAfter: 540, tone: 'warm' },
+      { text: 'Play Middle C.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['Let\u2019s check what you\u2019ve learned \u2014 nothing new here.', 'Find and play Middle C, near the centre.'],
+    show: { kind: 'keys', midis: [60], caption: 'Middle C.', label: 'Middle C' },
+    demo: [60], demoGap: 0.45,
+    tryPrompt: 'Play Middle C.', targets: [60], exact: true, mode: 'one',
+    okMsg: 'Exactly \u2014 Middle C, near the centre. Well remembered.',
+    hint: 'Middle C is the white key just left of the two black keys, near the centre.',
+  },
+  {
+    eyebrow: 'Checkpoint', title: 'Checkpoint: three steps', id: 'review-scale',
+    say: [
+      { text: 'Now play the first three steps of the C scale.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['From memory \u2014 climb the first three steps of the C scale.', 'C, then D, then E.'],
+    show: { kind: 'keys', midis: [60, 62, 64], caption: 'C, D, E.', label: 'C D E' },
+    demo: [60, 62, 64], demoGap: 0.46,
+    tryPrompt: 'Play C, D, E in order.', targets: [60, 62, 64], mode: 'sequence',
+    okMsg: 'Good \u2014 C, D, E. The scale is in your hands now.',
+    hint: 'Start on C, then the next white key, then the next: C, D, E.',
+  },
+  {
+    eyebrow: 'Checkpoint', title: 'Checkpoint: C major chord', id: 'review-chord',
+    say: [
+      { text: 'Last checkpoint \u2014 a chord.', pauseAfter: 500, tone: 'warm' },
+      { text: 'Play C, E and G together.', pauseAfter: 300, tone: 'instruct' },
+    ],
+    explain: ['One chord, from memory.', 'Press C, E and G together \u2014 a C major chord.'],
+    show: { kind: 'keys', midis: [60, 64, 67], caption: 'C, E, G together.', label: 'C \u2013 E \u2013 G' },
+    demo: [60, 64, 67], demoGap: 0.08,
+    tryPrompt: 'Press C, E and G together.', targets: [60, 64, 67], mode: 'set',
+    okMsg: 'Exactly \u2014 a C major chord. Orientation, names, scales, reading, rhythm and harmony \u2014 you\u2019ve begun them all.',
+    hint: 'Press the three highlighted keys together: C, E and G.',
+  },
+  {
     eyebrow: 'The road ahead', title: 'You\u2019ve begun', id: 'course-closing',
     say: [
-      { text: 'That\u2019s the opening of the Course.', pauseAfter: 560, tone: 'warm' },
-      { text: 'You\u2019ve oriented the keyboard, found your landmarks, and touched scales, chords, reading, and pulse.', pauseAfter: 660 },
-      { text: 'From here the Course builds, stage by stage, toward real musicianship. I\u2019ll be with you the whole way.', pauseAfter: 360, tone: 'warm' },
+      { text: 'You\u2019ve come a long way already.', pauseAfter: 560, tone: 'warm' },
+      { text: 'You can name the white keys, climb a scale up and down, play two chords, read a note and play it, and hold a steady pulse.', pauseAfter: 700 },
+      { text: 'Next, the masterclasses go deeper: Scales, Chords, and Cognitive Sight-Reading. I\u2019ll be with you the whole way.', pauseAfter: 360, tone: 'warm' },
     ],
-    explain: ['That\u2019s the opening of the KeyMaster PRO Course. You\u2019ve oriented the keyboard, found your landmarks, and touched scales, chords, reading, and pulse.', 'From here the Course builds, stage by stage, toward real musicianship \u2014 and the practice rooms are always open when you want to go deeper.'],
+    explain: ['You\u2019ve oriented the keyboard, named the white keys, climbed a scale both directions, played two chords, read notes and played them, and held a steady pulse.', 'What comes next: the Scales Masterclass, Chord Masterclass, and Cognitive Sight-Reading develop each of these in depth \u2014 reach them any time from the practice rooms below.'],
+    bridge: { label: 'Open a practice room to go deeper', hash: '#/scales' },
     mode: 'none',
   },
 ];
@@ -327,17 +550,25 @@ export const LEARN_STEPS = [
 // the existing LEARN_STEPS by id and changes nothing about the steps themselves.
 const COURSE_CHAPTERS = [
   { name: 'Orientation', ids: ['welcome', 'meet-keyboard', 'low-high'] },
-  { name: 'Landmarks',   ids: ['black-keys-two', 'black-keys-three', 'find-c', 'middle-c', 'b-below'],
-    intro: 'These are the keys that help you find your place on the keyboard.' },
-  { name: 'Melody',      ids: ['direction', 'first-scale', 'first-b-scale', 'bridge-scales'],
-    intro: 'Now we put notes in order, and hear how a melody moves.' },
-  { name: 'Harmony',     ids: ['first-chord', 'bridge-chords'],
-    intro: 'Notes can also sound together \u2014 that\u2019s harmony.' },
-  { name: 'Reading',     ids: ['first-reading', 'bridge-sightreading'],
-    intro: 'Reading music starts from one note you already know.' },
-  { name: 'Rhythm',      ids: ['first-pulse'],
-    intro: 'Music also needs a steady pulse to sit on.' },
-  { name: 'Onward',      ids: ['course-closing'] },
+  { name: 'Black keys', ids: ['black-keys-two', 'black-keys-three'],
+    intro: 'The black keys come in groups of two and three \u2014 your signposts.' },
+  { name: 'White keys', ids: ['find-c', 'find-d', 'find-e', 'find-f', 'find-g', 'find-a', 'middle-c', 'b-below'],
+    intro: 'Now we name the white keys, using the black-key groups to find them.' },
+  { name: 'Movement', ids: ['direction', 'step-skip'],
+    intro: 'Music moves \u2014 up and down, by steps and by skips.' },
+  { name: 'Scales', ids: ['first-scale', 'c-scale-five', 'c-scale-down'],
+    intro: 'A scale is steps in order \u2014 a ladder of pitch you can climb and descend.' },
+  { name: 'B major', ids: ['first-b-scale', 'b-major-why', 'bridge-scales'],
+    intro: 'A first taste of the B-major pathway, and why it fits the hand.' },
+  { name: 'Harmony', ids: ['first-chord', 'chord-g', 'bridge-chords'],
+    intro: 'Notes sounded together make chords \u2014 the colour of music.' },
+  { name: 'Reading', ids: ['read-play-e', 'read-play-g', 'first-reading', 'bridge-sightreading'],
+    intro: 'Reading is recognising a note, then playing it.' },
+  { name: 'Rhythm', ids: ['first-pulse', 'pulse-eight'],
+    intro: 'Music sits on a steady pulse \u2014 an even beat underneath the notes.' },
+  { name: 'Checkpoint', ids: ['review-c', 'review-scale', 'review-chord'],
+    intro: 'A calm checkpoint \u2014 just the things you already know.' },
+  { name: 'Onward', ids: ['course-closing'] },
 ];
 function chapterFor(stepId) {
   for (let i = 0; i < COURSE_CHAPTERS.length; i += 1) {
@@ -1008,7 +1239,7 @@ export default function createView(ctx) {
     }
     const explainLines = lead.length ? [...lead, ...c.explain] : c.explain;
     explain.replaceChildren(...explainLines.map((line) => {
-      const p = el('p'); p.textContent = line; return p;
+      const p = el('p'); p.textContent = speakable(line); return p;
     }));
 
     // Progress dots
@@ -1057,7 +1288,7 @@ export default function createView(ctx) {
     tryState = { pressed: new Set(), seqPos: 0, count: 0, done: false };
     if (c.mode && c.mode !== 'none') {
       tryWrap.style.display = '';
-      tryPrompt.textContent = c.tryPrompt || '';
+      tryPrompt.textContent = speakable(c.tryPrompt || '');
       tryStatus.textContent = '';
       tryStatus.classList.remove('is-done', 'is-wrong');
     } else {
@@ -1160,7 +1391,7 @@ export default function createView(ctx) {
     let shown = msg || 'Correct.';
     // Acknowledge a correct answer that came after a stumble (deterministic, not flattery).
     if (learnMode && wrongCount > 0) shown = `That\u2019s clearer now \u2014 ${shown}`;
-    tryStatus.textContent = `\u2713 ${shown}`;
+    tryStatus.textContent = `\u2713 ${speakable(shown)}`;
     tryStatus.classList.remove('is-wrong');
     tryStatus.classList.add('is-done');
     if (learnMode) {
@@ -1192,7 +1423,7 @@ export default function createView(ctx) {
       const c = steps[index];
       if (wrongCount >= 2 && c && c.reteach) msg = c.reteach;
     }
-    tryStatus.textContent = msg;
+    tryStatus.textContent = speakable(msg);
     tryStatus.classList.remove('is-done');
     tryStatus.classList.add('is-wrong');
     if (learnMode && voice && voiceOn) {
@@ -1202,7 +1433,7 @@ export default function createView(ctx) {
     }
   }
   function neutral(msg) {        // progress within an attempt (not yet complete)
-    tryStatus.textContent = msg;
+    tryStatus.textContent = speakable(msg);
     tryStatus.classList.remove('is-done', 'is-wrong');
   }
 

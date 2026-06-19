@@ -61,6 +61,16 @@ export function createTutorVoice(opts = {}) {
     } catch (_) { return null; }
   }
 
+  // Spoken-music normaliser: browsers read "C#" as "C hash" and "Bb" oddly.
+  // Convert note+accidental to learner-friendly spoken words. Visual notation is
+  // unaffected (this only touches what TTS pronounces).
+  function speakableMusic(s) {
+    if (typeof s !== 'string') return s;
+    return s
+      .replace(/([A-G])(#|\u266F)/g, '$1 sharp')
+      .replace(/([A-G])(b|\u266D)(?=$|[\s.,;:!?)\]\u2014\u2013-])/g, '$1 flat');
+  }
+
   function speak(text, id, onEnd) {
     const fin = (typeof onEnd === 'function') ? onEnd : null;
     if (!AVAILABLE || !enabled || !text) { if (fin) fin(); return; }
@@ -68,7 +78,7 @@ export function createTutorVoice(opts = {}) {
     lastId = id != null ? id : null;
     try {
       window.speechSynthesis.cancel();         // never overlap / pile up
-      const u = new window.SpeechSynthesisUtterance(text);
+      const u = new window.SpeechSynthesisUtterance(speakableMusic(text));
       u.rate = cfg.rate;        // calmer, unhurried — beside the learner, not at them
       u.pitch = cfg.pitch;      // slight warmth
       u.volume = cfg.volume;    // softer, not in-your-face
