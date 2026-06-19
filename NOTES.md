@@ -469,3 +469,54 @@ calm doctrine (no "Wrong"/"Great job"), so this was DELIVERY, not wording.
 Tokens rc2-51 → rc2-52 (app.js + index.html); foundations' tutorVoice import → rc2-52 (dep changed);
 chordVoice's untokenized import left intact (Chord backward-compatible).
 **Device-verify-only:** which actual voice Chrome selects and whether it feels right to the ear.
+
+## rc2-53 — Voice architecture: premium-voice-first, line-ID addressable (Option A + C)
+
+Doctrine (Tim): browser TTS is a temporary PROTOTYPE/fallback; the premium tutor voice is a
+core requirement; captions are always present but the intended experience is spoken & tutor-led.
+So this build prepares the premium-voice architecture WITHOUT bundling any audio or making voice
+feel optional (voice stays on by default).
+
+- **NEW `tutorAudio.js`** — resolves a spoken line by STABLE ID: (1) play a registered premium
+  audio file for that ID in the active language pack; (2) else fall back to the browser TTS
+  prototype (tutorVoice); (3) captions always render from the same text. De-dupes by line ID,
+  cancels cleanly, and exposes `setPack(map, lang)` as the lazy-load hook for future
+  accent/language packs. Unit-tested headlessly (9/9): empty pack → TTS, registered ID → plays
+  `voice/<lang>/<file>`, mixed, de-dupe, lazy swap.
+- **Stable line IDs.** Each LEARN_STEPS step has an `id` slug; spoken lines route through
+  `audio.say(lineId, text)`: `${id}.explain`, `${id}.correct` (premium-able, static okMsg),
+  `${id}.reteach` (premium-able, static), `${id}.miss` / `${id}.correct-retry` (dynamic → stay
+  TTS), and `greeting` (dynamic, name + last-lesson → stays TTS until a templated approach).
+- **Honest status:** "Tutor voice ready — device prototype (premium voice coming)."
+
+**Voice-pack contract (Option C — proven, no asset shipped):** to make a line premium, drop a
+licensed file at `voice/en-GB/<file>` and register `{ '<lineId>': '<file>' }` in the pack handed
+to `createTutorAudio` (or via `setPack`). No other code change. Static lines (explain/correct/
+reteach) are pre-recordable; dynamic lines (greeting, named corrections) need templated/segmented
+audio later. **No audio is bundled** — report file size, licensing (commercial redistribution),
+and offline impact before any pack is added; no cloned real person without rights, no unlicensed
+assets. Tokens rc2-52 → rc2-53; foundations' tutorVoice import stays rc2-52 (unchanged);
+tutorAudio imported at rc2-53. Chord untouched (tutorVoice unchanged).
+
+## rc2-54 — Tutor voice phrasing: paced beats + performance-note script model
+
+Feedback: the prototype voice sounds segmented/staccato/phrase-blind — it reads rather than
+teaches. True inflection/emphasis is a PREMIUM-audio capability (browser TTS ignores SSML), but
+"breathing" — phrasing + pauses — can be built now and is exactly the shape premium audio needs.
+
+- **Beat sequencing (`tutorAudio.sayBeats`).** A spoken explanation is performed as an array of
+  short BEATS with real pauses between them, chained on each utterance's completion, so the voice
+  breathes instead of reading one flat block. Interruptible (a correction via `say()` cuts in),
+  fully cancelable, premium-per-beat at `${baseId}.${i}`. Unit-tested 4/4 (order, indexed ids,
+  mid-sequence cancel, interrupt).
+- **`tutorVoice.speak(text, id, onEnd)`** gained an optional completion callback (fires once on
+  end OR error so a sequence never stalls). Additive — **Chord passes no onEnd and is unchanged.**
+- **Performance-note data model.** A step may carry `say: [{ text, pauseAfter, tone?, emphasis?,
+  voiceDirection? }]`. `text`+`pauseAfter` drive timing now; `tone`/`emphasis`/`voiceDirection`
+  are CARRIED for the premium recording / AI-generation phase. Five geography steps (black-keys
+  two/three, Find C, Middle C, B-below) rewritten into calm beats; captions still come from
+  `explain`. The rest follow the same pattern when the script is finalised.
+
+Tokens rc2-53 → rc2-54; foundations' tutorVoice + tutorAudio imports both → rc2-54 (both changed);
+chordVoice untokenized import intact. **Device-verify-only:** how the paced beats actually sound
+on the tablet (the honest gain here is pacing, not true inflection — that waits for premium audio).

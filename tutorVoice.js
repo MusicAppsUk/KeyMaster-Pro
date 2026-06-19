@@ -61,9 +61,10 @@ export function createTutorVoice(opts = {}) {
     } catch (_) { return null; }
   }
 
-  function speak(text, id) {
-    if (!AVAILABLE || !enabled || !text) return;
-    if (id != null && id === lastId) return;   // already said this — no chatter
+  function speak(text, id, onEnd) {
+    const fin = (typeof onEnd === 'function') ? onEnd : null;
+    if (!AVAILABLE || !enabled || !text) { if (fin) fin(); return; }
+    if (id != null && id === lastId) { if (fin) fin(); return; }
     lastId = id != null ? id : null;
     try {
       window.speechSynthesis.cancel();         // never overlap / pile up
@@ -73,9 +74,15 @@ export function createTutorVoice(opts = {}) {
       u.volume = cfg.volume;    // softer, not in-your-face
       const v = pickVoice();
       if (v) u.voice = v;
+      if (fin) {
+        // Chain on completion; fire once whether it ends cleanly or errors, so a
+        // beat sequence never stalls if the engine drops the 'end' event.
+        let done = false; const once = () => { if (done) return; done = true; fin(); };
+        u.onend = once; u.onerror = once;
+      }
       window.speechSynthesis.speak(u);
       unlocked = true;
-    } catch (_) { /* no-op: stay silent, never throw into the lesson */ }
+    } catch (_) { if (fin) fin(); }   // stay silent, never throw into the lesson
   }
 
   function cancel() {

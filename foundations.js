@@ -23,7 +23,8 @@
 // ("Exactly — that is Middle C"), wrong notes are named and gently guided, and
 // only genuine free-exploration is acknowledged as exploration.
 
-import { createTutorVoice } from './tutorVoice.js?v=rc2-52';
+import { createTutorVoice } from './tutorVoice.js?v=rc2-54';
+import { createTutorAudio } from './tutorAudio.js?v=rc2-54';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
 const pcOf = (m) => ((m % 12) + 12) % 12;
@@ -56,12 +57,16 @@ export function greetingFor(date, name) {
 // teaches: explain → demonstrate (visual + sound) → ask → wait → confirm/correct.
 // `label` is an on-screen pointer caption; `bridge` turns a step into a doorway
 // into a specialist practice room; `reteach` is the calm second-miss re-teach line.
+// `say` (optional) is the spoken explanation as an array of short BEATS performed with
+// real pauses so the voice breathes: { text, pauseAfter, tone?, emphasis?, voiceDirection? }.
+// `tone`/`emphasis`/`voiceDirection` are carried for the premium recording phase (browser
+// TTS cannot perform them); captions still come from `explain`.
 // RESERVED (scaffold for a later phase, no step uses these yet): an optional
 // `videoCue` / `visualCue` may carry a short, captioned, same-voice demonstration
 // clip or richer visual; rendering is intentionally deferred until that phase.
 export const LEARN_STEPS = [
   {
-    eyebrow: 'The keyboard', title: 'Meet the keyboard',
+    eyebrow: 'The keyboard', title: 'Meet the keyboard', id: 'meet-keyboard',
     explain: ['This is the piano keyboard \u2014 one long row of keys. Lower sounds sit to the left, higher to the right.', 'I\u2019ll show you, then you try.'],
     show: { kind: 'keys', midis: [48, 55, 60, 67, 72], caption: 'One row \u2014 low on the left, high on the right.', label: 'Low \u2190                      \u2192 High' },
     demo: [48, 60, 72], demoGap: 0.5,
@@ -69,7 +74,7 @@ export const LEARN_STEPS = [
     okMsg: 'Good \u2014 you\u2019ve made the piano sound.',
   },
   {
-    eyebrow: 'Low and high', title: 'Low and high sounds',
+    eyebrow: 'Low and high', title: 'Low and high sounds', id: 'low-high',
     explain: ['Keys on the left sound low. Keys on the right sound high.', 'Listen to the difference, then play one yourself.'],
     show: { kind: 'keys', midis: [48, 50, 52, 67, 69, 71], caption: 'Left is low; right is high.', label: 'low                          high' },
     demo: [48, 50, 52, 67, 69, 71], demoGap: 0.34,
@@ -77,7 +82,13 @@ export const LEARN_STEPS = [
     okMsg: 'That\u2019s it \u2014 left is lower, right is higher.',
   },
   {
-    eyebrow: 'Finding your way', title: 'Black-key groups of two',
+    eyebrow: 'Finding your way', title: 'Black-key groups of two', id: 'black-keys-two',
+    say: [
+      { text: 'These black keys form groups.', pauseAfter: 520, tone: 'warm' },
+      { text: 'Here is a group of two.', pauseAfter: 520, tone: 'instruct', emphasis: 'two' },
+      { text: 'I\u2019ll play it first.', pauseAfter: 460 },
+      { text: 'Now you try \u2014 tap either black key.', pauseAfter: 300, tone: 'instruct' },
+    ],
     explain: ['The black keys sit in groups of two and three.', 'Here is a group of two.'],
     show: { kind: 'keys', midis: [61, 63], caption: 'A group of two black keys.', label: 'group of two' },
     demo: [61, 63], demoGap: 0.4,
@@ -87,7 +98,13 @@ export const LEARN_STEPS = [
     reteach: 'Look again \u2014 the two black keys sit close together, with a wider gap before the next group. Tap either one.',
   },
   {
-    eyebrow: 'Finding your way', title: 'Black-key groups of three',
+    eyebrow: 'Finding your way', title: 'Black-key groups of three', id: 'black-keys-three',
+    say: [
+      { text: 'Next to the twos are groups of three.', pauseAfter: 520, tone: 'warm' },
+      { text: 'Here is a group of three.', pauseAfter: 520, tone: 'instruct', emphasis: 'three' },
+      { text: 'We use these groups as landmarks.', pauseAfter: 520 },
+      { text: 'Now you try \u2014 tap any of the three.', pauseAfter: 300, tone: 'instruct' },
+    ],
     explain: ['Next to the twos are groups of three black keys.', 'Here is a group of three.'],
     show: { kind: 'keys', midis: [66, 68, 70], caption: 'A group of three black keys.', label: 'group of three' },
     demo: [66, 68, 70], demoGap: 0.34,
@@ -97,7 +114,13 @@ export const LEARN_STEPS = [
     reteach: 'Look again \u2014 the group of three is the wider cluster. Tap any one of the three.',
   },
   {
-    eyebrow: 'The landmark C', title: 'Find C',
+    eyebrow: 'The landmark C', title: 'Find C', id: 'find-c',
+    say: [
+      { text: 'Find a group of two black keys.', pauseAfter: 520 },
+      { text: 'The white key just to their left is C.', pauseAfter: 560, tone: 'warm', emphasis: 'C' },
+      { text: 'Because the pattern repeats, C is everywhere.', pauseAfter: 480 },
+      { text: 'Now you try \u2014 find a C.', pauseAfter: 300, tone: 'instruct' },
+    ],
     explain: ['C is the white key just to the left of every group of two black keys.', 'Because the pattern repeats, you can find a C anywhere.'],
     show: { kind: 'keys', midis: [60], caption: 'C sits just left of the two black keys.', label: 'this is C' },
     demo: [60], demoGap: 0.45,
@@ -107,7 +130,14 @@ export const LEARN_STEPS = [
     reteach: 'Let\u2019s look again \u2014 first find a group of two black keys, then the white key just to their left is C.',
   },
   {
-    eyebrow: 'Your home note', title: 'Find exact Middle C',
+    eyebrow: 'Your home note', title: 'Find exact Middle C', id: 'middle-c',
+    say: [
+      { text: 'Look near the centre of the keyboard.', pauseAfter: 520 },
+      { text: 'Find the two black keys there.', pauseAfter: 520 },
+      { text: 'The white key to their left is Middle C.', pauseAfter: 560, tone: 'warm', emphasis: 'Middle C' },
+      { text: 'Here it is.', pauseAfter: 460 },
+      { text: 'Now you try.', pauseAfter: 300, tone: 'instruct' },
+    ],
     explain: ['Middle C is one special C, near the centre of the piano.', 'It is a landmark for reading music.'],
     show: { kind: 'keys', midis: [60], caption: 'Middle C \u2014 near the centre.', label: 'Middle C' },
     demo: [60], demoGap: 0.45,
@@ -117,7 +147,14 @@ export const LEARN_STEPS = [
     reteach: 'Let\u2019s look again \u2014 Middle C is near the centre, the white key just left of the two black keys there.',
   },
   {
-    eyebrow: 'Where B major begins', title: 'Find B below Middle C',
+    eyebrow: 'Where B major begins', title: 'Find B below Middle C', id: 'b-below',
+    say: [
+      { text: 'Start from Middle C.', pauseAfter: 500 },
+      { text: 'Step one white key to the left.', pauseAfter: 540, tone: 'warm' },
+      { text: 'That note is B \u2014 the B below Middle C.', pauseAfter: 560, emphasis: 'B' },
+      { text: 'This is where B major begins.', pauseAfter: 460, tone: 'warm' },
+      { text: 'Now you try.', pauseAfter: 300, tone: 'instruct' },
+    ],
     explain: ['Just to the left of Middle C is B \u2014 the B below Middle C.', 'KeyMaster PRO begins with B major around here.'],
     show: { kind: 'keys', midis: [59, 60], caption: 'B sits immediately left of Middle C.', label: 'C \u2192 one step left \u2192 B' },
     demo: [60, 59], demoGap: 0.5,
@@ -127,7 +164,7 @@ export const LEARN_STEPS = [
     reteach: 'Let\u2019s look again \u2014 find Middle C first, then step one white key to the left for B.',
   },
   {
-    eyebrow: 'Direction', title: 'First direction: up and down',
+    eyebrow: 'Direction', title: 'First direction: up and down', id: 'direction',
     explain: ['Moving right is going up. Moving left is going down.', 'Play two notes going up: C, then D.'],
     show: { kind: 'keys', midis: [60, 62], caption: 'C up to D \u2014 going up.', label: 'up \u2192' },
     demo: [60, 62], demoGap: 0.4,
@@ -136,7 +173,7 @@ export const LEARN_STEPS = [
     hint: 'Start on C, then the next white key to the right, D.',
   },
   {
-    eyebrow: 'Notes in order', title: 'First scale idea',
+    eyebrow: 'Notes in order', title: 'First scale idea', id: 'first-scale',
     explain: ['A scale is a ladder of notes climbing in order.', 'Climb the first three steps: C, D, E.'],
     show: { kind: 'keys', midis: [60, 62, 64], caption: 'C, D, E \u2014 step by step.', label: 'C \u2013 D \u2013 E' },
     demo: [60, 62, 64], demoGap: 0.3,
@@ -145,14 +182,14 @@ export const LEARN_STEPS = [
     hint: 'In order on the white keys: C, then D, then E.',
   },
   {
-    eyebrow: 'Practice room', title: 'Into Scales Masterclass',
+    eyebrow: 'Practice room', title: 'Into Scales Masterclass', id: 'bridge-scales',
     explain: ['You\u2019ve found C and climbed your first steps.', 'When you\u2019re ready, step into Scales Masterclass to build the B major shape.'],
     show: { kind: 'keys', midis: [59, 61, 63, 64, 66, 68, 70, 71], caption: 'B major sits naturally under the hand.' },
     demo: [59, 61, 63, 64, 66, 68, 70, 71], demoGap: 0.26, mode: 'none',
     bridge: { label: 'Go to Scales Masterclass', hash: '#/scales' },
   },
   {
-    eyebrow: 'Notes together', title: 'First chord idea',
+    eyebrow: 'Notes together', title: 'First chord idea', id: 'first-chord',
     explain: ['A chord is several notes sounded together.', 'C, E and G together make a C major chord.'],
     show: { kind: 'keys', midis: [60, 64, 67], caption: 'C + E + G = C major.', label: 'C + E + G' },
     demo: [60, 64, 67], demoGap: 0.08,
@@ -161,20 +198,20 @@ export const LEARN_STEPS = [
     hint: 'Press the three highlighted keys together: C, E and G.',
   },
   {
-    eyebrow: 'Practice room', title: 'Into Chord Masterclass',
+    eyebrow: 'Practice room', title: 'Into Chord Masterclass', id: 'bridge-chords',
     explain: ['You\u2019ve sounded your first chord.', 'When you\u2019re ready, step into Chord Masterclass to build B major, hand by hand.'],
     show: { kind: 'keys', midis: [60, 64, 67], caption: 'Chords are built from stacked notes.' },
     demo: [60, 64, 67], demoGap: 0.08, mode: 'none',
     bridge: { label: 'Go to Chord Masterclass', hash: '#/chords' },
   },
   {
-    eyebrow: 'Reading', title: 'First reading idea',
+    eyebrow: 'Reading', title: 'First reading idea', id: 'first-reading',
     explain: ['Written music places notes on lines and spaces. Middle C is a shared landmark between the hands.', 'We\u2019ll read outward from Middle C when you reach Sight-Reading.'],
     show: { kind: 'keys', midis: [60], caption: 'Middle C \u2014 your reading anchor.', label: 'Middle C, on the page too' },
     demo: [60], demoGap: 0.45, mode: 'none',
   },
   {
-    eyebrow: 'Practice room', title: 'Into Cognitive Sight-Reading',
+    eyebrow: 'Practice room', title: 'Into Cognitive Sight-Reading', id: 'bridge-sightreading',
     explain: ['Reading grows from recognising landmarks and patterns.', 'When you\u2019re ready, step into Cognitive Sight-Reading.'],
     show: { kind: 'keys', midis: [60], caption: 'Start reading from Middle C.' },
     demo: [60], demoGap: 0.45, mode: 'none',
@@ -378,6 +415,9 @@ export default function createView(ctx) {
   const voice = learnMode
     ? createTutorVoice({ rate: 0.9, pitch: 0.96, volume: 0.7, lang: 'en-GB', preferFemale: true })
     : null;
+  // Premium-voice-first layer: plays a licensed audio file per stable line ID when one
+  // exists, else falls back to the browser TTS prototype above. No assets bundled yet.
+  const audio = learnMode ? createTutorAudio({ voice, lang: 'en-GB' }) : null;
   // Master Training uses its own curriculum; Foundations keeps the original cards.
   const steps = learnMode ? LEARN_STEPS : CARDS;
   let voiceOn = true;
@@ -487,13 +527,13 @@ export default function createView(ctx) {
 
     startBtn.addEventListener('click', () => { voice?.unlock?.(); speakPending(); });
     voiceBtn.addEventListener('click', () => { voice?.unlock?.(); setVoice(!voiceOn); speakPending(); });
-    pauseBtn.addEventListener('click', () => { voice?.cancel?.(); stopDemoAudio(); stopPulse(); });
+    pauseBtn.addEventListener('click', () => { audio?.cancel?.(); stopDemoAudio(); stopPulse(); });
     repeatBtn.addEventListener('click', () => { voice?.unlock?.(); demoCard(steps[index]); speakCard(steps[index]); });
     resetBtn.addEventListener('click', onReset);
     bridgeBtn.addEventListener('click', () => {
       voice?.unlock?.();
       const b = steps[index]?.bridge;
-      if (b) { voice?.cancel?.(); try { window.location.hash = b.hash; } catch (_) { /* no-op */ } }
+      if (b) { audio?.cancel?.(); try { window.location.hash = b.hash; } catch (_) { /* no-op */ } }
     });
   }
 
@@ -505,7 +545,7 @@ export default function createView(ctx) {
   });
 
   backBtn.addEventListener('click', () => {
-    voice?.unlock?.(); voice?.cancel?.();
+    voice?.unlock?.(); audio?.cancel?.();
     if (index === 0) { goHome(); return; }
     index -= 1; render();
   });
@@ -546,7 +586,7 @@ export default function createView(ctx) {
       msg = 'Tap \u201CStart tutor voice\u201D to let the tutor speak.';
       showStart = true;
     } else {
-      msg = 'Tutor voice ready.';
+      msg = 'Tutor voice ready \u2014 device prototype (premium voice coming).';
     }
     statusEl.textContent = msg;
     if (startBtn) startBtn.style.display = showStart ? '' : 'none';
@@ -556,7 +596,7 @@ export default function createView(ctx) {
   function speakPending() {
     if (!pendingGreeting) { updateVoiceStatus(); return; }
     if (voice && voiceOn) {
-      voice.speak(pendingGreeting, 'greeting');
+      audio.say('greeting', pendingGreeting);
       const c0 = steps[index];
       if (progress && c0) progress.addToSet('heardNarration', `narr:${c0.title}`);
       pendingGreeting = null;
@@ -569,7 +609,7 @@ export default function createView(ctx) {
       ? window.confirm('Reset your learning progress on this device? This clears saved lessons and the voice preference.')
       : true;
     if (!okToReset) return;
-    voice?.cancel?.();
+    audio?.cancel?.();
     if (progress) progress.reset();
     index = 0;
     greeted = false;
@@ -579,11 +619,15 @@ export default function createView(ctx) {
   function speakCard(c) {
     if (!voice || !voiceOn || !c) return;
     const id = `narr:${c.title}`;
-    const parts = [];
-    if (Array.isArray(c.explain) && c.explain[0]) parts.push(c.explain[0]);
-    if (c.mode && c.mode !== 'none' && c.tryPrompt) parts.push(c.tryPrompt);
-    const text = parts.join(' ');
-    if (text) voice.speak(text, id);
+    if (Array.isArray(c.say) && c.say.length) {
+      audio.sayBeats(`${c.id}.say`, c.say);   // performed as short, paced beats
+    } else {
+      const parts = [];
+      if (Array.isArray(c.explain) && c.explain[0]) parts.push(c.explain[0]);
+      if (c.mode && c.mode !== 'none' && c.tryPrompt) parts.push(c.tryPrompt);
+      const text = parts.join(' ');
+      if (text) audio.say(`${c.id}.explain`, text);
+    }
     if (progress) progress.addToSet('heardNarration', id);
   }
 
@@ -747,7 +791,10 @@ export default function createView(ctx) {
     tryStatus.classList.add('is-done');
     if (learnMode) {
       enableContinue();
-      if (voice && voiceOn) voice.speak(shown, `done:${index}`);
+      if (voice && voiceOn) {
+        const sid = (steps[index] && steps[index].id) ? steps[index].id : `i${index}`;
+        audio.say(wrongCount > 0 ? `${sid}.correct-retry` : `${sid}.correct`, shown);
+      }
     }
   }
   function guide(msg) {          // calm correction — guides, never punishes
@@ -761,7 +808,11 @@ export default function createView(ctx) {
     tryStatus.textContent = msg;
     tryStatus.classList.remove('is-done');
     tryStatus.classList.add('is-wrong');
-    if (learnMode && voice && voiceOn) voice.speak(msg, `guide:${index}:${wrongCount}`);
+    if (learnMode && voice && voiceOn) {
+      const c = steps[index];
+      const sid = (c && c.id) ? c.id : `i${index}`;
+      audio.say((c && msg === c.reteach) ? `${sid}.reteach` : `${sid}.miss`, msg);
+    }
   }
   function neutral(msg) {        // progress within an attempt (not yet complete)
     tryStatus.textContent = msg;
@@ -828,7 +879,7 @@ export default function createView(ctx) {
     },
     exit() {
       if (unsub) { unsub(); unsub = null; }
-      voice?.cancel?.();
+      audio?.cancel?.();
       if (gateTimer) { clearTimeout(gateTimer); gateTimer = null; }
       stopPulse();
       stopDemoAudio();
