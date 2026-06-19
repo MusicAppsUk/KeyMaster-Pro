@@ -112,29 +112,29 @@ function savePrefs(prefs) {
 const VIEW_REGISTRY = {
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-48',
-    load: () => import('./foundations.js?v=rc2-48'),
+    src: './foundations.js?v=rc2-50',
+    load: () => import('./foundations.js?v=rc2-50'),
   },
   scales: {
     slot: 'scales',
-    src: './scalesMasterclass.js?v=rc2-48',
-    load: () => import('./scalesMasterclass.js?v=rc2-48'),
+    src: './scalesMasterclass.js?v=rc2-50',
+    load: () => import('./scalesMasterclass.js?v=rc2-50'),
   },
   sightreading: {
     slot: 'sightreading',
-    src: './sightReading.js?v=rc2-48',
-    load: () => import('./sightReading.js?v=rc2-48'),
+    src: './sightReading.js?v=rc2-50',
+    load: () => import('./sightReading.js?v=rc2-50'),
   },
   chords: {
     slot: 'chords',
-    src: './chordMasterclass.js?v=rc2-48',
-    load: () => import('./chordMasterclass.js?v=rc2-48'),
+    src: './chordMasterclass.js?v=rc2-50',
+    load: () => import('./chordMasterclass.js?v=rc2-50'),
   },
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-48',
-    load: () => import('./foundations.js?v=rc2-48'),
+    src: './foundations.js?v=rc2-50',
+    load: () => import('./foundations.js?v=rc2-50'),
   },
 };
 

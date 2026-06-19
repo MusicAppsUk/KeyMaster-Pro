@@ -70,9 +70,18 @@ export function createTutorVoice() {
     } catch (_) { /* no-op */ }
   }
 
+  // Warm up the (often async) voice list so pickVoice has options by first speak.
+  if (AVAILABLE) {
+    try {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.addEventListener?.('voiceschanged', () => { /* list ready */ });
+    } catch (_) { /* no-op */ }
+  }
+
   return {
     available: () => AVAILABLE,
     isEnabled: () => enabled,
+    isUnlocked: () => unlocked,
     setEnabled(on) { enabled = !!on; if (!enabled) cancel(); },
     speak,
     cancel,

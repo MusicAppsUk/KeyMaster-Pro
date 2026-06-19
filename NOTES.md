@@ -345,3 +345,79 @@ remain the gate, since /learn leans on the same browser TTS.
 **Deferred to the next Learn stage**: Lessons "Clefs and hands" + "First reading idea" and a
 Sight-Reading bridge (must use a learn-only overlay, never the shared CARDS). Then Stage 3 =
 videoCue metadata + placeholder panel (no assets).
+
+## rc2-49 — Master Training: tutor voice fix + visible voice diagnostic
+
+**Root cause of the silent tutor on Android/PWA:** the greeting's `voice.speak()` ran inside
+`enter()`, which executes *asynchronously after* the hash navigation (CTA click → hashchange
+→ _handleRoute → _enterView → enter). By then the mobile user-gesture token had expired, so
+SpeechSynthesis silently ignored the first utterance. `unlock()` only fired on later in-/learn
+taps — after the greeting had already failed. Desktop is lenient, so it "worked" there and
+headlessly showed no error.
+
+**Fix (learn-mode only; /foundations untouched):**
+- The greeting+intro is now *queued* (`pendingGreeting`) and spoken from **inside a user
+  gesture** — a new **"Start tutor voice"** button, or the first Continue/Back/Replay/key tap.
+  This is the canonical Android autoplay fix. If voice was already unlocked earlier in the
+  session, it speaks immediately on enter.
+- **Visible voice status** (the tutor must never fail silently): "unavailable / muted /
+  Tap Start to let the tutor speak / ready", driven by real `available()` + `isEnabled()` +
+  `isUnlocked()` state.
+- `tutorVoice.js` (additive, backward-compatible): exposes `isUnlocked()` and warms up the
+  (async) voice list. Chord is unaffected — it uses the unchanged speak/cancel/unlock API and
+  reaches the wrapper via the untouched `chordVoice.js` re-export.
+
+`foundations.js` now imports `./tutorVoice.js?v=rc2-49` so the updated wrapper is fetched in
+/learn (its only changed dependency). NOTE: bump that import token whenever tutorVoice changes.
+Tokens rc2-48 → rc2-49 (app.js + index.html).
+
+**This is the voice phase only.** The visual tutor cockpit (interactive Black-keys / Find-C /
+Middle-C / B, SVG/CSS keyboard cues, self-centering focus) is the next build, to be built on a
+device-confirmed-working voice rather than blind. **Device-verify-only:** spoken voice, the
+status text transitions, greeting-by-local-time, and that the first gesture unlocks speech.
+
+## rc2-50 — Master Training becomes the curriculum (interactive, proficiency-gated) + dashboard IA
+
+**Master Training (/learn) is now the guided course, not a card deck.** It gets its own
+14-step curriculum, `LEARN_STEPS` (exported), selected by `const steps = learnMode ?
+LEARN_STEPS : CARDS`. The shared `CARDS` array is never mutated, so **/foundations stays
+byte-identical** (steps === CARDS in plain mode; every learn behaviour is behind `if
+(learnMode)`).
+
+**Curriculum (14 steps):** meet the keyboard · low/high · black-key groups of two · groups of
+three · find C · exact Middle C · B below Middle C · up/down direction · first scale idea ·
+→ Scales Masterclass · first chord idea · → Chord Masterclass · first reading idea · →
+Cognitive Sight-Reading. Early steps are genuinely interactive (watch → listen → try →
+feedback), reusing the proven `onNote` + `complete/guide/neutral` engine.
+
+**New interaction + teaching:**
+- New `oneof` mode — "tap any one of the highlighted keys" (group of two = C♯/D♯; group of
+  three = F♯/G♯/A♯).
+- **Proficiency gate:** in learn mode an interactive step holds **Continue** (disabled) until
+  the task is done. Gentle escape so the learner is never trapped — unlocks after a few
+  attempts or a 22 s failsafe. Explanation/bridge steps continue freely.
+- **Controls:** added **Pause** (silence voice/demo) and **Repeat** (re-demonstrate: re-sound
+  + re-speak) to the learn row; footer keeps Back/Continue; show area keeps Hear-it-again;
+  Start tutor voice / Voice / Reset as before.
+- **Visual cues:** on-screen amber pointer **labels** ("group of two", "this is C", "Middle C")
+  + the existing amber target highlight + a `[data-view="learn"]`-scoped breathing **glow**
+  (mirrors the rc2-43 chord cue exactly; Scales/Chord/Foundations untouched) + the existing
+  `viewport.frame()` keyboard centering.
+- **Self-centering:** a gentle `scrollIntoView({block:'nearest'})` on step change.
+- Step-level `bridge` doorways into the three practice rooms.
+
+**Dashboard IA:** Master Training is now the **hero** CTA ("Master Training · the guided
+course" → Start Learning). The masterclasses sit under a secondary **"Practice rooms"**
+heading. The Foundations card is **removed from the grid** (absorbed into the path); the
+`/foundations` route is unchanged and still reachable via the hint link.
+
+Tokens rc2-49 → rc2-50 (app.js + index.html, incl. keyboard.css link). `tutorVoice.js` was
+unchanged this release, so foundations' import token stays `?v=rc2-49` (convention: an
+intra-module import token tracks the version that dependency last changed).
+
+**Deferred (needs device-tuned positioning — too risky to build blind):** SVG brackets /
+arrows / pointers from black keys to C, and staff↔keyboard reading graphics. Next polish pass.
+
+**Device-verify-only:** all on-screen rendering (labels, glow, gated button), the scroll/
+self-centering feel, spoken voice (rc2-49, still awaiting your confirmation), demo audio,
+the proficiency-gate pacing, and bridge navigation.

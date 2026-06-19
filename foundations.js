@@ -23,7 +23,7 @@
 // ("Exactly — that is Middle C"), wrong notes are named and gently guided, and
 // only genuine free-exploration is acknowledged as exploration.
 
-import { createTutorVoice } from './tutorVoice.js';
+import { createTutorVoice } from './tutorVoice.js?v=rc2-49';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
 const pcOf = (m) => ((m % 12) + 12) % 12;
@@ -51,20 +51,128 @@ export function greetingFor(date, name) {
   return name ? `${part}, ${name}.` : `${part}.`;
 }
 
-// Learn-mode bridges into the specialist practice rooms, keyed by the (stable) card
-// title so the shared CARDS array is never mutated.
-const LEARN_BRIDGES = {
-  'What is a scale?': {
-    label: 'Go to Scales Masterclass',
-    hash: '#/scales',
-    line: 'You now know the starting area. When you are ready, enter Scales Masterclass and begin the B major shape.',
+// Master Training curriculum — the learner-facing guided course. Used ONLY in
+// learn mode; /foundations keeps the original CARDS below, untouched. Each step
+// teaches: explain → demonstrate (visual + sound) → ask → wait → confirm/correct.
+// `label` is an on-screen pointer caption; `bridge` turns a step into a doorway
+// into a specialist practice room.
+export const LEARN_STEPS = [
+  {
+    eyebrow: 'The keyboard', title: 'Meet the keyboard',
+    explain: ['This is the piano keyboard \u2014 one long row of keys. Lower sounds sit to the left, higher to the right.', 'I\u2019ll show you, then you try.'],
+    show: { kind: 'keys', midis: [48, 55, 60, 67, 72], caption: 'One row \u2014 low on the left, high on the right.', label: 'Low \u2190                      \u2192 High' },
+    demo: [48, 60, 72], demoGap: 0.5,
+    tryPrompt: 'Press any key to make a sound.', mode: 'any',
+    okMsg: 'Good \u2014 you\u2019ve made the piano sound.',
   },
-  'What is a chord?': {
-    label: 'Go to Chord Masterclass',
-    hash: '#/chords',
-    line: 'That is a chord. When you are ready, enter Chord Masterclass to build B major, hand by hand.',
+  {
+    eyebrow: 'Low and high', title: 'Low and high sounds',
+    explain: ['Keys on the left sound low. Keys on the right sound high.', 'Listen to the difference, then play one yourself.'],
+    show: { kind: 'keys', midis: [48, 50, 52, 67, 69, 71], caption: 'Left is low; right is high.', label: 'low                          high' },
+    demo: [48, 50, 52, 67, 69, 71], demoGap: 0.34,
+    tryPrompt: 'Press any key and listen to how low or high it is.', mode: 'any',
+    okMsg: 'That\u2019s it \u2014 left is lower, right is higher.',
   },
-};
+  {
+    eyebrow: 'Finding your way', title: 'Black-key groups of two',
+    explain: ['The black keys sit in groups of two and three.', 'Here is a group of two.'],
+    show: { kind: 'keys', midis: [61, 63], caption: 'A group of two black keys.', label: 'group of two' },
+    demo: [61, 63], demoGap: 0.4,
+    tryPrompt: 'Tap one of the two black keys in the highlighted group.', targets: [61, 63], mode: 'oneof',
+    okMsg: 'Yes \u2014 that\u2019s a black key in a group of two.',
+    hint: 'The group of two is highlighted \u2014 tap either black key.',
+  },
+  {
+    eyebrow: 'Finding your way', title: 'Black-key groups of three',
+    explain: ['Next to the twos are groups of three black keys.', 'Here is a group of three.'],
+    show: { kind: 'keys', midis: [66, 68, 70], caption: 'A group of three black keys.', label: 'group of three' },
+    demo: [66, 68, 70], demoGap: 0.34,
+    tryPrompt: 'Tap one of the three black keys in the highlighted group.', targets: [66, 68, 70], mode: 'oneof',
+    okMsg: 'Yes \u2014 that\u2019s a black key in a group of three.',
+    hint: 'The group of three is highlighted \u2014 tap any of them.',
+  },
+  {
+    eyebrow: 'The landmark C', title: 'Find C',
+    explain: ['C is the white key just to the left of every group of two black keys.', 'Because the pattern repeats, you can find a C anywhere.'],
+    show: { kind: 'keys', midis: [60], caption: 'C sits just left of the two black keys.', label: 'this is C' },
+    demo: [60], demoGap: 0.45,
+    tryPrompt: 'Find and press a C \u2014 just left of a group of two black keys.', targets: [60], mode: 'one',
+    okMsg: 'Exactly \u2014 that\u2019s C, just left of the two black keys.',
+    hint: 'C is the white key immediately left of a group of two black keys.',
+  },
+  {
+    eyebrow: 'Your home note', title: 'Find exact Middle C',
+    explain: ['Middle C is one special C, near the centre of the piano.', 'It is a landmark for reading music.'],
+    show: { kind: 'keys', midis: [60], caption: 'Middle C \u2014 near the centre.', label: 'Middle C' },
+    demo: [60], demoGap: 0.45,
+    tryPrompt: 'Press Middle C \u2014 the highlighted key near the centre.', targets: [60], exact: true, mode: 'one',
+    okMsg: 'Exactly \u2014 that\u2019s Middle C (C4).',
+    hint: 'Middle C is the highlighted key, near the centre.',
+  },
+  {
+    eyebrow: 'Where B major begins', title: 'Find B below Middle C',
+    explain: ['Just to the left of Middle C is B \u2014 the B below Middle C.', 'KeyMaster PRO begins with B major around here.'],
+    show: { kind: 'keys', midis: [59, 60], caption: 'B sits immediately left of Middle C.', label: 'C \u2192 one step left \u2192 B' },
+    demo: [60, 59], demoGap: 0.5,
+    tryPrompt: 'Press the B just below Middle C \u2014 one white key to the left.', targets: [59], exact: true, mode: 'one',
+    okMsg: 'Exactly \u2014 that\u2019s B, just below Middle C. This is where B major lives.',
+    hint: 'B is the white key immediately left of Middle C.',
+  },
+  {
+    eyebrow: 'Direction', title: 'First direction: up and down',
+    explain: ['Moving right is going up. Moving left is going down.', 'Play two notes going up: C, then D.'],
+    show: { kind: 'keys', midis: [60, 62], caption: 'C up to D \u2014 going up.', label: 'up \u2192' },
+    demo: [60, 62], demoGap: 0.4,
+    tryPrompt: 'Play C, then D \u2014 two notes going up.', targets: [60, 62], mode: 'sequence',
+    okMsg: 'That\u2019s going up \u2014 C then D.',
+    hint: 'Start on C, then the next white key to the right, D.',
+  },
+  {
+    eyebrow: 'Notes in order', title: 'First scale idea',
+    explain: ['A scale is a ladder of notes climbing in order.', 'Climb the first three steps: C, D, E.'],
+    show: { kind: 'keys', midis: [60, 62, 64], caption: 'C, D, E \u2014 step by step.', label: 'C \u2013 D \u2013 E' },
+    demo: [60, 62, 64], demoGap: 0.3,
+    tryPrompt: 'Climb the first three steps: C, then D, then E.', targets: [60, 62, 64], mode: 'sequence',
+    okMsg: 'That\u2019s the first three steps of a scale \u2014 C, D, E.',
+    hint: 'In order on the white keys: C, then D, then E.',
+  },
+  {
+    eyebrow: 'Practice room', title: 'Into Scales Masterclass',
+    explain: ['You\u2019ve found C and climbed your first steps.', 'When you\u2019re ready, step into Scales Masterclass to build the B major shape.'],
+    show: { kind: 'keys', midis: [59, 61, 63, 64, 66, 68, 70, 71], caption: 'B major sits naturally under the hand.' },
+    demo: [59, 61, 63, 64, 66, 68, 70, 71], demoGap: 0.26, mode: 'none',
+    bridge: { label: 'Go to Scales Masterclass', hash: '#/scales' },
+  },
+  {
+    eyebrow: 'Notes together', title: 'First chord idea',
+    explain: ['A chord is several notes sounded together.', 'C, E and G together make a C major chord.'],
+    show: { kind: 'keys', midis: [60, 64, 67], caption: 'C + E + G = C major.', label: 'C + E + G' },
+    demo: [60, 64, 67], demoGap: 0.08,
+    tryPrompt: 'Press C, E and G together.', targets: [60, 64, 67], mode: 'set',
+    okMsg: 'That\u2019s a C major chord \u2014 C, E and G together.',
+    hint: 'Press the three highlighted keys together: C, E and G.',
+  },
+  {
+    eyebrow: 'Practice room', title: 'Into Chord Masterclass',
+    explain: ['You\u2019ve sounded your first chord.', 'When you\u2019re ready, step into Chord Masterclass to build B major, hand by hand.'],
+    show: { kind: 'keys', midis: [60, 64, 67], caption: 'Chords are built from stacked notes.' },
+    demo: [60, 64, 67], demoGap: 0.08, mode: 'none',
+    bridge: { label: 'Go to Chord Masterclass', hash: '#/chords' },
+  },
+  {
+    eyebrow: 'Reading', title: 'First reading idea',
+    explain: ['Written music places notes on lines and spaces. Middle C is a shared landmark between the hands.', 'We\u2019ll read outward from Middle C when you reach Sight-Reading.'],
+    show: { kind: 'keys', midis: [60], caption: 'Middle C \u2014 your reading anchor.', label: 'Middle C, on the page too' },
+    demo: [60], demoGap: 0.45, mode: 'none',
+  },
+  {
+    eyebrow: 'Practice room', title: 'Into Cognitive Sight-Reading',
+    explain: ['Reading grows from recognising landmarks and patterns.', 'When you\u2019re ready, step into Cognitive Sight-Reading.'],
+    show: { kind: 'keys', midis: [60], caption: 'Start reading from Middle C.' },
+    demo: [60], demoGap: 0.45, mode: 'none',
+    bridge: { label: 'Go to Cognitive Sight-Reading', hash: '#/sightreading' },
+  },
+];
 
 /**
  * The foundation pathway. Each card is short by design:
@@ -260,9 +368,14 @@ export default function createView(ctx) {
   const learnMode = ctx.route === 'learn';
   const progress = (learnMode && ctx.progress) ? ctx.progress : null;
   const voice = learnMode ? createTutorVoice() : null;
+  // Master Training uses its own curriculum; Foundations keeps the original cards.
+  const steps = learnMode ? LEARN_STEPS : CARDS;
   let voiceOn = true;
   let greeted = false;            // speak the greeting at most once per session
   let suppressSpeakOnce = false;  // first render after greeting must not cut it off
+  let pendingGreeting = null;     // greeting+intro awaiting the first user gesture (mobile autoplay)
+  let stepAttempts = 0;           // learn: interactions on the current step (gentle progression gate)
+  let gateTimer = null;           // learn: failsafe so the learner is never trapped
 
   injectStyles();
 
@@ -314,12 +427,13 @@ export default function createView(ctx) {
   const explain = el('div', { class: 'mf__explain' });
 
   const showCaption = el('p', { class: 'mf__showcap' });
+  const keyLabel = el('p', { class: 'mf__keylabel', 'aria-hidden': 'true' });
   const pulse = el('div', { class: 'mf__pulse', 'aria-hidden': 'true' });
   for (let i = 0; i < 4; i++) pulse.appendChild(el('span', { class: 'mf__beat' }));
   const sharps = el('p', { class: 'mf__sharps', 'aria-hidden': 'true' });
   const replayBtn = el('button', { class: 'mf__replay mf__btn mf__btn--ghost', type: 'button' });
   replayBtn.textContent = 'Hear it again';
-  const showWrap = el('div', { class: 'mf__show' }, [pulse, sharps, showCaption, replayBtn]);
+  const showWrap = el('div', { class: 'mf__show' }, [keyLabel, pulse, sharps, showCaption, replayBtn]);
 
   const tryWrap = el('div', { class: 'mf__try' });
   const tryPrompt = el('p', { class: 'mf__tryprompt' });
@@ -338,30 +452,42 @@ export default function createView(ctx) {
 
   // ---- Learn-mode UI (greeting, voice toggle, reset, bridge) — built only in
   // Master Training; plain Foundations never creates these. --------------------
-  let greetingEl = null, voiceBtn = null, bridgeBtn = null;
+  let greetingEl = null, voiceBtn = null, bridgeBtn = null, statusEl = null, startBtn = null;
   if (learnMode) {
     greetingEl = el('p', { class: 'mf__greeting', 'aria-live': 'polite' });
+    startBtn = el('button', { class: 'mf__btn mf__btn--primary mf__learnbtn mf__startvoice', type: 'button' });
+    startBtn.textContent = 'Start tutor voice';
+    startBtn.style.display = 'none';
     voiceBtn = el('button', { class: 'mf__btn mf__btn--ghost mf__learnbtn', type: 'button' });
+    const pauseBtn = el('button', { class: 'mf__btn mf__btn--ghost mf__learnbtn', type: 'button' });
+    pauseBtn.textContent = 'Pause';
+    const repeatBtn = el('button', { class: 'mf__btn mf__btn--ghost mf__learnbtn', type: 'button' });
+    repeatBtn.textContent = 'Repeat';
     const resetBtn = el('button', { class: 'mf__btn mf__btn--ghost mf__learnbtn', type: 'button' });
     resetBtn.textContent = 'Reset progress';
-    const ctrls = el('div', { class: 'mf__learnctrls' }, [voiceBtn, resetBtn]);
+    const ctrls = el('div', { class: 'mf__learnctrls' }, [startBtn, voiceBtn, pauseBtn, repeatBtn, resetBtn]);
+    statusEl = el('p', { class: 'mf__voicestatus', 'aria-live': 'polite' });
     root.insertBefore(greetingEl, head);
     root.insertBefore(ctrls, dots);
+    root.insertBefore(statusEl, dots);
     bridgeBtn = el('button', { class: 'mf__btn mf__btn--primary mf__bridge', type: 'button' });
     bridgeBtn.style.display = 'none';
     card.appendChild(bridgeBtn);
 
-    voiceBtn.addEventListener('click', () => { voice?.unlock?.(); setVoice(!voiceOn); });
+    startBtn.addEventListener('click', () => { voice?.unlock?.(); speakPending(); });
+    voiceBtn.addEventListener('click', () => { voice?.unlock?.(); setVoice(!voiceOn); speakPending(); });
+    pauseBtn.addEventListener('click', () => { voice?.cancel?.(); stopDemoAudio(); stopPulse(); });
+    repeatBtn.addEventListener('click', () => { voice?.unlock?.(); demoCard(steps[index]); speakCard(steps[index]); });
     resetBtn.addEventListener('click', onReset);
     bridgeBtn.addEventListener('click', () => {
       voice?.unlock?.();
-      const b = LEARN_BRIDGES[CARDS[index]?.title];
+      const b = steps[index]?.bridge;
       if (b) { voice?.cancel?.(); try { window.location.hash = b.hash; } catch (_) { /* no-op */ } }
     });
   }
 
   // Progress dots
-  CARDS.forEach((_, i) => {
+  steps.forEach((_, i) => {
     const d = el('span', { class: 'mf__dot' });
     d.dataset.i = String(i);
     dots.appendChild(d);
@@ -374,14 +500,15 @@ export default function createView(ctx) {
   });
   contBtn.addEventListener('click', () => {
     voice?.unlock?.();
-    if (learnMode && progress && CARDS[index]) {
-      progress.addToSet('foundationsCompleted', CARDS[index].title);
-      progress.addToSet('learnCompleted', CARDS[index].title);
+    if (learnMode && contBtn.disabled) return;   // proficiency gate (learn only)
+    if (learnMode && progress && steps[index]) {
+      progress.addToSet('foundationsCompleted', steps[index].title);
+      progress.addToSet('learnCompleted', steps[index].title);
     }
-    if (index >= CARDS.length - 1) { goHome(); return; }
+    if (index >= steps.length - 1) { goHome(); return; }
     index += 1; render();
   });
-  replayBtn.addEventListener('click', () => { voice?.unlock?.(); demoCard(CARDS[index]); });
+  replayBtn.addEventListener('click', () => { voice?.unlock?.(); demoCard(steps[index]); });
 
   function goHome() { try { window.location.hash = '#/'; } catch { /* no-op */ } }
 
@@ -394,6 +521,37 @@ export default function createView(ctx) {
       voiceBtn.setAttribute('aria-pressed', voiceOn ? 'true' : 'false');
     }
     if (progress) progress.set('voiceOn', voiceOn);
+    updateVoiceStatus();
+  }
+  // Visible voice diagnostic — the tutor must never fail silently.
+  function updateVoiceStatus() {
+    if (!statusEl) return;
+    let msg, showStart = false;
+    if (!voice || !voice.available?.()) {
+      msg = 'Tutor voice unavailable on this device \u2014 captions only.';
+    } else if (!voiceOn) {
+      msg = 'Tutor voice muted \u2014 captions only.';
+    } else if (!voice.isUnlocked?.()) {
+      msg = 'Tap \u201CStart tutor voice\u201D to let the tutor speak.';
+      showStart = true;
+    } else {
+      msg = 'Tutor voice ready.';
+    }
+    statusEl.textContent = msg;
+    if (startBtn) startBtn.style.display = showStart ? '' : 'none';
+  }
+  // Speak the queued greeting+intro — MUST be triggered from inside a user gesture
+  // (button tap / key press) so mobile autoplay rules allow the first utterance.
+  function speakPending() {
+    if (!pendingGreeting) { updateVoiceStatus(); return; }
+    if (voice && voiceOn) {
+      voice.speak(pendingGreeting, 'greeting');
+      const c0 = steps[index];
+      if (progress && c0) progress.addToSet('heardNarration', `narr:${c0.title}`);
+      pendingGreeting = null;
+      greeted = true;
+    }
+    updateVoiceStatus();
   }
   function onReset() {
     const okToReset = (typeof window !== 'undefined' && typeof window.confirm === 'function')
@@ -418,16 +576,33 @@ export default function createView(ctx) {
     if (progress) progress.addToSet('heardNarration', id);
   }
 
+  // ---- Proficiency gate (learn only): an interactive step holds Continue until the
+  // learner has done it, with a gentle escape so they are never trapped. ----------
+  function enableContinue() {
+    if (gateTimer) { clearTimeout(gateTimer); gateTimer = null; }
+    contBtn.disabled = false;
+    contBtn.classList.remove('is-gated');
+  }
+  function gateStep(c) {
+    if (gateTimer) { clearTimeout(gateTimer); gateTimer = null; }
+    stepAttempts = 0;
+    const interactive = !!(c && c.mode && c.mode !== 'none');
+    if (!interactive) { enableContinue(); return; }
+    contBtn.disabled = true;
+    contBtn.classList.add('is-gated');
+    gateTimer = setTimeout(enableContinue, 22000);  // failsafe: input may be unavailable
+  }
+
   // ---- Per-card render ------------------------------------------------------
   function render() {
-    const c = CARDS[index];
+    const c = steps[index];
     stopPulse();
     stopDemoAudio();
     demoToken += 1;
     keyboard?.clearHighlight?.('target');
 
     eyebrow.textContent = c.eyebrow;
-    stepLine.textContent = `${learnMode ? 'Lesson' : 'Step'} ${index + 1} of ${CARDS.length}`;
+    stepLine.textContent = `${learnMode ? 'Lesson' : 'Step'} ${index + 1} of ${steps.length}`;
     title.textContent = c.title;
     explain.replaceChildren(...c.explain.map((line) => {
       const p = el('p'); p.textContent = line; return p;
@@ -445,6 +620,8 @@ export default function createView(ctx) {
     sharps.textContent = '';
     const s = c.show || {};
     showCaption.textContent = s.caption || '';
+    keyLabel.textContent = s.label || '';
+    keyLabel.style.display = s.label ? '' : 'none';
     if (s.kind === 'keys' && Array.isArray(s.midis)) {
       keyboard?.highlight?.(s.midis, 'target');
       viewport?.frame?.(s.midis);
@@ -478,25 +655,30 @@ export default function createView(ctx) {
 
     // Footer
     backBtn.textContent = index === 0 ? 'Back to dashboard' : 'Back';
-    contBtn.textContent = index >= CARDS.length - 1 ? 'Finish' : 'Continue';
+    contBtn.textContent = index >= steps.length - 1 ? 'Finish' : 'Continue';
 
-    // ---- Learn-mode: bridge button, learning memory, spoken narration ---------
+    // ---- Learn-mode: gate, bridge, memory, narration, self-centering ----------
     if (learnMode) {
-      const bridge = LEARN_BRIDGES[c.title];
+      gateStep(c);
+      const bridge = c.bridge;
       if (bridgeBtn) {
         if (bridge) { bridgeBtn.textContent = bridge.label; bridgeBtn.style.display = ''; }
         else { bridgeBtn.style.display = 'none'; }
       }
       if (progress) progress.set('learnLesson', index);
-      if (suppressSpeakOnce) suppressSpeakOnce = false;  // greeting already covered this card
+      if (suppressSpeakOnce) suppressSpeakOnce = false;  // greeting already covered this step
       else speakCard(c);
+      // Gently bring the active teaching area into view (device-tuned; never jumps if visible).
+      try { card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) { /* no-op */ }
     }
   }
 
   // ---- Try detection — accurate, teaching feedback --------------------------
   function onNote(ev) {
-    const c = CARDS[index];
+    if (learnMode) { voice?.unlock?.(); speakPending(); }
+    const c = steps[index];
     if (!c || !c.mode || c.mode === 'none' || !tryState || tryState.done) return;
+    if (learnMode) { stepAttempts += 1; if (stepAttempts >= 3) enableContinue(); }
     const midi = ev.midiNote;
     const pc = pcOf(midi);
     const name = NOTE_NAMES[pc];
@@ -514,6 +696,9 @@ export default function createView(ctx) {
       } else {
         guide(`That was ${name}. ${c.hint || 'Try the highlighted key.'}`);
       }
+    } else if (c.mode === 'oneof') {
+      if (targetsPc.includes(pc)) complete(c.okMsg);
+      else guide(`That was ${name}. ${c.hint || 'Tap one of the highlighted keys.'}`);
     } else if (c.mode === 'set') {
       if (targetsPc.includes(pc)) {
         tryState.pressed.add(pc);
@@ -545,6 +730,7 @@ export default function createView(ctx) {
     tryStatus.textContent = `\u2713 ${msg || 'Correct.'}`;
     tryStatus.classList.remove('is-wrong');
     tryStatus.classList.add('is-done');
+    if (learnMode) enableContinue();
   }
   function guide(msg) {          // calm correction — guides, never punishes
     tryStatus.textContent = msg;
@@ -581,7 +767,7 @@ export default function createView(ctx) {
           const storedVoice = progress.get('voiceOn');
           voiceOn = (storedVoice === undefined || storedVoice === null) ? true : !!storedVoice;
           let resume = progress.get('learnLesson');
-          if (!Number.isInteger(resume) || resume < 0 || resume > CARDS.length - 1) resume = 0;
+          if (!Number.isInteger(resume) || resume < 0 || resume > steps.length - 1) resume = 0;
           index = resume;
         }
         setVoice(voiceOn);
@@ -593,21 +779,23 @@ export default function createView(ctx) {
           : `${g} Let\u2019s begin your piano training.`;
         if (greetingEl) greetingEl.textContent = greetText;
         if (!greeted) {
-          greeted = true;
-          const c0 = CARDS[index];
+          const c0 = steps[index];
           const intro0 = (c0 && Array.isArray(c0.explain) && c0.explain[0]) ? c0.explain[0] : '';
           const prompt0 = (c0 && c0.mode && c0.mode !== 'none' && c0.tryPrompt) ? c0.tryPrompt : '';
-          const combined = [greetText, intro0, prompt0].filter(Boolean).join(' ');
-          if (voice && voiceOn && combined) voice.speak(combined, 'greeting');
-          if (progress && c0) progress.addToSet('heardNarration', `narr:${c0.title}`);
-          suppressSpeakOnce = true;
+          pendingGreeting = [greetText, intro0, prompt0].filter(Boolean).join(' ');
+          suppressSpeakOnce = true;   // render won't auto-speak card 0; the greeting covers it
+          // If voice is already unlocked this session (a prior gesture), speak now;
+          // otherwise wait for the first tap (Start / Continue / key) — mobile autoplay.
+          if (voice && voiceOn && voice.isUnlocked?.()) speakPending();
         }
+        updateVoiceStatus();
       }
       render();
     },
     exit() {
       if (unsub) { unsub(); unsub = null; }
       voice?.cancel?.();
+      if (gateTimer) { clearTimeout(gateTimer); gateTimer = null; }
       stopPulse();
       stopDemoAudio();
       keyboard?.clearHighlight?.('target');
@@ -671,6 +859,10 @@ function injectStyles() {
     .mf__greeting { margin: 0 0 0.7rem; font-size: 1.08rem; font-weight: 600; color: var(--champagne, #E8C57E); }
     .mf__learnctrls { display: flex; gap: 0.55rem; margin: 0 0 0.9rem; flex-wrap: wrap; }
     .mf__learnbtn { padding: 0.42rem 0.95rem; min-height: 38px; font-size: 0.85rem; }
+    .mf__startvoice { font-weight: 650; }
+    .mf__voicestatus { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--ivory-faint, #7E7A72); }
+    .mf__keylabel { margin: 0 0 0.35rem; font-size: 0.98rem; font-weight: 650; letter-spacing: 0.02em; color: var(--amber, #E0A94B); }
+    .mf__btn.is-gated, .mf__btn:disabled { opacity: 0.45; cursor: not-allowed; }
     .mf__bridge { margin-top: 1.1rem; width: 100%; }
     @media (max-width: 520px) {
       .mf__card { padding: 1rem 1rem 1.15rem; }

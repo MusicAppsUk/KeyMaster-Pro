@@ -297,3 +297,26 @@
 @media (prefers-reduced-motion: reduce) {
   [data-view="chords"] .key.hl-target::after { animation: none; }
 }
+
+/* --------------------------------------------------------------------------
+   rc2-50 — Master Training (/learn): the same premium amber "look here / play
+   this" teaching cue, scoped to [data-view="learn"] so Scales, Chord and plain
+   Foundations are untouched. Enhances ONLY the ::after target disc. Motion is a
+   slow breathe, disabled under prefers-reduced-motion.
+   -------------------------------------------------------------------------- */
+[data-view="learn"] .key.hl-target::after {
+  width: 64%;
+  opacity: 1;
+  filter: drop-shadow(0 0 5px var(--amber-glow)) drop-shadow(0 0 11px var(--amber-glow));
+  animation: mfTargetBreathe 2.4s ease-in-out infinite;
+}
+[data-view="learn"] .key--black.hl-target::after { width: 78%; }
+
+@keyframes mfTargetBreathe {
+  0%, 100% { transform: translateX(-50%) scale(1);    opacity: 0.92; }
+  50%      { transform: translateX(-50%) scale(1.12); opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-view="learn"] .key.hl-target::after { animation: none; }
+}
