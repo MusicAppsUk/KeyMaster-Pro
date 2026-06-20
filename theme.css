@@ -857,6 +857,32 @@ a.vector:hover .vector__open { color: var(--ivory); }
   transition: background-color 240ms ease, border-color 240ms ease;
 }
 
+/* Music-staff diagrams (staffViz.js) — original line art: five lines, four
+   spaces, clefs, the grand staff, ledger lines, and note-heads at real pitch
+   positions. Device-verify: look needs a real device. */
+.view[data-view="learn"] .mf__staff {
+  display: flex; justify-content: center; margin: 0.3rem 0 0.6rem;
+}
+.view[data-view="learn"] .km-staff__svg {
+  width: 340px; max-width: 92%; height: auto; overflow: visible;
+  filter: drop-shadow(0 8px 18px rgba(0,0,0,0.4));
+}
+.view[data-view="learn"] .km-staff__line { stroke: color-mix(in srgb, var(--ivory) 78%, transparent); stroke-width: 2; }
+.view[data-view="learn"] .km-staff__line.is-hl { stroke: var(--amber-glow); stroke-width: 3; }
+.view[data-view="learn"] .km-staff__space.is-hl { fill: color-mix(in srgb, var(--amber-glow) 24%, transparent); }
+.view[data-view="learn"] .km-staff__ledger { stroke: color-mix(in srgb, var(--ivory) 78%, transparent); stroke-width: 2; }
+.view[data-view="learn"] .km-staff__brace { stroke: color-mix(in srgb, var(--ivory) 60%, transparent); stroke-width: 2.5; }
+.view[data-view="learn"] .km-staff__clef { fill: var(--ivory); font-size: 56px; font-weight: 400; }
+.view[data-view="learn"] .km-staff__clef--bass { font-size: 44px; }
+.view[data-view="learn"] .km-staff__cleflabel { fill: var(--ivory-dim); font-size: 12px; letter-spacing: 0.04em; }
+.view[data-view="learn"] .km-staff__note { fill: var(--amber-glow); stroke: color-mix(in srgb, var(--amber-glow) 60%, white 16%); stroke-width: 1.5; }
+.view[data-view="learn"] .km-staff__mc { fill: var(--ivory); font-size: 13px; font-weight: 700; }
+
+/* Teaching-panel hierarchy: give the demonstration area room to breathe so the
+   large diagrams read as the focus, not an attachment. */
+.view[data-view="learn"] .mf__show { padding: 1.25rem 1.2rem 0.9rem; }
+.view[data-view="learn"] .mf__showcap { margin-top: 0.55rem; font-size: 0.95rem; }
+
 /* Media slot — make the (interim) teaching-visual area read as intentional,
    recessed and framed rather than an unfinished box. Full premium panels
    are WP4. */

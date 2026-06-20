@@ -29,6 +29,7 @@ import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-56';
 import { buildScale } from './scaleEngine.js';
 import { buildHandSvg, setHandHighlight, FINGER_NAMES } from './handViz.js?v=rc2-78';
+import { buildStaff } from './staffViz.js?v=rc2-79';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
 const pcOf = (m) => ((m % 12) + 12) % 12;
@@ -409,6 +410,17 @@ export const LEARN_STEPS = [
     hint: 'Play C first, then skip over D to E.',
   },
   {
+    eyebrow: 'What a scale is', title: 'Why scales matter', id: 'scale-why',
+    say: [
+      { text: 'Before we climb one, a word on why scales matter.', pauseAfter: 540, tone: 'warm' },
+      { text: 'A scale is an ordered set of steps \u2014 the basic vocabulary of a key. Melodies, chords and whole pieces are drawn from it, and practising one trains the hand to move evenly and find its shape.', pauseAfter: 680 },
+      { text: 'We\u2019ll start in C because its steps are all white keys \u2014 easy to see and name. The hand-shape pathway then moves into B major, where the fingers fit the keys especially well.', pauseAfter: 360, tone: 'instruct' },
+    ],
+    explain: ['A scale is an ordered set of steps \u2014 the vocabulary of a key. Melodies, chords and pieces are built from it, and practising one trains the hand to move evenly.', 'We start in C (all white keys, easy to see), then the hand-shape pathway moves into B major, where the fingers fit the keys especially well.'],
+    show: { kind: 'keys', midis: [60, 62, 64, 65, 67], caption: 'A scale: steps in order, C upward.', label: 'a scale = steps in order' },
+    mode: 'none',
+  },
+  {
     eyebrow: 'Notes in order', title: 'First scale idea', id: 'first-scale',
     cues: { labels: [{ midi: 60, text: 'C', place: 'below' }, { midi: 62, text: 'D', place: 'below' }, { midi: 64, text: 'E', place: 'below' }] },
     say: [
@@ -515,6 +527,80 @@ export const LEARN_STEPS = [
     autoNext: 3200,
   },
   {
+    eyebrow: 'Reading the staff', title: 'The staff: lines', id: 'staff-what',
+    say: [
+      { text: 'A quick foundation that unlocks written music: the staff.', pauseAfter: 540, tone: 'warm' },
+      { text: 'The staff is the map musicians use to show pitch. Each staff has five lines. A note\u2019s height on the staff tells you how high or low it sounds.', pauseAfter: 360, tone: 'instruct' },
+    ],
+    explain: ['The staff is the map musicians use to show pitch \u2014 higher on the staff means higher in sound.', 'It has five lines. Here they are, highlighted.'],
+    show: { kind: 'staff', clef: 'treble', highlight: 'lines', caption: 'Five lines.' },
+    mode: 'none',
+  },
+  {
+    eyebrow: 'Reading the staff', title: 'The staff: spaces', id: 'staff-spaces',
+    say: [
+      { text: 'Between the five lines are four spaces.', pauseAfter: 520, tone: 'warm' },
+      { text: 'A note can sit on a line, or in a space. Lines and spaces together give every pitch a place.', pauseAfter: 360, tone: 'instruct' },
+    ],
+    explain: ['Between the five lines are four spaces. A note can sit on a line, or in a space.', 'Here are the four spaces, highlighted.'],
+    show: { kind: 'staff', clef: 'treble', highlight: 'spaces', caption: 'Four spaces.' },
+    mode: 'none',
+  },
+  {
+    eyebrow: 'Reading the staff', title: 'The treble clef', id: 'treble-clef',
+    say: [
+      { text: 'At the start of a staff sits a clef \u2014 it tells you which pitches the lines and spaces stand for.', pauseAfter: 600, tone: 'warm' },
+      { text: 'The treble clef usually helps us read higher notes \u2014 often the right hand at the piano.', pauseAfter: 360, tone: 'instruct' },
+    ],
+    explain: ['A clef at the start of the staff tells you which pitches the lines and spaces mean.', 'The treble clef usually carries the higher notes \u2014 at the piano, often the right hand.'],
+    show: { kind: 'staff', clef: 'treble', caption: 'The treble clef \u2014 higher notes.' },
+    mode: 'none',
+  },
+  {
+    eyebrow: 'Reading the staff', title: 'The bass clef', id: 'bass-clef',
+    say: [
+      { text: 'The bass clef usually helps us read lower notes \u2014 often the left hand at the piano.', pauseAfter: 600, tone: 'warm' },
+      { text: 'Same five lines and four spaces, but standing for lower pitches.', pauseAfter: 360, tone: 'instruct' },
+    ],
+    explain: ['The bass clef usually carries the lower notes \u2014 at the piano, often the left hand.', 'Same five lines and four spaces, standing for lower pitches.'],
+    show: { kind: 'staff', clef: 'bass', caption: 'The bass clef \u2014 lower notes.' },
+    mode: 'none',
+  },
+  {
+    eyebrow: 'Reading the staff', title: 'The grand staff', id: 'grand-staff',
+    say: [
+      { text: 'Piano music often uses both clefs together, joined into one system. That is called the grand staff.', pauseAfter: 640, tone: 'warm' },
+      { text: 'Treble on top for the right hand, bass below for the left \u2014 to begin with. And right in the middle sits Middle C.', pauseAfter: 360, tone: 'instruct' },
+    ],
+    explain: ['Piano music joins both clefs into the grand staff \u2014 treble above, bass below. To begin with: treble for the right hand, bass for the left.', 'Between the two staves sits Middle C \u2014 the landmark that links them.'],
+    show: { kind: 'staff', clef: 'grand', middleC: true, caption: 'The grand staff \u2014 Middle C sits between.' },
+    mode: 'none',
+  },
+  {
+    eyebrow: 'Reading the staff', title: 'Ledger lines', id: 'ledger-line',
+    say: [
+      { text: 'When notes go above or below the five lines, we add small extra lines called ledger lines.', pauseAfter: 620, tone: 'warm' },
+      { text: 'They simply extend the staff. Middle C, just below the treble staff, sits on its own short ledger line \u2014 you can see it here.', pauseAfter: 360, tone: 'instruct' },
+    ],
+    explain: ['When notes go above or below the five lines, small extra lines \u2014 ledger lines \u2014 extend the staff.', 'Middle C sits on a ledger line just below the treble staff. That is the note shown here.'],
+    show: { kind: 'staff', clef: 'treble', notes: [60], caption: 'Middle C on a ledger line below the treble staff.' },
+    mode: 'none',
+  },
+  {
+    eyebrow: 'Reading the staff', title: 'From staff to key', id: 'staff-to-key',
+    say: [
+      { text: 'Now connect it. This note on the staff is Middle C \u2014 and Middle C is a key you already know.', pauseAfter: 620, tone: 'warm' },
+      { text: 'Find it on the staff, then find it on the keyboard, and play it.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['The note on the staff is Middle C. The staff shows it; the keyboard is where you play it.', 'Find Middle C \u2014 just left of the two black keys, near the centre \u2014 and play it.'],
+    show: { kind: 'keys', midis: [60], caption: 'This staff note is Middle C.', label: 'Middle C' },
+    staffHint: { clef: 'grand', notes: [60], middleC: true },
+    demo: [60], demoGap: 0.45,
+    tryPrompt: 'Find Middle C on the staff, then play it on the keyboard.', targets: [60], exact: true, mode: 'one',
+    okMsg: 'Good \u2014 you connected the written note to the key. That link, staff to keyboard, is the whole of reading.',
+    hint: 'Middle C is the white key just left of the two black keys, near the centre.',
+  },
+  {
     eyebrow: 'Reading', title: 'Name and play: E', id: 'read-play-e',
     say: [
       { text: 'Reading music means knowing a note, then playing it.', pauseAfter: 560, tone: 'warm' },
@@ -522,6 +608,7 @@ export const LEARN_STEPS = [
     ],
     explain: ['Reading music means recognising a note, then finding it on the keyboard.', 'The note is E \u2014 just right of the two black keys. Play it.'],
     show: { kind: 'keys', midis: [64], caption: 'The note is E.', label: 'E' },
+    staffHint: { clef: 'treble', notes: [64] },
     demo: [64], demoGap: 0.45,
     tryPrompt: 'The note is E \u2014 find it and play it.', targets: [64], mode: 'one',
     okMsg: 'Exactly \u2014 you knew E and played it. That is the start of reading music.',
@@ -535,6 +622,7 @@ export const LEARN_STEPS = [
     ],
     explain: ['Know the note, then play it.', 'The note is G \u2014 just right of F.'],
     show: { kind: 'keys', midis: [67], caption: 'The note is G.', label: 'G' },
+    staffHint: { clef: 'treble', notes: [67] },
     demo: [67], demoGap: 0.45,
     tryPrompt: 'The note is G \u2014 find it and play it.', targets: [67], mode: 'one',
     okMsg: 'Good \u2014 know it, then play it. Cognitive Sight-Reading takes this much further.',
@@ -900,14 +988,16 @@ const COURSE_CHAPTERS = [
     intro: 'Now we name the white keys, using the black-key groups to find them.' },
   { stage: 1, name: 'Movement', ids: ['direction', 'step-skip'],
     intro: 'Music moves \u2014 up and down, by steps and by skips.' },
-  { stage: 1, name: 'Scales', ids: ['first-scale', 'c-scale-five', 'c-scale-down'],
-    intro: 'A scale is steps in order \u2014 a ladder of pitch you can climb and descend.' },
+  { stage: 1, name: 'Scales', ids: ['scale-why', 'first-scale', 'c-scale-five', 'c-scale-down'],
+    intro: 'What a scale is and why it matters \u2014 ordered steps you can climb and descend.' },
   { stage: 1, name: 'B major', ids: ['first-b-scale', 'b-major-why', 'bridge-scales'],
     intro: 'A first taste of the B-major pathway, and why it fits the hand.' },
   { stage: 1, name: 'Harmony', ids: ['first-chord', 'chord-g', 'bridge-chords'],
     intro: 'Notes sounded together make chords \u2014 the colour of music.' },
+  { stage: 1, name: 'Reading the staff', ids: ['staff-what', 'staff-spaces', 'treble-clef', 'bass-clef', 'grand-staff', 'ledger-line', 'staff-to-key'],
+    intro: 'The staff is the map musicians read \u2014 lines, spaces, clefs, the grand staff, and how it connects to the keys.' },
   { stage: 1, name: 'Reading', ids: ['read-play-e', 'read-play-g', 'first-reading', 'bridge-sightreading'],
-    intro: 'Reading music means knowing a note, then playing it.' },
+    intro: 'Reading music means knowing a note, then playing it \u2014 now linked to the staff.' },
   { stage: 1, name: 'Rhythm', ids: ['first-pulse', 'pulse-eight'],
     intro: 'Music sits on a steady pulse \u2014 an even beat underneath the notes.' },
   { stage: 1, name: 'Checkpoint', ids: ['review-c', 'review-scale', 'review-chord'],
@@ -1323,12 +1413,14 @@ export default function createView(ctx) {
   for (let i = 0; i < 4; i++) pulse.appendChild(el('span', { class: 'mf__beat' }));
   const handSlot = el('div', { class: 'mf__hand' });
   handSlot.style.display = 'none';
+  const staffSlot = el('div', { class: 'mf__staff' });
+  staffSlot.style.display = 'none';
   const sharps = el('p', { class: 'mf__sharps', 'aria-hidden': 'true' });
   const replayBtn = el('button', { class: 'mf__replay mf__btn mf__btn--ghost', type: 'button' });
   replayBtn.textContent = 'Hear it again';
   const mediaEl = el('div', { class: 'mf__media' });
   mediaEl.style.display = 'none';
-  const showWrap = el('div', { class: 'mf__show' }, [keyLabel, handSlot, pulse, sharps, mediaEl, showCaption, replayBtn]);
+  const showWrap = el('div', { class: 'mf__show' }, [keyLabel, handSlot, staffSlot, pulse, sharps, mediaEl, showCaption, replayBtn]);
 
   const tryWrap = el('div', { class: 'mf__try' });
   const tryPrompt = el('p', { class: 'mf__tryprompt' });
@@ -1649,6 +1741,8 @@ export default function createView(ctx) {
     setPhase('');
     handSlot.style.display = 'none';
     handSlot.replaceChildren();
+    staffSlot.style.display = 'none';
+    staffSlot.replaceChildren();
     const s = c.show || {};
     showCaption.textContent = s.caption || '';
     keyLabel.textContent = s.label || '';
@@ -1672,9 +1766,14 @@ export default function createView(ctx) {
       // Pure hand-teaching step: the diagram IS the visual.
       keyLabel.style.display = 'none';
       renderHand(s);
+    } else if (s.kind === 'staff') {
+      keyLabel.style.display = 'none';
+      renderStaff(s);
     }
     // A playable step can also carry a finger-number hand hint alongside its keys.
     if (s.kind !== 'hand' && c.handHint) renderHand(c.handHint);
+    // …and a staff hint (e.g. "this note on the staff is the key you'll play").
+    if (s.kind !== 'staff' && c.staffHint) renderStaff(c.staffHint);
 
     // Video-ready media slot (rc2-63): honest placeholder; hidden unless the step opts in.
     if (c.media) { mediaEl.replaceChildren(buildMediaSlot(c.media)); mediaEl.style.display = ''; }
@@ -1868,6 +1967,16 @@ export default function createView(ctx) {
     activeHandEl = buildHandSvg({ hand, highlight, numbers });
     handSlot.replaceChildren(activeHandEl);
     handSlot.style.display = '';
+  }
+  function renderStaff(spec) {
+    const s = spec || {};
+    staffSlot.replaceChildren(buildStaff({
+      clef: s.clef || 'treble',
+      highlight: s.highlight || null,
+      notes: Array.isArray(s.notes) ? s.notes : [],
+      middleC: !!s.middleC,
+    }));
+    staffSlot.style.display = '';
   }
   // Light each finger in turn (e.g. [1,2,3,4,5]) over a calm cadence, then rest.
   // Device-verify: motion + timing only confirmable on a real device.
