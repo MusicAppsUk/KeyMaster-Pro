@@ -818,22 +818,30 @@ a.vector:hover .vector__open { color: var(--ivory); }
 .view[data-view="learn"] .km-finger {
   stroke: color-mix(in srgb, var(--ivory) 70%, #3a2f1c); stroke-width: 2.5;
 }
-.view[data-view="learn"] .km-finger { transition: fill 220ms ease, stroke 220ms ease; }
+.view[data-view="learn"] .km-finger { transition: fill 220ms ease, stroke 220ms ease, opacity 220ms ease; }
+/* Active exercise fingers light GREEN — the same success/action language the
+   keyboard uses when a key is played correctly. Solid emerald (not glow) so
+   "these are the fingers I'm going to use" reads instantly, even next to the
+   staff and keyboard. Premium, not arcade. */
 .view[data-view="learn"] .km-finger.is-on {
-  fill: var(--amber-glow);
-  stroke: color-mix(in srgb, var(--amber-glow) 70%, white 14%); stroke-width: 3;
+  fill: var(--emerald);
+  stroke: color-mix(in srgb, var(--emerald) 64%, white 22%); stroke-width: 3.5;
 }
+/* When ANY finger is active, the unused fingers de-emphasise so the green ones
+   dominate. With no active finger (e.g. the finger-numbers lesson) all stay full. */
+.view[data-view="learn"] .km-hand.has-active .km-finger:not(.is-on) { opacity: 0.42; }
+.view[data-view="learn"] .km-hand.has-active .km-fingernum:not(.is-on) { opacity: 0.5; }
 .view[data-view="learn"] .km-fingernum circle {
   fill: var(--ebony-sink); stroke: var(--ivory); stroke-width: 2;
-  transition: fill 220ms ease, stroke 220ms ease;
+  transition: fill 220ms ease, stroke 220ms ease, opacity 220ms ease;
 }
 .view[data-view="learn"] .km-fingernum text {
   fill: var(--ivory); font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums;
 }
 .view[data-view="learn"] .km-fingernum.is-on circle {
-  fill: var(--amber-glow); stroke: color-mix(in srgb, var(--amber-glow) 60%, white 20%);
+  fill: var(--emerald); stroke: color-mix(in srgb, var(--emerald) 60%, white 26%);
 }
-.view[data-view="learn"] .km-fingernum.is-on text { fill: #1a1206; }
+.view[data-view="learn"] .km-fingernum.is-on text { fill: #07251a; }
 .view[data-view="learn"] .km-hand__tag {
   fill: var(--ivory-dim); font-size: 26px; font-weight: 800; letter-spacing: 0.04em;
 }

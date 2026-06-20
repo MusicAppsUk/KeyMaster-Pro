@@ -10,11 +10,11 @@
 //     views, so app.js routes to it with zero special-casing.
 //   • Reuses the SHARED on-screen keyboard for "Show" highlights and detects the
 //     "Try" press via ctx.input (the input-agnostic NoteInput hub) — read-only.
-//   • Demonstrates with the shared synth's existing gentle 'demo' voice (rc2-41)
-//     at reduced velocity, staggered onsets — synth.js is NOT modified, so the
-//     Scales Listen voice, the default learner-play voice, and the shared limiter
-//     are untouched. Each demo Voice instance is released individually, so it can
-//     never cut the learner's own held notes.
+//   • Demonstrates with courseVoice (rc2-81) — a Course-only warm voice that
+//     reuses the shared AudioContext but is SEPARATE from synth.js, so the Scales
+//     Listen voice, the default learner-play voice, and the shared limiter are all
+//     untouched. The metronome tick in pulse exercises uses the same voice. Each
+//     demo note is released individually, so it can never cut the learner's notes.
 //   • Never touches the evaluator, the Scales/Sight-Reading/Chord engines, MIDI
 //     mapping, EventBridge, staff rendering, Practice Review, or progression
 //     gates. It sets NO expected notes, so the evaluator stays idle throughout.
@@ -28,8 +28,9 @@ import { createTutorAudio } from './tutorAudio.js?v=rc2-54';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-56';
 import { buildScale } from './scaleEngine.js';
-import { buildHandSvg, setHandHighlight, FINGER_NAMES } from './handViz.js?v=rc2-78';
+import { buildHandSvg, setHandHighlight, FINGER_NAMES } from './handViz.js?v=rc2-81';
 import { buildStaff } from './staffViz.js?v=rc2-79';
+import { createCourseVoice } from './courseVoice.js?v=rc2-81';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
 const pcOf = (m) => ((m % 12) + 12) % 12;
@@ -408,6 +409,33 @@ export const LEARN_STEPS = [
     tryPrompt: 'Play C, then skip up to E.', targets: [60, 64], mode: 'sequence',
     okMsg: 'Good \u2014 C to E is a skip. Steps and skips are how melodies move.',
     hint: 'Play C first, then skip over D to E.',
+  },
+  {
+    eyebrow: 'Tones & semitones', title: 'The smallest step: a semitone', id: 'semitone',
+    say: [
+      { text: 'Two useful words now, ones we\u2019ll keep using as scales and keys grow: semitone and tone.', pauseAfter: 600, tone: 'warm' },
+      { text: 'A semitone is the smallest step there is \u2014 from one key to the very next key, with nothing between, whether that next key is white or black.', pauseAfter: 600 },
+      { text: 'E and F are neighbours with no key between them. Play E, then F \u2014 that move is one semitone.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['A semitone is the smallest step \u2014 from any key to the very next key, with nothing between, white or black.', 'E and F sit side by side with no key between. Play E, then F: that is one semitone.'],
+    show: { kind: 'keys', midis: [64, 65], caption: 'E to F \u2014 one semitone (no key between).', label: 'E \u2013 F = a semitone' },
+    demo: [64, 65], demoGap: 0.5,
+    tryPrompt: 'Play E, then the very next key F \u2014 one semitone.', targets: [64, 65], mode: 'sequence',
+    okMsg: 'Good \u2014 that\u2019s a semitone: the smallest move on the keyboard. Stepping to a black key is a semitone too.',
+    hint: 'E and F are the two white keys with no black key between them.',
+  },
+  {
+    eyebrow: 'Tones & semitones', title: 'Two steps: a tone', id: 'tone',
+    say: [
+      { text: 'A tone is simply two semitones \u2014 two of those smallest steps joined together.', pauseAfter: 580, tone: 'warm' },
+      { text: 'From C, step up past the black key to D. You\u2019ve moved two semitones \u2014 that is one tone.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['A tone is two semitones \u2014 two smallest steps at once.', 'C up to D skips the black key between them: two semitones, so C to D is one tone.'],
+    show: { kind: 'keys', midis: [60, 62], caption: 'C to D \u2014 one tone (two semitones).', label: 'C \u2013 D = a tone' },
+    demo: [60, 62], demoGap: 0.5,
+    tryPrompt: 'Play C, then D \u2014 a tone (two semitones).', targets: [60, 62], mode: 'sequence',
+    okMsg: 'Good \u2014 a tone: two semitones. Scales are built from tones and semitones in a set order, as you\u2019ll see.',
+    hint: 'C and D are white keys with one black key between them \u2014 that gap makes it a tone.',
   },
   {
     eyebrow: 'What a scale is', title: 'Why scales matter', id: 'scale-why',
@@ -1365,6 +1393,8 @@ const COURSE_CHAPTERS = [
     intro: 'Now we name the white keys, using the black-key groups to find them.' },
   { stage: 1, name: 'Movement', ids: ['direction', 'step-skip'],
     intro: 'Music moves \u2014 up and down, by steps and by skips.' },
+  { stage: 1, name: 'Tones & semitones', ids: ['semitone', 'tone'],
+    intro: 'The two sizes of step \u2014 the semitone and the tone \u2014 that scales are built from.' },
   { stage: 1, name: 'Scales', ids: ['scale-why', 'first-scale', 'c-scale-five', 'c-scale-down'],
     intro: 'What a scale is and why it matters \u2014 ordered steps you can climb and descend.' },
   { stage: 1, name: 'B major', ids: ['first-b-scale', 'b-major-why', 'bridge-scales'],
@@ -1700,7 +1730,12 @@ export default function createView(ctx) {
   let pulseTimer = null;     // rhythm-card animation
   let tryState = null;       // per-card progress for the Try interaction
 
-  // ---- Demonstration audio (shared 'demo' voice; no synth.js change) --------
+  // ---- Demonstration audio (Course-only warm voice; synth.js untouched) -----
+  // The tutor's note demonstrations and the pulse metronome use courseVoice,
+  // which reuses the shared AudioContext (synth.ctx) — a warmer, clearer, less
+  // "plinky" tone than the borrowed 'demo' voice, with NO change to synth.js
+  // (the protected Scales audio). The learner's own key-press tone is unchanged.
+  const courseVoice = createCourseVoice((synth && synth.ctx) ? synth.ctx : null, { volume: 0.85 });
   const demoVoices = [];     // teaching-audio Voice instances we own
   const demoSweepTimers = []; // visual highlight-sweep timers (animated guidance)
   let demoToken = 0;         // cancels a pending demo when the card changes
@@ -1752,7 +1787,8 @@ export default function createView(ctx) {
   function playDemoVoice(midi, vel, durSec, atSec) {
     if (!audioReady()) return;
     const t = atSec ?? synth.ctx.currentTime;
-    const v = synth.noteOn(midi, vel, t, 'demo');
+    // Course-only warm voice (synth.js untouched). Same shared AudioContext.
+    const v = courseVoice.note(midi, { when: t, dur: durSec, velocity: vel });
     if (v) { demoVoices.push(v); try { v.release(t + durSec); } catch (_) { /* no-op */ } }
   }
   function stopDemoAudio() {
@@ -2432,6 +2468,7 @@ export default function createView(ctx) {
     if (!beats.length) return;
     let b = 0;
     const tick = () => {
+      if (audioReady()) { try { courseVoice.tick((b % 4) === 0); } catch (_) { /* no-op */ } }
       beats.forEach((node, i) => node.classList.toggle('is-on', i === b));
       b = (b + 1) % beats.length;
     };
@@ -2458,6 +2495,7 @@ export default function createView(ctx) {
     for (let i = 0; i < groupLen; i += 1) {
       countInTimers.push(setTimeout(() => {
         if (seqToken !== demoToken) return;
+        if (audioReady()) { try { courseVoice.tick(i === 0); } catch (_) { /* no-op */ } }
         beats.forEach((node, j) => node.classList.toggle('is-on', j === i));
       }, i * beatMs));
     }

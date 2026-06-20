@@ -98,7 +98,7 @@ export function buildHandSvg(opts = {}) {
   const highlight = Array.isArray(opts.highlight) ? opts.highlight : [];
 
   const wrap = document.createElement('div');
-  wrap.className = `km-hand km-hand--${hand}`;
+  wrap.className = `km-hand km-hand--${hand}${highlight.length ? ' has-active' : ''}`;
   if (hand === 'both') {
     // Left hand on the left, right hand on the right — as the player sees their
     // own hands at the keyboard, thumbs toward the centre.
@@ -117,6 +117,10 @@ export function setHandHighlight(handEl, fingers) {
     const n = Number(node.getAttribute('data-finger'));
     node.classList.toggle('is-on', want.has(n));
   });
+  // mute unused fingers only while something is active (matches buildHandSvg)
+  if (handEl.classList && handEl.classList.contains('km-hand')) {
+    handEl.classList.toggle('has-active', want.size > 0);
+  }
 }
 
 /** Finger names, for captions/labels. 1 = thumb … 5 = little finger. */
