@@ -795,6 +795,50 @@ a.vector:hover .vector__open { color: var(--ivory); }
   .view[data-view="learn"] .mf__beat.is-on { transform: none; }
 }
 
+/* Hand & finger diagrams (handViz.js) — original line art. Fingers and their
+   numbered discs light amber when active; the "watch this" sequence animates
+   them one at a time. Device-verify: look + motion need a real device. */
+.view[data-view="learn"] .mf__hand {
+  display: flex; justify-content: center; align-items: flex-end;
+  margin: 0.1rem 0 0.5rem;
+}
+.view[data-view="learn"] .km-hand svg {
+  width: 168px; max-width: 56%; height: auto; overflow: visible;
+}
+.view[data-view="learn"] .km-hand__palm {
+  fill: color-mix(in srgb, var(--ivory) 16%, transparent);
+  stroke: var(--ivory-dim); stroke-width: 2;
+}
+.view[data-view="learn"] .km-finger {
+  fill: color-mix(in srgb, var(--ivory) 12%, transparent);
+  stroke: var(--ivory-dim); stroke-width: 2;
+  transition: fill 200ms ease, stroke 200ms ease;
+}
+.view[data-view="learn"] .km-finger.is-on {
+  fill: color-mix(in srgb, var(--amber-glow) 55%, transparent);
+  stroke: var(--amber-glow); stroke-width: 2.5;
+}
+.view[data-view="learn"] .km-fingernum circle {
+  fill: var(--ebony-sink); stroke: var(--ivory-dim); stroke-width: 1.5;
+  transition: fill 200ms ease, stroke 200ms ease;
+}
+.view[data-view="learn"] .km-fingernum text {
+  fill: var(--ivory); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.view[data-view="learn"] .km-fingernum.is-on circle {
+  fill: var(--amber-glow); stroke: color-mix(in srgb, var(--amber-glow) 70%, white 12%);
+}
+.view[data-view="learn"] .km-fingernum.is-on text { fill: #1a1206; }
+.view[data-view="learn"] .km-hand__tag {
+  fill: var(--ivory-dim); font-size: 16px; font-weight: 700; letter-spacing: 0.04em;
+}
+.view[data-view="learn"] .km-hand { animation: kmHandIn 360ms ease both; }
+@keyframes kmHandIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .view[data-view="learn"] .km-hand { animation: none; }
+  .view[data-view="learn"] .km-finger, .view[data-view="learn"] .km-fingernum circle { transition: none; }
+}
+
 /* Media slot — make the (interim) teaching-visual area read as intentional,
    recessed and framed rather than an unfinished box. Full premium panels
    are WP4. */
