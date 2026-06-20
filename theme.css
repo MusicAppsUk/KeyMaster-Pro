@@ -886,7 +886,7 @@ a.vector:hover .vector__open { color: var(--ivory); }
               inset 0 1px 0 rgba(255,255,255,0.6);
 }
 .view[data-view="learn"] .km-staff__svg {
-  width: 320px; max-width: 90%; height: auto; overflow: visible;
+  width: 360px; max-width: 100%; height: auto; overflow: visible;
 }
 /* Ink: lines, ledgers, brace, clef, note-heads, labels — all printed black. */
 .view[data-view="learn"] .km-staff__line { stroke: var(--ink); stroke-width: 1.6; }
@@ -1429,4 +1429,316 @@ html[data-view="learn"] .app__menu { display: none; }   /* focused lesson cockpi
 @media (prefers-reduced-motion: reduce) {
   .km-menu__panel, .km-map__panel, .km-signin__panel, .km-menu__backdrop { animation: none; }
   .course-hero__bar-fill { transition: none; }
+}
+
+/* ===========================================================================
+   FRONT DOOR — PREMIUM CINEMATIC SPLASH · rc2-85
+   A full-screen arrival: a warm-lit grand piano in a dark hall, drawn entirely
+   in CSS (no images, no competitor assets). Layered depth + restrained motion +
+   confident display typography. Overrides the earlier front-door rules.
+   ========================================================================= */
+.frontdoor {
+  position: fixed; inset: 0; z-index: 1200;
+  display: grid; place-items: center; padding: clamp(1.5rem, 5vw, 3rem);
+  overflow: hidden; isolation: isolate; color: var(--ivory);
+  background:
+    radial-gradient(120% 80% at 50% -10%, #2b3a63 0%, transparent 55%),
+    radial-gradient(90% 70% at 50% 120%, #120d08 0%, transparent 60%),
+    linear-gradient(178deg, var(--midnight) 0%, #11131d 46%, var(--ebony-sink) 100%);
+  transition: opacity 0.5s var(--ease), transform 0.5s var(--ease);
+}
+.frontdoor[hidden] { display: none; }
+.frontdoor.is-leaving { opacity: 0; transform: scale(1.04); pointer-events: none; }
+
+.fd-stage { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+
+/* slow drifting aurora — a faint warm/cool colour field that keeps the dark alive */
+.fd-aurora {
+  position: absolute; inset: -20%;
+  background:
+    radial-gradient(38% 30% at 28% 32%, rgba(120,150,220,0.18), transparent 70%),
+    radial-gradient(40% 32% at 74% 40%, rgba(232,197,126,0.16), transparent 70%),
+    radial-gradient(46% 34% at 50% 70%, rgba(70,192,138,0.10), transparent 72%);
+  filter: blur(24px); animation: fdAurora 26s ease-in-out infinite alternate;
+}
+@keyframes fdAurora {
+  0%   { transform: translate3d(-3%, -2%, 0) scale(1.05); opacity: 0.85; }
+  100% { transform: translate3d(3%, 2%, 0) scale(1.12); opacity: 1; }
+}
+
+/* warm overhead spotlight pooling on the keys */
+.fd-spot {
+  position: absolute; left: 50%; top: -8%; width: 120%; height: 92%; transform: translateX(-50%);
+  background: radial-gradient(46% 56% at 50% 24%, rgba(244,216,160,0.30), rgba(232,197,126,0.08) 40%, transparent 66%);
+  animation: fdBreathe 8s var(--ease) infinite;
+}
+@keyframes fdBreathe { 0%,100% { opacity: 0.78; } 50% { opacity: 1; } }
+
+/* drifting light motes (dust in the spotlight) */
+.fd-motes { position: absolute; inset: 0; }
+.fd-motes span {
+  position: absolute; bottom: 18%; width: 5px; height: 5px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,238,200,0.9), rgba(232,197,126,0) 70%);
+  filter: blur(0.4px); opacity: 0; animation: fdMote 13s linear infinite;
+}
+.fd-motes span:nth-child(1){ left: 16%; animation-delay: 0s;   }
+.fd-motes span:nth-child(2){ left: 33%; animation-delay: 2.6s; transform: scale(0.7); }
+.fd-motes span:nth-child(3){ left: 51%; animation-delay: 5.1s; transform: scale(1.3); }
+.fd-motes span:nth-child(4){ left: 64%; animation-delay: 7.4s; transform: scale(0.8); }
+.fd-motes span:nth-child(5){ left: 78%; animation-delay: 3.8s; transform: scale(1.1); }
+.fd-motes span:nth-child(6){ left: 88%; animation-delay: 9.7s; transform: scale(0.6); }
+@keyframes fdMote {
+  0%   { opacity: 0; transform: translateY(0) scale(1); }
+  12%  { opacity: 0.9; }
+  80%  { opacity: 0.7; }
+  100% { opacity: 0; transform: translateY(-46vh) scale(1.1); }
+}
+
+/* original grand-piano keybed at the foot, in perspective, lit and receding */
+.fd-piano {
+  position: absolute; left: 50%; bottom: -2%; width: 150%; height: 30vh; max-height: 280px;
+  transform: translateX(-50%) perspective(680px) rotateX(46deg); transform-origin: bottom center;
+  -webkit-mask-image: linear-gradient(0deg, #000 24%, transparent 92%); mask-image: linear-gradient(0deg, #000 24%, transparent 92%);
+  opacity: 0.9;
+}
+.fd-piano__keys {
+  position: absolute; inset: 0; border-radius: 6px 6px 0 0;
+  background:
+    linear-gradient(180deg, rgba(244,239,230,0.0) 0%, rgba(244,239,230,0.10) 60%, rgba(244,239,230,0.22) 100%),
+    repeating-linear-gradient(90deg,
+      #ece6d8 0 calc(100%/22 - 2px),
+      #2a2620 calc(100%/22 - 2px) calc(100%/22));
+  box-shadow: inset 0 30px 50px -20px rgba(0,0,0,0.7);
+}
+.fd-piano__sharps {
+  position: absolute; left: 0; right: 0; top: 0; height: 56%;
+  background: repeating-linear-gradient(90deg,
+    transparent 0 calc(100%/22 * 0.62),
+    #14110d calc(100%/22 * 0.62) calc(100%/22 - 4px),
+    transparent calc(100%/22 - 4px) calc(100%/22));
+  filter: drop-shadow(0 3px 4px rgba(0,0,0,0.5));
+}
+.fd-piano__sheen {
+  position: absolute; inset: 0;
+  background: linear-gradient(105deg, transparent 30%, rgba(255,235,190,0.22) 48%, transparent 62%);
+  background-size: 240% 100%; animation: fdSheen 9s ease-in-out infinite;
+}
+@keyframes fdSheen { 0% { background-position: 130% 0; } 55%,100% { background-position: -60% 0; } }
+
+.fd-vignette {
+  position: absolute; inset: 0;
+  box-shadow: inset 0 0 200px 60px rgba(8,8,12,0.7); pointer-events: none;
+}
+
+/* ---- Hero content ---- */
+.frontdoor__inner {
+  position: relative; z-index: 2; text-align: center; max-width: 34rem;
+  display: flex; flex-direction: column; align-items: center; gap: 0.25rem;
+}
+.frontdoor__inner > * { animation: fdRise 0.7s var(--ease) both; }
+.frontdoor__inner > :nth-child(1){ animation-delay: 0.05s; }
+.frontdoor__inner > :nth-child(2){ animation-delay: 0.13s; }
+.frontdoor__inner > :nth-child(3){ animation-delay: 0.21s; }
+.frontdoor__inner > :nth-child(4){ animation-delay: 0.29s; }
+.frontdoor__inner > :nth-child(5){ animation-delay: 0.37s; }
+.frontdoor__inner > :nth-child(6){ animation-delay: 0.45s; }
+.frontdoor__inner > :nth-child(7){ animation-delay: 0.53s; }
+.frontdoor__inner > :nth-child(8){ animation-delay: 0.61s; }
+@keyframes fdRise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+.fd-mark {
+  width: 60px; height: 60px; border-radius: 17px; display: grid; place-items: center; margin-bottom: 0.7rem;
+  background: radial-gradient(120% 120% at 32% 22%, var(--brass-bright) 0%, var(--brass) 46%, var(--brass-deep) 100%);
+  box-shadow: 0 12px 30px -8px var(--brass-glow), inset 0 1px 0 rgba(255,255,255,0.5), inset 0 -8px 14px -8px rgba(90,60,15,0.6);
+}
+.fd-mark__k { font-family: var(--font-display); font-weight: 600; font-size: 2rem; line-height: 1; color: #2a1c06; text-shadow: 0 1px 0 rgba(255,255,255,0.35); }
+
+.frontdoor__eyebrow {
+  margin: 0; font-size: 0.72rem; letter-spacing: 0.28em; text-transform: uppercase;
+  color: var(--brass-bright); opacity: 0.9;
+}
+.frontdoor__wordmark {
+  margin: 0.35rem 0 0; font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(2.6rem, 11vw, 4.6rem); line-height: 0.98; letter-spacing: -0.02em; color: var(--ivory);
+  text-shadow: 0 2px 30px rgba(232,197,126,0.25), 0 1px 0 #000;
+}
+.frontdoor__wordmark span { color: var(--brass-bright); margin-left: 0.1em; }
+.fd-tagline {
+  margin: 0.7rem 0 0; font-family: var(--font-display); font-weight: 400;
+  font-size: clamp(1.05rem, 3.4vw, 1.5rem); line-height: 1.3; color: var(--ivory-dim); letter-spacing: 0.01em;
+}
+.frontdoor__greeting { margin: 1.4rem 0 0; font-size: clamp(1rem, 2.6vw, 1.15rem); font-weight: 600; color: var(--ivory); }
+.frontdoor__sub { margin: 0.2rem 0 0; font-size: 0.96rem; color: var(--ivory-dim); }
+
+.fd-actions { display: flex; flex-direction: column; align-items: center; gap: 0.7rem; margin-top: 1.7rem; width: 100%; }
+.frontdoor__enter {
+  appearance: none; cursor: pointer; position: relative; overflow: hidden;
+  display: inline-flex; align-items: center; gap: 0.6rem;
+  min-width: 17rem; justify-content: center; padding: 1.05rem 2.4rem; border: 0; border-radius: 16px;
+  font: inherit; font-weight: 700; font-size: 1.16rem; color: #1a1206;
+  background: linear-gradient(135deg, #f4d9a0 0%, var(--brass-bright) 38%, var(--brass) 72%, var(--brass-deep) 100%);
+  box-shadow: 0 14px 38px -10px rgba(232,197,126,0.6), inset 0 1px 0 rgba(255,255,255,0.45);
+  transition: transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease), filter var(--dur) var(--ease);
+}
+.frontdoor__enter::after {
+  content: ''; position: absolute; inset: 0; transform: translateX(-130%);
+  background: linear-gradient(105deg, transparent 38%, rgba(255,255,255,0.55) 50%, transparent 62%);
+}
+.frontdoor__enter:hover, .frontdoor__enter:focus-visible { transform: translateY(-2px); filter: brightness(1.04); box-shadow: 0 20px 48px -12px rgba(232,197,126,0.7); }
+.frontdoor__enter:hover::after { transition: transform 0.7s var(--ease); transform: translateX(130%); }
+.frontdoor__enter-arrow { transition: transform var(--dur) var(--ease); }
+.frontdoor__enter:hover .frontdoor__enter-arrow { transform: translateX(4px); }
+
+.frontdoor__secondary {
+  appearance: none; cursor: pointer; padding: 0.85rem 1.6rem; border-radius: 13px; font: inherit; font-weight: 600; font-size: 0.98rem;
+  color: var(--ivory-dim); background: color-mix(in srgb, var(--ivory) 5%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ivory) 16%, transparent); transition: color var(--dur), border-color var(--dur), background var(--dur);
+}
+.frontdoor__secondary:hover, .frontdoor__secondary:focus-visible { color: var(--ivory); border-color: var(--brass); background: color-mix(in srgb, var(--brass) 12%, transparent); }
+
+.frontdoor__signin {
+  appearance: none; cursor: pointer; margin-top: 1.4rem; padding: 0.4rem 0.6rem; background: transparent; border: 0;
+  font: inherit; font-size: 0.9rem; font-weight: 600; color: var(--brass-bright); text-decoration: underline; text-underline-offset: 4px; text-decoration-thickness: 1px;
+  transition: color var(--dur);
+}
+.frontdoor__signin:hover { color: #f4d9a0; }
+.frontdoor__fs {
+  appearance: none; cursor: pointer; margin-top: 0.5rem; padding: 0.35rem 0.5rem; background: transparent; border: 0;
+  font: inherit; font-size: 0.8rem; color: var(--ivory-faint); transition: color var(--dur);
+}
+.frontdoor__fs:hover { color: var(--ivory-dim); }
+
+.frontdoor__build {
+  position: absolute; left: 0; right: 0; bottom: 0.9rem; z-index: 2; margin: 0; text-align: center;
+  font-family: var(--font-mono); font-size: 0.66rem; letter-spacing: 0.06em; color: var(--ivory-faint); opacity: 0.7;
+}
+
+/* top-bar brand mark — a small gold gem for product consistency */
+.brand__mark { background: radial-gradient(120% 120% at 30% 25%, var(--brass-bright), var(--brass-deep)) !important; box-shadow: 0 2px 8px -2px var(--brass-glow), inset 0 1px 0 rgba(255,255,255,0.4); }
+
+@media (max-width: 460px) {
+  .frontdoor__enter { min-width: 0; width: 100%; }
+  .frontdoor__secondary { width: 100%; }
+  .fd-actions { gap: 0.6rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fd-aurora, .fd-spot, .fd-motes span, .fd-piano__sheen { animation: none; }
+  .frontdoor__inner > * { animation: none; }
+  .frontdoor__enter::after { display: none; }
+}
+
+/* ===========================================================================
+   FRONT DOOR — FLAGSHIP PASS · rc2-86
+   The rc2-85 splash was tasteful but read as a dark-gradient template. This pass
+   adds the craft signals that make a product feel expensive: a fine gold framed
+   "plate", a crafted brand crest, a matte grain that removes gradient banding,
+   deeper richer blacks with a true overhead spotlight, and more confident type.
+   All original CSS — no images, no competitor assets. Overrides rc2-85 rules.
+   ========================================================================= */
+
+/* Deeper, richer hall: cool light from the rafters, warm pool on the floor,
+   true near-black at the edges. Crisper contrast = more expensive. */
+.frontdoor {
+  background:
+    radial-gradient(100% 68% at 50% -14%, #34467e 0%, rgba(40,55,100,0) 52%),
+    radial-gradient(62% 42% at 50% 26%, rgba(246,219,165,0.12), transparent 60%),
+    radial-gradient(82% 60% at 50% 118%, #1c1409 0%, transparent 56%),
+    linear-gradient(178deg, #161b2e 0%, #0e1019 46%, #070609 100%);
+}
+
+/* Matte film grain — the single biggest "not cheap" upgrade: it breaks up the
+   flat gradient banding that betrays a template. Generated SVG noise, tiled. */
+.fd-stage::after {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  opacity: 0.055; mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+/* The plate: a fine double gold hairline framing the whole arrival, like a
+   luxury invitation or a certificate of ownership. Instant premium read. */
+.frontdoor::after {
+  content: ''; position: absolute; inset: clamp(10px, 2.2vw, 22px); z-index: 3;
+  pointer-events: none; border-radius: 20px;
+  border: 1px solid color-mix(in srgb, var(--brass) 34%, transparent);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.045),
+    inset 0 0 70px -34px var(--brass-glow),
+    0 0 0 1px rgba(0, 0, 0, 0.4);
+}
+
+/* Crafted brand crest — larger, with a glowing rim ring and a hint of keybed
+   inside, so the mark itself says "piano" and "premium". */
+.fd-mark {
+  position: relative; width: 78px; height: 78px; border-radius: 22px; margin-bottom: 1rem;
+  background:
+    radial-gradient(130% 130% at 32% 20%, #f7e3b4 0%, var(--brass-bright) 40%, var(--brass) 70%, var(--brass-deep) 100%);
+  box-shadow:
+    0 16px 40px -10px var(--brass-glow),
+    inset 0 2px 0 rgba(255, 255, 255, 0.55),
+    inset 0 -12px 18px -10px rgba(80, 52, 12, 0.65);
+}
+.fd-mark::before {
+  content: ''; position: absolute; inset: -6px; border-radius: 27px;
+  border: 1px solid color-mix(in srgb, var(--brass) 52%, transparent);
+  box-shadow: 0 0 28px -6px var(--brass-glow);
+}
+.fd-mark::after {   /* a hinted keybed across the foot of the crest */
+  content: ''; position: absolute; left: 16%; right: 16%; bottom: 14%; height: 16%;
+  border-radius: 2px; opacity: 0.4;
+  background: repeating-linear-gradient(90deg, #2a1c06 0 2.5px, transparent 2.5px 6px);
+}
+.fd-mark__k { font-size: 2.4rem; }
+
+/* Eyebrow as a hairline badge — small, centred, framed; reads as a maker's mark. */
+.frontdoor__eyebrow {
+  display: inline-block; margin: 0 auto; padding: 0.34rem 0.9rem; border-radius: 999px;
+  font-size: 0.66rem; letter-spacing: 0.3em; text-transform: uppercase;
+  color: var(--brass-bright);
+  border: 1px solid color-mix(in srgb, var(--brass) 30%, transparent);
+  background: color-mix(in srgb, var(--brass) 8%, transparent);
+}
+
+/* Wordmark + tagline: more confident scale, finer light, italic tagline. */
+.frontdoor__wordmark {
+  margin: 0.9rem 0 0; font-size: clamp(2.8rem, 12vw, 5rem); letter-spacing: -0.025em;
+  text-shadow: 0 2px 40px rgba(232, 197, 126, 0.3), 0 1px 0 #000;
+}
+.frontdoor__wordmark span {
+  color: var(--brass-bright);
+  text-shadow: 0 0 24px var(--brass-glow);
+}
+.fd-tagline {
+  margin: 0.85rem 0 0; font-style: italic; font-weight: 400;
+  font-size: clamp(1.1rem, 3.6vw, 1.6rem); color: color-mix(in srgb, var(--ivory) 82%, var(--champagne));
+  letter-spacing: 0.005em;
+}
+
+/* A short gold rule under the tagline to anchor the masthead. */
+.fd-tagline::after {
+  content: ''; display: block; width: 58px; height: 2px; margin: 1.15rem auto 0; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--brass), transparent);
+}
+
+.frontdoor__greeting { margin: 1.5rem 0 0; }
+
+/* Richer keybed at the foot: warmer ivories, deeper shadow, a brass footlight
+   line where the keys meet the floor — more instrument, less stripe. */
+.fd-piano__keys {
+  background:
+    linear-gradient(180deg, rgba(248, 243, 233, 0) 0%, rgba(248, 243, 233, 0.12) 58%, rgba(250, 240, 220, 0.3) 100%),
+    repeating-linear-gradient(90deg, #efe9db 0 calc(100%/22 - 2px), #241f17 calc(100%/22 - 2px) calc(100%/22));
+  box-shadow: inset 0 34px 56px -22px rgba(0, 0, 0, 0.74), inset 0 -2px 0 0 color-mix(in srgb, var(--brass) 50%, transparent);
+}
+
+/* Stronger, warmer overhead spotlight so the masthead sits in a pool of light. */
+.fd-spot {
+  background: radial-gradient(44% 54% at 50% 22%, rgba(248, 224, 172, 0.36), rgba(232, 197, 126, 0.10) 42%, transparent 64%);
+}
+
+/* Reveal the 9th inner child (fullscreen link) in sequence. */
+.frontdoor__inner > :nth-child(9) { animation-delay: 0.69s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .fd-stage::after { opacity: 0.04; }
 }

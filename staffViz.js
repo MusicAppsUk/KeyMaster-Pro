@@ -13,13 +13,43 @@
 //   • Middle C between the staves
 //   • the convention KeyMaster uses elsewhere: treble ≈ right hand (≥ C4),
 //     bass ≈ left hand (≤ B3)
+//
+// LAYOUT ROBUSTNESS (rc2-86): two guarantees, enforced here for every Course
+// staff view regardless of how many notes or how high/low they sit:
+//   1. HORIZONTAL — notes always lay out inside the drawn staff lines. They use
+//      a comfortable spacing when there is room and compress to fit when there
+//      are many; they never run past the lines or off the canvas.
+//   2. VERTICAL — the SVG viewBox auto-fits to contain every note-head and its
+//      ledger lines (plus the clef and labels). A note can therefore never
+//      "float" off the staff background: the canvas always grows to hold it.
 // =============================================================================
 
 const GAP = 16;            // vertical distance between adjacent staff lines
 const HALF = GAP / 2;      // one diatonic step = half a line gap
-const LEFT = 54;           // x where the five lines begin (after the clef)
-const RIGHT = 340;         // x where the lines end
-const W = 360;
+
+// Wider staff (rc2-86): more presence, and room for a full octave of notes to
+// breathe like real sheet music instead of crowding.
+const W = 400;             // canvas width
+const LEFT = 56;           // x where the five lines begin (after the clef)
+const RIGHT = 384;         // x where the lines end
+
+// Horizontal note layout. Notes must always sit WITHIN the drawn staff (never
+// float past RIGHT or off-canvas), for any number of notes. We lay them out in
+// the span [NOTE_L, NOTE_R] with a comfortable spacing when there is room, and
+// compress to fit when there are many — always centred, always inside the lines.
+// This is the single source of horizontal positioning for every staff view.
+const NOTE_L = 112;             // first note sits clear of the clef
+const NOTE_R = RIGHT - 18;      // last note stays inside the staff + ledger width
+const NOTE_SPACING = 40;        // preferred gap between note centres
+function noteXs(n) {
+  if (n <= 0) return [];
+  if (n === 1) return [Math.round((NOTE_L + NOTE_R) / 2)];
+  const span = NOTE_R - NOTE_L;
+  const spacing = Math.min(NOTE_SPACING, span / (n - 1)); // compress only if needed
+  const groupW = spacing * (n - 1);
+  const start = NOTE_L + (span - groupW) / 2;             // centre the group
+  return Array.from({ length: n }, (_, i) => Math.round(start + i * spacing));
+}
 
 // Diatonic "staff step" of a MIDI pitch: 7 per octave, C=0 … B=6. Sharps/flats
 // share their natural letter's position (fine for white-key foundations).
@@ -53,11 +83,11 @@ function staffLines(topY, highlight) {
 
 function clefMark(clef, topY) {
   if (clef === 'treble') {
-    return `<text class="km-staff__clef" x="22" y="${topY + 3.4 * GAP}" text-anchor="middle">\uD834\uDD1E</text>`
-      + `<text class="km-staff__cleflabel" x="22" y="${topY + 5 * GAP + 14}" text-anchor="middle">treble</text>`;
+    return `<text class="km-staff__clef" x="24" y="${topY + 3.4 * GAP}" text-anchor="middle">\uD834\uDD1E</text>`
+      + `<text class="km-staff__cleflabel" x="24" y="${topY + 5 * GAP + 14}" text-anchor="middle">treble</text>`;
   }
-  return `<text class="km-staff__clef km-staff__clef--bass" x="22" y="${topY + 1.7 * GAP}" text-anchor="middle">\uD834\uDD22</text>`
-    + `<text class="km-staff__cleflabel" x="22" y="${topY + 5 * GAP + 14}" text-anchor="middle">bass</text>`;
+  return `<text class="km-staff__clef km-staff__clef--bass" x="24" y="${topY + 1.7 * GAP}" text-anchor="middle">\uD834\uDD22</text>`
+    + `<text class="km-staff__cleflabel" x="24" y="${topY + 5 * GAP + 14}" text-anchor="middle">bass</text>`;
 }
 
 // y for a pitch on a given staff block (topY = its top line's y).
@@ -95,6 +125,10 @@ function noteHead(midi, clef, topY, cx, on) {
     + `<ellipse class="${cls}" cx="${cx}" cy="${y}" rx="8.5" ry="6.5" transform="rotate(-18 ${cx} ${y})"/>`;
 }
 
+// Half-height of a note-head's visual footprint (head + a little air), used for
+// the vertical auto-fit so a note is never clipped at the canvas edge.
+const NOTE_PAD = 11;
+
 /**
  * Build a staff diagram.
  * @param {object} opts
@@ -111,36 +145,59 @@ export function buildStaff(opts = {}) {
   const middleC = !!opts.middleC;
 
   let body = '';
-  let H;
+  // Track the vertical extent of everything drawn, so the viewBox can grow to
+  // contain it. Seed with nothing; structural + note bounds are added below.
+  const ys = [];
+  const mark = (y) => { if (Number.isFinite(y)) ys.push(y); };
+
   if (clef === 'grand') {
-    const trebleTop = 24;
+    const trebleTop = 30;
     const bassTop = trebleTop + 4 * GAP + 3 * GAP + 6;   // gap holds Middle C
     body += staffLines(trebleTop, highlight) + clefMark('treble', trebleTop);
     body += staffLines(bassTop, highlight) + clefMark('bass', bassTop);
     // brace + connecting barlines
     body += `<line class="km-staff__brace" x1="${LEFT}" y1="${trebleTop}" x2="${LEFT}" y2="${bassTop + 4 * GAP}"/>`;
     body += `<line class="km-staff__brace" x1="${RIGHT}" y1="${trebleTop}" x2="${RIGHT}" y2="${bassTop + 4 * GAP}"/>`;
+    mark(trebleTop - 12);                  // clef curl above the treble staff
+    mark(bassTop + 5 * GAP + 16);          // bass clef label below
     if (middleC) {
       const cx = (LEFT + RIGHT) / 2;
       body += noteHead(60, 'treble', trebleTop, cx, true);   // Middle C: ledger below treble
       body += `<text class="km-staff__mc" x="${cx + 18}" y="${noteY(60, 'treble', trebleTop) + 4}">Middle C</text>`;
+      mark(noteY(60, 'treble', trebleTop) + NOTE_PAD);
     }
+    const gxs = noteXs(notes.length);
     notes.forEach((m, i) => {
-      const cx = 120 + i * 46;
+      const cx = gxs[i];
       const useClef = (m >= 60) ? 'treble' : 'bass';
       const top = (useClef === 'treble') ? trebleTop : bassTop;
       body += noteHead(m, useClef, top, cx, true);
+      const ny = noteY(m, useClef, top);
+      mark(ny - NOTE_PAD); mark(ny + NOTE_PAD);
     });
-    H = bassTop + 4 * GAP + 30;
   } else {
-    const topY = 26;
+    const topY = 30;
     body += staffLines(topY, highlight) + clefMark(clef, topY);
-    notes.forEach((m, i) => { body += noteHead(m, clef, topY, 120 + i * 46, true); });
-    H = topY + 4 * GAP + 34;
+    mark(topY - 12);                       // clef curl / top air
+    mark(topY + 5 * GAP + 16);             // clef label below the staff
+    const xs = noteXs(notes.length);
+    notes.forEach((m, i) => {
+      body += noteHead(m, clef, topY, xs[i], true);
+      const ny = noteY(m, clef, topY);
+      mark(ny - NOTE_PAD); mark(ny + NOTE_PAD);
+    });
   }
 
+  // Vertical auto-fit: the viewBox spans from the highest to the lowest thing
+  // drawn, with a little padding. A note (however high or low) is therefore
+  // always inside the canvas, sitting on its line/space/ledger — never floating.
+  const PAD = 6;
+  const yTop = Math.floor(Math.min(0, ...ys) - PAD);
+  const yBot = Math.ceil(Math.max(...ys) + PAD);
+  const vbH = Math.max(1, yBot - yTop);
+
   const aria = clef === 'grand' ? 'Grand staff' : (clef === 'bass' ? 'Bass staff' : 'Treble staff');
-  const svg = `<svg class="km-staff__svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${aria}">${body}</svg>`;
+  const svg = `<svg class="km-staff__svg" viewBox="0 ${yTop} ${W} ${vbH}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${aria}">${body}</svg>`;
   const wrap = document.createElement('div');
   wrap.className = `km-staff km-staff--${clef}`;
   wrap.innerHTML = svg;

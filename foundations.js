@@ -29,7 +29,7 @@ import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-56';
 import { buildScale } from './scaleEngine.js';
 import { buildHandSvg, setHandHighlight, FINGER_NAMES } from './handViz.js?v=rc2-81';
-import { buildStaff } from './staffViz.js?v=rc2-79';
+import { buildStaff } from './staffViz.js?v=rc2-86';
 import { createCourseVoice } from './courseVoice.js?v=rc2-81';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
