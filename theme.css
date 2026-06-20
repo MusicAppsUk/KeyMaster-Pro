@@ -1783,3 +1783,42 @@ html[data-view="learn"] .app__menu { display: none; }   /* focused lesson cockpi
 .frontdoor__install:hover { color: #1a1206; background: var(--brass-bright); border-color: var(--brass-bright); }
 .frontdoor__install[hidden] { display: none; }
 .frontdoor.is-standalone .frontdoor__fs { display: none; }
+
+/* ===========================================================================
+   FRONT DOOR — KEYBED REBUILD + PWA · rc2-90
+   The keybed is now a perspective SVG with real depth baked in (rear rail,
+   extruded black blocks with front faces, white front lip). It is no longer
+   tilted by CSS — that flattened it. Anchored full-width at the foot, drawn at
+   its natural aspect (no non-uniform stretch). Overrides the rc2-87/89 keybed.
+   ========================================================================= */
+.fd-piano {
+  position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: auto; max-height: none;
+  transform: none;                       /* depth is in the SVG, not a CSS tilt */
+  -webkit-mask-image: linear-gradient(0deg, #000 72%, transparent 100%);
+  mask-image: linear-gradient(0deg, #000 72%, transparent 100%);
+  opacity: 0.97;
+}
+.fd-piano__svg { position: static; inset: auto; width: 100%; height: auto; display: block; }
+.fd-piano::before {                      /* soft floor shadow under the whole keybed */
+  content: ''; position: absolute; left: 4%; right: 4%; bottom: -3%; height: 26%; z-index: -1;
+  background: radial-gradient(60% 100% at 50% 0%, rgba(0,0,0,0.6), transparent 74%); filter: blur(10px);
+}
+.fd-piano::after { content: none; }      /* footlight now lives inside the SVG (brass rail edge) */
+.fd-piano__sheen { display: none; }      /* sheen is baked into the SVG gloss now */
+
+/* App-launch affordances: clearer, premium. Install pill = the deliberate
+   full-screen path; full-screen pill = immediate option; iOS hint when neither. */
+.frontdoor__install {
+  display: inline-block; margin-top: 0.7rem; padding: 0.62rem 1.3rem; border-radius: 999px;
+  font-size: 0.9rem; font-weight: 700; letter-spacing: 0.01em; color: #1a1206;
+  background: linear-gradient(135deg, var(--brass-bright), var(--brass));
+  border: 0; box-shadow: 0 8px 22px -8px var(--brass-glow), inset 0 1px 0 rgba(255,255,255,0.4);
+  cursor: pointer; transition: transform var(--dur), filter var(--dur);
+}
+.frontdoor__install:hover { transform: translateY(-1px); filter: brightness(1.05); }
+.frontdoor__install[hidden] { display: none; }
+.frontdoor__ioshint {
+  margin: 0.7rem auto 0; max-width: 22rem; font-size: 0.82rem; line-height: 1.5; color: var(--ivory-dim);
+}
+.frontdoor__ioshint[hidden] { display: none; }
+.frontdoor__ioshint b { color: var(--brass-bright); font-weight: 600; }

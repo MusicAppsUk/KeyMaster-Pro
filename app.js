@@ -253,6 +253,15 @@ class KeyMasterApp {
     const onHome = (this.store.getState().view ?? 'home') === 'home';
     if (!(onHome && this._mountFrontDoor())) this._runWelcome();
     try { this._mountShell(); } catch (err) { console.info('[KeyMaster] shell wiring skipped:', err?.message ?? err); }
+    // Register the service worker so the app is installable (standalone / full
+    // screen) and works offline. Non-blocking; failure never affects the app.
+    try {
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').catch((err) => console.info('[KeyMaster] SW registration skipped:', err?.message ?? err));
+        });
+      }
+    } catch { /* ignore */ }
   }
 
   /**
@@ -381,6 +390,16 @@ class KeyMasterApp {
       if (installBtn) installBtn.hidden = true;
     });
     window.addEventListener('appinstalled', () => { if (installBtn) installBtn.hidden = true; });
+
+    // iOS Safari has no install event and no Fullscreen API for web pages — show
+    // the honest Add-to-Home-Screen route instead of a dead button.
+    try {
+      const ua = navigator.userAgent || '';
+      const isIOS = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && (navigator.maxTouchPoints || 0) > 1);
+      const fsOK2 = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+      const hint = document.getElementById('fd-ioshint');
+      if (isIOS && !fsOK2 && hint) hint.hidden = false;
+    } catch { /* ignore */ }
   }
 
   /**
