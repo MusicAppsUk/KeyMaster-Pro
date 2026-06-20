@@ -315,6 +315,7 @@ class KeyMasterApp {
         const finish = () => {
           fd.hidden = true;
           fd.classList.remove('is-leaving');
+          document.documentElement.classList.remove('fd-open');   // re-enable scroll
           if (toHash) location.hash = toHash;
         };
         fd.classList.add('is-leaving');
@@ -322,22 +323,18 @@ class KeyMasterApp {
       };
 
       document.getElementById('fd-fullscreen')?.addEventListener('click', () => {
-        try { this._toggleFullscreen(); } catch { /* ignore */ }
+        this._requestImmersiveFullscreen();
       });
       enterEl?.addEventListener('click', () => {
-        // Immersive entry: on touch devices use this gesture to go full-screen.
-        // Honest — a user gesture is required; silently ignored if unsupported
-        // or already full-screen/standalone.
-        try {
-          if (window.matchMedia?.('(pointer: coarse)')?.matches && !document.fullscreenElement) {
-            document.documentElement.requestFullscreen?.();
-          }
-        } catch { /* ignore */ }
+        // Fire the fullscreen request FIRST, synchronously inside the tap, before
+        // any transition/timer consumes the user activation. Never blocks entry.
+        this._requestImmersiveFullscreen();
         leave('#/learn');
       });
       document.getElementById('fd-rooms')?.addEventListener('click', () => leave(null));
 
       fd.hidden = false;
+      document.documentElement.classList.add('fd-open');   // lock scroll on splash
       return true;
     } catch { return false; }
   }
@@ -455,6 +452,9 @@ class KeyMasterApp {
     // ---- Hub chips on home --------------------------------------------------
     $('hub-map')?.addEventListener('click', () => this._openCourseMap());
     $('hub-review')?.addEventListener('click', () => resumeAt(Math.max(0, resumeIndex() - 1)));
+    // Primary launch from the home hub also requests immersive fullscreen on the
+    // tap (synchronously, before the anchor navigates). Never blocks navigation.
+    $('learn-cta')?.addEventListener('click', () => { this._requestImmersiveFullscreen(); });
 
     // ---- Course Map overlay -------------------------------------------------
     $('km-map-close')?.addEventListener('click', () => this._closeCourseMap());
@@ -724,6 +724,25 @@ class KeyMasterApp {
         doc.exitFullscreen?.();
       }
     } catch { /* unsupported; ignore */ }
+  }
+
+  /**
+   * Immersive fullscreen, fired directly from a launch tap. Must be called
+   * synchronously inside the click handler (before any await/timer) so the user
+   * activation is still valid. Never throws, never blocks entry; returns whether
+   * fullscreen was entered. Honest: if the browser declines, the app proceeds.
+   */
+  async _requestImmersiveFullscreen() {
+    try {
+      const root = document.documentElement;
+      if (!document.fullscreenEnabled) return false;
+      if (document.fullscreenElement) return true;
+      await root.requestFullscreen({ navigationUI: 'hide' });
+      return true;
+    } catch (err) {
+      console.info('[KeyMaster] fullscreen request not accepted:', err?.message ?? err);
+      return false;
+    }
   }
 
   /**

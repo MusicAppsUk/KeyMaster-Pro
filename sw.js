@@ -15,7 +15,7 @@
    Bump CACHE on each release so activate clears the previous cache.
    ============================================================================= */
 
-const CACHE = 'keymaster-rc2-90';
+const CACHE = 'keymaster-rc2-92';
 const CORE = ['./', './index.html', './manifest.json'];
 
 self.addEventListener('install', (event) => {

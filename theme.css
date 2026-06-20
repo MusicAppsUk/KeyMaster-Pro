@@ -1822,3 +1822,20 @@ html[data-view="learn"] .app__menu { display: none; }   /* focused lesson cockpi
 }
 .frontdoor__ioshint[hidden] { display: none; }
 .frontdoor__ioshint b { color: var(--brass-bright); font-weight: 600; }
+
+/* ===========================================================================
+   SPLASH / FULLSCREEN LAYOUT · rc2-92
+   Correct viewport sizing for tablet Chrome: dvh as the primary height (svh as a
+   robust minimum), not 100vh. Scroll is locked ONLY while the splash is shown.
+   (True immersive fullscreen still requires installed-PWA standalone or the
+   gesture-driven requestFullscreen wired to the launch button — see app.js.)
+   ========================================================================= */
+.frontdoor {
+  inset: auto; top: 0; left: 0; right: 0; bottom: auto;
+  width: 100vw;
+  height: 100vh;          /* fallback for browsers without dvh */
+  height: 100dvh;         /* primary: tracks the dynamic viewport (browser bars) */
+  min-height: 100svh;     /* never shorter than the small viewport */
+}
+/* Lock page scroll only while the splash is up; the Course/home views scroll. */
+html.fd-open, html.fd-open body { overflow: hidden; height: 100%; }
