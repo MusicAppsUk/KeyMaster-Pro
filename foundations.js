@@ -420,7 +420,7 @@ export const LEARN_STEPS = [
     explain: ['A semitone is the smallest step \u2014 from any key to the very next key, with nothing between, white or black.', 'E and F sit side by side with no key between. Play E, then F: that is one semitone.'],
     show: { kind: 'keys', midis: [64, 65], caption: 'E to F \u2014 one semitone (no key between).', label: 'E \u2013 F = a semitone' },
     demo: [64, 65], demoGap: 0.5,
-    tryPrompt: 'Play E, then the very next key F \u2014 one semitone.', targets: [64, 65], mode: 'sequence',
+    tryPrompt: 'Play E, then the very next key F \u2014 one semitone.', targets: [64, 65], mode: 'sequence', manualNext: true,
     okMsg: 'Good \u2014 that\u2019s a semitone: the smallest move on the keyboard. Stepping to a black key is a semitone too.',
     hint: 'E and F are the two white keys with no black key between them.',
   },
@@ -433,7 +433,7 @@ export const LEARN_STEPS = [
     explain: ['A tone is two semitones \u2014 two smallest steps at once.', 'C up to D skips the black key between them: two semitones, so C to D is one tone.'],
     show: { kind: 'keys', midis: [60, 62], caption: 'C to D \u2014 one tone (two semitones).', label: 'C \u2013 D = a tone' },
     demo: [60, 62], demoGap: 0.5,
-    tryPrompt: 'Play C, then D \u2014 a tone (two semitones).', targets: [60, 62], mode: 'sequence',
+    tryPrompt: 'Play C, then D \u2014 a tone (two semitones).', targets: [60, 62], mode: 'sequence', manualNext: true,
     okMsg: 'Good \u2014 a tone: two semitones. Scales are built from tones and semitones in a set order, as you\u2019ll see.',
     hint: 'C and D are white keys with one black key between them \u2014 that gap makes it a tone.',
   },
@@ -624,7 +624,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [60], caption: 'This staff note is Middle C.', label: 'Middle C' },
     staffHint: { clef: 'grand', notes: [60], middleC: true },
     demo: [60], demoGap: 0.45,
-    tryPrompt: 'Find Middle C on the staff, then play it on the keyboard.', targets: [60], exact: true, mode: 'one',
+    tryPrompt: 'Find Middle C on the staff, then play it on the keyboard.', targets: [60], exact: true, mode: 'one', manualNext: true,
     okMsg: 'Good \u2014 you connected the written note to the key. That link, staff to keyboard, is the whole of reading.',
     hint: 'Middle C is the white key just left of the two black keys, near the centre.',
   },
@@ -1730,6 +1730,13 @@ export default function createView(ctx) {
   let pulseTimer = null;     // rhythm-card animation
   let tryState = null;       // per-card progress for the Try interaction
 
+  // ---- Lesson-control state (learn): the learner must always know whether THEY
+  // are being waited on, or whether the app is about to move on. -----------------
+  let paused = false;        // lesson paused by the learner (overlay shown)
+  let pauseOverlay = null;   // the calm "Lesson paused" overlay (built in learn mode)
+  let contState = 'ready';   // 'wait' | 'ready' | 'auto' — Continue button meaning
+  let autoCountTimer = null; // visible "Continuing in 3…" countdown interval
+
   // ---- Demonstration audio (Course-only warm voice; synth.js untouched) -----
   // The tutor's note demonstrations and the pulse metronome use courseVoice,
   // which reuses the shared AudioContext (synth.ctx) — a warmer, clearer, less
@@ -1870,7 +1877,11 @@ export default function createView(ctx) {
   const backBtn = el('button', { class: 'mf__btn mf__btn--ghost', type: 'button' });
   backBtn.textContent = 'Back';
   const contBtn = el('button', { class: 'mf__btn mf__btn--primary', type: 'button' });
-  footer.append(backBtn, contBtn);
+  const stayBtn = el('button', { class: 'mf__btn mf__btn--ghost mf__stay', type: 'button' });
+  stayBtn.textContent = 'Stay here';
+  stayBtn.style.display = 'none';
+  stayBtn.addEventListener('click', () => { clearAutoCount(); setContinue('ready'); });
+  footer.append(backBtn, contBtn, stayBtn);
 
   const card = el('div', { class: 'mf__card' }, [title, explain, showWrap, tryWrap]);
   root.append(head, dots, card, footer);
@@ -1885,8 +1896,8 @@ export default function createView(ctx) {
     startBtn.textContent = 'Start tutor voice';
     startBtn.style.display = 'none';
     voiceBtn = el('button', { class: 'mf__btn mf__btn--ghost mf__learnbtn', type: 'button' });
-    const pauseBtn = el('button', { class: 'mf__btn mf__btn--ghost mf__learnbtn', type: 'button' });
-    pauseBtn.textContent = 'Pause';
+    const pauseBtn = el('button', { class: 'mf__btn mf__btn--pause', type: 'button' });
+    pauseBtn.textContent = '\u275A\u275A  Pause lesson';
     const repeatBtn = el('button', { class: 'mf__btn mf__btn--ghost mf__learnbtn', type: 'button' });
     repeatBtn.textContent = 'Repeat';
     const resetBtn = el('button', { class: 'mf__btn mf__btn--ghost mf__learnbtn', type: 'button' });
@@ -1900,11 +1911,27 @@ export default function createView(ctx) {
     bridgeBtn.style.display = 'none';
     card.appendChild(bridgeBtn);
 
+    // Calm pause overlay — covers the lesson card; footer is frozen while shown.
+    pauseOverlay = el('div', { class: 'mf__pause' });
+    pauseOverlay.style.display = 'none';
+    const pTitle = el('p', { class: 'mf__pause-title' }); pTitle.textContent = 'Lesson paused';
+    const pText = el('p', { class: 'mf__pause-text' });
+    pText.textContent = 'Take your time. Resume when you\u2019re ready.';
+    const resumeBtn = el('button', { class: 'mf__btn mf__btn--primary is-ready', type: 'button' });
+    resumeBtn.textContent = 'Resume lesson';
+    const homeBtn = el('button', { class: 'mf__btn mf__btn--ghost', type: 'button' });
+    homeBtn.textContent = 'Back to Course home';
+    pauseOverlay.append(pTitle, pText, el('div', { class: 'mf__pause-row' }, [resumeBtn, homeBtn]));
+    card.appendChild(pauseOverlay);
+    resumeBtn.addEventListener('click', () => { voice?.unlock?.(); resumeLesson(); });
+    homeBtn.addEventListener('click', () => { paused = false; goHome(); });
+
     startBtn.addEventListener('click', () => { voice?.unlock?.(); speakPending(); });
     voiceBtn.addEventListener('click', () => { voice?.unlock?.(); setVoice(!voiceOn); speakPending(); });
-    pauseBtn.addEventListener('click', () => { audio?.cancel?.(); stopDemoAudio(); stopPulse(); });
+    pauseBtn.addEventListener('click', () => { pauseLesson(); });
     repeatBtn.addEventListener('click', () => {
       voice?.unlock?.();
+      clearAutoCount();                                 // stop any "Continuing in…" countdown
       demoToken += 1;                                   // cancel any pending sequence
       if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
       if (demoTimer) { clearTimeout(demoTimer); demoTimer = null; }
@@ -1950,8 +1977,10 @@ export default function createView(ctx) {
   }
   contBtn.addEventListener('click', () => {
     voice?.unlock?.();
+    if (paused) return;                           // frozen while the pause overlay is up
     speakPending();                               // tutor arrives on the first primary tap
     if (learnMode && contBtn.disabled) return;   // proficiency gate (learn only)
+    clearAutoCount();                             // if mid-countdown, continue now
     advanceStep();
   });
   replayBtn.addEventListener('click', () => { voice?.unlock?.(); demoCard(steps[index]); });
@@ -2096,23 +2125,114 @@ export default function createView(ctx) {
     else speakCard(c, afterSpeech);
   }
 
-  // ---- Proficiency gate (learn only): an interactive step holds Continue until the
-  // learner has done it, with a gentle escape so they are never trapped. ----------
+  // ---- Lesson-control state machine (learn only) ---------------------------
+  // Three Continue states the learner can always read:
+  //   wait  — they must do the step first (button muted, says why)
+  //   ready — the app is waiting for THEM to choose to move on (green Continue)
+  //   auto  — the app will move on by itself, shown as a visible countdown they
+  //           can interrupt (Stay here / Repeat / Pause).
+  function setContinue(state, reason) {
+    contState = state;
+    contBtn.classList.remove('is-gated', 'is-ready', 'is-auto');
+    if (state === 'wait') {
+      contBtn.disabled = true;
+      contBtn.classList.add('is-gated');
+      contBtn.textContent = reason || 'Complete the step to continue';
+      if (stayBtn) stayBtn.style.display = 'none';
+    } else if (state === 'auto') {
+      contBtn.disabled = false;
+      contBtn.classList.add('is-ready', 'is-auto');     // text set by the countdown
+      if (stayBtn) stayBtn.style.display = '';
+    } else { // ready
+      contBtn.disabled = false;
+      contBtn.classList.add('is-ready');
+      contBtn.textContent = (index >= steps.length - 1) ? 'Finish' : 'Continue';
+      if (stayBtn) stayBtn.style.display = 'none';
+    }
+  }
+  // The reason a step is holding Continue — written plainly for the learner.
+  function gateReason(c) {
+    if (countInActive) return 'Listen first\u2026';
+    if (!c) return 'Complete the step to continue';
+    switch (c.mode) {
+      case 'count': return 'Play on the beat to continue';
+      case 'sequence': return 'Play the pattern to continue';
+      case 'set': case 'lowhigh': return 'Play the notes to continue';
+      case 'any': case 'one': case 'oneof': return 'Play to continue';
+      default: return 'Complete the step to continue';
+    }
+  }
+  function clearAutoCount() { if (autoCountTimer) { clearInterval(autoCountTimer); autoCountTimer = null; } }
+  // Visible auto-continue: "Continuing in 3… 2… 1…", interruptible at any time.
+  function startAutoCountdown(secs) {
+    const c = steps[index];
+    if (paused || (c && (c.hold || c.manualNext))) { setContinue('ready'); return; }
+    clearAutoCount();
+    let n = Math.max(1, secs || 3);
+    setContinue('auto');
+    contBtn.textContent = `Continuing in ${n}\u2026`;
+    autoCountTimer = setInterval(() => {
+      if (paused) { clearAutoCount(); setContinue('ready'); return; }
+      n -= 1;
+      if (n <= 0) { clearAutoCount(); advanceStep(); return; }
+      contBtn.textContent = `Continuing in ${n}\u2026`;
+    }, 1000);
+  }
   function enableContinue() {
     if (gateTimer) { clearTimeout(gateTimer); gateTimer = null; }
-    contBtn.disabled = false;
-    contBtn.classList.remove('is-gated');
+    setContinue('ready');
   }
   function gateStep(c) {
     if (gateTimer) { clearTimeout(gateTimer); gateTimer = null; }
+    clearAutoCount();
     stepAttempts = 0;
     wrongCount = 0;
     const interactive = !!(c && c.mode && c.mode !== 'none');
-    if (!interactive) { enableContinue(); return; }
-    contBtn.disabled = true;
-    contBtn.classList.add('is-gated');
+    if (!interactive) { setContinue('ready'); return; }   // explanation/reflective: manual Continue
+    setContinue('wait', gateReason(c));
     gateTimer = setTimeout(enableContinue, 22000);  // failsafe: input may be unavailable
   }
+
+  // ---- Pause / Resume -------------------------------------------------------
+  function pauseLesson() {
+    if (paused || !learnMode) return;
+    paused = true;
+    audio?.cancel?.();                                  // tutor speech
+    stopDemoAudio();                                    // demo notes + visual sweep
+    stopPulse();                                        // metronome / pulse
+    clearCountIn();                                     // any listen-first count
+    clearAutoCount();                                   // the "Continuing in…" countdown
+    if (autoAdvTimer) { clearTimeout(autoAdvTimer); autoAdvTimer = null; }
+    if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
+    if (demoTimer) { clearTimeout(demoTimer); demoTimer = null; }
+    demoToken += 1;                                     // cancel any pending speak→demo chain
+    root.classList.add('is-paused');                    // freeze footer + pause CSS animations
+    if (pauseOverlay) pauseOverlay.style.display = '';
+  }
+  function resumeLesson() {
+    if (!paused) return;
+    paused = false;
+    root.classList.remove('is-paused');
+    if (pauseOverlay) pauseOverlay.style.display = 'none';
+    const c = steps[index];
+    if (c && c.mode === 'count' && tryState && !tryState.done) {
+      // a pulse exercise: restart cleanly with a fresh count-in
+      tryState.count = 0;
+      setContinue('wait', 'Play on the beat to continue');
+      runCountIn(c, () => {
+        if (!paused && tryState && !tryState.done) {
+          tryStatus.textContent = 'Now you try \u2014 play a note on each beat.';
+          tryStatus.classList.remove('is-wrong', 'is-done');
+        }
+      });
+    } else if (c && c.mode && c.mode !== 'none') {
+      if (tryState && tryState.done) setContinue('ready');
+      else setContinue('wait', gateReason(c));
+    } else {
+      setContinue('ready');                             // explanation step: ready to continue
+    }
+  }
+
 
   // ---- Per-card render ------------------------------------------------------
   // Video-ready slot (rc2-63): an honest premium placeholder until real, licensed
@@ -2133,6 +2253,11 @@ export default function createView(ctx) {
     stopPulse();
     clearCountIn();
     stopDemoAudio();
+    clearAutoCount();                                 // no countdown carries across steps
+    paused = false;                                   // a freshly rendered step is never paused
+    if (pauseOverlay) pauseOverlay.style.display = 'none';
+    root.classList.remove('is-paused');
+    if (stayBtn) stayBtn.style.display = 'none';
     if (autoAdvTimer) { clearTimeout(autoAdvTimer); autoAdvTimer = null; }
     if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
     demoToken += 1;
@@ -2270,6 +2395,7 @@ export default function createView(ctx) {
 
   // ---- Try detection — accurate, teaching feedback --------------------------
   function onNote(ev) {
+    if (paused) return;                            // lesson is paused — ignore presses
     if (learnMode) { voice?.unlock?.(); speakPending(); }
     const c = steps[index];
     if (!c || !c.mode || c.mode === 'none' || !tryState || tryState.done) return;
@@ -2346,11 +2472,11 @@ export default function createView(ctx) {
       // Advance only after the confirmation has been fully delivered, then a calm
       // pause — never cut off, never rushed. Captions-led uses reading time.
       const scheduleAdvance = (delay) => {
-        if (steps[index] && steps[index].hold) return;
+        if (steps[index] && (steps[index].hold || steps[index].manualNext)) { setContinue('ready'); return; }
         const at = index;
         if (autoAdvTimer) clearTimeout(autoAdvTimer);
         autoAdvTimer = setTimeout(() => {
-          if (index === at && tryState && tryState.done) advanceStep();
+          if (index === at && tryState && tryState.done && !paused) startAutoCountdown(3);
         }, delay);
       };
       if (voice && voiceOn) {
@@ -2624,13 +2750,41 @@ function injectStyles() {
     .mf__btn--ghost:hover { color: var(--ivory, #F4EFE6); border-color: rgba(244,239,230,0.4); }
     .mf__btn--primary { background: var(--brass, #C99A4B); color: #1a1206; }
     .mf__btn--primary:hover { filter: brightness(1.08); }
+    /* Continue-state machine. ready = green action/success language; auto = a
+       pulsing "Continuing in…" the learner can interrupt. */
+    .mf__btn--primary.is-ready { background: var(--emerald, #46C08A); color: #06251a;
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--emerald, #46C08A) 24%, transparent), 0 6px 18px -7px var(--emerald, #46C08A); }
+    .mf__btn--primary.is-ready:hover { filter: brightness(1.06); }
+    .mf__btn--primary.is-auto { animation: mfAutoPulse 1s ease-in-out infinite; }
+    @keyframes mfAutoPulse {
+      0%, 100% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--emerald, #46C08A) 20%, transparent); }
+      50%      { box-shadow: 0 0 0 7px color-mix(in srgb, var(--emerald, #46C08A) 32%, transparent); }
+    }
+    .mf__stay { padding: 0.7rem 1rem; }
+    /* Prominent Pause — a proper lesson control, easy to find. */
+    .mf__btn--pause { background: color-mix(in srgb, var(--amber, #E0A94B) 18%, transparent);
+      border: 1px solid color-mix(in srgb, var(--amber, #E0A94B) 60%, transparent); color: var(--amber, #E0A94B);
+      font-weight: 700; min-height: 42px; padding: 0.5rem 1.1rem; border-radius: 11px; cursor: pointer; }
+    .mf__btn--pause:hover { background: color-mix(in srgb, var(--amber, #E0A94B) 30%, transparent); color: var(--ivory, #F4EFE6); }
+    /* Calm pause overlay — covers the lesson; the footer is frozen behind it. */
+    .mf__card { position: relative; }
+    .mf__pause { position: absolute; inset: 0; z-index: 6; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 0.85rem; text-align: center; padding: 1.5rem;
+      border-radius: 16px; background: color-mix(in srgb, var(--ebony, #14131A) 85%, transparent);
+      -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+    .mf__pause-title { margin: 0; font-size: 1.35rem; font-weight: 700; color: var(--ivory, #F4EFE6); }
+    .mf__pause-text { margin: 0; font-size: 1.02rem; color: var(--ivory-dim, #B9B2A6); max-width: 22rem; line-height: 1.5; }
+    .mf__pause-row { display: flex; gap: 0.7rem; flex-wrap: wrap; justify-content: center; margin-top: 0.3rem; }
+    .mf.is-paused .mf__footer { opacity: 0.4; pointer-events: none; }
+    .mf.is-paused .mf__learnctrls { opacity: 0.4; pointer-events: none; }
+    .mf.is-paused .km-hand, .mf.is-paused .km-staff, .mf.is-paused .mf__beat { animation-play-state: paused !important; }
     .mf__greeting { margin: 0 0 0.7rem; font-size: 1.08rem; font-weight: 600; color: var(--champagne, #E8C57E); }
     .mf__learnctrls { display: flex; gap: 0.55rem; margin: 0 0 0.9rem; flex-wrap: wrap; }
     .mf__learnbtn { padding: 0.42rem 0.95rem; min-height: 38px; font-size: 0.85rem; }
     .mf__startvoice { font-weight: 650; }
     .mf__voicestatus { margin: 0 0 0.7rem; font-size: 0.85rem; color: var(--ivory-faint, #7E7A72); }
     .mf__keylabel { margin: 0 0 0.35rem; font-size: 0.98rem; font-weight: 650; letter-spacing: 0.02em; color: var(--amber, #E0A94B); }
-    .mf__btn.is-gated, .mf__btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .mf__btn.is-gated, .mf__btn:disabled { opacity: 0.55; cursor: not-allowed; font-weight: 600; }
     .mf__bridgelink { display: block; width: fit-content; margin: 0.95rem auto 0; padding: 0.3rem 0.4rem; background: none; border: 0; cursor: pointer; font: inherit; font-size: 0.82rem; color: var(--champagne, #E8C57E); opacity: 0.72; }
     .mf__bridgelink:hover, .mf__bridgelink:focus-visible { opacity: 1; text-decoration: underline; }
     .mf__media { margin: 0 0 0.85rem; }
