@@ -304,12 +304,10 @@ class KeyMasterApp {
       let returning = false;
       try { returning = !!loadPrefs().lastView || this._hasCourseProgress(); } catch { /* ignore */ }
       const enterEl = document.getElementById('fd-enter');
-      const subEl = document.getElementById('fd-sub');
-      // The action lives on the button; the subtitle stays a calm, human line —
-      // never a sentence with a chapter name spliced in.
+      // The action lives on the button; the calm welcome is the greeting, with a
+      // Shakespeare line above it (static markup) — no chapter name spliced in.
       const arrow = '<span class="frontdoor__enter-arrow" aria-hidden="true">\u2192</span>';
       if (enterEl) enterEl.innerHTML = (returning ? 'Continue the Course' : 'Enter the Course') + arrow;
-      if (subEl) subEl.textContent = 'Your tutor is ready.';
 
       const leave = (toHash) => {
         const finish = () => {

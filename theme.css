@@ -1848,3 +1848,33 @@ html.fd-open, html.fd-open body { overflow: hidden; height: 100%; }
    ========================================================================= */
 .fd-piano { opacity: 1; bottom: 2%; }
 .fd-piano::before { content: none; }   /* no dark keybed mass to ground anymore */
+
+/* ===========================================================================
+   FRONT DOOR — SHAKESPEARE VERSE · rc2-94
+   A small, elegant couplet in the title area. Fraunces italic to match the
+   tagline; muted ivory-gold; a quiet small-caps attribution. Calm, premium,
+   uncluttered — lines break at the comma so there is no awkward wrap.
+   ========================================================================= */
+.fd-verse {
+  margin: 0.55rem auto 0.15rem;
+  max-width: 34ch;
+  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: clamp(0.84rem, 1.7vw, 1.0rem);
+  line-height: 1.5;
+  color: rgba(244, 228, 192, 0.72);
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+.fd-verse__line { display: block; }
+.fd-verse__cite {
+  display: block;
+  margin-top: 0.5rem;
+  font-family: 'Fraunces', Georgia, serif;
+  font-style: normal;
+  font-size: 0.66rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(232, 197, 126, 0.58);
+}

@@ -3,7 +3,7 @@
   "name": "KeyMaster PRO",
   "short_name": "KeyMaster",
   "description": "A cognitive piano-training studio: scales fluency and sight-reading resilience.",
-  "id": "/",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

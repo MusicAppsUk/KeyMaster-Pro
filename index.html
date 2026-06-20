@@ -24,6 +24,8 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="KeyMaster PRO" />
   <link rel="apple-touch-icon" href="icon-180.png" />
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png" />
+  <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png" />
 
   <!-- Type system: Fraunces (display/brand), Inter (UI), IBM Plex Mono
        (telemetry — BPM, latency, register readouts). -->
@@ -35,9 +37,9 @@
   />
 
   <!-- Separated styling layers (theme tokens first, then component sheets). -->
-  <link rel="stylesheet" href="theme.css?v=rc2-93" />
-  <link rel="stylesheet" href="keyboard.css?v=rc2-93" />
-  <link rel="stylesheet" href="notation.css?v=rc2-93" />
+  <link rel="stylesheet" href="theme.css?v=rc2-94" />
+  <link rel="stylesheet" href="keyboard.css?v=rc2-94" />
+  <link rel="stylesheet" href="notation.css?v=rc2-94" />
 
   <!-- The only inline style: hide the shell until the app flips data-boot,
        preventing an unstyled flash before the module graph resolves. -->
@@ -264,8 +266,12 @@
       <p class="frontdoor__eyebrow">Cognitive piano training</p>
       <h1 class="frontdoor__wordmark" id="fd-title">KeyMaster<span>PRO</span></h1>
       <p class="fd-tagline">The piano you always meant to learn.</p>
+      <blockquote class="fd-verse" aria-label="A line on music by Shakespeare">
+        <span class="fd-verse__line">The man that hath no music in himself,</span>
+        <span class="fd-verse__line">Nor is not moved with concord of sweet sounds&hellip;</span>
+        <cite class="fd-verse__cite">&#8212;&nbsp;William Shakespeare &middot; The Merchant of Venice</cite>
+      </blockquote>
       <p class="frontdoor__greeting" id="fd-greeting">Good afternoon.</p>
-      <p class="frontdoor__sub" id="fd-sub">Your tutor is ready.</p>
       <div class="fd-actions">
         <button type="button" class="frontdoor__enter" id="fd-enter">Enter the Course<span class="frontdoor__enter-arrow" aria-hidden="true">&#8594;</span></button>
         <button type="button" class="frontdoor__secondary" id="fd-rooms">Browse practice rooms</button>
@@ -346,6 +352,6 @@
 
   <!-- Single module entry point. Absolute path so it resolves regardless of
        the route in the hash. -->
-  <script type="module" src="app.js?v=rc2-93"></script>
+  <script type="module" src="app.js?v=rc2-94"></script>
 </body>
 </html>
