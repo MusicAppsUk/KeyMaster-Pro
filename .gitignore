@@ -1,6 +1,15 @@
+# OS / editor cruft
 .DS_Store
 Thumbs.db
 *.swp
 .idea/
 .vscode/
+
+# Dependencies (none currently — no build step)
 node_modules/
+
+# Voice-pack generation secrets (DEV) — never commit the API key
+.env
+.env.*
+!.env.example
+tools/.env
