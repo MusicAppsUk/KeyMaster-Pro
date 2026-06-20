@@ -1839,3 +1839,12 @@ html[data-view="learn"] .app__menu { display: none; }   /* focused lesson cockpi
 }
 /* Lock page scroll only while the splash is up; the Course/home views scroll. */
 html.fd-open, html.fd-open body { overflow: hidden; height: 100%; }
+
+/* ===========================================================================
+   FRONT DOOR — CENTRED LIGHT FORM · rc2-93
+   The literal keybed is gone. The foot now carries a symmetric, centred gold
+   light arc (concert-stage horizon) — luminous, balanced with the centred logo
+   and CTA above it. No dark body, so the old floor shadow is dropped.
+   ========================================================================= */
+.fd-piano { opacity: 1; bottom: 2%; }
+.fd-piano::before { content: none; }   /* no dark keybed mass to ground anymore */
