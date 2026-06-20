@@ -1751,7 +1751,7 @@ html[data-view="learn"] .app__menu { display: none; }   /* focused lesson cockpi
    without gimmickry. Overrides the rc2-85 flat-gradient keybed.
    ========================================================================= */
 .fd-piano {
-  bottom: -1%; height: 34vh; max-height: 300px;
+  bottom: -1%; height: 38vh; max-height: 324px;
   transform: translateX(-50%) perspective(760px) rotateX(40deg);   /* gentler tilt */
 }
 .fd-piano__svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }

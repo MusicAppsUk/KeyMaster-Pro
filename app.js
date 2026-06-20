@@ -315,7 +315,17 @@ class KeyMasterApp {
       document.getElementById('fd-fullscreen')?.addEventListener('click', () => {
         try { this._toggleFullscreen(); } catch { /* ignore */ }
       });
-      enterEl?.addEventListener('click', () => leave('#/learn'));
+      enterEl?.addEventListener('click', () => {
+        // Immersive entry: on touch devices use this gesture to go full-screen.
+        // Honest — a user gesture is required; silently ignored if unsupported
+        // or already full-screen/standalone.
+        try {
+          if (window.matchMedia?.('(pointer: coarse)')?.matches && !document.fullscreenElement) {
+            document.documentElement.requestFullscreen?.();
+          }
+        } catch { /* ignore */ }
+        leave('#/learn');
+      });
       document.getElementById('fd-rooms')?.addEventListener('click', () => leave(null));
 
       fd.hidden = false;
@@ -350,6 +360,14 @@ class KeyMasterApp {
         || window.navigator?.standalone);
     } catch { /* ignore */ }
     if (standalone) { fd?.classList.add('is-standalone'); return; }
+
+    // No broken affordance: where the Fullscreen API is unavailable (e.g. iPhone
+    // Safari) hide the full-screen link instead of showing a dead button.
+    try {
+      const fsBtn = document.getElementById('fd-fullscreen');
+      const fsOK = !!(document.documentElement.requestFullscreen || document.documentElement.webkitRequestFullscreen);
+      if (fsBtn && !fsOK) fsBtn.hidden = true;
+    } catch { /* ignore */ }
 
     const installBtn = document.getElementById('fd-install');
     let deferred = null;
