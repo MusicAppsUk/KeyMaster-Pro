@@ -795,48 +795,66 @@ a.vector:hover .vector__open { color: var(--ivory); }
   .view[data-view="learn"] .mf__beat.is-on { transform: none; }
 }
 
-/* Hand & finger diagrams (handViz.js) — original line art. Fingers and their
-   numbered discs light amber when active; the "watch this" sequence animates
-   them one at a time. Device-verify: look + motion need a real device. */
+/* Hand & finger diagrams (handViz.js) — original line art, designed LARGE and
+   central so it teaches, not decorates. Fingers and numbered discs light amber
+   when active; the "watch this" sequence animates them one at a time.
+   Device-verify: look + motion need a real device. */
+.view[data-view="learn"] {
+  --km-hand-hi: color-mix(in srgb, var(--ivory) 88%, #6b5a3a);
+  --km-hand-lo: color-mix(in srgb, var(--ivory) 58%, #5a4a2e);
+}
 .view[data-view="learn"] .mf__hand {
-  display: flex; justify-content: center; align-items: flex-end;
-  margin: 0.1rem 0 0.5rem;
+  display: flex; justify-content: center; align-items: flex-end; gap: 4%;
+  margin: 0.3rem 0 0.7rem;
 }
-.view[data-view="learn"] .km-hand svg {
-  width: 168px; max-width: 56%; height: auto; overflow: visible;
+.view[data-view="learn"] .km-hand { animation: kmHandIn 380ms ease both; }
+.view[data-view="learn"] .km-hand--both { display: flex; justify-content: center; gap: 6%; width: 100%; }
+.view[data-view="learn"] .km-hand__svg {
+  width: 300px; max-width: 86%; height: auto; overflow: visible;
+  filter: drop-shadow(0 10px 22px rgba(0,0,0,0.45));
 }
-.view[data-view="learn"] .km-hand__palm {
-  fill: color-mix(in srgb, var(--ivory) 16%, transparent);
-  stroke: var(--ivory-dim); stroke-width: 2;
-}
+.view[data-view="learn"] .km-hand--both .km-hand__svg { width: 210px; max-width: 46%; }
+.view[data-view="learn"] .km-hand__palm,
 .view[data-view="learn"] .km-finger {
-  fill: color-mix(in srgb, var(--ivory) 12%, transparent);
-  stroke: var(--ivory-dim); stroke-width: 2;
-  transition: fill 200ms ease, stroke 200ms ease;
+  stroke: color-mix(in srgb, var(--ivory) 70%, #3a2f1c); stroke-width: 2.5;
 }
+.view[data-view="learn"] .km-finger { transition: fill 220ms ease, stroke 220ms ease; }
 .view[data-view="learn"] .km-finger.is-on {
-  fill: color-mix(in srgb, var(--amber-glow) 55%, transparent);
-  stroke: var(--amber-glow); stroke-width: 2.5;
+  fill: var(--amber-glow);
+  stroke: color-mix(in srgb, var(--amber-glow) 70%, white 14%); stroke-width: 3;
 }
 .view[data-view="learn"] .km-fingernum circle {
-  fill: var(--ebony-sink); stroke: var(--ivory-dim); stroke-width: 1.5;
-  transition: fill 200ms ease, stroke 200ms ease;
+  fill: var(--ebony-sink); stroke: var(--ivory); stroke-width: 2;
+  transition: fill 220ms ease, stroke 220ms ease;
 }
 .view[data-view="learn"] .km-fingernum text {
-  fill: var(--ivory); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums;
+  fill: var(--ivory); font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums;
 }
 .view[data-view="learn"] .km-fingernum.is-on circle {
-  fill: var(--amber-glow); stroke: color-mix(in srgb, var(--amber-glow) 70%, white 12%);
+  fill: var(--amber-glow); stroke: color-mix(in srgb, var(--amber-glow) 60%, white 20%);
 }
 .view[data-view="learn"] .km-fingernum.is-on text { fill: #1a1206; }
 .view[data-view="learn"] .km-hand__tag {
-  fill: var(--ivory-dim); font-size: 16px; font-weight: 700; letter-spacing: 0.04em;
+  fill: var(--ivory-dim); font-size: 26px; font-weight: 800; letter-spacing: 0.04em;
 }
-.view[data-view="learn"] .km-hand { animation: kmHandIn 360ms ease both; }
-@keyframes kmHandIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
+@keyframes kmHandIn { from { opacity: 0; transform: translateY(8px) scale(0.98); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) {
   .view[data-view="learn"] .km-hand { animation: none; }
   .view[data-view="learn"] .km-finger, .view[data-view="learn"] .km-fingernum circle { transition: none; }
+}
+
+/* Watch → try: the panel visibly shifts focus, so the learner always knows
+   whose turn it is — demonstration first, then their turn. */
+.view[data-view="learn"] .mf__card[data-phase="watch"] .mf__show {
+  border-color: color-mix(in srgb, var(--amber-glow) 45%, var(--ebony-edge));
+  box-shadow: inset 0 2px 14px -6px rgba(0,0,0,0.7),
+              0 0 0 1px color-mix(in srgb, var(--amber-glow) 24%, transparent);
+}
+.view[data-view="learn"] .mf__card[data-phase="try"] .mf__try {
+  border-left: 3px solid var(--amber-glow);
+  background: color-mix(in srgb, var(--amber-glow) 9%, transparent);
+  padding-left: 0.85rem; border-radius: 0 10px 10px 0;
+  transition: background-color 240ms ease, border-color 240ms ease;
 }
 
 /* Media slot — make the (interim) teaching-visual area read as intentional,

@@ -28,7 +28,7 @@ import { createTutorAudio } from './tutorAudio.js?v=rc2-54';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-56';
 import { buildScale } from './scaleEngine.js';
-import { buildHandSvg, setHandHighlight, FINGER_NAMES } from './handViz.js?v=rc2-77';
+import { buildHandSvg, setHandHighlight, FINGER_NAMES } from './handViz.js?v=rc2-78';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
 const pcOf = (m) => ((m % 12) + 12) % 12;
@@ -134,11 +134,21 @@ export const LEARN_STEPS = [
     eyebrow: 'Your hands', title: 'Sitting at the keyboard', id: 'sit-approach',
     say: [
       { text: 'Before we play patterns, let\u2019s set up your hands. Good habits now make everything later easier.', pauseAfter: 620, tone: 'warm' },
-      { text: 'Sit tall, a little back from the keys. Let your arms hang easily, elbows roughly level with the keyboard, shoulders relaxed.', pauseAfter: 680 },
-      { text: 'Bring a hand to the keys and let it curve naturally \u2014 as if holding a small ball. The wrist stays level, never locked.', pauseAfter: 360, tone: 'instruct' },
+      { text: 'Sit tall, a little back from the keys, roughly centred. Let your arms hang easily, elbows about level with the keyboard, shoulders down and relaxed.', pauseAfter: 700 },
+      { text: 'Bring a hand toward the keys with the weight carried by your arm, not gripped in the fingers. The wrist stays level \u2014 never locked, never dropped.', pauseAfter: 360, tone: 'instruct' },
     ],
-    explain: ['Sit tall, a little back, arms hanging easily \u2014 elbows about level with the keys, shoulders relaxed.', 'Let the hand curve naturally over the keys, as if holding a small ball. Wrist level and loose, weight supported by the arm.'],
-    show: { kind: 'hand', hand: 'right', caption: 'A relaxed, curved hand \u2014 wrist level, fingers gently rounded.' },
+    explain: ['Sit tall, a little back and roughly centred, arms hanging easily \u2014 elbows about level with the keys, shoulders relaxed.', 'Bring the hand toward the keys with the arm carrying the weight, wrist level and loose. This relaxed, supported approach is the foundation of good tone.'],
+    show: { kind: 'hand', hand: 'right', caption: 'Relaxed and supported \u2014 wrist level, arm carrying the weight.' },
+    mode: 'none',
+  },
+  {
+    eyebrow: 'Your hands', title: 'A natural hand shape', id: 'hand-shape',
+    say: [
+      { text: 'Now the shape of the hand itself. Let the fingers stay gently rounded, the knuckles slightly up \u2014 a soft dome, as if a small ball rested under your palm.', pauseAfter: 700, tone: 'warm' },
+      { text: 'Notice the fingers are different lengths. The middle three \u2014 two, three and four \u2014 are longer, and reach a little further forward. That matters once we meet the black keys.', pauseAfter: 360, tone: 'instruct' },
+    ],
+    explain: ['Keep the hand\u2019s natural curve \u2014 fingers gently rounded, knuckles slightly up, a soft dome under the palm. Never flat, never tense.', 'The longer fingers (2, 3, 4) reach a little further forward than the thumb and little finger \u2014 which is exactly why the B-major shape will feel natural later.'],
+    show: { kind: 'hand', hand: 'right', sweep: [2, 3, 4], caption: 'Gently curved, knuckles up \u2014 the long fingers (2, 3, 4) reach furthest.' },
     mode: 'none',
   },
   {
@@ -159,6 +169,16 @@ export const LEARN_STEPS = [
     ],
     explain: ['The left hand is numbered the same way \u2014 thumb is 1 \u2014 but mirrored, so its thumb points toward the middle of the keyboard.', 'Right thumb and left thumb both sit near the centre; the little fingers reach outward.'],
     show: { kind: 'hand', hand: 'left', sweep: [1, 2, 3, 4, 5], caption: 'Left hand: 1 (thumb) to 5 (little finger), mirrored.' },
+    mode: 'none',
+  },
+  {
+    eyebrow: 'Your hands', title: 'Two hands, mirrored', id: 'hands-mirror',
+    say: [
+      { text: 'Here are both hands together. They use the same numbers, one to five \u2014 but they mirror each other.', pauseAfter: 660, tone: 'warm' },
+      { text: 'Both thumbs are finger one, and both sit toward the middle of the keyboard. The little fingers, finger five, reach outward to the ends.', pauseAfter: 360, tone: 'instruct' },
+    ],
+    explain: ['The two hands mirror each other. Both thumbs are finger 1 and sit toward the centre; both little fingers are finger 5 and reach outward.', 'Left hand on the left, right hand on the right \u2014 each numbered outward from its thumb.'],
+    show: { kind: 'hand', hand: 'both', sweep: [1], caption: 'Left and right \u2014 both thumbs (1) toward the centre.' },
     mode: 'none',
   },
   {
@@ -186,6 +206,20 @@ export const LEARN_STEPS = [
     tryPrompt: 'Play any white key near the middle with right finger 3.', mode: 'any',
     okMsg: 'Good \u2014 finger 3, curved and supported. Knowing your finger numbers is what lets a teacher (or this Course) guide your hands precisely.',
     hint: 'Any white key is fine \u2014 the point is using finger 3, the long middle finger.',
+  },
+  {
+    eyebrow: 'Your hands', title: 'Press with control', id: 'press-control',
+    say: [
+      { text: 'One last habit before we play patterns: control.', pauseAfter: 520, tone: 'warm' },
+      { text: 'Watch the finger, then press a single key slowly and deliberately \u2014 let the arm guide it down, don\u2019t jab. Feel the key under your finger, and listen to the sound it makes.', pauseAfter: 360, tone: 'instruct' },
+    ],
+    explain: ['Press a single key slowly and deliberately, the arm guiding the finger down \u2014 controlled, not jabbed.', 'This joins the three things piano asks of you at once: seeing the finger, feeling the key, and hearing the sound. Play any one white key, with control.'],
+    show: { kind: 'keys', midis: [62], caption: 'See it, feel it, hear it.', label: 'Control' },
+    handHint: { hand: 'right', highlight: [2] },
+    demo: [62], demoGap: 0.5,
+    tryPrompt: 'Press any single white key slowly, with control \u2014 and listen to it.', mode: 'any',
+    okMsg: 'Good \u2014 a slow, supported press. Seeing, feeling and hearing together is how every note is played well. Now your hands are ready.',
+    hint: 'Any single white key \u2014 the point is a slow, controlled, supported press, listening as you go.',
   },
   {
     eyebrow: 'Finding your way', title: 'Black-key groups of two', id: 'black-keys-two',
@@ -599,7 +633,7 @@ export const LEARN_STEPS = [
     say: [
       { text: 'That\u2019s Stage 1 complete \u2014 the foundations are yours.', pauseAfter: 600, tone: 'warm' },
       { text: 'You can name the white keys, climb a scale up and down, play two chords, name a note and play it, and hold a steady pulse.', pauseAfter: 700 },
-      { text: 'The Course now continues into Stage 2, where we start to make music. The masterclasses are there too, any time, for deeper practice.', pauseAfter: 360, tone: 'warm' },
+      { text: 'The Course now continues into Stage 2, where we begin shaping these notes into music. The masterclasses are there too, any time, for deeper practice.', pauseAfter: 360, tone: 'warm' },
     ],
     explain: ['Stage 1 complete \u2014 you\u2019ve built the foundations: the keyboard, the white keys, movement, scales, B major, harmony, naming notes, and a steady pulse.', 'Next is Stage 2, where these foundations become music. Continue the Course below \u2014 the masterclasses stay available any time for deeper practice.'],
     bridge: { label: 'Optional \u2014 open a practice room for deeper practice', hash: '#/scales' },
@@ -615,10 +649,10 @@ export const LEARN_STEPS = [
   {
     eyebrow: 'Stage 2 \u00B7 Making music', title: 'Welcome to Stage 2', id: 'stage2-welcome',
     say: [
-      { text: 'Welcome to Stage 2. In Stage 1 you learned the keyboard. Now we begin to make music with it.', pauseAfter: 620, tone: 'warm' },
+      { text: 'Welcome to Stage 2. In Stage 1 you learned the keyboard; now we start to shape those notes into music.', pauseAfter: 620, tone: 'warm' },
       { text: 'Short phrases, a little harmony, and a steady pulse underneath \u2014 one small step at a time.', pauseAfter: 360 },
     ],
-    explain: ['Welcome to Stage 2 \u2014 making music. You\u2019ll play short phrases, a little harmony, and feel pulse inside music.', 'Nothing here is graded for timing. We\u2019re building musicianship, one small step at a time.'],
+    explain: ['Welcome to Stage 2. You\u2019ll begin connecting notes into short phrases, a little harmony, and pulse \u2014 the start of shaping sound into music.', 'Nothing here is graded for timing. We\u2019re building musicianship, one small step at a time.'],
     show: { kind: 'keys', midis: [60, 64, 67], caption: 'From notes to music.', label: 'Stage 2' },
     mode: 'none',
   },
@@ -673,7 +707,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [60, 62, 64], caption: 'Up: C, D, E.', label: 'C D E' },
     demo: [60, 62, 64], demoGap: 0.5,
     tryPrompt: 'Play C, then D, then E \u2014 in order.', targets: [60, 62, 64], mode: 'sequence',
-    okMsg: 'That\u2019s a phrase \u2014 three notes rising. Small, but it\u2019s music.',
+    okMsg: 'Good \u2014 three notes rising, cleanly in order. That ordered shape is the start of a musical line.',
     hint: 'Start on C, then the next white key, then the next: C, D, E.',
   },
   {
@@ -686,8 +720,21 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [64, 62, 60], caption: 'Down: E, D, C.', label: 'E D C' },
     demo: [64, 62, 60], demoGap: 0.5,
     tryPrompt: 'Play E, then D, then C \u2014 in order.', targets: [64, 62, 60], mode: 'sequence',
-    okMsg: 'Up and down \u2014 a phrase has shape. You\u2019re shaping music now.',
+    okMsg: 'Good \u2014 you kept the notes in order, both directions. Up and back down: a phrase has shape.',
     hint: 'Start on E, then the next white key down, then the next: E, D, C.',
+  },
+  {
+    eyebrow: 'Reading a pattern', title: 'Four notes in order', id: 'read-pattern',
+    say: [
+      { text: 'Reading music is naming notes, then playing them in order \u2014 a few at a time to start.', pauseAfter: 560, tone: 'warm' },
+      { text: 'Here is a short pattern: C, then E, then D, then C again. Look at each, then play them in order.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['Reading music is naming notes, then playing them in order. We grow it a few notes at a time.', 'The pattern is C, E, D, C. Look at each note, then play them in turn.'],
+    show: { kind: 'keys', midis: [60, 64, 62, 60], caption: 'C, E, D, C.', label: 'C E D C' },
+    demo: [60, 64, 62, 60], demoGap: 0.5,
+    tryPrompt: 'Play the pattern in order: C, E, D, then C.', targets: [60, 64, 62, 60], mode: 'sequence',
+    okMsg: 'Good \u2014 you held the order: C, E, D, C. Reading is exactly this, growing longer over time.',
+    hint: 'C, then E, then D, then C again.',
   },
   {
     eyebrow: 'Rhythm in music', title: 'Play on the pulse', id: 'play-on-pulse',
@@ -700,6 +747,18 @@ export const LEARN_STEPS = [
     tryPrompt: 'After the count, play a note on each of the four beats.', mode: 'count', count: 4,
     okMsg: 'That\u2019s music on a pulse \u2014 notes riding a steady beat. No rush, nothing scored \u2014 just the feel of it.',
     hint: 'Wait for the count to finish, then play four notes, evenly spaced.',
+  },
+  {
+    eyebrow: 'Rhythm in music', title: 'A pattern, in time', id: 'pattern-pulse',
+    say: [
+      { text: 'Now a small pattern, kept in time.', pauseAfter: 520, tone: 'warm' },
+      { text: 'Listen to the count of four. Then play four notes, one on each beat \u2014 try C, D, E, then C again, kept even.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['A pattern over a pulse is where notes and time meet \u2014 the start of real rhythm.', 'Listen to the count: 1, 2, 3, 4. Then play four notes, one per beat \u2014 C, D, E, C works well, kept even.'],
+    show: { kind: 'pulse', caption: 'A note on each beat: 1 2 3 4.' },
+    tryPrompt: 'After the count, play four notes \u2014 one on each beat.', mode: 'count', count: 4,
+    okMsg: 'Good \u2014 a pattern sitting on a steady pulse. Notes and time together: that connection is the heart of rhythm.',
+    hint: 'Wait for the count, then four even notes, one per beat \u2014 C, D, E, C is a good choice.',
   },
   {
     eyebrow: 'Scale shape', title: 'The scale as a shape', id: 'scale-shape-up',
@@ -764,7 +823,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [60, 64, 67, 72], caption: 'C, E, G, C.', label: 'C E G C' },
     demo: [60, 64, 67, 72], demoGap: 0.46,
     tryPrompt: 'Play C, E, G, then the C above \u2014 in order.', targets: [60, 64, 67, 72], mode: 'sequence',
-    okMsg: 'That\u2019s a melody \u2014 your first real phrase. Rising, then home. This is making music.',
+    okMsg: 'Good \u2014 C, E, G, and home. Rising, then settling: that shape is the beginning of a musical phrase.',
     hint: 'C, then E, then G, then the next C higher up.',
   },
 
@@ -798,7 +857,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [67], caption: 'Play one note \u2014 and listen.', label: 'Listen' },
     demo: [67], demoGap: 0.5,
     tryPrompt: 'Play any single note \u2014 then listen to it fade.', mode: 'any',
-    okMsg: 'That\u2019s listening \u2014 the habit behind every musical sound. Notes, patterns, harmony, pulse, and now your ear: you\u2019re becoming a musician.',
+    okMsg: 'That\u2019s listening \u2014 the habit behind good tone. You\u2019re starting to connect sound, movement and attention, which is what musicianship is built on.',
     hint: 'Any single note \u2014 the point is to play it, then truly listen to the sound.',
   },
   {
@@ -817,10 +876,10 @@ export const LEARN_STEPS = [
   {
     eyebrow: 'The Course continues', title: 'More music ahead', id: 'stage2-onward',
     say: [
-      { text: 'That\u2019s the start of Stage 2 \u2014 you\u2019re making music now, not just finding keys.', pauseAfter: 600, tone: 'warm' },
+      { text: 'That\u2019s the start of Stage 2 \u2014 you\u2019re connecting notes, fingers, pattern and pulse, not just finding keys.', pauseAfter: 600, tone: 'warm' },
       { text: 'There\u2019s more Course ahead: longer phrases, more harmony, real reading and rhythm. And the masterclasses are always here for deeper practice.', pauseAfter: 360, tone: 'warm' },
     ],
-    explain: ['You\u2019ve begun making music \u2014 phrases, harmony, pattern, and pulse. This is the start of Stage 2, not the end of the Course.', 'More is coming: longer phrases, deeper harmony, real reading and rhythm. The masterclasses stay available any time for deeper practice.'],
+    explain: ['You\u2019ve connected notes into short phrases, with a little harmony, pattern and pulse. This is the start of Stage 2, not the end of the Course.', 'More is coming: longer phrases, deeper harmony, real reading and rhythm. The masterclasses stay available any time for deeper practice.'],
     bridge: { label: 'Optional \u2014 open a practice room for deeper practice', hash: '#/scales' },
     mode: 'none',
   },
@@ -833,8 +892,8 @@ export const LEARN_STEPS = [
 // the existing LEARN_STEPS by id and changes nothing about the steps themselves.
 const COURSE_CHAPTERS = [
   { stage: 1, name: 'Orientation', ids: ['welcome', 'meet-keyboard', 'low-high'] },
-  { stage: 1, name: 'Your hands', ids: ['sit-approach', 'fingers-rh', 'fingers-lh', 'thumb-play', 'finger3-play'],
-    intro: 'Before patterns, set up the hands: posture, a relaxed curved shape, and the finger numbers.' },
+  { stage: 1, name: 'Your hands', ids: ['sit-approach', 'hand-shape', 'fingers-rh', 'fingers-lh', 'hands-mirror', 'thumb-play', 'finger3-play', 'press-control'],
+    intro: 'Before patterns, set up the hands: posture, a relaxed curved shape, the finger numbers, and control.' },
   { stage: 1, name: 'Black keys', ids: ['black-keys-two', 'black-keys-three'],
     intro: 'The black keys come in groups of two and three \u2014 your signposts.' },
   { stage: 1, name: 'White keys', ids: ['find-c', 'find-d', 'find-e', 'find-f', 'find-g', 'find-a', 'middle-c', 'b-below'],
@@ -858,9 +917,9 @@ const COURSE_CHAPTERS = [
     intro: 'Stage 2 \u2014 the foundations become music.' },
   { stage: 2, name: 'The B-major pathway', ids: ['bmaj-shape', 'bmaj-rh', 'bmaj-lh'],
     intro: 'The KeyMaster hand-shape pathway \u2014 fingering, hand by hand, on the keys that fit.' },
-  { stage: 2, name: 'Phrases', ids: ['phrase-up', 'phrase-down'],
-    intro: 'Short phrases you can play \u2014 a small musical idea, up and down.' },
-  { stage: 2, name: 'Rhythm in music', ids: ['play-on-pulse'],
+  { stage: 2, name: 'Phrases', ids: ['phrase-up', 'phrase-down', 'read-pattern'],
+    intro: 'Short phrases you can play \u2014 up, down, and a pattern to name and play in order.' },
+  { stage: 2, name: 'Rhythm in music', ids: ['play-on-pulse', 'pattern-pulse'],
     intro: 'Notes over a steady pulse \u2014 the feel of music in time.' },
   { stage: 2, name: 'Scale & pattern shapes', ids: ['scale-shape-up', 'pattern-fingered'],
     intro: 'A scale and a pattern as shapes \u2014 with a finger ready for each note.' },
@@ -1474,6 +1533,7 @@ export default function createView(ctx) {
     const afterDemo = () => {
       if (!alive()) return;
       cue('Your turn.');
+      setPhase(interactive ? 'try' : '');
       if (c.autoNext) {   // reflective bridge: move along the main path after a calm pause
         if (autoAdvTimer) clearTimeout(autoAdvTimer);
         autoAdvTimer = setTimeout(() => { if (alive()) advanceStep(); }, PAUSE_AFTER_DEMO + 400);
@@ -1481,6 +1541,7 @@ export default function createView(ctx) {
     };
     const doDemo = () => {
       if (!alive()) return;
+      setPhase('watch');
       if (c.show && c.show.kind === 'hand' && Array.isArray(c.show.sweep) && c.show.sweep.length) {
         cue('\u266A  Watch \u2014 the fingers light in order.');
         runHandSequence(c.show.sweep, () => { if (alive()) afterDemo(); });
@@ -1585,6 +1646,7 @@ export default function createView(ctx) {
     sharps.style.display = 'none';
     sharps.textContent = '';
     clearHandSeq();
+    setPhase('');
     handSlot.style.display = 'none';
     handSlot.replaceChildren();
     const s = c.show || {};
@@ -1794,8 +1856,13 @@ export default function createView(ctx) {
     handSeqTimers = [];
     activeHandEl = null;
   }
+  // watch / try phase — lets the panel visibly shift from "watch this" to "your
+  // turn" (styled in theme.css). Set on the card element.
+  function setPhase(p) {
+    try { if (p) card.dataset.phase = p; else delete card.dataset.phase; } catch (_) { /* no-op */ }
+  }
   function renderHand(spec) {
-    const hand = (spec && spec.hand === 'left') ? 'left' : 'right';
+    const hand = (spec && (spec.hand === 'left' || spec.hand === 'both')) ? spec.hand : 'right';
     const highlight = (spec && Array.isArray(spec.highlight)) ? spec.highlight : [];
     const numbers = !(spec && spec.numbers === false);
     activeHandEl = buildHandSvg({ hand, highlight, numbers });

@@ -1,33 +1,33 @@
-// handViz.js — original KeyMaster PRO hand & finger-number diagrams.
+// handViz.js — original KeyMaster PRO hand & finger-number teaching diagrams.
 // =============================================================================
-// Built from scratch as simple, original SVG line art for KeyMaster PRO. No
-// scraped images, no stock art, no method-book illustrations, no competitor
-// assets. Pure geometry generated here.
+// Built entirely from geometry here. No scraped images, no stock art, no
+// method-book illustrations, no competitor assets. Original KeyMaster PRO line
+// art designed to be LARGE and instructional — a teaching diagram, not decor.
 //
-// Teaches, at a glance:
+// Teaches at a glance:
 //   • finger numbers — 1 = thumb … 5 = little finger
 //   • right hand vs left hand (the left hand is the right, mirrored)
 //   • a natural, curved hand shape with the thumb to the side
-//   • which finger is active (any finger can be highlighted, or animated in
-//     sequence for a "watch this" demonstration)
+//   • which finger is active (any finger highlightable, or animated in sequence
+//     for a "watch this" demonstration)
+//   • how the two hands mirror, thumbs toward the centre (both-hands view)
 //
-// The diagram is intentionally clean and diagrammatic rather than photographic:
-// it reads clearly at small sizes on a phone and stays original and lightweight.
+// Clean and diagrammatic by design: it reads clearly at large sizes on a phone
+// or tablet and stays original and lightweight.
 // =============================================================================
 
-const W = 240;
-const H = 262;
+const W = 260;
+const H = 300;
 
-// Right-hand geometry (palm-down, fingers pointing up). Each finger carries the
-// fingertip point (for its numbered disc) and the rounded-capsule body. The left
-// hand mirrors every x across the vertical centre line; finger NUMBERS never
-// mirror — the thumb is finger 1 in either hand.
+// Right-hand geometry (palm-down, fingers up). Each finger: numbered-disc tip
+// point + rounded-capsule body. The left hand mirrors every x across the centre
+// line; finger NUMBERS never mirror — the thumb is finger 1 in either hand.
 const RH_FINGERS = [
-  { n: 1, tipX: 52,  tipY: 152, x: 40,  y: 150, w: 26, h: 66, rot: -40, rcx: 53,  rcy: 178 }, // thumb
-  { n: 2, tipX: 94,  tipY: 50,  x: 81,  y: 52,  w: 26, h: 104 },
-  { n: 3, tipX: 126, tipY: 32,  x: 113, y: 34,  w: 26, h: 122 },
-  { n: 4, tipX: 158, tipY: 48,  x: 145, y: 50,  w: 26, h: 106 },
-  { n: 5, tipX: 190, tipY: 76,  x: 177, y: 78,  w: 26, h: 82  },
+  { n: 1, tipX: 36,  tipY: 184, x: 44,  y: 176, w: 30, h: 80, rot: -42, rcx: 59,  rcy: 212 }, // thumb
+  { n: 2, tipX: 94,  tipY: 62,  x: 78,  y: 64,  w: 32, h: 112 },
+  { n: 3, tipX: 132, tipY: 42,  x: 116, y: 44,  w: 32, h: 132 },
+  { n: 4, tipX: 170, tipY: 58,  x: 154, y: 60,  w: 32, h: 116 },
+  { n: 5, tipX: 206, tipY: 92,  x: 190, y: 94,  w: 32, h: 86  },
 ];
 
 function mirrorFinger(f) {
@@ -40,53 +40,72 @@ function mirrorFinger(f) {
   };
 }
 
-/**
- * Build an original hand diagram.
- * @param {object} opts
- *   hand       'right' | 'left'            (default 'right')
- *   highlight  number[]  fingers to mark active, e.g. [1,2,3]   (default [])
- *   numbers    boolean   show the 1–5 discs                     (default true)
- * @returns {HTMLDivElement} a <div class="km-hand"> wrapping the <svg>
- */
-export function buildHandSvg(opts = {}) {
-  const hand = (opts.hand === 'left') ? 'left' : 'right';
+function handSvg(hand, highlight, showNumbers, idSuffix) {
   const mirror = (hand === 'left');
-  const showNumbers = opts.numbers !== false;
-  const highlight = Array.isArray(opts.highlight) ? opts.highlight : [];
   const fingers = mirror ? RH_FINGERS.map(mirrorFinger) : RH_FINGERS;
+  const gid = `kmHandGrad-${idSuffix}`;
 
-  const palm = '<rect class="km-hand__palm" x="70" y="138" width="140" height="92" rx="40"/>';
+  const defs =
+    `<defs>`
+    + `<linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1">`
+    + `<stop offset="0%" stop-color="var(--km-hand-hi, #efe7d6)"/>`
+    + `<stop offset="100%" stop-color="var(--km-hand-lo, #cfc4ad)"/>`
+    + `</linearGradient></defs>`;
+
+  // wrist + palm read as a single solid mass under the fingers
+  const wrist = '<rect class="km-hand__palm" x="96" y="240" width="68" height="52" rx="24"/>';
+  const palm  = '<rect class="km-hand__palm" x="64" y="158" width="150" height="96" rx="44"/>';
 
   const shapes = fingers.map((f) => {
     const on = highlight.includes(f.n) ? ' is-on' : '';
     const transform = (f.rot != null && f.rcx != null)
       ? ` transform="rotate(${f.rot} ${f.rcx} ${f.rcy})"` : '';
     return `<rect class="km-finger${on}" data-finger="${f.n}" x="${f.x}" y="${f.y}" `
-      + `width="${f.w}" height="${f.h}" rx="13"${transform}/>`;
+      + `width="${f.w}" height="${f.h}" rx="16"${transform}/>`;
   }).join('');
 
   const labels = showNumbers ? fingers.map((f) => {
     const on = highlight.includes(f.n) ? ' is-on' : '';
     return `<g class="km-fingernum${on}" data-finger="${f.n}">`
-      + `<circle cx="${f.tipX}" cy="${f.tipY}" r="13.5"/>`
-      + `<text x="${f.tipX}" y="${f.tipY + 5}" text-anchor="middle">${f.n}</text>`
+      + `<circle cx="${f.tipX}" cy="${f.tipY}" r="17"/>`
+      + `<text x="${f.tipX}" y="${f.tipY + 6}" text-anchor="middle">${f.n}</text>`
       + '</g>';
   }).join('') : '';
 
   const tag = (hand === 'left') ? 'L' : 'R';
-  const tagX = mirror ? (W - 22) : 22;
+  const tagX = mirror ? (W - 26) : 26;
   const aria = `${hand === 'left' ? 'Left' : 'Right'} hand, fingers numbered 1 to 5`;
 
-  const svg =
-    `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${aria}">`
-    + `<g class="km-hand__shapes">${palm}${shapes}</g>`
+  return `<svg class="km-hand__svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${aria}" style="--km-grad:url(#${gid})">`
+    + defs
+    + `<g class="km-hand__shapes" fill="url(#${gid})">${wrist}${palm}${shapes}</g>`
     + `<g class="km-hand__labels">${labels}</g>`
-    + `<text class="km-hand__tag" x="${tagX}" y="250" text-anchor="middle">${tag}</text>`
+    + `<text class="km-hand__tag" x="${tagX}" y="284" text-anchor="middle">${tag}</text>`
     + '</svg>';
+}
+
+/**
+ * Build a hand diagram.
+ * @param {object} opts
+ *   hand       'right' | 'left' | 'both'   (default 'right')
+ *   highlight  number[]  fingers to mark active                 (default [])
+ *   numbers    boolean   show the 1–5 discs                     (default true)
+ * @returns {HTMLDivElement} <div class="km-hand km-hand--{hand}">
+ */
+export function buildHandSvg(opts = {}) {
+  const hand = (opts.hand === 'left' || opts.hand === 'both') ? opts.hand : 'right';
+  const showNumbers = opts.numbers !== false;
+  const highlight = Array.isArray(opts.highlight) ? opts.highlight : [];
 
   const wrap = document.createElement('div');
   wrap.className = `km-hand km-hand--${hand}`;
-  wrap.innerHTML = svg;
+  if (hand === 'both') {
+    // Left hand on the left, right hand on the right — as the player sees their
+    // own hands at the keyboard, thumbs toward the centre.
+    wrap.innerHTML = handSvg('left', highlight, showNumbers, 'l') + handSvg('right', highlight, showNumbers, 'r');
+  } else {
+    wrap.innerHTML = handSvg(hand, highlight, showNumbers, hand[0]);
+  }
   return wrap;
 }
 
