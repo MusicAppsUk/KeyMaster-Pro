@@ -252,6 +252,7 @@ class KeyMasterApp {
     // neither path may ever block or break boot.
     const onHome = (this.store.getState().view ?? 'home') === 'home';
     if (!(onHome && this._mountFrontDoor())) this._runWelcome();
+    try { this._mountShell(); } catch (err) { console.info('[KeyMaster] shell wiring skipped:', err?.message ?? err); }
   }
 
   /**
@@ -289,7 +290,7 @@ class KeyMasterApp {
       const greetEl = document.getElementById('fd-greeting');
       if (greetEl) greetEl.textContent = `${part}, ${name}.`;
       const buildEl = document.getElementById('fd-build');
-      if (buildEl) buildEl.textContent = `KeyMaster PRO \u00B7 Progressive Course \u00B7 Stages 1\u20134 \u00B7 ${BUILD}`;
+      if (buildEl) buildEl.textContent = `KeyMaster PRO \u00B7 Premium Shell \u00B7 Stages 1\u20134 \u00B7 ${BUILD}`;
 
       let returning = false;
       try { returning = !!loadPrefs().lastView || this._hasCourseProgress(); } catch { /* ignore */ }
@@ -341,6 +342,150 @@ class KeyMasterApp {
       const o = JSON.parse(raw);
       return !!(o && typeof o === 'object' && Object.keys(o).length);
     } catch { return false; }
+  }
+
+  /**
+   * Premium app shell: the side-menu / course hub, the Course Map overlay, and
+   * the DEFERRED trusted sign-in seam. Wired once. Every action is defensive and
+   * non-critical — a failure here never affects the Course or the instrument.
+   * No account system is created: sign-in shows only the safe UI seam.
+   */
+  _mountShell() {
+    const $ = (id) => document.getElementById(id);
+    const resumeIndex = () => {
+      const li = this.progress?.get?.('learnLesson');
+      return Number.isInteger(li) && li > 0 ? li : 0;
+    };
+    const resumeAt = (idx) => {
+      try { if (Number.isInteger(idx)) this.progress?.set?.('learnLesson', Math.max(0, idx)); } catch { /* ignore */ }
+      location.hash = '#/learn';
+    };
+
+    // ---- Side menu ----------------------------------------------------------
+    const menu = $('km-menu');
+    const openMenu = () => {
+      if (!menu) return;
+      // refresh the "continue" label + build each open
+      try {
+        const started = this._hasCourseProgress();
+        const lbl = $('km-menu-continue-label'); const sub = $('km-menu-continue-sub');
+        if (lbl) lbl.textContent = started ? 'Continue the Course' : 'Start the Course';
+        if (sub) sub.textContent = started ? 'Pick up where you left off' : 'Begin Stage 1';
+        const b = $('km-menu-build'); if (b) b.textContent = `KeyMaster PRO \u00B7 ${BUILD}`;
+      } catch { /* ignore */ }
+      menu.hidden = false;
+      $('app-menu-btn')?.setAttribute('aria-expanded', 'true');
+    };
+    const closeMenu = () => { if (menu) menu.hidden = true; $('app-menu-btn')?.setAttribute('aria-expanded', 'false'); };
+    $('app-menu-btn')?.addEventListener('click', openMenu);
+    $('km-menu-close')?.addEventListener('click', closeMenu);
+    $('km-menu-backdrop')?.addEventListener('click', closeMenu);
+    menu?.querySelectorAll('[data-menu]')?.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const action = btn.getAttribute('data-menu');
+        closeMenu();
+        if (action === 'continue') { location.hash = '#/learn'; }
+        else if (action === 'map') { this._openCourseMap(); }
+        else if (action === 'review') { resumeAt(Math.max(0, resumeIndex() - 1)); }
+        else if (action === 'rooms') { location.hash = '#/'; setTimeout(() => { this.root.querySelector('#practice-rooms-heading')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); }
+        else if (action === 'settings') { this._openSignin('Settings \u2014 MIDI, sound and accessibility options are coming in a future release.'); }
+        else if (action === 'signin') { this._openSignin(); }
+      });
+    });
+
+    // ---- Hub chips on home --------------------------------------------------
+    $('hub-map')?.addEventListener('click', () => this._openCourseMap());
+    $('hub-review')?.addEventListener('click', () => resumeAt(Math.max(0, resumeIndex() - 1)));
+
+    // ---- Course Map overlay -------------------------------------------------
+    $('km-map-close')?.addEventListener('click', () => this._closeCourseMap());
+    $('km-map-backdrop')?.addEventListener('click', () => this._closeCourseMap());
+    $('km-map-continue')?.addEventListener('click', () => { this._closeCourseMap(); location.hash = '#/learn'; });
+
+    // ---- Deferred sign-in seam ---------------------------------------------
+    $('signin-open')?.addEventListener('click', () => this._openSignin());
+    $('fd-signin')?.addEventListener('click', () => this._openSignin());
+    $('km-signin-close')?.addEventListener('click', () => this._closeSignin());
+    $('km-signin-backdrop')?.addEventListener('click', () => this._closeSignin());
+    $('km-signin')?.querySelectorAll('[data-provider]')?.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const who = btn.getAttribute('data-provider');
+        const note = $('km-signin-note');
+        if (note) {
+          note.textContent = `${who} sign-in is being finished for a future release. Your progress is saved safely on this device for now \u2014 nothing is lost.`;
+          note.classList.add('is-clicked');
+        }
+      });
+    });
+
+    // Escape closes any open shell overlay.
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (!$('km-signin')?.hidden) this._closeSignin();
+      else if (!$('km-coursemap')?.hidden) this._closeCourseMap();
+      else if (!menu?.hidden) closeMenu();
+    });
+  }
+
+  _openSignin(noteText) {
+    const m = document.getElementById('km-signin'); if (!m) return;
+    const note = document.getElementById('km-signin-note');
+    if (note) {
+      note.classList.remove('is-clicked');
+      note.textContent = noteText || 'Secure sign-in is being finished for a future release. For now, your progress is saved safely on this device.';
+    }
+    m.hidden = false;
+  }
+  _closeSignin() { const m = document.getElementById('km-signin'); if (m) m.hidden = true; }
+  _closeCourseMap() { const m = document.getElementById('km-coursemap'); if (m) m.hidden = true; }
+
+  /** Build the Course Map from the live Course data and show it. */
+  _openCourseMap() {
+    const overlay = document.getElementById('km-coursemap');
+    const body = document.getElementById('km-map-body');
+    if (!overlay || !body) return;
+    overlay.hidden = false;
+    body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Loading the journey\u2026</p>';
+    import('./foundations.js?v=rc2-83').then((F) => {
+      const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
+      const chapterAt = (typeof F.chapterAtIndex === 'function') ? F.chapterAtIndex : null;
+      if (!steps.length || !chapterAt) { body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Course map unavailable right now.</p>'; return; }
+      // Derive the chapter list (name, stage, first-step index) from live data.
+      const seen = new Set(); const chapters = [];
+      for (let i = 0; i < steps.length; i += 1) {
+        const c = chapterAt(i);
+        if (c && c.name && !seen.has(c.chIdx)) { seen.add(c.chIdx); chapters.push({ chIdx: c.chIdx, name: c.name, stage: c.stage, start: i }); }
+      }
+      const li = this.progress?.get?.('learnLesson');
+      const curIdx = Number.isInteger(li) ? li : 0;
+      const curChIdx = chapterAt(curIdx).chIdx;
+      body.innerHTML = '';
+      let lastStage = null;
+      chapters.forEach((ch) => {
+        if (ch.stage !== lastStage) {
+          lastStage = ch.stage;
+          const wrap = document.createElement('div'); wrap.className = 'km-map__stage';
+          const sh = document.createElement('p'); sh.className = 'km-map__stage-name'; sh.textContent = `Stage ${ch.stage}`;
+          wrap.appendChild(sh); body.appendChild(wrap);
+        }
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'km-map__chapter' + (ch.chIdx === curChIdx ? ' is-current' : (ch.chIdx < curChIdx ? ' is-done' : ''));
+        const dot = document.createElement('span'); dot.className = 'km-map__dot'; dot.setAttribute('aria-hidden', 'true');
+        const nm = document.createElement('span'); nm.className = 'km-map__chapter-name'; nm.textContent = ch.name;
+        row.append(dot, nm);
+        if (ch.chIdx === curChIdx) { const here = document.createElement('span'); here.className = 'km-map__here'; here.textContent = 'You are here'; row.appendChild(here); }
+        row.addEventListener('click', () => {
+          try { this.progress?.set?.('learnLesson', ch.start); } catch { /* ignore */ }
+          this._closeCourseMap();
+          location.hash = '#/learn';
+        });
+        body.lastChild.appendChild(row);
+      });
+    }).catch((err) => {
+      body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Course map unavailable right now.</p>';
+      console.info('[KeyMaster] course map skipped:', err?.message ?? err);
+    });
   }
 
   /* ---- DOM ------------------------------------------------------------- */
@@ -866,7 +1011,7 @@ class KeyMasterApp {
   _updateDashboardHero() {
     try {
       const set = (sel, txt) => { const e = this.root.querySelector(sel); if (e && txt != null) e.textContent = txt; };
-      set('#build-tag', `KeyMaster PRO \u00B7 Progressive Course \u00B7 Stages 1\u20134 \u00B7 ${BUILD}`);
+      set('#build-tag', `KeyMaster PRO \u00B7 Premium Shell \u00B7 Stages 1\u20134 \u00B7 ${BUILD}`);
       const lesson = this.progress?.get?.('learnLesson');
       const completed = this.progress?.get?.('learnCompleted');
       const started = (Number.isInteger(lesson) && lesson > 0)
@@ -893,6 +1038,18 @@ class KeyMasterApp {
           set('#hero-next', stepTitle ? `${lead}: ${stepTitle}` : `${lead}.`);
           set('#hero-progress', steps.length ? `Lesson ${idx + 1} of ${steps.length}` : '');
         }
+        // Hub: reveal "Review previous lesson" + the progress bar once begun.
+        try {
+          const reviewBtn = this.root.querySelector('#hub-review');
+          if (reviewBtn) reviewBtn.hidden = !started;
+          const bar = this.root.querySelector('#hero-bar');
+          const fill = this.root.querySelector('#hero-bar-fill');
+          if (bar && fill && steps.length) {
+            const pct = Math.max(2, Math.min(100, Math.round((idx / steps.length) * 100)));
+            bar.hidden = !started;
+            if (started) fill.style.width = pct + '%';
+          }
+        } catch { /* ignore */ }
       }).catch((err) => { console.info('[KeyMaster] hero enrich skipped:', err?.message ?? err); });
     } catch (err) {
       console.info('[KeyMaster] dashboard hero update skipped:', err?.message ?? err);

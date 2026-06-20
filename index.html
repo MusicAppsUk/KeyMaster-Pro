@@ -35,9 +35,9 @@
   />
 
   <!-- Separated styling layers (theme tokens first, then component sheets). -->
-  <link rel="stylesheet" href="theme.css?v=rc2-83" />
-  <link rel="stylesheet" href="keyboard.css?v=rc2-83" />
-  <link rel="stylesheet" href="notation.css?v=rc2-83" />
+  <link rel="stylesheet" href="theme.css?v=rc2-84" />
+  <link rel="stylesheet" href="keyboard.css?v=rc2-84" />
+  <link rel="stylesheet" href="notation.css?v=rc2-84" />
 
   <!-- The only inline style: hide the shell until the app flips data-boot,
        preventing an unstyled flash before the module graph resolves. -->
@@ -52,6 +52,9 @@
 
     <!-- Top bar: identity, live keyboard register readout, instrument controls -->
     <header class="app__bar" role="banner">
+      <button type="button" class="app__menu" id="app-menu-btn" aria-label="Open menu" aria-expanded="false" aria-controls="km-menu">
+        <span class="app__menu-bars" aria-hidden="true"></span>
+      </button>
       <div class="brand-wrap">
         <a class="brand" href="#/" aria-label="KeyMaster PRO home">
           <span class="brand__mark" aria-hidden="true"></span>
@@ -102,8 +105,13 @@
             <p class="course-hero__eyebrow">The KeyMaster PRO Course</p>
             <h1 class="course-hero__title" id="course-hero-title">The KeyMaster PRO Course</h1>
             <p class="course-hero__next" id="hero-next">Your first step.</p>
-            <a class="course-hero__cta" id="learn-cta" href="#/learn">Start the KeyMaster PRO Course</a>
+            <div class="course-hero__actions">
+              <a class="course-hero__cta" id="learn-cta" href="#/learn">Start the KeyMaster PRO Course</a>
+              <button type="button" class="hub-chip" id="hub-review" hidden><span aria-hidden="true">&#8635;</span> Review previous lesson</button>
+              <button type="button" class="hub-chip" id="hub-map"><span aria-hidden="true">&#9776;</span> Course Map</button>
+            </div>
             <p class="course-hero__progress" id="hero-progress"></p>
+            <div class="course-hero__bar" id="hero-bar" hidden aria-hidden="true"><span class="course-hero__bar-fill" id="hero-bar-fill"></span></div>
           </div>
 
           <section class="practice-rooms" aria-labelledby="practice-rooms-heading">
@@ -159,6 +167,11 @@
             </div>
           </nav>
           </section>
+
+          <div class="signin-seam">
+            <p class="signin-seam__text">Your progress is saved on this device. Sign in later to keep it across your devices.</p>
+            <button type="button" class="signin-seam__btn" id="signin-open">Sign in</button>
+          </div>
 
           <p class="build-tag" id="build-tag">KeyMaster PRO</p>
         </div>
@@ -248,8 +261,69 @@
       <button type="button" class="frontdoor__fs" id="fd-fullscreen"><span aria-hidden="true">&#9974;</span> Enter Full Screen</button>
       <button type="button" class="frontdoor__enter" id="fd-enter">Enter the Course</button>
       <button type="button" class="frontdoor__secondary" id="fd-rooms">Browse practice rooms</button>
+      <button type="button" class="frontdoor__signin" id="fd-signin">Sign in to save progress</button>
     </div>
     <p class="frontdoor__build" id="fd-build"></p>
+  </div>
+
+  <!-- Side menu / course hub drawer. Slides in from the left; app.js wires the
+       actions. Future-ready: a single place for Course, map, rooms, settings,
+       account. -->
+  <div id="km-menu" class="km-menu" hidden>
+    <div class="km-menu__backdrop" id="km-menu-backdrop" aria-hidden="true"></div>
+    <nav class="km-menu__panel" role="navigation" aria-label="Course menu">
+      <div class="km-menu__head">
+        <span class="km-menu__brand">KeyMaster<span>PRO</span></span>
+        <button type="button" class="km-menu__close" id="km-menu-close" aria-label="Close menu">&#10005;</button>
+      </div>
+      <button type="button" class="km-menu__item is-primary" data-menu="continue"><span class="km-menu__ico" aria-hidden="true">&#9654;</span><span><strong id="km-menu-continue-label">Continue the Course</strong><small id="km-menu-continue-sub">Pick up where you left off</small></span></button>
+      <button type="button" class="km-menu__item" data-menu="map"><span class="km-menu__ico" aria-hidden="true">&#9776;</span><span><strong>Course Map</strong><small>See the whole journey</small></span></button>
+      <button type="button" class="km-menu__item" data-menu="review"><span class="km-menu__ico" aria-hidden="true">&#8635;</span><span><strong>Review previous lesson</strong><small>Revisit the last step</small></span></button>
+      <button type="button" class="km-menu__item" data-menu="rooms"><span class="km-menu__ico" aria-hidden="true">&#9839;</span><span><strong>Practice Rooms</strong><small>Optional specialist areas</small></span></button>
+      <div class="km-menu__divider" aria-hidden="true"></div>
+      <button type="button" class="km-menu__item is-muted" data-menu="settings"><span class="km-menu__ico" aria-hidden="true">&#9881;</span><span><strong>Settings</strong><small>MIDI, sound, accessibility &mdash; soon</small></span></button>
+      <button type="button" class="km-menu__item is-muted" data-menu="signin"><span class="km-menu__ico" aria-hidden="true">&#9737;</span><span><strong>Sign in</strong><small>Save progress across devices</small></span></button>
+      <p class="km-menu__build" id="km-menu-build"></p>
+    </nav>
+  </div>
+
+  <!-- Course Map overlay. app.js builds the stage/chapter list from the Course
+       data and highlights the current position. -->
+  <div id="km-coursemap" class="km-map" hidden>
+    <div class="km-map__backdrop" id="km-map-backdrop" aria-hidden="true"></div>
+    <div class="km-map__panel" role="dialog" aria-labelledby="km-map-title" aria-modal="true">
+      <div class="km-map__head">
+        <div>
+          <p class="km-map__eyebrow">The KeyMaster PRO Course</p>
+          <h2 class="km-map__title" id="km-map-title">Course Map</h2>
+        </div>
+        <button type="button" class="km-map__close" id="km-map-close" aria-label="Close course map">&#10005;</button>
+      </div>
+      <div class="km-map__body" id="km-map-body"></div>
+      <div class="km-map__foot">
+        <button type="button" class="km-map__continue" id="km-map-continue">Continue where you left off</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sign-in seam (DEFERRED). Real trusted sign-in (Google / Apple / Microsoft)
+       is intended but NOT implemented — these are the safe UI seams only. No
+       password system, no fake auth. Each provider explains it is coming and
+       that progress is saved locally for now. -->
+  <div id="km-signin" class="km-signin" hidden>
+    <div class="km-signin__backdrop" id="km-signin-backdrop" aria-hidden="true"></div>
+    <div class="km-signin__panel" role="dialog" aria-labelledby="km-signin-title" aria-modal="true">
+      <button type="button" class="km-signin__close" id="km-signin-close" aria-label="Close">&#10005;</button>
+      <span class="km-signin__mark" aria-hidden="true"></span>
+      <h2 class="km-signin__title" id="km-signin-title">Sign in to KeyMaster PRO</h2>
+      <p class="km-signin__sub">Keep your Course progress, licence and settings across devices. Choose a trusted provider &mdash; we never store a password.</p>
+      <div class="km-signin__providers">
+        <button type="button" class="km-provider" data-provider="Google"><span class="km-provider__g" aria-hidden="true">G</span> Continue with Google</button>
+        <button type="button" class="km-provider" data-provider="Apple"><span class="km-provider__a" aria-hidden="true">A</span> Continue with Apple</button>
+        <button type="button" class="km-provider" data-provider="Microsoft"><span class="km-provider__m" aria-hidden="true">M</span> Continue with Microsoft</button>
+      </div>
+      <p class="km-signin__note" id="km-signin-note">Secure sign-in is being finished for a future release. For now, your progress is saved safely on this device.</p>
+    </div>
   </div>
 
   <noscript>
@@ -260,6 +334,6 @@
 
   <!-- Single module entry point. Absolute path so it resolves regardless of
        the route in the hash. -->
-  <script type="module" src="app.js?v=rc2-83"></script>
+  <script type="module" src="app.js?v=rc2-84"></script>
 </body>
 </html>

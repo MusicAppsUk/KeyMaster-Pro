@@ -1224,3 +1224,209 @@ html[data-view="learn"] .key.hl-demo {
   40%  { box-shadow: inset 0 0 0 2px var(--amber, #E6B45A), 0 0 24px 7px rgba(230, 180, 90, 0.78); }
   100% { box-shadow: inset 0 0 0 2px var(--amber, #E6B45A), 0 0 18px 4px rgba(230, 180, 90, 0.6); }
 }
+
+/* ===========================================================================
+   PREMIUM SHELL — rc2-84
+   Front door, home hub, side menu / course hub, Course Map, and the deferred
+   sign-in seam. Original KeyMaster PRO identity: midnight-to-ebony depth, brass
+   warmth, emerald progress/success, ivory contrast. CSS-drawn graphics only —
+   no external images. Scoped to shell components; the lesson cockpit and the
+   protected masterclasses are untouched.
+   ========================================================================= */
+
+/* ---- Hub menu (hamburger) ------------------------------------------------ */
+.app__menu {
+  appearance: none; background: transparent; border: 1px solid var(--ebony-edge);
+  border-radius: 10px; width: 42px; height: 38px; display: inline-flex; align-items: center;
+  justify-content: center; cursor: pointer; margin-right: 0.6rem; transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.app__menu:hover { border-color: var(--brass); background: color-mix(in srgb, var(--brass) 12%, transparent); }
+.app__menu-bars, .app__menu-bars::before, .app__menu-bars::after {
+  content: ''; display: block; width: 18px; height: 2px; border-radius: 2px; background: var(--brass-bright);
+  position: relative; transition: transform var(--dur) var(--ease);
+}
+.app__menu-bars::before { position: absolute; top: -6px; }
+.app__menu-bars::after  { position: absolute; top: 6px; }
+html[data-view="learn"] .app__menu { display: none; }   /* focused lesson cockpit */
+
+/* ---- Home hub: richer hero + action row --------------------------------- */
+.view--launcher.is-active { align-content: start; }
+.dashboard { width: min(56rem, 100%); padding-bottom: 3rem; }
+.course-hero {
+  position: relative; margin: clamp(1.25rem, 5vw, 3rem) 0 2rem; max-width: 44rem;
+  padding: clamp(1.4rem, 4vw, 2.4rem) clamp(1.3rem, 4vw, 2.4rem) clamp(1.5rem, 4vw, 2.2rem);
+  border-radius: 22px; isolation: isolate; overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 8% 0%, color-mix(in srgb, var(--midnight) 64%, transparent), transparent 60%),
+    linear-gradient(158deg, color-mix(in srgb, var(--midnight) 40%, var(--ebony-raise)) 0%, var(--ebony-raise) 58%, var(--ebony-sink) 100%);
+  border: 1px solid color-mix(in srgb, var(--brass) 22%, var(--ebony-edge));
+  box-shadow: 0 24px 60px -28px #000, inset 0 1px 0 color-mix(in srgb, var(--ivory) 8%, transparent);
+}
+.course-hero::after {   /* warm gold corner light + hinted keybed at the foot */
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(60% 50% at 100% 8%, var(--brass-glow), transparent 64%),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--ivory) 6%, transparent) 0 calc(100%/26 - 2px), transparent calc(100%/26 - 2px) calc(100%/26));
+  -webkit-mask-image: linear-gradient(0deg, #000 0, transparent 26%); mask-image: linear-gradient(0deg, #000 0, transparent 26%);
+  opacity: 0.5;
+}
+.course-hero__greeting { margin: 0 0 0.45rem; font-size: var(--step-md); color: var(--brass-bright); font-weight: 600; letter-spacing: 0.01em; }
+.course-hero__eyebrow { margin: 0 0 0.55rem; font-size: 0.72rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--ivory-faint); }
+.course-hero__title {
+  margin: 0 0 0.7rem; font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(2rem, 7vw, 3.4rem); line-height: 1.04; letter-spacing: -0.015em;
+  color: var(--ivory);
+  text-shadow: 0 1px 0 #000;
+}
+.course-hero__next { margin: 0 0 1.5rem; font-size: clamp(1rem, 2.6vw, 1.18rem); line-height: 1.5; color: var(--ivory-dim); max-width: 34rem; }
+.course-hero__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.7rem; }
+.course-hero__cta {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 1rem 2.2rem; border-radius: 14px; text-decoration: none; font-weight: 700; font-size: 1.12rem;
+  color: #1a1206; background: linear-gradient(135deg, var(--brass-bright) 0%, var(--brass) 60%, var(--brass-deep) 100%);
+  box-shadow: 0 10px 30px -8px color-mix(in srgb, var(--brass) 60%, transparent), inset 0 1px 0 rgba(255,255,255,0.35);
+  transition: filter var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+.course-hero__cta:hover, .course-hero__cta:focus-visible { filter: brightness(1.06); transform: translateY(-2px); box-shadow: 0 16px 40px -10px color-mix(in srgb, var(--brass) 70%, transparent); }
+.hub-chip {
+  appearance: none; cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem;
+  padding: 0.85rem 1.15rem; border-radius: 12px; font: inherit; font-size: 0.95rem; font-weight: 600;
+  color: var(--ivory-dim); background: color-mix(in srgb, var(--ivory) 5%, transparent);
+  border: 1px solid var(--ebony-edge); transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease), background var(--dur) var(--ease);
+}
+.hub-chip:hover, .hub-chip:focus-visible { color: var(--ivory); border-color: var(--brass); background: color-mix(in srgb, var(--brass) 12%, transparent); }
+.course-hero__progress { margin: 1.2rem 0 0; font-size: 0.82rem; letter-spacing: 0.04em; color: var(--ivory-faint); }
+.course-hero__bar { display: block; height: 6px; margin: 0.6rem 0 0; border-radius: 99px; background: color-mix(in srgb, var(--ivory) 10%, transparent); overflow: hidden; max-width: 22rem; }
+.course-hero__bar-fill { display: block; height: 100%; width: 0%; border-radius: 99px; background: linear-gradient(90deg, var(--emerald), color-mix(in srgb, var(--emerald) 60%, var(--brass-bright))); transition: width 0.6s var(--ease); }
+
+/* Practice Rooms read clearly as the SECONDARY tier under the Course. */
+.practice-rooms__heading { font-family: var(--font-display); font-weight: 600; }
+
+/* ---- Sign-in seam (home) ------------------------------------------------- */
+.signin-seam {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;
+  margin: 2.2rem 0 0; padding: 1rem 1.2rem; border-radius: 14px;
+  border: 1px solid var(--ebony-edge); background: color-mix(in srgb, var(--midnight) 22%, var(--ebony-raise));
+}
+.signin-seam__text { margin: 0; font-size: 0.9rem; color: var(--ivory-dim); }
+.signin-seam__btn {
+  appearance: none; cursor: pointer; padding: 0.6rem 1.3rem; border-radius: 11px; font: inherit; font-weight: 700;
+  color: var(--brass-bright); background: transparent; border: 1px solid color-mix(in srgb, var(--brass) 55%, transparent);
+  transition: color var(--dur), background var(--dur), border-color var(--dur);
+}
+.signin-seam__btn:hover { color: #1a1206; background: var(--brass-bright); border-color: var(--brass-bright); }
+
+/* ---- Side menu / course hub drawer -------------------------------------- */
+.km-menu { position: fixed; inset: 0; z-index: 1000; }
+.km-menu[hidden] { display: none; }
+.km-menu__backdrop { position: absolute; inset: 0; background: rgba(8, 8, 12, 0.62); -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px); animation: kmFade 0.2s var(--ease); }
+.km-menu__panel {
+  position: absolute; top: 0; bottom: 0; left: 0; width: min(20rem, 86vw);
+  display: flex; flex-direction: column; gap: 0.25rem; padding: 1.1rem 0.9rem 1.4rem;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--midnight) 46%, var(--ebony-raise)) 0%, var(--ebony) 70%, var(--ebony-sink) 100%);
+  border-right: 1px solid color-mix(in srgb, var(--brass) 22%, var(--ebony-edge));
+  box-shadow: 24px 0 60px -20px #000; animation: kmSlideIn 0.28s var(--ease);
+  overflow-y: auto;
+}
+@keyframes kmSlideIn { from { transform: translateX(-100%); } to { transform: none; } }
+@keyframes kmFade { from { opacity: 0; } to { opacity: 1; } }
+.km-menu__head { display: flex; align-items: center; justify-content: space-between; padding: 0.3rem 0.6rem 0.9rem; }
+.km-menu__brand { font-family: var(--font-display); font-size: 1.25rem; font-weight: 600; color: var(--ivory); letter-spacing: 0.01em; }
+.km-menu__brand span { color: var(--brass-bright); margin-left: 0.12em; }
+.km-menu__close { appearance: none; background: transparent; border: 0; color: var(--ivory-dim); font-size: 1.1rem; cursor: pointer; padding: 0.3rem 0.5rem; border-radius: 8px; }
+.km-menu__close:hover { color: var(--ivory); background: color-mix(in srgb, var(--ivory) 8%, transparent); }
+.km-menu__item {
+  appearance: none; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 0.8rem;
+  padding: 0.8rem 0.7rem; border-radius: 12px; border: 1px solid transparent; background: transparent; font: inherit;
+  color: var(--ivory); transition: background var(--dur), border-color var(--dur);
+}
+.km-menu__item:hover, .km-menu__item:focus-visible { background: color-mix(in srgb, var(--ivory) 6%, transparent); border-color: var(--ebony-edge); }
+.km-menu__item strong { display: block; font-size: 0.98rem; font-weight: 650; }
+.km-menu__item small { display: block; font-size: 0.78rem; color: var(--ivory-faint); margin-top: 1px; }
+.km-menu__item.is-primary { background: color-mix(in srgb, var(--brass) 14%, transparent); border-color: color-mix(in srgb, var(--brass) 40%, transparent); }
+.km-menu__item.is-primary .km-menu__ico { color: var(--emerald); }
+.km-menu__item.is-muted { opacity: 0.72; }
+.km-menu__ico { flex: 0 0 1.4rem; text-align: center; font-size: 1rem; color: var(--brass-bright); }
+.km-menu__divider { height: 1px; margin: 0.5rem 0.4rem; background: var(--ebony-edge); }
+.km-menu__build { margin: auto 0 0; padding: 0.6rem 0.6rem 0; font-size: 0.68rem; letter-spacing: 0.04em; color: var(--ivory-faint); }
+
+/* ---- Course Map overlay -------------------------------------------------- */
+.km-map { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1.2rem; }
+.km-map[hidden] { display: none; }
+.km-map__backdrop { position: absolute; inset: 0; background: rgba(8, 8, 12, 0.66); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+.km-map__panel {
+  position: relative; width: min(40rem, 100%); max-height: 86vh; display: flex; flex-direction: column;
+  border-radius: 20px; overflow: hidden; animation: kmPop 0.26s var(--ease);
+  background: linear-gradient(168deg, color-mix(in srgb, var(--midnight) 40%, var(--ebony-raise)) 0%, var(--ebony-raise) 60%, var(--ebony-sink) 100%);
+  border: 1px solid color-mix(in srgb, var(--brass) 22%, var(--ebony-edge)); box-shadow: 0 30px 80px -24px #000;
+}
+@keyframes kmPop { from { opacity: 0; transform: translateY(10px) scale(0.99); } to { opacity: 1; transform: none; } }
+.km-map__head { display: flex; align-items: flex-start; justify-content: space-between; padding: 1.3rem 1.4rem 0.9rem; border-bottom: 1px solid var(--ebony-edge); }
+.km-map__eyebrow { margin: 0 0 0.2rem; font-size: 0.7rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--brass-bright); }
+.km-map__title { margin: 0; font-family: var(--font-display); font-size: 1.7rem; font-weight: 600; color: var(--ivory); }
+.km-map__close { appearance: none; background: transparent; border: 0; color: var(--ivory-dim); font-size: 1.2rem; cursor: pointer; padding: 0.3rem 0.5rem; border-radius: 8px; }
+.km-map__close:hover { color: var(--ivory); background: color-mix(in srgb, var(--ivory) 8%, transparent); }
+.km-map__body { overflow-y: auto; padding: 0.9rem 1.1rem; }
+.km-map__stage { margin: 0 0 1.1rem; }
+.km-map__stage-name { margin: 0 0 0.5rem; font-size: 0.78rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brass-bright); display: flex; align-items: center; gap: 0.5rem; }
+.km-map__stage-name::after { content: ''; flex: 1; height: 1px; background: var(--ebony-edge); }
+.km-map__chapter {
+  appearance: none; width: 100%; text-align: left; cursor: pointer; display: flex; align-items: center; gap: 0.7rem;
+  padding: 0.6rem 0.7rem; border-radius: 11px; border: 1px solid transparent; background: transparent; font: inherit; color: var(--ivory-dim);
+  transition: background var(--dur), border-color var(--dur), color var(--dur);
+}
+.km-map__chapter:hover { background: color-mix(in srgb, var(--ivory) 6%, transparent); color: var(--ivory); border-color: var(--ebony-edge); }
+.km-map__dot { flex: 0 0 0.6rem; width: 0.6rem; height: 0.6rem; border-radius: 50%; background: var(--ebony-edge-2); }
+.km-map__chapter.is-done .km-map__dot { background: var(--brass); }
+.km-map__chapter.is-current { background: color-mix(in srgb, var(--emerald) 12%, transparent); border-color: color-mix(in srgb, var(--emerald) 45%, transparent); color: var(--ivory); }
+.km-map__chapter.is-current .km-map__dot { background: var(--emerald); box-shadow: 0 0 0 4px color-mix(in srgb, var(--emerald) 22%, transparent); }
+.km-map__chapter-name { flex: 1; font-weight: 600; }
+.km-map__here { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.04em; color: var(--emerald); text-transform: uppercase; }
+.km-map__foot { padding: 0.9rem 1.4rem 1.2rem; border-top: 1px solid var(--ebony-edge); }
+.km-map__continue { appearance: none; cursor: pointer; width: 100%; padding: 0.9rem 1.4rem; border-radius: 13px; font: inherit; font-weight: 700; font-size: 1.05rem; color: #06251a; border: 0; background: linear-gradient(135deg, var(--emerald), color-mix(in srgb, var(--emerald) 70%, var(--brass-bright))); box-shadow: 0 10px 26px -10px var(--emerald); }
+.km-map__continue:hover { filter: brightness(1.06); }
+
+/* ---- Deferred sign-in modal --------------------------------------------- */
+.km-signin { position: fixed; inset: 0; z-index: 1001; display: grid; place-items: center; padding: 1.2rem; }
+.km-signin[hidden] { display: none; }
+.km-signin__backdrop { position: absolute; inset: 0; background: rgba(8, 8, 12, 0.7); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+.km-signin__panel {
+  position: relative; width: min(24rem, 100%); padding: 2rem 1.6rem 1.6rem; text-align: center;
+  border-radius: 20px; animation: kmPop 0.26s var(--ease);
+  background: linear-gradient(168deg, color-mix(in srgb, var(--midnight) 44%, var(--ebony-raise)) 0%, var(--ebony-raise) 64%, var(--ebony-sink) 100%);
+  border: 1px solid color-mix(in srgb, var(--brass) 24%, var(--ebony-edge)); box-shadow: 0 30px 80px -24px #000;
+}
+.km-signin__close { position: absolute; top: 0.7rem; right: 0.8rem; appearance: none; background: transparent; border: 0; color: var(--ivory-dim); font-size: 1.1rem; cursor: pointer; padding: 0.3rem 0.45rem; border-radius: 8px; }
+.km-signin__close:hover { color: var(--ivory); background: color-mix(in srgb, var(--ivory) 8%, transparent); }
+.km-signin__mark { display: block; width: 46px; height: 46px; margin: 0 auto 0.9rem; border-radius: 13px; background: radial-gradient(120% 120% at 30% 20%, var(--brass-bright), var(--brass-deep)); box-shadow: 0 8px 22px -8px var(--brass-glow), inset 0 1px 0 rgba(255,255,255,0.4); }
+.km-signin__title { margin: 0 0 0.5rem; font-family: var(--font-display); font-size: 1.4rem; font-weight: 600; color: var(--ivory); }
+.km-signin__sub { margin: 0 0 1.2rem; font-size: 0.9rem; line-height: 1.5; color: var(--ivory-dim); }
+.km-signin__providers { display: flex; flex-direction: column; gap: 0.6rem; }
+.km-provider {
+  appearance: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 0.6rem;
+  padding: 0.85rem 1rem; border-radius: 12px; font: inherit; font-weight: 600; font-size: 0.98rem;
+  color: var(--ivory); background: color-mix(in srgb, var(--ivory) 6%, transparent); border: 1px solid var(--ebony-edge-2);
+  transition: background var(--dur), border-color var(--dur), transform var(--dur);
+}
+.km-provider:hover { background: color-mix(in srgb, var(--ivory) 11%, transparent); border-color: var(--brass); transform: translateY(-1px); }
+.km-provider__g, .km-provider__a, .km-provider__m { display: inline-flex; width: 1.3rem; height: 1.3rem; align-items: center; justify-content: center; border-radius: 5px; font-weight: 800; font-size: 0.9rem; background: var(--ivory); color: var(--ebony); }
+.km-signin__note { margin: 1rem 0 0; font-size: 0.8rem; line-height: 1.45; color: var(--brass-bright); }
+.km-signin__note.is-clicked { color: var(--emerald); }
+
+/* ---- Front-door sign-in seam -------------------------------------------- */
+.frontdoor__signin {
+  appearance: none; cursor: pointer; margin-top: 0.9rem; padding: 0.4rem 0.6rem; background: transparent; border: 0;
+  font: inherit; font-size: 0.85rem; color: var(--ivory-faint); text-decoration: underline; text-underline-offset: 3px;
+  transition: color var(--dur);
+}
+.frontdoor__signin:hover { color: var(--brass-bright); }
+
+@media (max-width: 520px) {
+  .course-hero__cta { width: 100%; justify-content: center; }
+  .course-hero__actions { gap: 0.55rem; }
+  .hub-chip { flex: 1; justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .km-menu__panel, .km-map__panel, .km-signin__panel, .km-menu__backdrop { animation: none; }
+  .course-hero__bar-fill { transition: none; }
+}
