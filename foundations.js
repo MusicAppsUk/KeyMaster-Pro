@@ -88,7 +88,7 @@ const B_FRAGMENT_NAMES = B_MAJOR_SCALE.degrees.slice(0, 3).map((d) => d.name);
 export const LEARN_STEPS = [
   {
     eyebrow: 'Welcome', title: 'Welcome to the Course', id: 'welcome',
-    media: { kind: 'video', topic: 'posture', caption: 'Sitting at the piano \u2014 guided demonstration coming' },
+    media: { kind: 'video', topic: 'posture', caption: 'Sitting well at the piano \u2014 guided demonstration' },
     say: [
       { text: 'Welcome to the KeyMaster PRO Course.', pauseAfter: 560, tone: 'warm' },
       { text: 'I\u2019m your tutor. We\u2019ll go step by step, and you\u2019ll always know what to do next.', pauseAfter: 620 },
@@ -494,7 +494,7 @@ export const LEARN_STEPS = [
   {
     eyebrow: 'A new shape', title: 'A taste of B major', id: 'first-b-scale',
     progressKey: 'scale:b-major-fragment',
-    media: { kind: 'video', topic: 'hand-shape', caption: 'The B major hand shape \u2014 guided demonstration coming' },
+    media: { kind: 'video', topic: 'hand-shape', caption: 'The B major hand shape \u2014 guided demonstration' },
     cues: { labels: B_FRAGMENT.map((m, i) => ({ midi: m, text: B_FRAGMENT_NAMES[i], place: 'below' })) },
     explain: ['Those notes moved upward. Now hear a different shape \u2014 the opening of B major.', `Copy these three: ${B_FRAGMENT_NAMES.join(', then ')}.`],
     show: { kind: 'keys', midis: B_FRAGMENT, caption: `${B_FRAGMENT_NAMES.join(', ')} \u2014 the first steps of B major.`, label: B_FRAGMENT_NAMES.join(' \u2013 ') },
@@ -665,7 +665,7 @@ export const LEARN_STEPS = [
     ],
     explain: ['Written music lives on a staff \u2014 lines and spaces. Middle C is the shared landmark between the hands, the note we count outward from.', 'You already know it on the keys. Play Middle C \u2014 your reading anchor.'],
     show: { kind: 'keys', midis: [60], caption: 'Middle C \u2014 your anchor, on the keys and on the page.', label: 'Middle C' },
-    media: { kind: 'image', topic: 'staff', caption: 'Middle C on the staff \u2014 notation view coming' },
+    media: { kind: 'image', topic: 'staff', caption: 'Middle C on the staff \u2014 notation view' },
     demo: [60], demoGap: 0.45,
     tryPrompt: 'Play Middle C \u2014 your reading anchor.', targets: [60], exact: true, mode: 'one',
     okMsg: 'Good \u2014 that\u2019s your anchor. In Sight-Reading, every note is read from here.',
@@ -682,7 +682,7 @@ export const LEARN_STEPS = [
   },
   {
     eyebrow: 'Rhythm', title: 'Feel the pulse', id: 'first-pulse',
-    media: { kind: 'video', topic: 'pulse', caption: 'Keeping a steady pulse \u2014 guided demonstration coming' },
+    media: { kind: 'video', topic: 'pulse', caption: 'Keeping a steady pulse \u2014 guided demonstration' },
     say: [
       { text: 'Music moves in time, over a steady pulse \u2014 a calm, even heartbeat under the notes.', pauseAfter: 560, tone: 'warm' },
       { text: 'Music groups beats in different ways. A very common pattern is four beats: one, two, three, four. We\u2019ll start there.', pauseAfter: 640 },
@@ -709,10 +709,10 @@ export const LEARN_STEPS = [
   {
     eyebrow: 'Checkpoint', title: 'Checkpoint: Middle C', id: 'review-c',
     say: [
-      { text: 'A quick checkpoint \u2014 no new ideas, just what you know.', pauseAfter: 540, tone: 'warm' },
+      { text: 'A quick checkpoint \u2014 a chance to use what you already know.', pauseAfter: 540, tone: 'warm' },
       { text: 'Play Middle C.', pauseAfter: 300, tone: 'instruct' },
     ],
-    explain: ['Let\u2019s check what you\u2019ve learned \u2014 nothing new here.', 'Find and play Middle C, near the centre.'],
+    explain: ['Let\u2019s bring together what you\u2019ve learned so far.', 'Find and play Middle C, near the centre.'],
     show: { kind: 'keys', midis: [60], caption: 'Middle C.', label: 'Middle C' },
     demo: [60], demoGap: 0.45,
     tryPrompt: 'Play Middle C.', targets: [60], exact: true, mode: 'one',
@@ -992,7 +992,7 @@ export const LEARN_STEPS = [
   {
     eyebrow: 'Stage 2 review', title: 'Checkpoint: your phrase', id: 'review-phrase',
     say: [
-      { text: 'A calm checkpoint \u2014 no new ideas.', pauseAfter: 520, tone: 'warm' },
+      { text: 'A calm checkpoint \u2014 a chance to bring it together.', pauseAfter: 520, tone: 'warm' },
       { text: 'Play your melody once more, from memory: C, E, G, C.', pauseAfter: 320, tone: 'instruct' },
     ],
     explain: ['From memory \u2014 the melody you just learned.', 'Play C, E, G, then the C above.'],
@@ -1165,10 +1165,10 @@ export const LEARN_STEPS = [
   {
     eyebrow: 'Stage 3 review', title: 'Checkpoint: see and play', id: 's3-review',
     say: [
-      { text: 'A calm checkpoint \u2014 nothing new. Read this short rise once more and play it: C, D, E, F, G.', pauseAfter: 620, tone: 'warm' },
+      { text: 'A calm checkpoint \u2014 let\u2019s bring this together. Play this short rise once more: C, D, E, F, G.', pauseAfter: 620, tone: 'warm' },
       { text: 'The whole five-finger position, going up. Fingers one to five.', pauseAfter: 320, tone: 'instruct' },
     ],
-    explain: ['From memory and from the staff: C, D, E, F, G \u2014 the five-finger position rising. Fingers 1, 2, 3, 4, 5.', 'No new ideas \u2014 just reading and playing what you\u2019ve built.'],
+    explain: ['From memory and from the staff: C, D, E, F, G \u2014 the five-finger position rising. Fingers 1, 2, 3, 4, 5.', 'Just reading and playing what you\u2019ve built \u2014 take it steadily.'],
     show: { kind: 'keys', midis: [60, 62, 64, 65, 67], caption: 'C, D, E, F, G.', label: 'C D E F G' },
     staffHint: { clef: 'treble', notes: [60, 62, 64, 65, 67] },
     handHint: { hand: 'right', highlight: [1, 2, 3, 4, 5] },
@@ -1357,7 +1357,7 @@ export const LEARN_STEPS = [
       { text: 'A calm checkpoint. Play the left-hand five-finger shape once more: low C, D, E, F, G.', pauseAfter: 620, tone: 'warm' },
       { text: 'Fingers five, four, three, two, one \u2014 from memory and from the bass clef.', pauseAfter: 320, tone: 'instruct' },
     ],
-    explain: ['From memory: the left-hand five-finger shape, low C, D, E, F, G \u2014 fingers 5, 4, 3, 2, 1.', 'No new ideas \u2014 confirming the left hand knows its shape and its clef.'],
+    explain: ['From memory: the left-hand five-finger shape, low C, D, E, F, G \u2014 fingers 5, 4, 3, 2, 1.', 'A chance to confirm the left hand knows its shape and its clef.'],
     show: { kind: 'keys', midis: [48, 50, 52, 53, 55], caption: 'Low C, D, E, F, G \u2014 left hand.', label: 'C D E F G' },
     staffHint: { clef: 'bass', notes: [48, 50, 52, 53, 55] },
     handHint: { hand: 'left', highlight: [5, 4, 3, 2, 1] },
@@ -2122,7 +2122,7 @@ export default function createView(ctx) {
     const icon = el('span', { class: 'mf__media-icon', 'aria-hidden': 'true' });
     icon.textContent = media.kind === 'video' ? '\u25B6' : '\u25A6';
     const cap = el('p', { class: 'mf__media-cap' });
-    cap.textContent = media.caption || 'Guided demonstration \u2014 coming';
+    cap.textContent = media.caption || 'Guided demonstration';
     const sub = el('p', { class: 'mf__media-sub' });
     sub.textContent = media.kind === 'video' ? 'Video teaching' : 'Notation view';
     wrap.append(icon, cap, sub);
@@ -2215,7 +2215,9 @@ export default function createView(ctx) {
     if (s.kind !== 'staff' && c.staffHint) renderStaff(c.staffHint);
 
     // Video-ready media slot (rc2-63): honest placeholder; hidden unless the step opts in.
-    if (c.media) { mediaEl.replaceChildren(buildMediaSlot(c.media)); mediaEl.style.display = ''; }
+    // Only show the media panel once a REAL asset (src) exists — no "coming
+    // soon" placeholder is ever shown to the learner (video package is deferred).
+    if (c.media && c.media.src) { mediaEl.replaceChildren(buildMediaSlot(c.media)); mediaEl.style.display = ''; }
     else { mediaEl.replaceChildren(); mediaEl.style.display = 'none'; }
 
     // Demonstration sound. In plain Foundations there's no tutor voice, so the

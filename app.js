@@ -26,7 +26,7 @@ import { NoteInput } from './noteInput.js';
 import { createMidiEvaluator } from './midiEvaluator.js';
 import { createDevReadout, isDevMode } from './devReadout.js';
 import { createProgressStore } from './progressStore.js';
-import { STAGES, COURSE_NAME } from './courseMap.js?v=rc2-81';
+import { STAGES, COURSE_NAME } from './courseMap.js?v=rc2-82';
 
 // rc2-61: discreet build tag, sourced from this module's own cache token (?v=).
 const BUILD = (() => { try { return new URL(import.meta.url).searchParams.get('v') || 'dev'; } catch { return 'dev'; } })();
@@ -116,29 +116,29 @@ function savePrefs(prefs) {
 const VIEW_REGISTRY = {
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-81',
-    load: () => import('./foundations.js?v=rc2-81'),
+    src: './foundations.js?v=rc2-82',
+    load: () => import('./foundations.js?v=rc2-82'),
   },
   scales: {
     slot: 'scales',
-    src: './scalesMasterclass.js?v=rc2-81',
-    load: () => import('./scalesMasterclass.js?v=rc2-81'),
+    src: './scalesMasterclass.js?v=rc2-82',
+    load: () => import('./scalesMasterclass.js?v=rc2-82'),
   },
   sightreading: {
     slot: 'sightreading',
-    src: './sightReading.js?v=rc2-81',
-    load: () => import('./sightReading.js?v=rc2-81'),
+    src: './sightReading.js?v=rc2-82',
+    load: () => import('./sightReading.js?v=rc2-82'),
   },
   chords: {
     slot: 'chords',
-    src: './chordMasterclass.js?v=rc2-81',
-    load: () => import('./chordMasterclass.js?v=rc2-81'),
+    src: './chordMasterclass.js?v=rc2-82',
+    load: () => import('./chordMasterclass.js?v=rc2-82'),
   },
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-81',
-    load: () => import('./foundations.js?v=rc2-81'),
+    src: './foundations.js?v=rc2-82',
+    load: () => import('./foundations.js?v=rc2-82'),
   },
 };
 
@@ -874,7 +874,7 @@ class KeyMasterApp {
       const cta = this.root.querySelector('#learn-cta');
       if (cta) cta.textContent = started ? 'Continue the Course' : 'Start the KeyMaster PRO Course';
       set('#course-hero-title', started ? 'Continue the KeyMaster PRO Course' : COURSE_NAME);
-      import('./foundations.js?v=rc2-81').then((F) => {
+      import('./foundations.js?v=rc2-82').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
         const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
