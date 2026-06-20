@@ -294,24 +294,13 @@ class KeyMasterApp {
 
       let returning = false;
       try { returning = !!loadPrefs().lastView || this._hasCourseProgress(); } catch { /* ignore */ }
-      // Continuous Learning: name the chapter they'll resume in. Boundary table
-      // mirrors foundations.js COURSE_CHAPTERS (start index -> chapter name).
-      let resumeChapter = null;
-      try {
-        const raw = window.localStorage.getItem('keymaster.progress.v1');
-        const o = raw ? JSON.parse(raw) : null;
-        const li = (o && Number.isFinite(o.learnLesson)) ? o.learnLesson : null;
-        if (li !== null) {
-          const CH = [[0, 'Orientation'], [3, 'Your hands'], [11, 'Black keys'], [13, 'White keys'], [21, 'Movement'], [23, 'Tones & semitones'], [25, 'Scales'], [29, 'B major'], [32, 'Harmony'], [35, 'Reading the staff'], [42, 'Reading'], [46, 'Rhythm'], [48, 'Checkpoint'], [51, 'Stage 1 complete'], [52, 'Making music'], [53, 'The B-major pathway'], [56, 'Phrases'], [59, 'Rhythm in music'], [61, 'Scale & pattern shapes'], [63, 'Harmony in music'], [64, 'Patterns & phrases'], [66, 'Becoming a musician'], [68, 'Stage 2 review'], [70, 'Reading & playing'], [71, 'Reading the staff'], [75, 'Right-hand patterns'], [77, 'Reading with pulse'], [78, 'B major, reading'], [79, 'Phrase & review'], [82, 'Two hands'], [83, 'The bass clef'], [87, 'The grand staff'], [89, 'Harmony & scales'], [92, 'Practising well'], [93, 'A piece & review']];
-          for (const [start, nm] of CH) if (li >= start) resumeChapter = nm;
-        }
-      } catch { /* ignore */ }
       const enterEl = document.getElementById('fd-enter');
       const subEl = document.getElementById('fd-sub');
-      if (enterEl) enterEl.textContent = returning ? 'Continue the Course' : 'Enter the Course';
-      if (subEl) subEl.textContent = returning
-        ? (resumeChapter ? `Your tutor is ready. Continue in ${resumeChapter}.` : 'Your tutor is ready. Pick up where you left off.')
-        : 'Your tutor is ready.';
+      // The action lives on the button; the subtitle stays a calm, human line —
+      // never a sentence with a chapter name spliced in.
+      const arrow = '<span class="frontdoor__enter-arrow" aria-hidden="true">\u2192</span>';
+      if (enterEl) enterEl.innerHTML = (returning ? 'Continue the Course' : 'Enter the Course') + arrow;
+      if (subEl) subEl.textContent = 'Your tutor is ready.';
 
       const leave = (toHash) => {
         const finish = () => {
@@ -345,6 +334,38 @@ class KeyMasterApp {
   }
 
   /**
+   * PWA / full-screen launch. If already running installed (standalone /
+   * fullscreen display-mode), drop the in-page full-screen + install
+   * affordances — it is already app-like. Otherwise, when the browser offers an
+   * install (beforeinstallprompt), reveal an honest install button wired to the
+   * real prompt. Never forces fullscreen; the full-screen button stays a manual,
+   * gesture-driven option for in-browser use.
+   */
+  _setupAppLaunch() {
+    const fd = document.getElementById('frontdoor');
+    let standalone = false;
+    try {
+      standalone = !!(window.matchMedia?.('(display-mode: standalone)')?.matches
+        || window.matchMedia?.('(display-mode: fullscreen)')?.matches
+        || window.navigator?.standalone);
+    } catch { /* ignore */ }
+    if (standalone) { fd?.classList.add('is-standalone'); return; }
+
+    const installBtn = document.getElementById('fd-install');
+    let deferred = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      try { e.preventDefault(); deferred = e; if (installBtn) installBtn.hidden = false; } catch { /* ignore */ }
+    });
+    installBtn?.addEventListener('click', async () => {
+      if (!deferred) return;
+      try { deferred.prompt(); await deferred.userChoice; } catch { /* ignore */ }
+      deferred = null;
+      if (installBtn) installBtn.hidden = true;
+    });
+    window.addEventListener('appinstalled', () => { if (installBtn) installBtn.hidden = true; });
+  }
+
+  /**
    * Premium app shell: the side-menu / course hub, the Course Map overlay, and
    * the DEFERRED trusted sign-in seam. Wired once. Every action is defensive and
    * non-critical — a failure here never affects the Course or the instrument.
@@ -352,6 +373,7 @@ class KeyMasterApp {
    */
   _mountShell() {
     const $ = (id) => document.getElementById(id);
+    try { this._setupAppLaunch(); } catch (err) { console.info('[KeyMaster] app-launch wiring skipped:', err?.message ?? err); }
     const resumeIndex = () => {
       const li = this.progress?.get?.('learnLesson');
       return Number.isInteger(li) && li > 0 ? li : 0;

@@ -1742,3 +1742,44 @@ html[data-view="learn"] .app__menu { display: none; }   /* focused lesson cockpi
 @media (prefers-reduced-motion: reduce) {
   .fd-stage::after { opacity: 0.04; }
 }
+
+/* ===========================================================================
+   FRONT DOOR — 3D KEYBED + APP LAUNCH · rc2-87
+   The keybed is now an original SVG: white keys with bevel + gloss and black
+   keys grouped 2-3 per octave, raised with shading, shadow and a front lip.
+   A gentler perspective + a contact shadow + a brass footlight sell the depth
+   without gimmickry. Overrides the rc2-85 flat-gradient keybed.
+   ========================================================================= */
+.fd-piano {
+  bottom: -1%; height: 34vh; max-height: 300px;
+  transform: translateX(-50%) perspective(760px) rotateX(40deg);   /* gentler tilt */
+}
+.fd-piano__svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+/* contact shadow where the keybed meets the floor, + a warm brass footlight */
+.fd-piano::before {
+  content: ''; position: absolute; left: 6%; right: 6%; bottom: -6%; height: 22%; z-index: -1;
+  background: radial-gradient(60% 100% at 50% 0%, rgba(0,0,0,0.55), transparent 72%);
+  filter: blur(8px);
+}
+.fd-piano::after {
+  content: ''; position: absolute; left: 8%; right: 8%; bottom: 6%; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--brass-bright) 70%, transparent), transparent);
+  opacity: 0.6;
+}
+/* keep the sheen sweeping over the new SVG keys */
+.fd-piano__sheen { z-index: 2; }
+
+/* ---- App-launch affordances (PWA / full-screen) ------------------------- */
+/* Install prompt + full-screen link share a tidy row; both hidden until the
+   browser says they apply (set by app.js). When already running installed/
+   standalone, app.js hides them entirely — it is already full-screen. */
+.frontdoor__install {
+  appearance: none; cursor: pointer; margin-top: 0.5rem; padding: 0.5rem 1.1rem; border-radius: 999px;
+  font: inherit; font-size: 0.84rem; font-weight: 600; color: var(--brass-bright);
+  background: color-mix(in srgb, var(--brass) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--brass) 38%, transparent);
+  transition: color var(--dur), background var(--dur), border-color var(--dur);
+}
+.frontdoor__install:hover { color: #1a1206; background: var(--brass-bright); border-color: var(--brass-bright); }
+.frontdoor__install[hidden] { display: none; }
+.frontdoor.is-standalone .frontdoor__fs { display: none; }
