@@ -90,7 +90,7 @@ export function createTutorAudio(options = {}) {
         a.volume = (opts.volume != null) ? opts.volume : 0.9;
         current = a;
         // If the premium file is missing or fails, fall back to TTS so we are never silent.
-        const fallback = () => { current = null; if (ttsFallback && voice) voice.speak(text, lineId, done); else silentHold(text, done); };
+        const fallback = () => { current = null; if (typeof opts.onError === 'function') { opts.onError(); return; } if (ttsFallback && voice) voice.speak(text, lineId, done); else silentHold(text, done); };
         a.addEventListener('error', fallback, { once: true });
         if (done) a.addEventListener('ended', () => { current = null; done(); }, { once: true });
         const p = a.play?.();

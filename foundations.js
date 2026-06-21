@@ -24,14 +24,14 @@
 // only genuine free-exploration is acknowledged as exploration.
 
 import { createTutorVoice } from './tutorVoice.js?v=rc2-74';
-import { createTutorAudio } from './tutorAudio.js?v=rc2-100';
+import { createTutorAudio } from './tutorAudio.js?v=rc2-105';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-101';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-56';
 import { buildScale } from './scaleEngine.js';
 import { buildHandSvg, setHandHighlight, FINGER_NAMES } from './handViz.js?v=rc2-81';
 import { buildStaff } from './staffViz.js?v=rc2-86';
-import { createCourseVoice } from './courseVoice.js?v=rc2-104';
+import { createCourseVoice } from './courseVoice.js?v=rc2-105';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
 const pcOf = (m) => ((m % 12) + 12) % 12;
@@ -101,29 +101,29 @@ export const LEARN_STEPS = [
   },
   {
     eyebrow: 'The keyboard', title: 'Meet the keyboard', id: 'meet-keyboard',
-    cues: { labels: [{ midi: 48, text: 'low', place: 'below' }, { midi: 72, text: 'high', place: 'below' }] },
+    cues: { labels: [{ midi: 48, text: 'low', place: 'below' }, { midi: 88, text: 'high', place: 'below' }] },
     say: [
       { text: 'Let\u2019s orient the keyboard first.', pauseAfter: 520, tone: 'warm' },
       { text: 'Lower notes live to your left, higher notes to your right.', pauseAfter: 560 },
       { text: 'Play any key, and listen to where its sound sits.', pauseAfter: 300, tone: 'instruct' },
     ],
     explain: ['Let\u2019s orient the keyboard first. Lower notes live to your left, higher notes to your right.', 'Play any key, and listen to where its sound sits.'],
-    show: { kind: 'keys', midis: [48, 55, 60, 67, 72], caption: 'One row \u2014 low on the left, high on the right.', label: 'Low \u2190                      \u2192 High' },
-    demo: [48, 60, 72], demoGap: 0.5,
+    show: { kind: 'keys', midis: [48, 60, 72, 88], caption: 'One row \u2014 low on the left, high on the right.', label: 'Low \u2190                      \u2192 High' },
+    demo: [48, 88], demoGap: 0.6,
     tryPrompt: 'Play any key, and listen to where its sound sits on the keyboard.', mode: 'any',
     okMsg: 'Good. That is your first landmark: sound moves across the keyboard, low to high.',
   },
   {
     eyebrow: 'Low and high', title: 'Low and high sounds', id: 'low-high',
-    cues: { labels: [{ midi: 48, text: 'low', place: 'below' }, { midi: 72, text: 'high', place: 'below' }, { midi: 60, text: 'C', place: 'below' }] },
+    cues: { labels: [{ midi: 48, text: 'low', place: 'below' }, { midi: 88, text: 'high', place: 'below' }, { midi: 60, text: 'C', place: 'below' }] },
     say: [
       { text: 'The keyboard is laid out by pitch.', pauseAfter: 500, tone: 'warm' },
       { text: 'Keys to the left sound lower; keys to the right sound higher.', pauseAfter: 560 },
       { text: 'Play a low note on the left \u2014 then a high note on the right.', pauseAfter: 300, tone: 'instruct' },
     ],
     explain: ['The keyboard is laid out by pitch \u2014 keys to the left sound lower, keys to the right higher.', 'Play a low note on the left, then a high note on the right.'],
-    show: { kind: 'keys', midis: [48, 72], caption: 'Left is low \u2014 right is high, across the whole keyboard.', label: 'low                          high' },
-    demo: [48, 72], demoGap: 0.6,
+    show: { kind: 'keys', midis: [48, 88], caption: 'Left is low \u2014 right is high, across the whole keyboard.', label: 'low                          high' },
+    demo: [48, 88], demoGap: 0.6,
     tryPrompt: 'Play a low note on the left, then a high note on the right.', mode: 'lowhigh',
     okMsg: 'Good \u2014 low on the left, high on the right. You\u2019re hearing the shape of the keyboard.',
   },
@@ -1786,6 +1786,7 @@ export default function createView(ctx) {
     if (v) { demoVoices.push(v); try { v.release(t + durSec); } catch (_) { /* no-op */ } }
   }
   function stopDemoAudio() {
+    try { courseVoice?.cancelAll?.(); } catch (_) { /* no-op */ }   // hard-stop sampled notes
     if (demoTimer) { clearTimeout(demoTimer); demoTimer = null; }
     if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
     if (demoSweepTimers.length) { for (const t of demoSweepTimers.splice(0)) clearTimeout(t); }
@@ -1801,7 +1802,9 @@ export default function createView(ctx) {
     const gap = c.demoGap ?? 0.4;
     const isChord = gap <= 0.12;
     const vel = isChord ? 50 : 58;
-    const dur = isChord ? 1.10 : Math.max(0.42, gap * 1.05);
+    // Sequence notes must clear before the next starts (no overlap-summing);
+    // chords are meant to ring together.
+    const dur = isChord ? 1.10 : Math.min(0.55, Math.max(0.20, gap * 0.9));
     const t0 = synth.ctx.currentTime + 0.02;
     c.demo.forEach((m, i) => playDemoVoice(m, vel, dur, t0 + i * gap));
     sweepDemoVisual(c.demo, gap, isChord, dur);   // light each key as the tutor plays it
@@ -2025,7 +2028,10 @@ export default function createView(ctx) {
       const tod = (gh >= 5 && gh < 12) ? 'morning' : (gh >= 12 && gh < 18) ? 'afternoon' : 'evening';
       const resuming = !!(progress && (((progress.get('learnLesson') || 0) > 0)
         || (Array.isArray(progress.get('learnCompleted')) && progress.get('learnCompleted').length > 0)));
-      audio.say((resuming ? 'greeting.back.' : 'greeting.') + tod, pendingGreeting);
+      // If the time-of-day greeting MP3 isn't present yet, fall through to the
+      // welcome card's own generated beats so Jack still greets the learner.
+      audio.say((resuming ? 'greeting.back.' : 'greeting.') + tod, pendingGreeting,
+        { onError: () => { const c0 = steps[index]; if (c0) speakCard(c0); } });
       const c0 = steps[index];
       if (progress && c0) progress.addToSet('heardNarration', `narr:${c0.title}`);
       pendingGreeting = null;
