@@ -18,6 +18,7 @@ import { PianoEngine, PIANO_MIN_MIDI, PIANO_MAX_MIDI } from './pianoEngine.js';
 import { Viewport } from './viewport.js';
 import { MidiRouter } from './midiRouter.js';
 import { getAudioContext, unlockAudio, isAudioSupported } from './audioContext.js';
+import { routeToMasterBus } from './audioBus.js';
 import { runWelcomeExperience, getDisplayName, flourishEnabled } from './welcomeExperience.js';
 import { Synth } from './synth.js';
 import { PianoSynth } from './pianoVoice.js';
@@ -600,6 +601,13 @@ class KeyMasterApp {
       this.piano = new PianoSynth(ctx, { volume: 0.8 });
       this.scheduler = new Scheduler(ctx, { tempo: 90, beatsPerBar: 4 });
       this.metronome = new Metronome(this.scheduler, { volume: 0.55, enabled: false });
+      // ONE shared output chain: every engine feeds a single safety-limited bus
+      // so overlapping/dense passages can't sum past 0 dBFS (the crackle cause).
+      // Non-invasive — each engine's existing output node is reconnected; the
+      // protected Synth is NOT modified.
+      routeToMasterBus(this.synth.limiter, ctx);
+      routeToMasterBus(this.piano.limiter, ctx);
+      routeToMasterBus(this.metronome.bus, ctx);
       this._wireSound();
     } else {
       // Silent fallback: the keyboard still works visually.
@@ -669,6 +677,7 @@ class KeyMasterApp {
 
     this._unsubs.push(
       this.keyboard.on('press', (midi, detail) => {
+        this._suppressFlourish = true;   // a real keypress — don't also sound the flourish
         ensureAudio();
         this.piano?.noteOn(midi, detail.velocity ?? 100);
       }),
@@ -687,7 +696,7 @@ class KeyMasterApp {
    * first interaction to retry), and only when the flourish setting is enabled.
    */
   _playFlourish() {
-    if (!this.synth || this._flourishPlayed) return;
+    if (!this.synth || this._flourishPlayed || this._suppressFlourish) return;
     if (!flourishEnabled()) return;
     const ctx = this.synth.ctx;
     if (!ctx || ctx.state !== 'running') return;     // not yet unlocked → a later gesture retries

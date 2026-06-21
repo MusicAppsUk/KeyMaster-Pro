@@ -41,11 +41,27 @@ export function isAudioSupported() {
 export async function unlockAudio() {
   if (!isAudioSupported()) return false;
   const context = getAudioContext();
-  if (context.state === 'running') return true;
+  if (context.state !== 'running') {
+    try {
+      await context.resume();
+    } catch {
+      /* gesture wasn't sufficient yet; the next one will retry */
+    }
+  }
+  // Prime the output pipeline so the FIRST real sound (a demo, the welcome line)
+  // is not late: a one-sample silent buffer spins the audio hardware up the
+  // instant we resume, instead of the first audible note paying that cost.
   try {
-    await context.resume();
+    if (context.state === 'running' && !context.__primed) {
+      const buf = context.createBuffer(1, 1, context.sampleRate);
+      const src = context.createBufferSource();
+      src.buffer = buf;
+      src.connect(context.destination);
+      src.start(0);
+      context.__primed = true;
+    }
   } catch {
-    /* gesture wasn't sufficient yet; the next one will retry */
+    /* priming is best-effort; never fatal */
   }
   return context.state === 'running';
 }

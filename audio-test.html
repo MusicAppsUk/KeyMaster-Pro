@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex" />
+<title>KeyMaster — Audio Diagnostics (dev)</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 16px; font: 15px/1.45 system-ui, sans-serif;
+         background: #0e1116; color: #e6e9ef; -webkit-tap-highlight-color: transparent; }
+  h1 { font-size: 17px; margin: 0 0 4px; }
+  p.sub { margin: 0 0 14px; color: #8b93a3; font-size: 13px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 12px 0; }
+  button { font: inherit; padding: 12px 10px; border: 1px solid #2a3140; border-radius: 10px;
+           background: #161b23; color: #e6e9ef; cursor: pointer; }
+  button:active { background: #1f2733; }
+  button.full { grid-column: 1 / -1; }
+  button.warn { border-color: #4a3a1a; }
+  .panel { border: 1px solid #232a36; border-radius: 12px; padding: 12px; margin: 12px 0; background: #11161d; }
+  .row { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-bottom: 1px solid #1a212b; }
+  .row:last-child { border-bottom: 0; }
+  .k { color: #8b93a3; } .v { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .ok { color: #5ad19a; } .bad { color: #ff7a7a; } .warnv { color: #f0c674; }
+  .probe { font-size: 13px; }
+  .probe .row .k { font-family: ui-monospace, monospace; font-size: 12px; }
+  #log { font: 12px/1.4 ui-monospace, monospace; white-space: pre-wrap; color: #9fb0c3;
+         background: #0a0d12; border: 1px solid #1a212b; border-radius: 10px; padding: 10px;
+         height: 140px; overflow: auto; margin-top: 10px; }
+</style>
+</head>
+<body>
+  <h1>KeyMaster · Audio Diagnostics</h1>
+  <p class="sub">Dev-only. Reads the real engines and voice pack. Not linked anywhere in the app.</p>
+
+  <div class="panel">
+    <div class="row"><span class="k">AudioContext state</span><span class="v" id="m-state">—</span></div>
+    <div class="row"><span class="k">Sample rate</span><span class="v" id="m-sr">—</span></div>
+    <div class="row"><span class="k">Output latency</span><span class="v" id="m-lat">—</span></div>
+    <div class="row"><span class="k">Pipeline primed</span><span class="v" id="m-prime">—</span></div>
+    <div class="row"><span class="k">Shared master bus</span><span class="v" id="m-bus">—</span></div>
+    <div class="row"><span class="k">Piano active voices</span><span class="v" id="m-pv">—</span></div>
+    <div class="row"><span class="k">Synth active voices</span><span class="v" id="m-sv">—</span></div>
+    <div class="row"><span class="k">Last engine fired</span><span class="v" id="m-eng">—</span></div>
+    <div class="row"><span class="k">Voice pack IDs</span><span class="v" id="m-pack">—</span></div>
+  </div>
+
+  <div class="grid">
+    <button class="full" id="b-unlock">1 · Unlock + prime audio (tap first)</button>
+    <button id="b-note">Single note (piano)</button>
+    <button id="b-repeat">Repeated note ×6</button>
+    <button id="b-chord">Chord (3 notes)</button>
+    <button id="b-dense">Dense chord (10)</button>
+    <button id="b-demo">Scale demo (synth)</button>
+    <button id="b-overlap">Demo + keypress overlap</button>
+    <button class="full" id="b-jack">Play Jack welcome line (greeting)</button>
+    <button class="full warn" id="b-panic">Stop all / panic</button>
+  </div>
+
+  <div class="panel probe">
+    <div class="row"><span class="k" style="font-family:system-ui">Jack MP3 reachability</span>
+      <button id="b-probe" style="padding:4px 10px">Re-probe</button></div>
+    <div id="probe-rows"></div>
+  </div>
+
+  <div id="log"></div>
+
+<script type="module">
+import { getAudioContext, unlockAudio } from './audioContext.js';
+import { Synth } from './synth.js';
+import { PianoSynth } from './pianoVoice.js';
+import { getMasterBus, routeToMasterBus, masterBusReady } from './audioBus.js';
+import { VOICE_PACK } from './voicePackData.js';
+
+const $ = (id) => document.getElementById(id);
+const logEl = $('log');
+const log = (m) => { logEl.textContent += m + '\n'; logEl.scrollTop = logEl.scrollHeight; };
+let lastEngine = '—';
+
+const ctx = getAudioContext();
+const synth = new Synth(ctx, { volume: 0.8 });
+const piano = new PianoSynth(ctx, { volume: 0.8 });
+// Fold both into the shared safety-limited bus, exactly like the app does.
+routeToMasterBus(synth.limiter, ctx);
+routeToMasterBus(piano.limiter, ctx);
+log('engines built; routed to shared master bus.');
+
+const voicesOf = (eng) => { try { return eng._voices?.length ?? '?'; } catch { return '?'; } };
+
+setInterval(() => {
+  $('m-state').textContent = ctx.state;
+  $('m-state').className = 'v ' + (ctx.state === 'running' ? 'ok' : 'warnv');
+  $('m-sr').textContent = ctx.sampleRate + ' Hz';
+  $('m-lat').textContent = (ctx.outputLatency != null ? Math.round(ctx.outputLatency * 1000) + ' ms' : '—');
+  $('m-prime').textContent = ctx.__primed ? 'yes' : 'no';
+  $('m-prime').className = 'v ' + (ctx.__primed ? 'ok' : 'warnv');
+  $('m-bus').textContent = masterBusReady() ? 'active' : 'not built';
+  $('m-bus').className = 'v ' + (masterBusReady() ? 'ok' : 'bad');
+  $('m-pv').textContent = voicesOf(piano);
+  $('m-sv').textContent = voicesOf(synth);
+  $('m-eng').textContent = lastEngine;
+  $('m-pack').textContent = Object.keys(VOICE_PACK).length;
+}, 200);
+
+$('b-unlock').onclick = async () => {
+  const ok = await unlockAudio();
+  log('unlock → ctx.state=' + ctx.state + (ctx.__primed ? ' (primed)' : ''));
+};
+$('b-note').onclick = () => { lastEngine = 'piano'; piano.noteOn(60, 100); setTimeout(() => piano.noteOff(60), 350); log('piano C4'); };
+$('b-repeat').onclick = () => {
+  lastEngine = 'piano (retrigger)';
+  for (let i = 0; i < 6; i++) { setTimeout(() => { piano.noteOn(60, 100); setTimeout(() => piano.noteOff(60), 90); }, i * 130); }
+  log('piano C4 ×6 @130ms — listen for doubled/click on retrigger');
+};
+$('b-chord').onclick = () => { lastEngine = 'piano'; [60,64,67].forEach(m => piano.noteOn(m, 100)); setTimeout(() => [60,64,67].forEach(m => piano.noteOff(m)), 600); log('piano chord C-E-G'); };
+$('b-dense').onclick = () => { lastEngine = 'piano (dense)'; const ns=[48,52,55,60,64,67,72,76,79,84]; ns.forEach(m=>piano.noteOn(m,110)); setTimeout(()=>ns.forEach(m=>piano.noteOff(m)),700); log('piano 10-note cluster — stresses the limiter (was a clip source)'); };
+$('b-demo').onclick = () => {
+  lastEngine = 'synth (demo)';
+  const t0 = performance.now();
+  const now = ctx.currentTime;
+  const seq = [60,62,64,65,67]; const gap = 0.34;
+  seq.forEach((m,i) => { synth.noteOn(m, 80, now + i*gap, 'demo'); synth.noteOff(m, now + i*gap + gap*0.9); });
+  log('synth scale demo scheduled at ctx.currentTime (first note offset 0). UI tap→schedule: ' + Math.round(performance.now()-t0) + 'ms');
+};
+$('b-overlap').onclick = () => {
+  lastEngine = 'synth+piano';
+  const now = ctx.currentTime;
+  [60,64,67].forEach((m,i)=>{ synth.noteOn(m,70,now+i*0.3,'demo'); synth.noteOff(m,now+i*0.3+0.28); });
+  setTimeout(()=>{ piano.noteOn(72,100); setTimeout(()=>piano.noteOff(72),300); }, 150);
+  log('synth demo + piano keypress overlapping — both now share the safety limiter');
+};
+$('b-jack').onclick = () => {
+  const id = 'greeting.afternoon';
+  const file = VOICE_PACK[id];
+  if (!file) { log('NO mapping for ' + id); return; }
+  const url = 'voice/en-GB/' + file;
+  lastEngine = 'Jack MP3';
+  const a = new Audio(url);
+  a.addEventListener('playing', () => log('Jack PLAYING: ' + url));
+  a.addEventListener('error', () => log('Jack FAILED (missing/blocked): ' + url + ' — generate the pack'));
+  a.play().then(() => log('Jack play() ok: ' + url)).catch((e) => log('Jack play() rejected: ' + e.message));
+};
+$('b-panic').onclick = () => { piano.panic?.(); synth.panic?.(); log('panic — all voices stopped'); };
+
+// --- MP3 reachability probe ---
+const PROBE_IDS = ['greeting.morning','greeting.afternoon','greeting.evening','welcome.say.0','meet-keyboard.say.0','find-c.correct'];
+async function probe() {
+  const box = $('probe-rows'); box.innerHTML = '';
+  for (const id of PROBE_IDS) {
+    const file = VOICE_PACK[id];
+    const url = file ? 'voice/en-GB/' + file : null;
+    const row = document.createElement('div'); row.className = 'row';
+    const k = document.createElement('span'); k.className = 'k'; k.textContent = file || ('(' + id + ' unmapped)');
+    const v = document.createElement('span'); v.className = 'v'; v.textContent = '…';
+    row.append(k, v); box.append(row);
+    if (!url) { v.textContent = 'no map'; v.classList.add('bad'); continue; }
+    try {
+      const r = await fetch(url, { cache: 'no-store' });
+      if (r.ok) { const b = await r.blob(); v.textContent = r.status + ' · ' + Math.round(b.size/1024) + 'kB'; v.classList.add('ok'); }
+      else { v.textContent = r.status + ' missing'; v.classList.add('bad'); }
+    } catch (e) { v.textContent = 'fetch error'; v.classList.add('bad'); }
+  }
+  log('probe complete — any "404 missing" means that file is not generated/merged yet.');
+}
+$('b-probe').onclick = probe;
+probe();
+log('ready. Tap "Unlock + prime" first, then run the tests.');
+</script>
+</body>
+</html>
