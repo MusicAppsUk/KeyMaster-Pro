@@ -1,1 +1,38 @@
-
+name: Generate voice pack
+on:
+  workflow_dispatch:
+    inputs:
+      voice_id:
+        description: "ElevenLabs voice ID (Jack by default)"
+        default: "RL2gbGArFsmr05q4aJLj"
+      only:
+        description: "Line IDs, comma-separated (the 2-line proof by default)"
+        default: "welcome.0,find-c.0"
+      dry_run:
+        description: "true = preview only, no cost. false = actually generate."
+        default: "true"
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Generate or preview
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          VOICE_ID: ${{ inputs.voice_id }}
+          ONLY: ${{ inputs.only }}
+          DRY: ${{ inputs.dry_run }}
+        run: |
+          args=( --voice-id "$VOICE_ID" --out voice/en-GB --only "$ONLY" )
+          if [ "$DRY" = "false" ]; then args+=( --generate ); fi
+          node tools/generateVoicePack.mjs "${args[@]}"
+      - name: Upload MP3 files
+        if: ${{ inputs.dry_run == 'false' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: voice-pack-proof
+          path: voice/en-GB/*.mp3
+          if-no-files-found: warn
