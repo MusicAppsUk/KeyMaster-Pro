@@ -1,16 +1,15 @@
-name: Generate voice pack
+name: Generate Jack voice pack
 on:
   workflow_dispatch:
     inputs:
       voice_id:
-        description: "ElevenLabs voice ID (Jack by default)"
+        description: "Voice ID (Jack by default)"
         default: "RL2gbGArFsmr05q4aJLj"
-      only:
-        description: "Line IDs, comma-separated (the 2-line proof by default)"
-        default: "welcome.0,find-c.0"
       dry_run:
-        description: "true = preview only, no cost. false = actually generate."
+        description: "true = safe preview (no cost). false = really generate the pack."
         default: "true"
+permissions:
+  contents: write
 jobs:
   generate:
     runs-on: ubuntu-latest
@@ -19,20 +18,23 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Generate or preview
+      - name: Generate the voice pack (or preview)
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           VOICE_ID: ${{ inputs.voice_id }}
-          ONLY: ${{ inputs.only }}
           DRY: ${{ inputs.dry_run }}
         run: |
-          args=( --voice-id "$VOICE_ID" --out voice/en-GB --only "$ONLY" )
+          args=( --voice-id "$VOICE_ID" --out voice/en-GB )
           if [ "$DRY" = "false" ]; then args+=( --generate ); fi
           node tools/generateVoicePack.mjs "${args[@]}"
-      - name: Upload MP3 files
+      - name: Publish to test branch with Jack enabled
         if: ${{ inputs.dry_run == 'false' }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: voice-pack-proof
-          path: voice/en-GB/*.mp3
-          if-no-files-found: warn
+        run: |
+          git config user.name "voice-pack-bot"
+          git config user.email "actions@users.noreply.github.com"
+          git checkout -B voice-pack-jack
+          sed -i -E 's/(PREMIUM_VOICE_READY[[:space:]]*=[[:space:]]*)false/\1true/' foundations.js || echo "::warning::PREMIUM_VOICE_READY flag not found at ./foundations.js"
+          git add voice/en-GB/*.mp3 foundations.js tools/voice-pack.lock.json
+          git commit -m "Jack voice pack + enable premium voice [skip ci]" || echo "nothing to commit"
+          git push -f origin voice-pack-jack
+          echo "Done. Test branch: voice-pack-jack (main untouched)."
