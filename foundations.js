@@ -25,7 +25,7 @@
 
 import { createTutorVoice } from './tutorVoice.js?v=rc2-74';
 import { createTutorAudio } from './tutorAudio.js?v=rc2-100';
-import { VOICE_PACK } from './voicePackData.js?v=rc2-99';
+import { VOICE_PACK } from './voicePackData.js?v=rc2-101';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-56';
 import { buildScale } from './scaleEngine.js';
@@ -271,7 +271,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [60], caption: 'C sits just left of the two black keys.', label: 'this is C' },
     demo: [60], demoGap: 0.45,
     tryPrompt: 'Find and press a C \u2014 just left of a group of two black keys.', targets: [60], mode: 'one',
-    okMsg: 'Exactly \u2014 that\u2019s C, just left of the two black keys.',
+    okMsg: 'Good \u2014 that\u2019s C, just to the left of the two black keys.',
     hint: 'C is the white key immediately left of a group of two black keys.',
     reteach: 'Let\u2019s look again \u2014 first find a group of two black keys, then the white key just to their left is C.',
   },
@@ -286,7 +286,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [62], caption: 'D \u2014 between the two black keys.', label: 'this is D' },
     demo: [62], demoGap: 0.45,
     tryPrompt: 'Find and press a D \u2014 between the two black keys.', targets: [62], mode: 'one',
-    okMsg: 'Exactly \u2014 that\u2019s D, between the two black keys.',
+    okMsg: 'Yes \u2014 that\u2019s D, sitting between the two black keys.',
     hint: 'D is the white key between the group of two black keys.',
   },
   {
@@ -300,7 +300,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [64], caption: 'E \u2014 just right of the two black keys.', label: 'this is E' },
     demo: [64], demoGap: 0.45,
     tryPrompt: 'Find and press an E \u2014 just right of the two black keys.', targets: [64], mode: 'one',
-    okMsg: 'Exactly \u2014 that\u2019s E, just right of the two black keys.',
+    okMsg: 'That\u2019s E, just to the right of the two black keys.',
     hint: 'E is the white key immediately right of the group of two black keys.',
   },
   {
@@ -314,7 +314,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [65], caption: 'F \u2014 just left of the three black keys.', label: 'this is F' },
     demo: [65], demoGap: 0.45,
     tryPrompt: 'Find and press an F \u2014 just left of the three black keys.', targets: [65], mode: 'one',
-    okMsg: 'Exactly \u2014 that\u2019s F, just left of the three black keys.',
+    okMsg: 'Good \u2014 that\u2019s F, just to the left of the three black keys.',
     hint: 'F is the white key immediately left of the group of three black keys.',
   },
   {
@@ -328,7 +328,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [67], caption: 'G \u2014 just right of F.', label: 'this is G' },
     demo: [67], demoGap: 0.45,
     tryPrompt: 'Find and press a G \u2014 the white key just right of F.', targets: [67], mode: 'one',
-    okMsg: 'Exactly \u2014 that\u2019s G.',
+    okMsg: 'Yes \u2014 that\u2019s G, the next white key along.',
     hint: 'G is the next white key to the right of F.',
   },
   {
@@ -342,7 +342,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [69], caption: 'A \u2014 just right of G.', label: 'this is A' },
     demo: [69], demoGap: 0.45,
     tryPrompt: 'Find and press an A \u2014 the white key just right of G.', targets: [69], mode: 'one',
-    okMsg: 'Exactly \u2014 that\u2019s A. You can now name the white keys.',
+    okMsg: 'That\u2019s A. You can now name all of the white keys.',
     hint: 'A is the next white key to the right of G.',
   },
   {
@@ -359,7 +359,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [60], caption: 'Middle C \u2014 near the centre.', label: 'Middle C' },
     demo: [60], demoGap: 0.45,
     tryPrompt: 'Press Middle C \u2014 the highlighted key near the centre.', targets: [60], exact: true, mode: 'one',
-    okMsg: 'Exactly \u2014 that\u2019s Middle C (C4).',
+    okMsg: 'That\u2019s Middle C \u2014 the C nearest the centre of the keyboard.',
     hint: 'Middle C is the highlighted key, near the centre.',
     reteach: 'Let\u2019s look again \u2014 Middle C is near the centre, the white key just left of the two black keys there.',
   },
@@ -377,7 +377,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [59, 60], caption: 'B sits immediately left of Middle C.', label: 'C \u2192 one step left \u2192 B' },
     demo: [60, 59], demoGap: 0.5,
     tryPrompt: 'Press the B just below Middle C \u2014 one white key to the left.', targets: [59], exact: true, mode: 'one',
-    okMsg: 'Exactly \u2014 that\u2019s B, just below Middle C.',
+    okMsg: 'Good \u2014 that\u2019s B, the white key just below Middle C.',
     hint: 'B is the white key immediately left of Middle C.',
     reteach: 'Let\u2019s look again \u2014 find Middle C first, then step one white key to the left for B.',
   },
@@ -640,7 +640,7 @@ export const LEARN_STEPS = [
     staffHint: { clef: 'treble', notes: [64] },
     demo: [64], demoGap: 0.45,
     tryPrompt: 'The note is E \u2014 find it and play it.', targets: [64], mode: 'one',
-    okMsg: 'Exactly \u2014 you knew E and played it. That is the start of reading music.',
+    okMsg: 'Good \u2014 you knew E, and you played it. That is where reading music begins.',
     hint: 'E is just right of the two black keys.',
   },
   {
@@ -717,7 +717,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [60], caption: 'Middle C.', label: 'Middle C' },
     demo: [60], demoGap: 0.45,
     tryPrompt: 'Play Middle C.', targets: [60], exact: true, mode: 'one',
-    okMsg: 'Exactly \u2014 Middle C, near the centre. Well remembered.',
+    okMsg: 'That\u2019s Middle C, near the centre \u2014 well remembered.',
     hint: 'Middle C is the white key just left of the two black keys, near the centre.',
   },
   {
@@ -742,7 +742,7 @@ export const LEARN_STEPS = [
     show: { kind: 'keys', midis: [60, 64, 67], caption: 'C, E, G together.', label: 'C \u2013 E \u2013 G' },
     demo: [60, 64, 67], demoGap: 0.08,
     tryPrompt: 'Press C, E and G together.', targets: [60, 64, 67], mode: 'set',
-    okMsg: 'Exactly \u2014 a C major chord. Orientation, names, scales, reading, rhythm and harmony \u2014 you\u2019ve begun them all.',
+    okMsg: 'That\u2019s a C major chord. Orientation, names, scales, reading, rhythm and harmony \u2014 you\u2019ve begun them all.',
     hint: 'Press the three highlighted keys together: C, E and G.',
   },
   {
@@ -828,7 +828,7 @@ export const LEARN_STEPS = [
     handHint: { hand: 'right', highlight: [1, 2, 3] },
     demo: [60, 62, 64], demoGap: 0.5,
     tryPrompt: 'Play C, then D, then E \u2014 in order.', targets: [60, 62, 64], mode: 'sequence',
-    okMsg: 'Good \u2014 three notes rising, cleanly in order. That ordered shape is the start of a musical line.',
+    okMsg: 'That\u2019s it \u2014 three notes rising, cleanly in order. That ordered shape is the start of a musical line.',
     hint: 'Start on C, then the next white key, then the next: C, D, E.',
   },
   {
@@ -857,7 +857,7 @@ export const LEARN_STEPS = [
     staffHint: { clef: 'treble', notes: [60, 64, 62, 60] },
     demo: [60, 64, 62, 60], demoGap: 0.5,
     tryPrompt: 'Play the pattern in order: C, E, D, then C.', targets: [60, 64, 62, 60], mode: 'sequence',
-    okMsg: 'Good \u2014 you held the order: C, E, D, C. Reading is exactly this, growing longer over time.',
+    okMsg: 'Good \u2014 you held the order: C, E, D, C. Reading is this, growing a little longer over time.',
     hint: 'C, then E, then D, then C again.',
   },
   {
@@ -1043,7 +1043,7 @@ export const LEARN_STEPS = [
     handHint: { hand: 'right', highlight: [2] },
     demo: [67], demoGap: 0.45,
     tryPrompt: 'Play the G shown on the staff \u2014 just above Middle C, with finger 2.', targets: [67], mode: 'one',
-    okMsg: 'Good \u2014 G on the second line. Landmarks like this let you read by sight, without counting every line.',
+    okMsg: 'Yes \u2014 G on the second line. Landmarks like this let you read by sight, without counting every line.',
     hint: 'G is the white key just above the two-black-key group, near the middle.',
   },
   {
@@ -1058,7 +1058,7 @@ export const LEARN_STEPS = [
     handHint: { hand: 'right', highlight: [1, 2, 3] },
     demo: [60, 62, 64], demoGap: 0.46,
     tryPrompt: 'Play the rise you see: C, D, E (fingers 1, 2, 3).', targets: [60, 62, 64], mode: 'sequence',
-    okMsg: 'Good \u2014 the notes rose on the staff and your hand rose with them. That match is reading.',
+    okMsg: 'There \u2014 the notes rose on the staff and your hand rose with them. That match is reading.',
     hint: 'From Middle C: C, then D, then E \u2014 fingers 1, 2, 3.',
   },
   {
@@ -1072,7 +1072,7 @@ export const LEARN_STEPS = [
     staffHint: { clef: 'treble', notes: [60, 67] },
     demo: [67], demoGap: 0.45,
     tryPrompt: 'Play the higher of the two notes on the staff.', targets: [67], mode: 'one',
-    okMsg: 'Good \u2014 higher on the staff, higher in sound, further right on the keyboard. Direction connects all three.',
+    okMsg: 'Yes \u2014 higher on the staff, higher in sound, further right on the keyboard. Direction connects all three.',
     hint: 'The higher note on the staff is G, above Middle C.',
   },
   {
@@ -1102,7 +1102,7 @@ export const LEARN_STEPS = [
     handHint: { hand: 'right', highlight: [1, 2, 3, 4, 3] },
     demo: [60, 62, 64, 65, 64], demoGap: 0.4,
     tryPrompt: 'Play C, D, E, F, E in order (fingers 1, 2, 3, 4, 3).', targets: [60, 62, 64, 65, 64], mode: 'sequence',
-    okMsg: 'Good \u2014 a five-note line, played in order. Your hand is learning to stay home while the fingers travel.',
+    okMsg: 'That\u2019s it \u2014 a five-note line, played in order. Your hand is learning to stay home while the fingers travel.',
     hint: 'C up to F, then one step back to E \u2014 fingers 1, 2, 3, 4, 3.',
   },
   {
@@ -1130,7 +1130,7 @@ export const LEARN_STEPS = [
     show: { kind: 'pulse', caption: 'A note on each beat: 1 2 3 4.' },
     staffHint: { clef: 'treble', notes: [60, 62, 64, 65] },
     tryPrompt: 'After the count, play four notes \u2014 one on each beat.', mode: 'count', count: 4,
-    okMsg: 'Good \u2014 reading and playing carried on a steady pulse. That\u2019s how written music actually moves.',
+    okMsg: 'Yes \u2014 reading and playing carried on a steady pulse. That\u2019s how written music actually moves.',
     hint: 'Wait for the count to finish, then four even notes \u2014 C, D, E, F is a good choice.',
   },
   {
@@ -1265,7 +1265,7 @@ export const LEARN_STEPS = [
     staffHint: { clef: 'grand', notes: [48, 67] },
     demo: [48, 67], demoGap: 0.6,
     tryPrompt: 'Play a low note with the left hand, then a high note with the right.', mode: 'lowhigh',
-    okMsg: 'Good \u2014 left below, right above, joined on the grand staff. That division is how piano reading begins.',
+    okMsg: 'There \u2014 left below, right above, joined on the grand staff. That division is how piano reading begins.',
     hint: 'A low key on the left for the left hand, then a higher key on the right for the right hand.',
   },
   {
@@ -1279,7 +1279,7 @@ export const LEARN_STEPS = [
     staffHint: { clef: 'grand', notes: [48, 64] },
     demo: [48, 64], demoGap: 0.6,
     tryPrompt: 'Play a low left-hand note, then a higher right-hand note.', mode: 'lowhigh',
-    okMsg: 'Good \u2014 an anchor below and a voice above. You\u2019re hearing how the two hands share a single piece of music.',
+    okMsg: 'Yes \u2014 an anchor below and a voice above. You\u2019re hearing how the two hands share a single piece of music.',
     hint: 'Low key with the left hand first, then a higher key with the right.',
   },
   {
@@ -1539,7 +1539,7 @@ const CARDS = [
     tryPrompt: 'Find and press a C.',
     targets: [60],
     mode: 'one',
-    okMsg: 'Exactly \u2014 that\u2019s C, just left of the two black keys.',
+    okMsg: 'Good \u2014 that\u2019s C, just left of the two black keys.',
     hint: 'C is the white key immediately left of a group of two black keys.',
   },
   {
@@ -1555,7 +1555,7 @@ const CARDS = [
     targets: [60],
     exact: true,
     mode: 'one',
-    okMsg: 'Exactly \u2014 that\u2019s Middle C (C4).',
+    okMsg: 'Yes \u2014 that\u2019s Middle C (C4).',
     hint: 'Middle C is the highlighted key, near the centre of the keyboard.',
   },
   {
@@ -1571,7 +1571,7 @@ const CARDS = [
     targets: [59],
     exact: true,
     mode: 'one',
-    okMsg: 'Exactly \u2014 that\u2019s B, just below Middle C.',
+    okMsg: 'That\u2019s right \u2014 that\u2019s B, just below Middle C.',
     hint: 'B is the white key immediately to the left of Middle C \u2014 the highlighted key.',
   },
   {
@@ -2456,7 +2456,7 @@ export default function createView(ctx) {
     tryState.done = true;
     let shown = msg || 'Correct.';
     // Acknowledge a correct answer that came after a stumble (deterministic, not flattery).
-    if (learnMode && wrongCount > 0) shown = `That\u2019s clearer now \u2014 ${shown}`;
+    if (learnMode && wrongCount > 0) shown = `That\u2019s clearer. ${shown}`;
     tryStatus.textContent = `\u2713 ${speakable(shown)}`;
     tryStatus.classList.remove('is-wrong');
     tryStatus.classList.add('is-done');
