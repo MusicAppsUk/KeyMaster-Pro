@@ -35,7 +35,7 @@ const midiToFreq = (m) => FREQ_A4 * Math.pow(2, (m - MIDI_A4) / 12);
 
 // Sine-phase partial magnitudes for the body oscillator (index 0 = DC = 0).
 // A gently rolling series: strong fundamental, present low harmonics, soft top.
-const PARTIALS = [0, 1.0, 0.62, 0.45, 0.32, 0.22, 0.16, 0.11, 0.08, 0.055, 0.038, 0.026, 0.018];
+const PARTIALS = [0, 1.0, 0.60, 0.40, 0.26, 0.17, 0.11, 0.07, 0.045, 0.03, 0.02];
 
 function buildPianoWave(ctx) {
   const imag = new Float32Array(PARTIALS);          // sine-phase partials
@@ -78,10 +78,10 @@ class PianoNote {
     this.oscB = ctx.createOscillator();
     this.oscB.setPeriodicWave(wave);
     this.oscB.frequency.value = freq;
-    this.oscB.detune.value = 4; // a few cents → gentle unison shimmer
+    this.oscB.detune.value = 3; // a few cents → gentle unison warmth
 
     const twin = ctx.createGain();
-    twin.gain.value = 0.45;
+    twin.gain.value = 0.40;
     this.oscA.connect(this.gain);
     this.oscB.connect(twin);
     twin.connect(this.gain);
@@ -89,8 +89,8 @@ class PianoNote {
     this.filter.connect(dest);
 
     // --- brightness: bright at the strike, mellowing as it decays; softer up high ---
-    const fOpen = Math.max(600, 3200 + v * 5200 - p * 1500);
-    const fClose = Math.max(400, 700 + v * 900);
+    const fOpen = Math.max(520, 2300 + v * 3200 - p * 1100);
+    const fClose = Math.max(360, 560 + v * 720);
     const cutClose = Math.min(fOpen, fClose);
     this.filter.frequency.setValueAtTime(cutClose, t0);
     this.filter.frequency.linearRampToValueAtTime(fOpen, t0 + 0.006);
@@ -103,7 +103,7 @@ class PianoNote {
     const g = this.gain.gain;
     g.cancelScheduledValues(t0);
     g.setValueAtTime(0.0001, t0);
-    g.linearRampToValueAtTime(peak, t0 + 0.004);                       // ~4ms attack, click-free
+    g.linearRampToValueAtTime(peak, t0 + 0.007);                       // ~7ms attack — softer onset
     g.exponentialRampToValueAtTime(decayTo, t0 + 0.004 + decayLen);
     this._releaseTime = 0.22;
 
@@ -112,10 +112,10 @@ class PianoNote {
     noise.buffer = noiseBuf;
     const nf = ctx.createBiquadFilter();
     nf.type = 'bandpass';
-    nf.frequency.value = 2000 + p * 3000;
-    nf.Q.value = 0.8;
+    nf.frequency.value = 1100 + p * 1400;
+    nf.Q.value = 0.5;
     const ng = ctx.createGain();
-    const nPeak = (0.04 + v * 0.10) * (1 - p * 0.4); // softer knock up high
+    const nPeak = (0.015 + v * 0.04) * (1 - p * 0.5); // gentle felt thud, not a click
     ng.gain.setValueAtTime(0.0001, t0);
     ng.gain.linearRampToValueAtTime(nPeak, t0 + 0.002);
     ng.gain.exponentialRampToValueAtTime(0.0002, t0 + 0.045);

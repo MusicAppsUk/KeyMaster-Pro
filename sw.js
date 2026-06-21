@@ -15,37 +15,16 @@
    Bump CACHE on each release so activate clears the previous cache.
    ============================================================================= */
 
-const CACHE = 'keymaster-rc2-97';
+const CACHE = 'keymaster-rc2-99';
 const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './icon-180.png'];
-// Pre-rendered tutor voice pack (local MP3s). Cached one-by-one and tolerantly:
-// a not-yet-generated file is simply skipped and never breaks install or the shell.
-const VOICE = [
-  './voice/en-GB/welcome-0.mp3',
-  './voice/en-GB/welcome-1.mp3',
-  './voice/en-GB/welcome-2.mp3',
-  './voice/en-GB/welcome-3.mp3',
-  './voice/en-GB/meet-keyboard-0.mp3',
-  './voice/en-GB/meet-keyboard-1.mp3',
-  './voice/en-GB/meet-keyboard-2.mp3',
-  './voice/en-GB/meet-keyboard-correct.mp3',
-  './voice/en-GB/low-high-0.mp3',
-  './voice/en-GB/low-high-1.mp3',
-  './voice/en-GB/low-high-2.mp3',
-  './voice/en-GB/low-high-correct.mp3',
-  './voice/en-GB/find-c-0.mp3',
-  './voice/en-GB/find-c-1.mp3',
-  './voice/en-GB/find-c-2.mp3',
-  './voice/en-GB/find-c-3.mp3',
-  './voice/en-GB/find-c-correct.mp3'
-];
+// Tutor voice MP3s (voice/en-GB/*.mp3) are cached on first play by the runtime
+// cache-first handler below, so they work offline after first listen without
+// precaching the whole (large, growing) pack at install time.
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE)
-      .then((c) => c.addAll(CORE).catch(() => {})
-        .then(() => Promise.allSettled(
-          VOICE.map((u) => fetch(u).then((r) => (r && r.ok ? c.put(u, r) : null)).catch(() => null)),
-        )))
+      .then((c) => c.addAll(CORE))
       .catch(() => {})
       .then(() => self.skipWaiting()),
   );

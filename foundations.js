@@ -25,6 +25,7 @@
 
 import { createTutorVoice } from './tutorVoice.js?v=rc2-74';
 import { createTutorAudio } from './tutorAudio.js?v=rc2-54';
+import { VOICE_PACK } from './voicePackData.js?v=rc2-99';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-56';
 import { buildScale } from './scaleEngine.js';
@@ -1691,26 +1692,9 @@ export default function createView(ctx) {
   // PREMIUM_VOICE_READY to true once the files in VOICE_SCRIPT.md are recorded and
   // dropped into voice/en-GB/. (Full script + delivery brief: VOICE_SCRIPT.md.)
   const PREMIUM_VOICE_READY = true;
-  const OPENING_VOICE_PACK = {
-    'welcome.0': 'welcome-0.mp3',
-    'welcome.1': 'welcome-1.mp3',
-    'welcome.2': 'welcome-2.mp3',
-    'welcome.3': 'welcome-3.mp3',
-    'meet-keyboard.0': 'meet-keyboard-0.mp3',
-    'meet-keyboard.1': 'meet-keyboard-1.mp3',
-    'meet-keyboard.2': 'meet-keyboard-2.mp3',
-    'meet-keyboard.correct': 'meet-keyboard-correct.mp3',
-    'low-high.0': 'low-high-0.mp3',
-    'low-high.1': 'low-high-1.mp3',
-    'low-high.2': 'low-high-2.mp3',
-    'low-high.correct': 'low-high-correct.mp3',
-    'find-c.0': 'find-c-0.mp3',
-    'find-c.1': 'find-c-1.mp3',
-    'find-c.2': 'find-c-2.mp3',
-    'find-c.3': 'find-c-3.mp3',
-    'find-c.correct': 'find-c-correct.mp3',
-  };
-  if (audio && PREMIUM_VOICE_READY) audio.setPack(OPENING_VOICE_PACK, 'en-GB');
+  // Full code-matched voice pack (every spoken line ID -> local MP3), imported from
+  // voicePackData.js — generated from the course script so IDs always match.
+  if (audio && PREMIUM_VOICE_READY) audio.setPack(VOICE_PACK, 'en-GB');
   // Visual teaching cues (brackets / pointer / labels), measured from real key geometry.
   const overlay = learnMode ? createLearnOverlay(keyboard) : null;
   // Master Training uses its own curriculum; Foundations keeps the original cards.
@@ -2032,7 +2016,13 @@ export default function createView(ctx) {
   function speakPending() {
     if (!pendingGreeting) { updateVoiceStatus(); return; }
     if (voice && voiceOn) {
-      audio.say('greeting', pendingGreeting);
+      // Premium name-greeting: pick the recorded segment for this time of day
+      // (and whether the learner is resuming). Falls back to TTS if absent.
+      const gh = new Date().getHours();
+      const tod = (gh >= 5 && gh < 12) ? 'morning' : (gh >= 12 && gh < 18) ? 'afternoon' : 'evening';
+      const resuming = !!(progress && (((progress.get('learnLesson') || 0) > 0)
+        || (Array.isArray(progress.get('learnCompleted')) && progress.get('learnCompleted').length > 0)));
+      audio.say((resuming ? 'greeting.back.' : 'greeting.') + tod, pendingGreeting);
       const c0 = steps[index];
       if (progress && c0) progress.addToSet('heardNarration', `narr:${c0.title}`);
       pendingGreeting = null;
