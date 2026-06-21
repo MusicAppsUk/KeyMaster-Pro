@@ -41,6 +41,13 @@ export class PianoEngine {
       throw new TypeError('PianoEngine requires a DOM element to mount into');
     }
     this.mountEl = mountEl;
+    // Instrument surface: long-press must NOT open the Android Download/Share/
+    // Print callout, and keys must not be selectable/draggable. Scoped to the
+    // keyboard only — no global browser behaviour is touched.
+    try {
+      mountEl.addEventListener('contextmenu', (e) => e.preventDefault());
+      mountEl.addEventListener('dragstart', (e) => e.preventDefault());
+    } catch (_) { /* no-op */ }
     this.accidental = options.accidental === 'flat' ? 'flat' : 'sharp';
     this.showLabels = Boolean(options.showLabels);
 
@@ -175,6 +182,7 @@ export class PianoEngine {
       const el = document.createElement('button');
       el.type = 'button';
       el.className = `key ${black ? 'key--black' : 'key--white'}`;
+      el.draggable = false;
       el.dataset.midi = String(midi);
       el.dataset.pc = String(pitchClass(midi));
       // White index used by CSS to position both whites (in flow) and blacks

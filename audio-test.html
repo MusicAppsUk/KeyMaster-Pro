@@ -44,6 +44,7 @@
     <div class="row"><span class="k">Synth active voices</span><span class="v" id="m-sv">—</span></div>
     <div class="row"><span class="k">Last engine fired</span><span class="v" id="m-eng">—</span></div>
     <div class="row"><span class="k">Voice pack IDs</span><span class="v" id="m-pack">—</span></div>
+    <div class="row"><span class="k">Course samples ready</span><span class="v" id="m-ready">—</span></div>
   </div>
 
   <div class="grid">
@@ -54,6 +55,7 @@
     <button id="b-dense">Dense chord (10)</button>
     <button id="b-lesson">LESSON demo (courseVoice)</button>
     <button id="b-lesson2">LESSON demo ×2 (cancel test)</button>
+    <button class="full" id="b-real">Hear it (REAL demo path: sampler→piano fallback)</button>
     <button id="b-demo">Scale demo · Scales synth</button>
     <button id="b-overlap">Demo + keypress overlap</button>
     <button class="full" id="b-jack">Play Jack welcome line (greeting)</button>
@@ -107,6 +109,8 @@ setInterval(() => {
   $('m-sv').textContent = voicesOf(synth);
   $('m-eng').textContent = lastEngine;
   $('m-pack').textContent = Object.keys(VOICE_PACK).length;
+  $('m-ready').textContent = courseVoice.ready ? 'yes (sampled)' : 'loading… (piano fallback)';
+  $('m-ready').className = 'v ' + (courseVoice.ready ? 'ok' : 'warnv');
 }, 200);
 
 $('b-unlock').onclick = async () => {
@@ -138,6 +142,26 @@ function playLessonDemo(){
   log('LESSON demo via courseVoice (the real lesson path) at +20ms');
 }
 $('b-lesson').onclick = playLessonDemo;
+// Mirrors foundations.playDemoVoice: sampler when ready, else the keypress
+// engine (piano). This is the SAME decision the real Course 'Hear it' makes.
+function playDemoVoiceReal(midi, vel, durSec, atSec){
+  const t = atSec ?? ctx.currentTime;
+  if (courseVoice && courseVoice.ready) {
+    const v = courseVoice.note(midi,{when:t,dur:durSec,velocity:vel});
+    if (v) { courseDemo.push(v); try{v.release(t+durSec);}catch(e){} return 'sampler'; }
+  }
+  piano.noteOn(midi, vel, t); piano.noteOff(midi, t+durSec);
+  courseDemo.push({release:(rt)=>{ try{piano.noteOff(midi, Math.max(rt ?? ctx.currentTime, ctx.currentTime));}catch(e){} }});
+  return 'piano';
+}
+$('b-real').onclick = () => {
+  stopCourseDemo();
+  const seq=[48,88], gap=0.6, vel=58, dur=Math.min(0.55,Math.max(0.20,gap*0.9));
+  const t0=ctx.currentTime+0.02; let eng='';
+  seq.forEach((m,i)=>{ eng = playDemoVoiceReal(m, vel, dur, t0+i*gap); });
+  lastEngine = 'REAL demo (' + eng + ')';
+  log('REAL Hear-it path low→high [48,88] via ' + eng + (courseVoice.ready ? '' : ' — samples still loading; piano fallback kept it audible'));
+};
 $('b-lesson2').onclick = () => { playLessonDemo(); setTimeout(playLessonDemo, 250); log('replayed after 250ms — old notes should be cancelled, NOT stacked'); };
 $('b-overlap').onclick = () => {
   lastEngine = 'synth+piano';
@@ -177,7 +201,17 @@ async function probe() {
       else { v.textContent = r.status + ' missing'; v.classList.add('bad'); }
     } catch (e) { v.textContent = 'fetch error'; v.classList.add('bad'); }
   }
-  log('probe complete — any "404 missing" means that file is not generated/merged yet.');
+  // Course sample MP3s
+  for (const m of [36,48,60,72,88,96]) {
+    const url = `audio/course/note-${m}.mp3`;
+    const row = document.createElement('div'); row.className='row';
+    const k = document.createElement('span'); k.className='k'; k.textContent = `note-${m}.mp3`;
+    const v = document.createElement('span'); v.className='v'; v.textContent='…';
+    row.append(k,v); box.append(row);
+    try { const r = await fetch(url,{cache:'no-store'}); if(r.ok){const b=await r.blob(); v.textContent=r.status+' · '+Math.round(b.size/1024)+'kB'; v.classList.add('ok');} else {v.textContent=r.status+' missing'; v.classList.add('bad');} }
+    catch(e){ v.textContent='fetch error'; v.classList.add('bad'); }
+  }
+  log('probe complete — greeting/welcome 404 = regenerate pack; sample 404 = samples not deployed.');
 }
 $('b-probe').onclick = probe;
 probe();

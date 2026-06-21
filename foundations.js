@@ -1672,7 +1672,7 @@ const CARDS = [
 ];
 
 export default function createView(ctx) {
-  const { mount, keyboard, viewport, input, synth } = ctx;
+  const { mount, keyboard, viewport, input, synth, piano } = ctx;
 
   // Master Training / Learn mode is enabled purely by the route id; /foundations
   // stays in plain mode with every learn-only branch below skipped.
@@ -1781,9 +1781,20 @@ export default function createView(ctx) {
   function playDemoVoice(midi, vel, durSec, atSec) {
     if (!audioReady()) return;
     const t = atSec ?? synth.ctx.currentTime;
-    // Course-only warm voice (synth.js untouched). Same shared AudioContext.
-    const v = courseVoice.note(midi, { when: t, dur: durSec, velocity: vel });
-    if (v) { demoVoices.push(v); try { v.release(t + durSec); } catch (_) { /* no-op */ } }
+    // Prefer the sampled Course voice once its buffers have loaded; otherwise use
+    // the SAME engine the on-screen keypress uses (piano) — which is always ready.
+    // The demo must NEVER be silent, so we always have a working path.
+    if (courseVoice && courseVoice.ready) {
+      const v = courseVoice.note(midi, { when: t, dur: durSec, velocity: vel });
+      if (v) { demoVoices.push(v); try { v.release(t + durSec); } catch (_) { /* no-op */ } return; }
+    }
+    if (piano && typeof piano.noteOn === 'function') {
+      try {
+        piano.noteOn(midi, vel, t);
+        piano.noteOff(midi, t + durSec);
+        demoVoices.push({ release: (rt) => { try { piano.noteOff(midi, Math.max(rt ?? synth.ctx.currentTime, synth.ctx.currentTime)); } catch (_) { /* no-op */ } } });
+      } catch (_) { /* no-op */ }
+    }
   }
   function stopDemoAudio() {
     try { courseVoice?.cancelAll?.(); } catch (_) { /* no-op */ }   // hard-stop sampled notes
