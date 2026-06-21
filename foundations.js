@@ -24,7 +24,7 @@
 // only genuine free-exploration is acknowledged as exploration.
 
 import { createTutorVoice } from './tutorVoice.js?v=rc2-74';
-import { createTutorAudio } from './tutorAudio.js?v=rc2-54';
+import { createTutorAudio } from './tutorAudio.js?v=rc2-100';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-99';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-56';
@@ -1683,7 +1683,10 @@ export default function createView(ctx) {
     : null;
   // Premium-voice-first layer: plays a licensed audio file per stable line ID when one
   // exists, else falls back to the browser TTS prototype above. No assets bundled yet.
-  const audio = learnMode ? createTutorAudio({ voice, lang: 'en-GB' }) : null;
+  // Browser SpeechSynthesis is an emergency/DEV fallback only — OFF by default so it
+  // can never speak under Jack. Flip to true only for development without a voice pack.
+  const TTS_DEV_FALLBACK = false;
+  const audio = learnMode ? createTutorAudio({ voice, lang: 'en-GB', ttsFallback: TTS_DEV_FALLBACK }) : null;
   // Recorded-human voice pilot (route A). Maps the Course's stable opening line IDs
   // to local audio files under voice/en-GB/. The architecture (premium file -> TTS
   // -> captions) already lives in tutorAudio.js; this only supplies the manifest.
@@ -1699,7 +1702,7 @@ export default function createView(ctx) {
   const overlay = learnMode ? createLearnOverlay(keyboard) : null;
   // Master Training uses its own curriculum; Foundations keeps the original cards.
   const steps = learnMode ? LEARN_STEPS : CARDS;
-  let voiceOn = false;   // captions-first: browser TTS is opt-in, not the default
+  let voiceOn = PREMIUM_VOICE_READY;   // Jack is the product voice: ON by default when the pack exists
   let greeted = false;            // speak the greeting at most once per session
   let suppressSpeakOnce = false;  // first render after greeting must not cut it off
   let pendingGreeting = null;     // greeting+intro awaiting the first user gesture (mobile autoplay)
@@ -2006,7 +2009,7 @@ export default function createView(ctx) {
       msg = 'Captions are on. The tutor begins speaking the moment you play or continue.';
       showStart = false;
     } else {
-      msg = 'Tutor voice ready \u2014 device prototype (premium voice coming).';
+      msg = PREMIUM_VOICE_READY ? 'Tutor voice on. Captions on.' : 'Tutor voice ready \u2014 device prototype (premium voice coming).';
     }
     statusEl.textContent = msg;
     if (startBtn) startBtn.style.display = showStart ? '' : 'none';
@@ -2632,7 +2635,7 @@ export default function createView(ctx) {
       if (learnMode) {
         if (progress) {
           const storedVoice = progress.get('voiceOn');
-          voiceOn = (storedVoice === undefined || storedVoice === null) ? false : !!storedVoice;
+          voiceOn = (storedVoice === undefined || storedVoice === null) ? PREMIUM_VOICE_READY : !!storedVoice;
           let resume = progress.get('learnLesson');
           if (!Number.isInteger(resume) || resume < 0 || resume > steps.length - 1) resume = 0;
           index = resume;

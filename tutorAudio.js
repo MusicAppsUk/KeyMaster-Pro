@@ -33,6 +33,7 @@ export function createTutorAudio(options = {}) {
     lang = 'en-GB',      // active language/accent pack key
     pack = null,         // { [lineId]: 'fileName.ext' } for the active lang, or null
     basePath = 'voice',  // premium files resolve to `${basePath}/${lang}/${file}`
+    ttsFallback = false, // emergency/DEV ONLY: speak captions via browser TTS when no MP3 exists
   } = options;
 
   let activePack = (pack && typeof pack === 'object') ? { ...pack } : {};
@@ -41,6 +42,10 @@ export function createTutorAudio(options = {}) {
   let lastId = null;     // de-dupe: never repeat the same line back-to-back
   let seqActive = false; // a beat sequence is in progress
   let seqTimer = null;   // inter-beat pause timer (held so we can cancel)
+  let silentTimer = null; // captions-only line pacing (no MP3 + TTS off)
+  const readTimeMs = (t) => { const n = t ? String(t).length : 0; return Math.max(900, Math.min(9000, n * 48)); };
+  function clearSilent() { if (silentTimer) { clearTimeout(silentTimer); silentTimer = null; } }
+  function silentHold(text, cb) { clearSilent(); silentTimer = setTimeout(() => { silentTimer = null; if (cb) cb(); }, readTimeMs(text)); }
 
   function urlFor(lineId) {
     const file = activePack[lineId];
@@ -50,6 +55,7 @@ export function createTutorAudio(options = {}) {
   function isPremiumActive() { return Object.keys(activePack).length > 0; }
 
   function stopAudio() {
+    clearSilent();
     if (current) {
       try { current.pause(); current.src = ''; } catch (_) { /* no-op */ }
       current = null;
@@ -84,7 +90,7 @@ export function createTutorAudio(options = {}) {
         a.volume = (opts.volume != null) ? opts.volume : 0.9;
         current = a;
         // If the premium file is missing or fails, fall back to TTS so we are never silent.
-        const fallback = () => { current = null; if (voice) voice.speak(text, lineId, done); else if (done) done(); };
+        const fallback = () => { current = null; if (ttsFallback && voice) voice.speak(text, lineId, done); else silentHold(text, done); };
         a.addEventListener('error', fallback, { once: true });
         if (done) a.addEventListener('ended', () => { current = null; done(); }, { once: true });
         const p = a.play?.();
@@ -94,8 +100,8 @@ export function createTutorAudio(options = {}) {
         current = null;   // fall through to TTS
       }
     }
-    if (voice) voice.speak(text, lineId, done);   // prototype / fallback — calls done reliably
-    else if (done) done();
+    if (ttsFallback && voice) voice.speak(text, lineId, done);  // DEV fallback only — never under Jack
+    else silentHold(text, done);                                // captions remain; no robot voice
   }
 
   // Speak a line as a SEQUENCE of short beats with real pauses between them, so the
@@ -124,13 +130,13 @@ export function createTutorAudio(options = {}) {
       const next = () => { if (seqActive) seqTimer = setTimeout(run, after); };
       const url = HAS_AUDIO ? urlFor(bid) : null;
       if (url) playFile(url, beat.text, bid, next);
-      else if (voice) voice.speak(beat.text, bid, next);   // onEnd chains to `next`
-      else next();
+      else if (ttsFallback && voice) voice.speak(beat.text, bid, next);  // DEV fallback only
+      else { seqTimer = setTimeout(next, readTimeMs(beat.text)); }         // captions-only pacing
     };
     run();
   }
   function playFile(url, fallbackText, bid, onDone) {
-    const fb = () => { current = null; if (voice) voice.speak(fallbackText, bid, onDone); else if (onDone) onDone(); };
+    const fb = () => { current = null; if (ttsFallback && voice) voice.speak(fallbackText, bid, onDone); else { seqTimer = setTimeout(onDone, readTimeMs(fallbackText)); } };
     try {
       stopAudio();
       const a = new window.Audio(url);
