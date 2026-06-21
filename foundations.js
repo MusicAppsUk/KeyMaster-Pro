@@ -1690,7 +1690,7 @@ export default function createView(ctx) {
   // no pack active, voice-on falls back to TTS and voice-off shows captions. Flip
   // PREMIUM_VOICE_READY to true once the files in VOICE_SCRIPT.md are recorded and
   // dropped into voice/en-GB/. (Full script + delivery brief: VOICE_SCRIPT.md.)
-  const PREMIUM_VOICE_READY = false;
+  const PREMIUM_VOICE_READY = true;
   const OPENING_VOICE_PACK = {
     'welcome.0': 'welcome-0.mp3',
     'welcome.1': 'welcome-1.mp3',
