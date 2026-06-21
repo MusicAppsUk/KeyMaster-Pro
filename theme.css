@@ -1878,3 +1878,37 @@ html.fd-open, html.fd-open body { overflow: hidden; height: 100%; }
   text-transform: uppercase;
   color: rgba(232, 197, 126, 0.58);
 }
+
+/* --------------------------------------------------------------------------
+   App-shell long-press hardening (rc2-107)
+   Stops the Android/Chrome "Download / Share / Print" callout that appears on
+   long-press of images/SVG/canvas/visual surfaces, so the PWA feels like an app
+   rather than a web page. Scoped to the app shell — global browser behaviour is
+   untouched. Text remains selectable (no blanket user-select:none); only media
+   and decorative surfaces are made non-selectable / non-draggable, and form
+   fields keep their native behaviour.
+   -------------------------------------------------------------------------- */
+.app {
+  -webkit-touch-callout: none;   /* no long-press media callout on the shell */
+}
+.app img,
+.app svg,
+.app canvas,
+.app .km-map,
+.app [aria-hidden="true"] {
+  -webkit-touch-callout: none;
+  -webkit-user-drag: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.app img,
+.app svg,
+.app canvas { pointer-events: none; }   /* decorative media never captures the press */
+/* Keep text inputs fully interactive + selectable. */
+.app input,
+.app textarea,
+.app [contenteditable] {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  user-select: text;
+}

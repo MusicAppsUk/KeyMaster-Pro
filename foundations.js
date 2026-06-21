@@ -24,7 +24,7 @@
 // only genuine free-exploration is acknowledged as exploration.
 
 import { createTutorVoice } from './tutorVoice.js?v=rc2-74';
-import { createTutorAudio } from './tutorAudio.js?v=rc2-105';
+import { createTutorAudio } from './tutorAudio.js?v=rc2-107';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-101';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-56';
@@ -1781,13 +1781,10 @@ export default function createView(ctx) {
   function playDemoVoice(midi, vel, durSec, atSec) {
     if (!audioReady()) return;
     const t = atSec ?? synth.ctx.currentTime;
-    // Prefer the sampled Course voice once its buffers have loaded; otherwise use
-    // the SAME engine the on-screen keypress uses (piano) — which is always ready.
-    // The demo must NEVER be silent, so we always have a working path.
-    if (courseVoice && courseVoice.ready) {
-      const v = courseVoice.note(midi, { when: t, dur: durSec, velocity: vel });
-      if (v) { demoVoices.push(v); try { v.release(t + durSec); } catch (_) { /* no-op */ } return; }
-    }
+    // STABILISED: the demo uses the SAME engine the on-screen keypress uses
+    // (piano / pianoVoice) — the proven, always-ready path. The sampler is NOT
+    // the demo path until it's verified working in the real Course; this
+    // guarantees "Hear it" is never silent.
     if (piano && typeof piano.noteOn === 'function') {
       try {
         piano.noteOn(midi, vel, t);
@@ -2039,10 +2036,7 @@ export default function createView(ctx) {
       const tod = (gh >= 5 && gh < 12) ? 'morning' : (gh >= 12 && gh < 18) ? 'afternoon' : 'evening';
       const resuming = !!(progress && (((progress.get('learnLesson') || 0) > 0)
         || (Array.isArray(progress.get('learnCompleted')) && progress.get('learnCompleted').length > 0)));
-      // If the time-of-day greeting MP3 isn't present yet, fall through to the
-      // welcome card's own generated beats so Jack still greets the learner.
-      audio.say((resuming ? 'greeting.back.' : 'greeting.') + tod, pendingGreeting,
-        { onError: () => { const c0 = steps[index]; if (c0) speakCard(c0); } });
+      audio.say((resuming ? 'greeting.back.' : 'greeting.') + tod, pendingGreeting);
       const c0 = steps[index];
       if (progress && c0) progress.addToSet('heardNarration', `narr:${c0.title}`);
       pendingGreeting = null;
@@ -2324,6 +2318,17 @@ export default function createView(ctx) {
     if (s.kind === 'keys' && Array.isArray(s.midis)) {
       keyboard?.highlight?.(s.midis, 'target');
       viewport?.frame?.(s.midis);
+      // Marker diagnostic (visible in device remote-debug console): shows each
+      // marked midi, whether its key element exists, and whether it's on-screen.
+      try {
+        const w = viewport?.window;
+        const diag = s.midis.map((m) => {
+          const k = keyboard?.keys?.get?.(m);
+          const onscreen = k && !k.el.classList.contains('is-offscreen');
+          return `${m}:${k ? (onscreen ? 'on' : 'OFF') : 'MISSING'}`;
+        }).join(' ');
+        console.debug(`[KeyMaster] ${c.id} markers=[${s.midis}] window=${w ? w.low + '..' + w.high : '?'} -> ${diag}`);
+      } catch (_) { /* no-op */ }
       overlay?.render?.(c.cues || null);
     } else if (s.kind === 'sharps' && Array.isArray(s.midis)) {
       keyboard?.highlight?.(s.midis, 'target');
