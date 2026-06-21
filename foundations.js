@@ -31,7 +31,7 @@ import { createLearnOverlay } from './learnOverlay.js?v=rc2-56';
 import { buildScale } from './scaleEngine.js';
 import { buildHandSvg, setHandHighlight, FINGER_NAMES } from './handViz.js?v=rc2-81';
 import { buildStaff } from './staffViz.js?v=rc2-86';
-import { createCourseVoice } from './courseVoice.js?v=rc2-103';
+import { createCourseVoice } from './courseVoice.js?v=rc2-104';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
 const pcOf = (m) => ((m % 12) + 12) % 12;
@@ -115,15 +115,15 @@ export const LEARN_STEPS = [
   },
   {
     eyebrow: 'Low and high', title: 'Low and high sounds', id: 'low-high',
-    cues: { labels: [{ midi: 50, text: 'low', place: 'below' }, { midi: 69, text: 'high', place: 'below' }] },
+    cues: { labels: [{ midi: 48, text: 'low', place: 'below' }, { midi: 72, text: 'high', place: 'below' }, { midi: 60, text: 'C', place: 'below' }] },
     say: [
       { text: 'The keyboard is laid out by pitch.', pauseAfter: 500, tone: 'warm' },
       { text: 'Keys to the left sound lower; keys to the right sound higher.', pauseAfter: 560 },
       { text: 'Play a low note on the left \u2014 then a high note on the right.', pauseAfter: 300, tone: 'instruct' },
     ],
     explain: ['The keyboard is laid out by pitch \u2014 keys to the left sound lower, keys to the right higher.', 'Play a low note on the left, then a high note on the right.'],
-    show: { kind: 'keys', midis: [48, 50, 52, 67, 69, 71], caption: 'Left is low; right is high.', label: 'low                          high' },
-    demo: [48, 50, 52, 67, 69, 71], demoGap: 0.34,
+    show: { kind: 'keys', midis: [48, 72], caption: 'Left is low \u2014 right is high, across the whole keyboard.', label: 'low                          high' },
+    demo: [48, 72], demoGap: 0.6,
     tryPrompt: 'Play a low note on the left, then a high note on the right.', mode: 'lowhigh',
     okMsg: 'Good \u2014 low on the left, high on the right. You\u2019re hearing the shape of the keyboard.',
   },

@@ -1,190 +1,105 @@
-// pianoVoice.js
+// pianoVoice.js — free-play / learner-keypress voice for KeyMaster PRO.
+// =============================================================================
+// rc2-104 — REBUILT as a clean, simple, warm tone to match courseVoice.
 //
-// Richer, piano-flavoured polyphonic voice used for FREE-PLAY ONLY — the
-// on-screen keyboard and live MIDI. It is deliberately a SEPARATE module from
-// synth.js so the protected Scales audio engine stays byte-for-byte frozen.
+// The previous version layered a harmonic PeriodicWave, a detuned twin, a filter
+// envelope and a filtered-noise hammer "knock". On tablet speakers that read as
+// brittle/clicky. Realism is not the goal — a clean stable teaching tone is. So
+// each note is now: ONE triangle oscillator → a STATIC gentle low-pass → a gain
+// envelope that starts and ends at TRUE zero (no onset or release click). Minimal
+// nodes per voice, so dense playing can't underrun the audio thread.
 //
-// Interface-compatible with Synth (drop-in): noteOn / noteOff / allNotesOff /
-// panic / setVolume, plus a `ctx` field. app.js routes only the free-play
-// keyboard press/release here; everything else (Scales "Listen", the scheduler,
-// the startup flourish) still uses synth.js.
-//
-// Why this exists — the default synth voice is a triangle+sine pair, which is
-// harmonically thin and tends to read as weak/plasticky on small speakers. This
-// voice targets the three things that were wrong at once:
-//   • THIN  → a custom harmonic PeriodicWave (a full stack of partials) plus a
-//             faint detuned unison twin, so it has body and a bit of shimmer
-//             like real strings rather than an organ tone.
-//   • CHEAP → a short filtered-noise "knock" at the very onset supplies the
-//             hammer transient a phone speaker leans on to hear "piano".
-//   • CHOPPY/CUT-OUT → a fast attack into a continuous, pitch-dependent decay
-//             (low notes ring longer) that mellows as it fades, instead of a
-//             held plateau that stops abruptly.
-//   • CRACKLY → every gain change is a ramp from/to a small epsilon, the tail
-//             always fades to true zero before an oscillator stops, and a master
-//             limiter catches dense-chord clipping.
-//
-// NOTE: the actual SOUND is judged on-device; this is built from acoustic
-// principles, not auditioned in the build environment.
+// Interface unchanged (drop-in for the keyboard): noteOn / noteOff / allNotesOff /
+// panic / setVolume, plus a `ctx` field. app.js routes this engine's output into
+// the shared safety bus (audioBus.js) — synth.js (protected Scales) is untouched.
+// =============================================================================
 
 import { getAudioContext } from './audioContext.js';
 
-const MIDI_A4 = 69;
-const FREQ_A4 = 440;
-const midiToFreq = (m) => FREQ_A4 * Math.pow(2, (m - MIDI_A4) / 12);
+const midiToFreq = (m) => 440 * Math.pow(2, (m - 69) / 12);
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
 
-// Sine-phase partial magnitudes for the body oscillator (index 0 = DC = 0).
-// A gently rolling series: strong fundamental, present low harmonics, soft top.
-const PARTIALS = [0, 1.0, 0.60, 0.40, 0.26, 0.17, 0.11, 0.07, 0.045, 0.03, 0.02];
-
-function buildPianoWave(ctx) {
-  const imag = new Float32Array(PARTIALS);          // sine-phase partials
-  const real = new Float32Array(PARTIALS.length);   // cosine terms all zero
-  return ctx.createPeriodicWave(real, imag, { disableNormalization: false });
-}
-
-// One shared short white-noise buffer; per-note BufferSources are spawned from it.
-function buildNoise(ctx) {
-  const len = Math.max(1, Math.floor(ctx.sampleRate * 0.05)); // ~50ms
-  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
-  return buf;
-}
-
-/** A single struck piano note: body oscillators + filter + envelope + attack knock. */
 class PianoNote {
-  constructor(ctx, dest, wave, noiseBuf, midi, velocity, when) {
+  constructor(ctx, dest, midi, velocity, when) {
     this.ctx = ctx;
     this.midi = midi;
     this.releasing = false;
     this.onended = null;
+    this._releaseTime = 0.18;
 
-    const freq = midiToFreq(midi);
-    const v = Math.min(127, Math.max(1, velocity)) / 127;
+    const f = midiToFreq(midi);
+    const v = clamp(velocity, 1, 127) / 127;
     const t0 = Math.max(when, ctx.currentTime);
-    const p = Math.min(1, Math.max(0, (midi - 21) / 87)); // 0 (low) … 1 (high)
+    const level = 0.06 + v * 0.17;
 
-    // --- body: rich periodic wave + a faint detuned unison twin for warmth ---
+    this.osc = ctx.createOscillator();
+    this.osc.type = 'triangle';
+    this.osc.frequency.value = f;
+
+    this.lp = ctx.createBiquadFilter();
+    this.lp.type = 'lowpass';
+    this.lp.frequency.value = clamp(f * 4, 1300, 3600);   // static, no sweep
+    this.lp.Q.value = 0.4;
+
     this.gain = ctx.createGain();
-    this.filter = ctx.createBiquadFilter();
-    this.filter.type = 'lowpass';
-    this.filter.Q.value = 0.5;
-
-    this.oscA = ctx.createOscillator();
-    this.oscA.setPeriodicWave(wave);
-    this.oscA.frequency.value = freq;
-
-    this.oscB = ctx.createOscillator();
-    this.oscB.setPeriodicWave(wave);
-    this.oscB.frequency.value = freq;
-    this.oscB.detune.value = 3; // a few cents → gentle unison warmth
-
-    const twin = ctx.createGain();
-    twin.gain.value = 0.40;
-    this.oscA.connect(this.gain);
-    this.oscB.connect(twin);
-    twin.connect(this.gain);
-    this.gain.connect(this.filter);
-    this.filter.connect(dest);
-
-    // --- brightness: bright at the strike, mellowing as it decays; softer up high ---
-    const fOpen = Math.max(520, 2300 + v * 3200 - p * 1100);
-    const fClose = Math.max(360, 560 + v * 720);
-    const cutClose = Math.min(fOpen, fClose);
-    this.filter.frequency.setValueAtTime(cutClose, t0);
-    this.filter.frequency.linearRampToValueAtTime(fOpen, t0 + 0.006);
-    this.filter.frequency.exponentialRampToValueAtTime(cutClose, t0 + 0.35);
-
-    // --- amplitude: fast attack → continuous pitch-dependent decay (no plateau) ---
-    const peak = 0.05 + v * 0.30;
-    const decayTo = Math.max(peak * 0.02, 0.0002);
-    const decayLen = 4.5 - p * 3.0;            // low notes ring longer than high
     const g = this.gain.gain;
-    g.cancelScheduledValues(t0);
-    g.setValueAtTime(0.0001, t0);
-    g.linearRampToValueAtTime(peak, t0 + 0.010);                       // ~10ms attack — clean, click-free onset
-    g.exponentialRampToValueAtTime(decayTo, t0 + 0.004 + decayLen);
-    this._releaseTime = 0.22;
+    g.setValueAtTime(0, t0);                              // TRUE zero start → no click
+    g.linearRampToValueAtTime(level, t0 + 0.010);         // 10ms clean attack
+    g.exponentialRampToValueAtTime(Math.max(level * 0.28, 0.0006), t0 + 3.2); // slow natural decay while held
 
-    // Hammer "knock" transient REMOVED (rc2-103): the filtered-noise burst at onset
-    // read as a click/brittleness on small speakers. A clean, warm teaching tone is
-    // preferred over hammer realism. The soft gain ramp below is the whole attack.
-    this._noiseNodes = [];
-
-    this.oscA.start(t0);
-    this.oscB.start(t0);
+    this.osc.connect(this.lp); this.lp.connect(this.gain); this.gain.connect(dest);
+    this.osc.start(t0);
   }
 
-  /** Smooth release tail, then a guaranteed fade to true zero before stop. */
   release(when) {
     if (this.releasing) return;
     this.releasing = true;
     const ctx = this.ctx;
     const t = Math.max(when, ctx.currentTime);
     const g = this.gain.gain;
-    const rel = this._releaseTime;
     if (typeof g.cancelAndHoldAtTime === 'function') {
       g.cancelAndHoldAtTime(t);
     } else {
-      const held = Math.max(g.value, 0.0002);
+      const held = Math.max(g.value, 0.0004);
       g.cancelScheduledValues(t);
       g.setValueAtTime(held, t);
     }
-    const tailEnd = t + rel;
-    const stopAt = tailEnd + 0.03;
-    g.exponentialRampToValueAtTime(0.0008, tailEnd);
-    g.linearRampToValueAtTime(0, stopAt);          // never stop on a non-zero sample
-    this.oscA.stop(stopAt);
-    this.oscB.stop(stopAt);
-    this.oscA.onended = () => this._teardown();
+    const end = t + this._releaseTime;
+    g.exponentialRampToValueAtTime(0.0005, end);
+    g.linearRampToValueAtTime(0, end + 0.03);             // true zero before stop
+    this.osc.stop(end + 0.04);
+    this.osc.onended = () => this._teardown();
   }
 
-  /** Fast forced release for voice-stealing / retrigger / panic. */
-  steal(when) {
-    this._releaseTime = Math.min(this._releaseTime, 0.05);
-    this.release(when);
-  }
+  steal(when) { this._releaseTime = Math.min(this._releaseTime, 0.04); this.release(when); }
 
   _teardown() {
-    try {
-      this.oscA.disconnect();
-      this.oscB.disconnect();
-      this.gain.disconnect();
-      this.filter.disconnect();
-      this._noiseNodes?.forEach((n) => { try { n.disconnect(); } catch { /* gone */ } });
-    } catch { /* already gone */ }
+    try { this.osc.disconnect(); this.lp.disconnect(); this.gain.disconnect(); } catch (_) { /* gone */ }
     this.onended?.(this);
   }
 }
 
 export class PianoSynth {
-  /**
-   * @param {AudioContext} [ctx]  Shared context; defaults to the app singleton.
-   * @param {object} [options]
-   * @param {number} [options.maxPolyphony=32]
-   * @param {number} [options.volume=0.8]  Master 0–1.
-   */
   constructor(ctx = getAudioContext(), options = {}) {
     this.ctx = ctx;
-    this.maxPolyphony = options.maxPolyphony ?? 32;
+    this.maxPolyphony = options.maxPolyphony ?? 24;
 
     this.master = ctx.createGain();
     this.master.gain.value = options.volume ?? 0.8;
 
+    // Per-engine soft limiter retained; app.js reconnects THIS node into the
+    // shared master bus so all engines share one ceiling.
     this.limiter = ctx.createDynamicsCompressor();
-    this.limiter.threshold.value = -8;
-    this.limiter.knee.value = 8;
+    this.limiter.threshold.value = -6;
+    this.limiter.knee.value = 6;
     this.limiter.ratio.value = 12;
     this.limiter.attack.value = 0.003;
     this.limiter.release.value = 0.2;
 
     this.master.connect(this.limiter);
-    this.limiter.connect(ctx.destination);
+    this.limiter.connect(ctx.destination);   // app.js reroutes this to the shared bus
 
-    this._wave = buildPianoWave(ctx);
-    this._noise = buildNoise(ctx);
-    /** @type {PianoNote[]} live voices, oldest first. */
+    /** @type {PianoNote[]} */
     this._voices = [];
   }
 
@@ -194,16 +109,12 @@ export class PianoSynth {
       const vc = this._voices[i];
       if (vc.midi === midi && !vc.releasing) { vc.steal(this.ctx.currentTime); break; }
     }
-    // Polyphony ceiling.
     while (this._voices.length >= this.maxPolyphony) {
       const victim = this._voices.shift();
       victim?.steal(this.ctx.currentTime);
     }
-    const voice = new PianoNote(this.ctx, this.master, this._wave, this._noise, midi, velocity, when);
-    voice.onended = (v) => {
-      const i = this._voices.indexOf(v);
-      if (i !== -1) this._voices.splice(i, 1);
-    };
+    const voice = new PianoNote(this.ctx, this.master, midi, velocity, when);
+    voice.onended = (v) => { const i = this._voices.indexOf(v); if (i !== -1) this._voices.splice(i, 1); };
     this._voices.push(voice);
     return voice;
   }
@@ -215,20 +126,9 @@ export class PianoSynth {
     }
   }
 
-  allNotesOff() {
-    const now = this.ctx.currentTime;
-    for (const voice of [...this._voices]) voice.release(now);
-  }
-
-  panic() {
-    const now = this.ctx.currentTime;
-    for (const voice of [...this._voices]) voice.steal(now);
-  }
-
-  setVolume(value) {
-    const v = Math.min(1, Math.max(0, value));
-    this.master.gain.setTargetAtTime(v, this.ctx.currentTime, 0.02);
-  }
+  allNotesOff() { const now = this.ctx.currentTime; for (const v of [...this._voices]) v.release(now); }
+  panic() { const now = this.ctx.currentTime; for (const v of [...this._voices]) v.steal(now); }
+  setVolume(value) { this.master.gain.setTargetAtTime(clamp(value, 0, 1), this.ctx.currentTime, 0.02); }
 }
 
 export { midiToFreq };
