@@ -1,1 +1,28 @@
-
+name: Generate Jack voice pack
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "true = preview (no cost). false = generate the 17-line Jack pack."
+        default: "true"
+permissions:
+  contents: write
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Generate or preview
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          DRY: ${{ inputs.dry_run }}
+        run: |
+          node <<'SCRIPT'
+          const fs = require('fs');
+          const VOICE_ID = 'RL2gbGArFsmr05q4aJLj';
+          const KEY = process.env.ELEVENLABS_API_KEY;
+          const DRY = process.env.DRY !== 'false';
+          const LINES = [["welcome.0","Welcome to the KeyMaster PRO Course."],["welcome.1","I'm your tutor. We'll go step by step, and you'll always know what to do next."],["welcome.2","Sit comfortably — both feet down, shoulders easy, hands relaxed over the keys. Natural, supported, never forced."],["welcome.3","When you're ready, we'll begin by orienting the keyboard."],["meet-keyboard.0","Let's orient the keyboard first."],["meet-keyboard.1","Lower notes live to your left, higher notes to your right."],["meet-keyboard.2","Play any key, and listen to where its sound sits."],["meet-keyboard.correct","Good. That is your first landmark: sound moves across the keyboard, low to high."],["low-high.0","The keyboard is laid out by pitch."],["low-high.1","Keys to the left sound lower; keys to the right sound higher."],["low-high.2","Play a low note on the left — then a high no
