@@ -15,7 +15,7 @@
    Bump CACHE on each release so activate clears the previous cache.
    ============================================================================= */
 
-const CACHE = 'keymaster-rc2-96';
+const CACHE = 'keymaster-rc2-97';
 const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './icon-180.png'];
 // Pre-rendered tutor voice pack (local MP3s). Cached one-by-one and tolerantly:
 // a not-yet-generated file is simply skipped and never breaks install or the shell.

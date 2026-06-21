@@ -20,6 +20,7 @@ import { MidiRouter } from './midiRouter.js';
 import { getAudioContext, unlockAudio, isAudioSupported } from './audioContext.js';
 import { runWelcomeExperience, getDisplayName, flourishEnabled } from './welcomeExperience.js';
 import { Synth } from './synth.js';
+import { PianoSynth } from './pianoVoice.js';
 import { Scheduler } from './scheduler.js';
 import { Metronome } from './metronome.js';
 import { NoteInput } from './noteInput.js';
@@ -116,8 +117,8 @@ function savePrefs(prefs) {
 const VIEW_REGISTRY = {
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-95',
-    load: () => import('./foundations.js?v=rc2-95'),
+    src: './foundations.js?v=rc2-97',
+    load: () => import('./foundations.js?v=rc2-97'),
   },
   scales: {
     slot: 'scales',
@@ -137,8 +138,8 @@ const VIEW_REGISTRY = {
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-95',
-    load: () => import('./foundations.js?v=rc2-95'),
+    src: './foundations.js?v=rc2-97',
+    load: () => import('./foundations.js?v=rc2-97'),
   },
 };
 
@@ -503,7 +504,7 @@ class KeyMasterApp {
     if (!overlay || !body) return;
     overlay.hidden = false;
     body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Loading the journey\u2026</p>';
-    import('./foundations.js?v=rc2-95').then((F) => {
+    import('./foundations.js?v=rc2-97').then((F) => {
       const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
       const chapterAt = (typeof F.chapterAtIndex === 'function') ? F.chapterAtIndex : null;
       if (!steps.length || !chapterAt) { body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Course map unavailable right now.</p>'; return; }
@@ -594,12 +595,16 @@ class KeyMasterApp {
     if (isAudioSupported()) {
       const ctx = getAudioContext();
       this.synth = new Synth(ctx, { volume: 0.8 });
+      // Free-play only: a richer piano voice for on-screen/MIDI key presses.
+      // The protected synth above still drives Scales, the scheduler, and the flourish.
+      this.piano = new PianoSynth(ctx, { volume: 0.8 });
       this.scheduler = new Scheduler(ctx, { tempo: 90, beatsPerBar: 4 });
       this.metronome = new Metronome(this.scheduler, { volume: 0.55, enabled: false });
       this._wireSound();
     } else {
       // Silent fallback: the keyboard still works visually.
       this.synth = this.scheduler = this.metronome = null;
+      this.piano = null;
     }
 
     // Reflect the live window into the header readout.
@@ -665,10 +670,10 @@ class KeyMasterApp {
     this._unsubs.push(
       this.keyboard.on('press', (midi, detail) => {
         ensureAudio();
-        this.synth?.noteOn(midi, detail.velocity ?? 100);
+        this.piano?.noteOn(midi, detail.velocity ?? 100);
       }),
       this.keyboard.on('release', (midi) => {
-        this.synth?.noteOff(midi);
+        this.piano?.noteOff(midi);
       })
     );
   }
@@ -1095,7 +1100,7 @@ class KeyMasterApp {
       const cta = this.root.querySelector('#learn-cta');
       if (cta) cta.textContent = started ? 'Continue the Course' : 'Start the KeyMaster PRO Course';
       set('#course-hero-title', started ? 'Continue the KeyMaster PRO Course' : COURSE_NAME);
-      import('./foundations.js?v=rc2-95').then((F) => {
+      import('./foundations.js?v=rc2-97').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
         const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
