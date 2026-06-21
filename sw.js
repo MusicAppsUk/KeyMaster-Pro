@@ -15,7 +15,7 @@
    Bump CACHE on each release so activate clears the previous cache.
    ============================================================================= */
 
-const CACHE = 'keymaster-rc2-102';
+const CACHE = 'keymaster-rc2-103';
 const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './icon-180.png'];
 // Tutor voice MP3s (voice/en-GB/*.mp3) are cached on first play by the runtime
 // cache-first handler below, so they work offline after first listen without

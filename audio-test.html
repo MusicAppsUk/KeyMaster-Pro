@@ -52,7 +52,9 @@
     <button id="b-repeat">Repeated note ×6</button>
     <button id="b-chord">Chord (3 notes)</button>
     <button id="b-dense">Dense chord (10)</button>
-    <button id="b-demo">Scale demo (synth)</button>
+    <button id="b-lesson">LESSON demo (courseVoice)</button>
+    <button id="b-lesson2">LESSON demo ×2 (cancel test)</button>
+    <button id="b-demo">Scale demo · Scales synth</button>
     <button id="b-overlap">Demo + keypress overlap</button>
     <button class="full" id="b-jack">Play Jack welcome line (greeting)</button>
     <button class="full warn" id="b-panic">Stop all / panic</button>
@@ -72,6 +74,7 @@ import { Synth } from './synth.js';
 import { PianoSynth } from './pianoVoice.js';
 import { getMasterBus, routeToMasterBus, masterBusReady } from './audioBus.js';
 import { VOICE_PACK } from './voicePackData.js';
+import { createCourseVoice } from './courseVoice.js';
 
 const $ = (id) => document.getElementById(id);
 const logEl = $('log');
@@ -84,7 +87,10 @@ const piano = new PianoSynth(ctx, { volume: 0.8 });
 // Fold both into the shared safety-limited bus, exactly like the app does.
 routeToMasterBus(synth.limiter, ctx);
 routeToMasterBus(piano.limiter, ctx);
-log('engines built; routed to shared master bus.');
+const courseVoice = createCourseVoice(ctx, { volume: 0.85 }); // lesson demo + tick — self-routes to the bus
+let courseDemo = [];
+function stopCourseDemo(){ const now=ctx.currentTime; for(const v of courseDemo.splice(0)){ try{v.release(now);}catch(e){} } }
+log('engines built; synth/piano + courseVoice routed to shared master bus.');
 
 const voicesOf = (eng) => { try { return eng._voices?.length ?? '?'; } catch { return '?'; } };
 
@@ -123,6 +129,16 @@ $('b-demo').onclick = () => {
   seq.forEach((m,i) => { synth.noteOn(m, 80, now + i*gap, 'demo'); synth.noteOff(m, now + i*gap + gap*0.9); });
   log('synth scale demo scheduled at ctx.currentTime (first note offset 0). UI tap→schedule: ' + Math.round(performance.now()-t0) + 'ms');
 };
+function playLessonDemo(){
+  stopCourseDemo();
+  lastEngine = 'courseVoice (lesson)';
+  const seq=[60,62,64,65,67], gap=0.42, vel=58, dur=Math.max(0.42,gap*1.05);
+  const t0=ctx.currentTime+0.02;
+  seq.forEach((m,i)=>{ const v=courseVoice.note(m,{when:t0+i*gap,dur,velocity:vel}); if(v){courseDemo.push(v); try{v.release(t0+i*gap+dur);}catch(e){}} });
+  log('LESSON demo via courseVoice (the real lesson path) at +20ms');
+}
+$('b-lesson').onclick = playLessonDemo;
+$('b-lesson2').onclick = () => { playLessonDemo(); setTimeout(playLessonDemo, 250); log('replayed after 250ms — old notes should be cancelled, NOT stacked'); };
 $('b-overlap').onclick = () => {
   lastEngine = 'synth+piano';
   const now = ctx.currentTime;

@@ -103,26 +103,14 @@ class PianoNote {
     const g = this.gain.gain;
     g.cancelScheduledValues(t0);
     g.setValueAtTime(0.0001, t0);
-    g.linearRampToValueAtTime(peak, t0 + 0.007);                       // ~7ms attack — softer onset
+    g.linearRampToValueAtTime(peak, t0 + 0.010);                       // ~10ms attack — clean, click-free onset
     g.exponentialRampToValueAtTime(decayTo, t0 + 0.004 + decayLen);
     this._releaseTime = 0.22;
 
-    // --- attack "knock": brief band-passed noise → the hammer transient ---
-    const noise = ctx.createBufferSource();
-    noise.buffer = noiseBuf;
-    const nf = ctx.createBiquadFilter();
-    nf.type = 'bandpass';
-    nf.frequency.value = 1100 + p * 1400;
-    nf.Q.value = 0.5;
-    const ng = ctx.createGain();
-    const nPeak = (0.015 + v * 0.04) * (1 - p * 0.5); // gentle felt thud, not a click
-    ng.gain.setValueAtTime(0.0001, t0);
-    ng.gain.linearRampToValueAtTime(nPeak, t0 + 0.002);
-    ng.gain.exponentialRampToValueAtTime(0.0002, t0 + 0.045);
-    noise.connect(nf); nf.connect(ng); ng.connect(dest);
-    noise.start(t0);
-    noise.stop(t0 + 0.06);
-    this._noiseNodes = [noise, nf, ng];
+    // Hammer "knock" transient REMOVED (rc2-103): the filtered-noise burst at onset
+    // read as a click/brittleness on small speakers. A clean, warm teaching tone is
+    // preferred over hammer realism. The soft gain ramp below is the whole attack.
+    this._noiseNodes = [];
 
     this.oscA.start(t0);
     this.oscB.start(t0);

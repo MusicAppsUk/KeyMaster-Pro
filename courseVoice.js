@@ -25,6 +25,8 @@
 // overlapping notes never clip.
 // =============================================================================
 
+import { getMasterBus } from './audioBus.js';
+
 const A4 = 440;
 const midiToFreq = (m) => A4 * Math.pow(2, (m - 69) / 12);
 
@@ -40,8 +42,10 @@ export function createCourseVoice(ctx, opts = {}) {
 
   const master = ctx.createGain();
   master.gain.value = (typeof opts.volume === 'number') ? opts.volume : 0.85;
-  // A gentle ceiling keeps overlapping demo notes well clear of clipping.
-  master.connect(ctx.destination);
+  // Route through the ONE shared safety-limited bus (same chain as every other
+  // engine), so overlapping demo notes + the count-in tick can never sum past
+  // 0 dBFS at the speaker. THIS is the lesson-path voice the learner hears.
+  try { master.connect(getMasterBus(ctx)); } catch (_) { master.connect(ctx.destination); }
 
   const rand = (a, b) => a + Math.random() * (b - a);
 
@@ -90,7 +94,7 @@ export function createCourseVoice(ctx, opts = {}) {
     const amp = ctx.createGain();
     const peak = level * rand(0.94, 1.0);  // ±a touch of level variation
     amp.gain.setValueAtTime(0.0001, t0);
-    amp.gain.exponentialRampToValueAtTime(peak, t0 + 0.012);     // ~12ms warm attack
+    amp.gain.exponentialRampToValueAtTime(peak, t0 + 0.016);     // ~16ms warm attack (click-free)
     amp.gain.exponentialRampToValueAtTime(peak * 0.34, t0 + dur * 0.9); // piano-like decay
 
     o1.connect(lp); o2.connect(lp); o3.connect(o3gain); o3gain.connect(lp);
@@ -112,9 +116,10 @@ export function createCourseVoice(ctx, opts = {}) {
           amp.gain.cancelScheduledValues(r);
           const cur = Math.max(0.0002, amp.gain.value);
           amp.gain.setValueAtTime(cur, r);
-          amp.gain.exponentialRampToValueAtTime(0.0006, r + 0.10); // clean fade → no end click
+          amp.gain.exponentialRampToValueAtTime(0.0004, r + 0.10);
+          amp.gain.linearRampToValueAtTime(0, r + 0.13);            // reach TRUE zero...
         } catch (_) { /* no-op */ }
-        stopAt(r + 0.14);
+        stopAt(r + 0.16);                                          // ...before the oscillators stop
       },
     };
   }
