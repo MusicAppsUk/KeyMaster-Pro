@@ -1,0 +1,46 @@
+KeyMaster PRO - putting these files into GitHub (Android / tablet)
+
+Almost everything here uploads fine. Just ONE file lives in a folder whose name
+starts with a dot (".github"). Android hides dot-folders, which is why the
+workflow "disappeared" last time. A zip can't reliably fix that on a tablet, so
+the easy, sure way is to create that one file straight in GitHub. ~1 minute.
+
+================================================================
+STEP 1 - Create the workflow file in GitHub (the reliable way)
+================================================================
+1. Open your repo at github.com in Chrome.
+   If the buttons look tiny, tap Chrome's three-dot menu and turn on
+   "Desktop site".
+2. Make sure the branch shown is:  main
+3. Tap:  Add file  ->  Create new file
+4. In the name box at the very top, type EXACTLY:
+
+       .github/workflows/generate-voice-pack.yml
+
+   (As you type each "/", GitHub turns it into a folder. The leading dot
+    is fine here - GitHub keeps it.)
+5. Open the file in this download called:
+
+       generate-voice-pack-workflow.txt
+
+   Select ALL its text, copy it, and paste it into the GitHub editor box.
+6. Scroll down and tap "Commit changes" (commit directly to main).
+
+================================================================
+STEP 2 - Check it worked
+================================================================
+- Open the "Actions" tab. You should now see:  Generate voice pack
+- You already added the secret ELEVENLABS_API_KEY, so there's nothing
+  else to paste anywhere.
+- Tap "Run workflow" to run it. Leave dry_run = true the first time
+  (that's a safe preview - no cost, no audio yet).
+
+================================================================
+STEP 3 - The other files
+================================================================
+- The app files and the "tools" folder upload from this zip as normal.
+- If the workflow ever says it can't find "tools/generateVoicePack.mjs",
+  tell Claude and he'll help you add those two files the same easy way.
+
+That's it. Once "Generate voice pack" appears under Actions, you're ready
+for the 2-line Jack proof.
