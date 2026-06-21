@@ -1912,3 +1912,26 @@ html.fd-open, html.fd-open body { overflow: hidden; height: 100%; }
   -webkit-user-select: text;
   user-select: text;
 }
+
+/* --------------------------------------------------------------------------
+   Premium teaching cues (rc2-108): low->high range sweep + Middle C badge.
+   Emerald sweep with a soft glow; the Middle C landmark is a small gold pill so
+   it never reads as an end-marker. Pure presentation — no layout/JS coupling.
+   -------------------------------------------------------------------------- */
+.view[data-view="learn"] .mf-ovl__range {
+  fill: none;
+  stroke: var(--emerald, #2f9e74);
+  stroke-width: 3;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--emerald, #2f9e74) 55%, transparent));
+  opacity: 0.95;
+}
+.view[data-view="learn"] .mf-ovl__label--badge {
+  background: linear-gradient(180deg, #f4d77e 0%, #d8af45 100%);
+  color: #3a2c08;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 1px 9px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,255,255,0.35);
+  letter-spacing: 0.02em;
+}

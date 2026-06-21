@@ -27,7 +27,7 @@ import { createTutorVoice } from './tutorVoice.js?v=rc2-74';
 import { createTutorAudio } from './tutorAudio.js?v=rc2-107';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-101';
 import { STAGES } from './courseMap.js?v=rc2-55';
-import { createLearnOverlay } from './learnOverlay.js?v=rc2-56';
+import { createLearnOverlay } from './learnOverlay.js?v=rc2-108';
 import { buildScale } from './scaleEngine.js';
 import { buildHandSvg, setHandHighlight, FINGER_NAMES } from './handViz.js?v=rc2-81';
 import { buildStaff } from './staffViz.js?v=rc2-86';
@@ -96,7 +96,7 @@ export const LEARN_STEPS = [
       { text: 'Sit comfortably \u2014 both feet down, shoulders easy, hands relaxed over the keys. Natural, supported, never forced.', pauseAfter: 640, tone: 'warm' },
       { text: 'When you\u2019re ready, we\u2019ll begin by orienting the keyboard.', pauseAfter: 320, tone: 'instruct' },
     ],
-    explain: ['Welcome to the KeyMaster PRO Course. I\u2019m your tutor \u2014 we\u2019ll go step by step, and you\u2019ll always know what to do next.', 'Sit comfortably: both feet down, shoulders easy, hands relaxed over the keys. Natural, supported, never forced. When you\u2019re ready, we\u2019ll orient the keyboard.'],
+    explain: ['Welcome to KeyMaster PRO. This Course teaches you more than which key to press \u2014 how the keyboard is laid out, how notes move, how rhythm is felt, how music is read, and how the hand finds its shape naturally.', 'We begin with the foundations: sitting well, finding the keyboard, hearing low and high, recognising the black-key patterns, naming notes, and feeling a steady pulse. Then we begin making music. There is no need to rush \u2014 I\u2019ll guide you one step at a time.'],
     mode: 'none',
   },
   {
@@ -115,7 +115,7 @@ export const LEARN_STEPS = [
   },
   {
     eyebrow: 'Low and high', title: 'Low and high sounds', id: 'low-high',
-    cues: { labels: [{ midi: 48, text: 'low', place: 'below' }, { midi: 88, text: 'high', place: 'below' }, { midi: 60, text: 'C', place: 'below' }] },
+    cues: { range: { from: 48, to: 88, lowLabel: 'low', highLabel: 'high' }, labels: [{ midi: 60, text: 'C', place: 'below', badge: true }] },
     say: [
       { text: 'The keyboard is laid out by pitch.', pauseAfter: 500, tone: 'warm' },
       { text: 'Keys to the left sound lower; keys to the right sound higher.', pauseAfter: 560 },
@@ -2030,14 +2030,21 @@ export default function createView(ctx) {
   function speakPending() {
     if (!pendingGreeting) { updateVoiceStatus(); return; }
     if (voice && voiceOn) {
-      // Premium name-greeting: pick the recorded segment for this time of day
-      // (and whether the learner is resuming). Falls back to TTS if absent.
+      // The named time-of-day greeting MP3s aren't part of the shipped pack yet.
+      // Rather than play a missing file and fall silent, speak the welcome card's
+      // own recorded beats — Jack reliably introduces the Course at the start
+      // using voice files that already exist. (Named greeting returns once those
+      // files are generated.)
       const gh = new Date().getHours();
       const tod = (gh >= 5 && gh < 12) ? 'morning' : (gh >= 12 && gh < 18) ? 'afternoon' : 'evening';
       const resuming = !!(progress && (((progress.get('learnLesson') || 0) > 0)
         || (Array.isArray(progress.get('learnCompleted')) && progress.get('learnCompleted').length > 0)));
-      audio.say((resuming ? 'greeting.back.' : 'greeting.') + tod, pendingGreeting);
       const c0 = steps[index];
+      if (!resuming && c0 && Array.isArray(c0.say) && c0.say.length) {
+        speakCard(c0);                       // spoken Course introduction (existing MP3s)
+      } else {
+        audio.say((resuming ? 'greeting.back.' : 'greeting.') + tod, pendingGreeting);
+      }
       if (progress && c0) progress.addToSet('heardNarration', `narr:${c0.title}`);
       pendingGreeting = null;
       greeted = true;

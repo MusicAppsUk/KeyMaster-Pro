@@ -70,13 +70,30 @@ export function overlayGeometry(cues, rectOf) {
     }
   }
 
-  // Labels anchored to a single key, above or below it.
+  // Range sweep — a premium low->high indicator: one line spanning two keys with
+  // an arrow at each end and a label under each end. Teaches "across the keyboard".
+  if (cues.range && cues.range.from != null && cues.range.to != null) {
+    const lo = boxFor(cues.range.from, rectOf);
+    const hi = boxFor(cues.range.to, rectOf);
+    if (lo && hi) {
+      const y = Math.max(lo.bottom, hi.bottom) + OVL.bracketGap + 8;
+      out.strokes.push({ kind: 'range', x1: lo.cx, x2: hi.cx, y, head: OVL.arrowHead });
+      if (cues.range.lowLabel) out.labels.push({ cx: lo.cx, y: y + OVL.labelGap, text: cues.range.lowLabel, anchor: 'top' });
+      if (cues.range.highLabel) out.labels.push({ cx: hi.cx, y: y + OVL.labelGap, text: cues.range.highLabel, anchor: 'top' });
+    }
+  }
+
+  // Labels anchored to a single key, above or below it. `badge: true` renders a
+  // small pill (used for the Middle C landmark so it never reads as an end-marker).
   for (const l of (cues.labels || [])) {
     const r = rectOf(l.midi);
     if (!r) continue;
     const cx = r.x + r.w / 2;
-    if (l.place === 'above') out.labels.push({ cx, y: r.y - OVL.labelGap, text: l.text, anchor: 'bottom' });
-    else out.labels.push({ cx, y: r.y + r.h + OVL.labelGap, text: l.text, anchor: 'top' });
+    const lab = (l.place === 'above')
+      ? { cx, y: r.y - OVL.labelGap, text: l.text, anchor: 'bottom' }
+      : { cx, y: r.y + r.h + OVL.labelGap, text: l.text, anchor: 'top' };
+    if (l.badge) lab.badge = true;
+    out.labels.push(lab);
   }
   return out;
 }
@@ -136,6 +153,13 @@ export function createLearnOverlay(keyboard) {
         svg.appendChild(path(`M${s.x1} ${s.y1} L${s.x2} ${s.y2}`, 'mf-ovl__stroke'));
         svg.appendChild(path(`M${s.x1} ${s.y1} L${s.x1} ${s.y1 - s.tick}`, 'mf-ovl__stroke'));
         svg.appendChild(path(`M${s.x2} ${s.y1} L${s.x2} ${s.y1 - s.tick}`, 'mf-ovl__stroke'));
+      } else if (s.kind === 'range') {
+        svg.appendChild(path(`M${s.x1} ${s.y} L${s.x2} ${s.y}`, 'mf-ovl__range'));
+        const h = s.head;
+        svg.appendChild(path(`M${s.x1} ${s.y} L${s.x1 + h} ${s.y - h * 0.62}`, 'mf-ovl__range'));
+        svg.appendChild(path(`M${s.x1} ${s.y} L${s.x1 + h} ${s.y + h * 0.62}`, 'mf-ovl__range'));
+        svg.appendChild(path(`M${s.x2} ${s.y} L${s.x2 - h} ${s.y - h * 0.62}`, 'mf-ovl__range'));
+        svg.appendChild(path(`M${s.x2} ${s.y} L${s.x2 - h} ${s.y + h * 0.62}`, 'mf-ovl__range'));
       } else if (s.kind === 'arrow') {
         svg.appendChild(path(`M${s.x1} ${s.y1} L${s.x2} ${s.y2}`, 'mf-ovl__arrow'));
         const a = Math.atan2(s.y2 - s.y1, s.x2 - s.x1);
@@ -146,7 +170,7 @@ export function createLearnOverlay(keyboard) {
     }
     for (const l of g.labels) {
       const d = document.createElement('div');
-      d.className = 'mf-ovl__label';
+      d.className = 'mf-ovl__label' + (l.badge ? ' mf-ovl__label--badge' : '');
       d.textContent = l.text;
       d.style.left = `${l.cx}px`;
       d.style.top = `${l.y}px`;
