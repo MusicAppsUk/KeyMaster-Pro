@@ -15,7 +15,7 @@
    Bump CACHE on each release so activate clears the previous cache.
    ============================================================================= */
 
-const CACHE = 'keymaster-rc2-122';
+const CACHE = 'keymaster-rc2-123';
 const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './icon-180.png'];
 // Course teaching-piano samples (small, fixed set) — precached so Course demos
 // work offline immediately. Fault-tolerant: a missing one won't fail install.
@@ -30,9 +30,16 @@ self.addEventListener('install', (event) => {
     caches.open(CACHE)
       .then((c) => c.addAll(CORE).catch(() => {})
         .then(() => Promise.all(COURSE_SAMPLES.map((u) => c.add(u).catch(() => {})))))
-      .catch(() => {})
-      .then(() => self.skipWaiting()),
+      .catch(() => {}),
+    // NOTE: no skipWaiting() here — a new build WAITS until the user taps
+    // "Update now" (pwaUpdate.js posts SKIP_WAITING), so updates are visible
+    // and the app never silently swaps assets mid-session.
   );
+});
+
+// Take over immediately once the user has opted in to the update.
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
