@@ -875,34 +875,57 @@ a.vector:hover .vector__open { color: var(--ivory); }
   display: flex; justify-content: center; margin: 0.3rem 0 0.7rem;
 }
 .view[data-view="learn"] .km-staff {
-  --ink: #221d15;                 /* warm near-black notation ink */
-  --ink-soft: color-mix(in srgb, var(--ink) 62%, #efe7d4);
-  display: inline-block;
-  padding: 0.7rem 0.95rem 0.55rem;
-  background: linear-gradient(176deg, #FCF8EF 0%, #F4EDDD 100%);  /* ivory paper */
-  border-radius: 11px;
-  border: 1px solid rgba(34, 29, 21, 0.16);
-  box-shadow: 0 10px 24px -8px rgba(0,0,0,0.5),
-              inset 0 1px 0 rgba(255,255,255,0.6);
+  --ink: #14110B;                 /* engraving black — crisp printed notation */
+  --ink-dim: #2E2A22;             /* staff lines / ledgers (engraving black, a touch softer) */
+  --ink-soft: color-mix(in srgb, var(--ink) 58%, #b8ad97);
+  display: block;
+  width: min(560px, 100%);
+  margin-inline: auto;
+  padding: 0.9rem 1.1rem 0.7rem;
+  background: linear-gradient(176deg, #FCFAF4 0%, #F4EFE4 100%);  /* clean ivory paper */
+  border-radius: 12px;
+  border: 1px solid rgba(20, 17, 11, 0.16);
+  box-shadow: 0 12px 26px -9px rgba(0,0,0,0.5),
+              inset 0 1px 0 rgba(255,255,255,0.65);
 }
 .view[data-view="learn"] .km-staff__svg {
-  width: 360px; max-width: 100%; height: auto; overflow: visible;
+  width: 100%; max-width: 100%; height: auto; overflow: visible;
 }
-/* Ink: lines, ledgers, brace, clef, note-heads, labels — all printed black. */
-.view[data-view="learn"] .km-staff__line { stroke: var(--ink); stroke-width: 1.6; }
-.view[data-view="learn"] .km-staff__ledger { stroke: var(--ink); stroke-width: 1.6; }
-.view[data-view="learn"] .km-staff__brace { stroke: var(--ink); stroke-width: 2.4; }
+/* Ink: note-heads print full engraving black; lines/ledgers a hair softer. */
+.view[data-view="learn"] .km-staff__line { stroke: var(--ink-dim); stroke-width: 1.7; }
+.view[data-view="learn"] .km-staff__ledger { stroke: var(--ink-dim); stroke-width: 1.7; }
+.view[data-view="learn"] .km-staff__brace { stroke: var(--ink); stroke-width: 2.6; }
 .view[data-view="learn"] .km-staff__clef { fill: var(--ink); font-size: 56px; font-weight: 400; }
 .view[data-view="learn"] .km-staff__clef--bass { font-size: 44px; }
 .view[data-view="learn"] .km-staff__cleflabel { fill: var(--ink-soft); font-size: 12px; letter-spacing: 0.04em; }
-.view[data-view="learn"] .km-staff__note { fill: var(--ink); stroke: none; }
+.view[data-view="learn"] .km-staff__note { fill: var(--ink); stroke: none; transition: fill 0.18s ease, filter 0.2s ease, stroke 0.18s ease; }
 .view[data-view="learn"] .km-staff__mc { fill: var(--ink); font-size: 13px; font-weight: 700; }
+.view[data-view="learn"] .km-staff__rest { fill: var(--ink); font-size: 30px; }
+/* Fingering numbers: legible, and bound to the app's existing fingering toggle. */
+.view[data-view="learn"] .km-staff__finger {
+  fill: var(--ink-soft); font-size: 14px; font-weight: 700;
+  font-family: var(--font-ui, system-ui, sans-serif);
+}
+html[data-fingering="hidden"] .view[data-view="learn"] .km-staff__finger { display: none; }
 /* Teaching highlights only — amber guidance, matching the keyboard target. */
 .view[data-view="learn"] .km-staff__line.is-hl { stroke: var(--amber); stroke-width: 3; }
 .view[data-view="learn"] .km-staff__space.is-hl { fill: color-mix(in srgb, var(--amber) 30%, transparent); }
 .view[data-view="learn"] .km-staff__note.is-on {
   fill: var(--amber);
   stroke: color-mix(in srgb, var(--amber) 60%, #3a2a08); stroke-width: 1.5;
+}
+/* Success glows; mistakes guide. Mirrors the keyboard's emerald / soft-rose feedback. */
+.view[data-view="learn"] .km-staff__note.is-correct {
+  fill: var(--emerald);
+  filter: drop-shadow(0 0 5px var(--emerald-glow));
+}
+.view[data-view="learn"] .km-staff__note.is-wrong {
+  fill: var(--rose);
+  stroke: var(--rose-edge); stroke-width: 1.4;
+}
+@media (prefers-reduced-motion: reduce) {
+  .view[data-view="learn"] .km-staff__note { transition: none; }
+  .view[data-view="learn"] .km-staff__note.is-correct { filter: none; }
 }
 
 /* Teaching-panel hierarchy: give the demonstration area room to breathe so the

@@ -118,11 +118,48 @@ function ledgersFor(midi, clef, topY, cx) {
   return out;
 }
 
-function noteHead(midi, clef, topY, cx, on) {
+// state: 'on' (amber teaching target) | 'correct' (green) | 'wrong' (rose) | null.
+// A truthy non-string is treated as 'on' for backward compatibility.
+function stateClass(state) {
+  const s = (state === true) ? 'on' : (typeof state === 'string' ? state : null);
+  return s ? ` is-${s}` : '';
+}
+function noteHead(midi, clef, topY, cx, state, finger) {
   const y = noteY(midi, clef, topY);
-  const cls = on ? 'km-staff__note is-on' : 'km-staff__note';
-  return ledgersFor(midi, clef, topY, cx)
-    + `<ellipse class="${cls}" cx="${cx}" cy="${y}" rx="8.5" ry="6.5" transform="rotate(-18 ${cx} ${y})"/>`;
+  const cls = 'km-staff__note' + stateClass(state);
+  let out = ledgersFor(midi, clef, topY, cx)
+    + `<ellipse class="${cls}" cx="${cx}" cy="${y}" rx="9.5" ry="7.2" transform="rotate(-18 ${cx} ${y})"/>`;
+  // Fingering number, sat clear above the note-head. Always drawn; the app's
+  // existing fingering toggle (html[data-fingering="hidden"]) hides it in CSS,
+  // so the staff respects the same preference as the hand and keyboard.
+  if (Number.isFinite(finger)) {
+    out += `<text class="km-staff__finger" x="${cx}" y="${y - 15}" text-anchor="middle">${finger}</text>`;
+  }
+  return out;
+}
+
+// Original rest glyphs (standard Unicode music symbols — notation, not art),
+// centred on the middle line so rhythm lessons can show silence beside sound.
+const REST_GLYPH = {
+  whole: '\uD834\uDD3B', half: '\uD834\uDD3C', quarter: '\uD834\uDD3D', eighth: '\uD834\uDD3E',
+};
+function restGlyph(type, cx, topY) {
+  const g = REST_GLYPH[type] || REST_GLYPH.quarter;
+  const y = topY + 2 * GAP + 6;   // sit around the middle line
+  return `<text class="km-staff__rest" x="${cx}" y="${y}" text-anchor="middle">${g}</text>`;
+}
+
+// Normalise a notes array: each entry may be a MIDI number, a { midi, state,
+// finger } object, or a { rest: 'quarter'|... } object. Always returns objects.
+function normaliseSeq(notes) {
+  return notes.map((n) => {
+    if (typeof n === 'number') return { midi: n, state: 'on' };
+    if (n && typeof n === 'object') {
+      if (n.rest) return { rest: String(n.rest) };
+      return { midi: n.midi, state: (n.state === undefined ? 'on' : n.state), finger: n.finger };
+    }
+    return { midi: n, state: 'on' };
+  });
 }
 
 // Half-height of a note-head's visual footprint (head + a little air), used for
@@ -134,14 +171,16 @@ const NOTE_PAD = 11;
  * @param {object} opts
  *   clef       'treble' | 'bass' | 'grand'        (default 'treble')
  *   highlight  'lines' | 'spaces' | null          (default null)
- *   notes      number[]  MIDI pitches to draw as note-heads   (default [])
+ *   notes      Array of MIDI numbers, or { midi, state, finger } objects, or
+ *              { rest: 'quarter'|'half'|'whole'|'eighth' } entries. state is
+ *              'on' (amber target) | 'correct' (green) | 'wrong' (rose).   (default [])
  *   middleC    boolean   mark Middle C on the grand staff      (default false)
  * @returns {HTMLDivElement} <div class="km-staff km-staff--{clef}">
  */
 export function buildStaff(opts = {}) {
   const clef = (opts.clef === 'bass' || opts.clef === 'grand') ? opts.clef : 'treble';
   const highlight = (opts.highlight === 'lines' || opts.highlight === 'spaces') ? opts.highlight : null;
-  const notes = Array.isArray(opts.notes) ? opts.notes : [];
+  const seq = normaliseSeq(Array.isArray(opts.notes) ? opts.notes : []);
   const middleC = !!opts.middleC;
 
   let body = '';
@@ -162,29 +201,31 @@ export function buildStaff(opts = {}) {
     mark(bassTop + 5 * GAP + 16);          // bass clef label below
     if (middleC) {
       const cx = (LEFT + RIGHT) / 2;
-      body += noteHead(60, 'treble', trebleTop, cx, true);   // Middle C: ledger below treble
+      body += noteHead(60, 'treble', trebleTop, cx, 'on');   // Middle C: ledger below treble
       body += `<text class="km-staff__mc" x="${cx + 18}" y="${noteY(60, 'treble', trebleTop) + 4}">Middle C</text>`;
       mark(noteY(60, 'treble', trebleTop) + NOTE_PAD);
     }
-    const gxs = noteXs(notes.length);
-    notes.forEach((m, i) => {
+    const gxs = noteXs(seq.length);
+    seq.forEach((it, i) => {
       const cx = gxs[i];
-      const useClef = (m >= 60) ? 'treble' : 'bass';
+      if (it.rest) { body += restGlyph(it.rest, cx, trebleTop); mark(trebleTop + 2 * GAP + 10); return; }
+      const useClef = (it.midi >= 60) ? 'treble' : 'bass';
       const top = (useClef === 'treble') ? trebleTop : bassTop;
-      body += noteHead(m, useClef, top, cx, true);
-      const ny = noteY(m, useClef, top);
-      mark(ny - NOTE_PAD); mark(ny + NOTE_PAD);
+      body += noteHead(it.midi, useClef, top, cx, it.state, it.finger);
+      const ny = noteY(it.midi, useClef, top);
+      mark(ny - NOTE_PAD - (Number.isFinite(it.finger) ? 14 : 0)); mark(ny + NOTE_PAD);
     });
   } else {
     const topY = 30;
     body += staffLines(topY, highlight) + clefMark(clef, topY);
     mark(topY - 12);                       // clef curl / top air
     mark(topY + 5 * GAP + 16);             // clef label below the staff
-    const xs = noteXs(notes.length);
-    notes.forEach((m, i) => {
-      body += noteHead(m, clef, topY, xs[i], true);
-      const ny = noteY(m, clef, topY);
-      mark(ny - NOTE_PAD); mark(ny + NOTE_PAD);
+    const xs = noteXs(seq.length);
+    seq.forEach((it, i) => {
+      if (it.rest) { body += restGlyph(it.rest, xs[i], topY); mark(topY + 2 * GAP + 10); return; }
+      body += noteHead(it.midi, clef, topY, xs[i], it.state, it.finger);
+      const ny = noteY(it.midi, clef, topY);
+      mark(ny - NOTE_PAD - (Number.isFinite(it.finger) ? 14 : 0)); mark(ny + NOTE_PAD);
     });
   }
 

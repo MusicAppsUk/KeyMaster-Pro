@@ -30,7 +30,7 @@ import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-108';
 import { buildScale } from './scaleEngine.js';
 import { buildHandSvg, setHandHighlight, FINGER_NAMES } from './handViz.js?v=rc2-81';
-import { buildStaff } from './staffViz.js?v=rc2-86';
+import { buildStaff } from './staffViz.js?v=rc2-117';
 import { createCourseVoice } from './courseVoice.js?v=rc2-105';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
@@ -1201,7 +1201,7 @@ export const LEARN_STEPS = [
     ],
     explain: ['Notes climbing the staff climb in pitch. Read C, D, E rising from Middle C.', 'Play them in order with fingers 1, 2, 3 \u2014 watching the notes rise as your hand moves.'],
     show: { kind: 'keys', midis: [60, 62, 64], caption: 'C, D, E \u2014 rising on the staff.', label: 'C D E' },
-    staffHint: { clef: 'treble', notes: [60, 62, 64] },
+    staffHint: { clef: 'treble', notes: [{ midi: 60, finger: 1 }, { midi: 62, finger: 2 }, { midi: 64, finger: 3 }] },
     handHint: { hand: 'right', highlight: [1, 2, 3] },
     demo: [60, 62, 64], demoGap: 0.46,
     tryPrompt: 'Play the rise you see: C, D, E (fingers 1, 2, 3).', targets: [60, 62, 64], mode: 'sequence',
@@ -1492,7 +1492,7 @@ export const LEARN_STEPS = [
     ],
     explain: ['A short piece: C, D, E, F, E, D, C \u2014 up to F and back home. Fingers 1, 2, 3, 4, 3, 2, 1.', 'Play it slowly and evenly, as one shape, listening to the sound.'],
     show: { kind: 'keys', midis: [60, 62, 64, 65, 64, 62, 60], caption: 'C, D, E, F, E, D, C.', label: 'a little piece' },
-    staffHint: { clef: 'treble', notes: [60, 62, 64, 65, 64, 62, 60] },
+    staffHint: { clef: 'treble', notes: [{ midi: 60, finger: 1 }, { midi: 62, finger: 2 }, { midi: 64, finger: 3 }, { midi: 65, finger: 4 }, { midi: 64, finger: 3 }, { midi: 62, finger: 2 }, { midi: 60, finger: 1 }] },
     handHint: { hand: 'right', highlight: [1, 2, 3, 4, 3, 2, 1] },
     demo: [60, 62, 64, 65, 64, 62, 60], demoGap: 0.42,
     tryPrompt: 'Play the piece: C, D, E, F, E, D, C (fingers 1, 2, 3, 4, 3, 2, 1).', targets: [60, 62, 64, 65, 64, 62, 60], mode: 'sequence',
@@ -2652,6 +2652,7 @@ export default function createView(ctx) {
         keyboard?.highlight?.(okKeys, 'success');
         setTimeout(() => { try { keyboard?.clearHighlight?.('success'); } catch (_) { /* no-op */ } }, 950);
       }
+      flashStaff('correct');
     } catch (_) { /* success glow is a flourish, never required */ }
     let shown = msg || 'Correct.';
     // Acknowledge a correct answer that came after a stumble (deterministic, not flattery).
@@ -2705,6 +2706,7 @@ export default function createView(ctx) {
     tryStatus.textContent = speakable(msg);
     tryStatus.classList.remove('is-done');
     tryStatus.classList.add('is-wrong');
+    flashStaff('wrong');
     if (learnMode && voice && voiceOn) {
       const c = steps[index];
       const sid = (c && c.id) ? c.id : `i${index}`;
@@ -2751,7 +2753,25 @@ export default function createView(ctx) {
     }));
     staffSlot.style.display = '';
   }
-  // Light each finger in turn (e.g. [1,2,3,4,5]) over a calm cadence, then rest.
+  // Mirror the keyboard's success/correction feedback onto the staff note(s):
+  // correct -> the note glows emerald; wrong -> it shows soft rose, then settles
+  // back to the amber target. Only acts when the current step shows a staff, so
+  // keyboard-only steps are untouched. Success glows; mistakes guide.
+  function flashStaff(state) {
+    try {
+      const c = steps[index];
+      const hasStaff = c && ((c.show && c.show.kind === 'staff') || c.staffHint);
+      if (!hasStaff || !staffSlot || staffSlot.style.display === 'none') return;
+      const notes = staffSlot.querySelectorAll('.km-staff__note');
+      if (!notes.length) return;
+      if (state === 'wrong') {
+        notes.forEach((n) => { n.classList.add('is-wrong'); });
+        setTimeout(() => { notes.forEach((n) => { n.classList.remove('is-wrong'); }); }, 720);
+      } else {
+        notes.forEach((n) => { n.classList.remove('is-on', 'is-wrong'); n.classList.add('is-correct'); });
+      }
+    } catch (_) { /* staff feedback is a flourish, never required */ }
+  }
   // Device-verify: motion + timing only confirmable on a real device.
   function runHandSequence(fingers, onDone) {
     if (!activeHandEl || !Array.isArray(fingers) || !fingers.length) {
