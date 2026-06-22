@@ -1,0 +1,2040 @@
+{
+  "lang": "en-GB",
+  "lines": [
+    {
+      "id": "greeting.morning",
+      "text": "Good morning, Tim. Let’s begin by orienting the keyboard. Welcome to the KeyMaster PRO Course. I’m your tutor — we’ll go step by step, and you’ll always know what to do next.",
+      "file": "greeting-morning.mp3"
+    },
+    {
+      "id": "greeting.back.morning",
+      "text": "Good morning, Tim. Welcome back. Let’s continue where you left off.",
+      "file": "greeting-back-morning.mp3"
+    },
+    {
+      "id": "greeting.afternoon",
+      "text": "Good afternoon, Tim. Let’s begin by orienting the keyboard. Welcome to the KeyMaster PRO Course. I’m your tutor — we’ll go step by step, and you’ll always know what to do next.",
+      "file": "greeting-afternoon.mp3"
+    },
+    {
+      "id": "greeting.back.afternoon",
+      "text": "Good afternoon, Tim. Welcome back. Let’s continue where you left off.",
+      "file": "greeting-back-afternoon.mp3"
+    },
+    {
+      "id": "greeting.evening",
+      "text": "Good evening, Tim. Let’s begin by orienting the keyboard. Welcome to the KeyMaster PRO Course. I’m your tutor — we’ll go step by step, and you’ll always know what to do next.",
+      "file": "greeting-evening.mp3"
+    },
+    {
+      "id": "greeting.back.evening",
+      "text": "Good evening, Tim. Welcome back. Let’s continue where you left off.",
+      "file": "greeting-back-evening.mp3"
+    },
+    {
+      "id": "welcome.say.0",
+      "text": "Welcome to the KeyMaster PRO Course.",
+      "file": "welcome-0.mp3"
+    },
+    {
+      "id": "welcome.say.1",
+      "text": "I’m your tutor. We’ll go step by step, and you’ll always know what to do next.",
+      "file": "welcome-1.mp3"
+    },
+    {
+      "id": "welcome.say.2",
+      "text": "Sit comfortably — both feet down, shoulders easy, hands relaxed over the keys. Natural, supported, never forced.",
+      "file": "welcome-2.mp3"
+    },
+    {
+      "id": "welcome.say.3",
+      "text": "When you’re ready, we’ll begin by orienting the keyboard.",
+      "file": "welcome-3.mp3"
+    },
+    {
+      "id": "meet-keyboard.say.0",
+      "text": "Let’s orient the keyboard first.",
+      "file": "meet-keyboard-0.mp3"
+    },
+    {
+      "id": "meet-keyboard.say.1",
+      "text": "Lower notes live to your left, higher notes to your right.",
+      "file": "meet-keyboard-1.mp3"
+    },
+    {
+      "id": "meet-keyboard.say.2",
+      "text": "Play any key, and listen to where its sound sits.",
+      "file": "meet-keyboard-2.mp3"
+    },
+    {
+      "id": "meet-keyboard.correct",
+      "text": "Good. That is your first landmark: sound moves across the keyboard, low to high.",
+      "file": "meet-keyboard-correct.mp3"
+    },
+    {
+      "id": "meet-keyboard.correct-retry",
+      "text": "That’s clearer. Good. That is your first landmark: sound moves across the keyboard, low to high.",
+      "file": "meet-keyboard-correct-retry.mp3"
+    },
+    {
+      "id": "low-high.say.0",
+      "text": "The keyboard is laid out by pitch.",
+      "file": "low-high-0.mp3"
+    },
+    {
+      "id": "low-high.say.1",
+      "text": "Keys to the left sound lower; keys to the right sound higher.",
+      "file": "low-high-1.mp3"
+    },
+    {
+      "id": "low-high.say.2",
+      "text": "Play a low note on the left — then a high note on the right.",
+      "file": "low-high-2.mp3"
+    },
+    {
+      "id": "low-high.correct",
+      "text": "Good — low on the left, high on the right. You’re hearing the shape of the keyboard.",
+      "file": "low-high-correct.mp3"
+    },
+    {
+      "id": "low-high.correct-retry",
+      "text": "That’s clearer. Good — low on the left, high on the right. You’re hearing the shape of the keyboard.",
+      "file": "low-high-correct-retry.mp3"
+    },
+    {
+      "id": "sit-approach.say.0",
+      "text": "Before we play patterns, let’s set up your hands. Good habits now make everything later easier.",
+      "file": "sit-approach-0.mp3"
+    },
+    {
+      "id": "sit-approach.say.1",
+      "text": "Sit tall, a little back from the keys, roughly centred. Let your arms hang easily, elbows about level with the keyboard, shoulders down and relaxed.",
+      "file": "sit-approach-1.mp3"
+    },
+    {
+      "id": "sit-approach.say.2",
+      "text": "Bring a hand toward the keys with the weight carried by your arm, not gripped in the fingers. The wrist stays level — never locked, never dropped.",
+      "file": "sit-approach-2.mp3"
+    },
+    {
+      "id": "hand-shape.say.0",
+      "text": "Now the shape of the hand itself. Let the fingers stay gently rounded, the knuckles slightly up — a soft dome, as if a small ball rested under your palm.",
+      "file": "hand-shape-0.mp3"
+    },
+    {
+      "id": "hand-shape.say.1",
+      "text": "Notice the fingers are different lengths. The middle three — two, three and four — are longer, and reach a little further forward. That matters once we meet the black keys.",
+      "file": "hand-shape-1.mp3"
+    },
+    {
+      "id": "fingers-rh.say.0",
+      "text": "Each finger has a number, the same in every method: the thumb is one, then two, three, four, and the little finger is five.",
+      "file": "fingers-rh-0.mp3"
+    },
+    {
+      "id": "fingers-rh.say.1",
+      "text": "Watch your right hand: one, two, three, four, five.",
+      "file": "fingers-rh-1.mp3"
+    },
+    {
+      "id": "fingers-lh.say.0",
+      "text": "The left hand uses the same numbers — mirrored. Its thumb is also one, sitting toward the middle of the keyboard.",
+      "file": "fingers-lh-0.mp3"
+    },
+    {
+      "id": "fingers-lh.say.1",
+      "text": "Watch the left hand: one, two, three, four, five.",
+      "file": "fingers-lh-1.mp3"
+    },
+    {
+      "id": "hands-mirror.say.0",
+      "text": "Here are both hands together. They use the same numbers, one to five — but they mirror each other.",
+      "file": "hands-mirror-0.mp3"
+    },
+    {
+      "id": "hands-mirror.say.1",
+      "text": "Both thumbs are finger one, and both sit toward the middle of the keyboard. The little fingers, finger five, reach outward to the ends.",
+      "file": "hands-mirror-1.mp3"
+    },
+    {
+      "id": "thumb-play.say.0",
+      "text": "Let’s use a finger on purpose. Your thumb is finger one — strong and close to the keys.",
+      "file": "thumb-play-0.mp3"
+    },
+    {
+      "id": "thumb-play.say.1",
+      "text": "With your right thumb, play any white key near the middle. Let the arm support it — don’t press hard.",
+      "file": "thumb-play-1.mp3"
+    },
+    {
+      "id": "thumb-play.correct",
+      "text": "That’s finger 1, your thumb — playing with intention. This is how every note begins: a chosen finger, a relaxed hand.",
+      "file": "thumb-play-correct.mp3"
+    },
+    {
+      "id": "thumb-play.correct-retry",
+      "text": "That’s clearer. That’s finger 1, your thumb — playing with intention. This is how every note begins: a chosen finger, a relaxed hand.",
+      "file": "thumb-play-correct-retry.mp3"
+    },
+    {
+      "id": "finger3-play.say.0",
+      "text": "Now your longest finger — the middle finger, number three.",
+      "file": "finger3-play-0.mp3"
+    },
+    {
+      "id": "finger3-play.say.1",
+      "text": "With right finger three, play any white key near the middle. Keep the hand curved, the wrist level.",
+      "file": "finger3-play-1.mp3"
+    },
+    {
+      "id": "finger3-play.correct",
+      "text": "Good — finger 3, curved and supported. Knowing your finger numbers is what lets a teacher (or this Course) guide your hands precisely.",
+      "file": "finger3-play-correct.mp3"
+    },
+    {
+      "id": "finger3-play.correct-retry",
+      "text": "That’s clearer. Good — finger 3, curved and supported. Knowing your finger numbers is what lets a teacher (or this Course) guide your hands precisely.",
+      "file": "finger3-play-correct-retry.mp3"
+    },
+    {
+      "id": "press-control.say.0",
+      "text": "One last habit before we play patterns: control.",
+      "file": "press-control-0.mp3"
+    },
+    {
+      "id": "press-control.say.1",
+      "text": "Watch the finger, then press a single key slowly and deliberately — let the arm guide it down, don’t jab. Feel the key under your finger, and listen to the sound it makes.",
+      "file": "press-control-1.mp3"
+    },
+    {
+      "id": "press-control.correct",
+      "text": "Good — a slow, supported press. Seeing, feeling and hearing together is how every note is played well. Now your hands are ready.",
+      "file": "press-control-correct.mp3"
+    },
+    {
+      "id": "press-control.correct-retry",
+      "text": "That’s clearer. Good — a slow, supported press. Seeing, feeling and hearing together is how every note is played well. Now your hands are ready.",
+      "file": "press-control-correct-retry.mp3"
+    },
+    {
+      "id": "black-keys-two.say.0",
+      "text": "A keyboard has white keys and black keys.",
+      "file": "black-keys-two-0.mp3"
+    },
+    {
+      "id": "black-keys-two.say.1",
+      "text": "The black keys sit in groups of two and three, and that pattern repeats — it helps you find your place.",
+      "file": "black-keys-two-1.mp3"
+    },
+    {
+      "id": "black-keys-two.say.2",
+      "text": "Here is a group of two.",
+      "file": "black-keys-two-2.mp3"
+    },
+    {
+      "id": "black-keys-two.say.3",
+      "text": "Now you try — tap either black key.",
+      "file": "black-keys-two-3.mp3"
+    },
+    {
+      "id": "black-keys-two.correct",
+      "text": "Good — that’s one of the pair. The groups of two are your first anchor points.",
+      "file": "black-keys-two-correct.mp3"
+    },
+    {
+      "id": "black-keys-two.correct-retry",
+      "text": "That’s clearer. Good — that’s one of the pair. The groups of two are your first anchor points.",
+      "file": "black-keys-two-correct-retry.mp3"
+    },
+    {
+      "id": "black-keys-two.reteach",
+      "text": "Look again — the two black keys sit close together, with a wider gap before the next group. Tap either one.",
+      "file": "black-keys-two-reteach.mp3"
+    },
+    {
+      "id": "black-keys-three.say.0",
+      "text": "Next to the twos are groups of three.",
+      "file": "black-keys-three-0.mp3"
+    },
+    {
+      "id": "black-keys-three.say.1",
+      "text": "Here is a group of three.",
+      "file": "black-keys-three-1.mp3"
+    },
+    {
+      "id": "black-keys-three.say.2",
+      "text": "We use these groups as landmarks.",
+      "file": "black-keys-three-2.mp3"
+    },
+    {
+      "id": "black-keys-three.say.3",
+      "text": "Now you try — tap any of the three.",
+      "file": "black-keys-three-3.mp3"
+    },
+    {
+      "id": "black-keys-three.correct",
+      "text": "Good — that’s the group of three. The groups of two and three repeat across the keyboard, so you can always find your place.",
+      "file": "black-keys-three-correct.mp3"
+    },
+    {
+      "id": "black-keys-three.correct-retry",
+      "text": "That’s clearer. Good — that’s the group of three. The groups of two and three repeat across the keyboard, so you can always find your place.",
+      "file": "black-keys-three-correct-retry.mp3"
+    },
+    {
+      "id": "black-keys-three.reteach",
+      "text": "Look again — the group of three is the wider cluster. Tap any one of the three.",
+      "file": "black-keys-three-reteach.mp3"
+    },
+    {
+      "id": "find-c.say.0",
+      "text": "Find a group of two black keys.",
+      "file": "find-c-0.mp3"
+    },
+    {
+      "id": "find-c.say.1",
+      "text": "The white key just to their left is C.",
+      "file": "find-c-1.mp3"
+    },
+    {
+      "id": "find-c.say.2",
+      "text": "Because the pattern repeats, C is everywhere.",
+      "file": "find-c-2.mp3"
+    },
+    {
+      "id": "find-c.say.3",
+      "text": "Now you try — find a C.",
+      "file": "find-c-3.mp3"
+    },
+    {
+      "id": "find-c.correct",
+      "text": "Good — that’s C, just to the left of the two black keys.",
+      "file": "find-c-correct.mp3"
+    },
+    {
+      "id": "find-c.correct-retry",
+      "text": "That’s clearer. Good — that’s C, just to the left of the two black keys.",
+      "file": "find-c-correct-retry.mp3"
+    },
+    {
+      "id": "find-c.reteach",
+      "text": "Let’s look again — first find a group of two black keys, then the white key just to their left is C.",
+      "file": "find-c-reteach.mp3"
+    },
+    {
+      "id": "find-d.say.0",
+      "text": "D sits right between the two black keys.",
+      "file": "find-d-0.mp3"
+    },
+    {
+      "id": "find-d.say.1",
+      "text": "Now you try — find a D.",
+      "file": "find-d-1.mp3"
+    },
+    {
+      "id": "find-d.correct",
+      "text": "Yes — that’s D, sitting between the two black keys.",
+      "file": "find-d-correct.mp3"
+    },
+    {
+      "id": "find-d.correct-retry",
+      "text": "That’s clearer. Yes — that’s D, sitting between the two black keys.",
+      "file": "find-d-correct-retry.mp3"
+    },
+    {
+      "id": "find-e.say.0",
+      "text": "E sits just to the right of the two black keys.",
+      "file": "find-e-0.mp3"
+    },
+    {
+      "id": "find-e.say.1",
+      "text": "Now you try — find an E.",
+      "file": "find-e-1.mp3"
+    },
+    {
+      "id": "find-e.correct",
+      "text": "That’s E, just to the right of the two black keys.",
+      "file": "find-e-correct.mp3"
+    },
+    {
+      "id": "find-e.correct-retry",
+      "text": "That’s clearer. That’s E, just to the right of the two black keys.",
+      "file": "find-e-correct-retry.mp3"
+    },
+    {
+      "id": "find-f.say.0",
+      "text": "F sits just to the left of the three black keys.",
+      "file": "find-f-0.mp3"
+    },
+    {
+      "id": "find-f.say.1",
+      "text": "Now you try — find an F.",
+      "file": "find-f-1.mp3"
+    },
+    {
+      "id": "find-f.correct",
+      "text": "Good — that’s F, just to the left of the three black keys.",
+      "file": "find-f-correct.mp3"
+    },
+    {
+      "id": "find-f.correct-retry",
+      "text": "That’s clearer. Good — that’s F, just to the left of the three black keys.",
+      "file": "find-f-correct-retry.mp3"
+    },
+    {
+      "id": "find-g.say.0",
+      "text": "After F comes G — the next white key up.",
+      "file": "find-g-0.mp3"
+    },
+    {
+      "id": "find-g.say.1",
+      "text": "Now you try — find a G.",
+      "file": "find-g-1.mp3"
+    },
+    {
+      "id": "find-g.correct",
+      "text": "Yes — that’s G, the next white key along.",
+      "file": "find-g-correct.mp3"
+    },
+    {
+      "id": "find-g.correct-retry",
+      "text": "That’s clearer. Yes — that’s G, the next white key along.",
+      "file": "find-g-correct-retry.mp3"
+    },
+    {
+      "id": "find-a.say.0",
+      "text": "After G comes A.",
+      "file": "find-a-0.mp3"
+    },
+    {
+      "id": "find-a.say.1",
+      "text": "Now you try — find an A.",
+      "file": "find-a-1.mp3"
+    },
+    {
+      "id": "find-a.correct",
+      "text": "That’s A. You can now name all of the white keys.",
+      "file": "find-a-correct.mp3"
+    },
+    {
+      "id": "find-a.correct-retry",
+      "text": "That’s clearer. That’s A. You can now name all of the white keys.",
+      "file": "find-a-correct-retry.mp3"
+    },
+    {
+      "id": "middle-c.say.0",
+      "text": "Look near the centre of the keyboard.",
+      "file": "middle-c-0.mp3"
+    },
+    {
+      "id": "middle-c.say.1",
+      "text": "Find the two black keys there.",
+      "file": "middle-c-1.mp3"
+    },
+    {
+      "id": "middle-c.say.2",
+      "text": "The white key to their left is Middle C.",
+      "file": "middle-c-2.mp3"
+    },
+    {
+      "id": "middle-c.say.3",
+      "text": "Here it is.",
+      "file": "middle-c-3.mp3"
+    },
+    {
+      "id": "middle-c.say.4",
+      "text": "Now you try.",
+      "file": "middle-c-4.mp3"
+    },
+    {
+      "id": "middle-c.correct",
+      "text": "That’s Middle C — the C nearest the centre of the keyboard.",
+      "file": "middle-c-correct.mp3"
+    },
+    {
+      "id": "middle-c.correct-retry",
+      "text": "That’s clearer. That’s Middle C — the C nearest the centre of the keyboard.",
+      "file": "middle-c-correct-retry.mp3"
+    },
+    {
+      "id": "middle-c.reteach",
+      "text": "Let’s look again — Middle C is near the centre, the white key just left of the two black keys there.",
+      "file": "middle-c-reteach.mp3"
+    },
+    {
+      "id": "b-below.say.0",
+      "text": "Start from Middle C.",
+      "file": "b-below-0.mp3"
+    },
+    {
+      "id": "b-below.say.1",
+      "text": "Step one white key to the left.",
+      "file": "b-below-1.mp3"
+    },
+    {
+      "id": "b-below.say.2",
+      "text": "That note is B — the B below Middle C.",
+      "file": "b-below-2.mp3"
+    },
+    {
+      "id": "b-below.say.3",
+      "text": "Later, this B becomes the starting note of the B major scale.",
+      "file": "b-below-3.mp3"
+    },
+    {
+      "id": "b-below.say.4",
+      "text": "Now you try.",
+      "file": "b-below-4.mp3"
+    },
+    {
+      "id": "b-below.correct",
+      "text": "Good — that’s B, the white key just below Middle C.",
+      "file": "b-below-correct.mp3"
+    },
+    {
+      "id": "b-below.correct-retry",
+      "text": "That’s clearer. Good — that’s B, the white key just below Middle C.",
+      "file": "b-below-correct-retry.mp3"
+    },
+    {
+      "id": "b-below.reteach",
+      "text": "Let’s look again — find Middle C first, then step one white key to the left for B.",
+      "file": "b-below-reteach.mp3"
+    },
+    {
+      "id": "direction.say.0",
+      "text": "Moving to the right raises the pitch.",
+      "file": "direction-0.mp3"
+    },
+    {
+      "id": "direction.say.1",
+      "text": "Moving to the left lowers it.",
+      "file": "direction-1.mp3"
+    },
+    {
+      "id": "direction.say.2",
+      "text": "Play two notes that rise — C, then D.",
+      "file": "direction-2.mp3"
+    },
+    {
+      "id": "direction.correct",
+      "text": "Good — that’s motion upward, C to D. Direction is how a melody moves.",
+      "file": "direction-correct.mp3"
+    },
+    {
+      "id": "direction.correct-retry",
+      "text": "That’s clearer. Good — that’s motion upward, C to D. Direction is how a melody moves.",
+      "file": "direction-correct-retry.mp3"
+    },
+    {
+      "id": "step-skip.say.0",
+      "text": "Moving to the very next key is a step.",
+      "file": "step-skip-0.mp3"
+    },
+    {
+      "id": "step-skip.say.1",
+      "text": "Jumping over a key is a skip.",
+      "file": "step-skip-1.mp3"
+    },
+    {
+      "id": "step-skip.say.2",
+      "text": "Play C, then skip up to E.",
+      "file": "step-skip-2.mp3"
+    },
+    {
+      "id": "step-skip.correct",
+      "text": "Good — C to E is a skip. Steps and skips are how melodies move.",
+      "file": "step-skip-correct.mp3"
+    },
+    {
+      "id": "step-skip.correct-retry",
+      "text": "That’s clearer. Good — C to E is a skip. Steps and skips are how melodies move.",
+      "file": "step-skip-correct-retry.mp3"
+    },
+    {
+      "id": "semitone.say.0",
+      "text": "Two useful words now, ones we’ll keep using as scales and keys grow: semitone and tone.",
+      "file": "semitone-0.mp3"
+    },
+    {
+      "id": "semitone.say.1",
+      "text": "A semitone is the smallest step there is — from one key to the very next key, with nothing between, whether that next key is white or black.",
+      "file": "semitone-1.mp3"
+    },
+    {
+      "id": "semitone.say.2",
+      "text": "E and F are neighbours with no key between them. Play E, then F — that move is one semitone.",
+      "file": "semitone-2.mp3"
+    },
+    {
+      "id": "semitone.correct",
+      "text": "Good — that’s a semitone: the smallest move on the keyboard. Stepping to a black key is a semitone too.",
+      "file": "semitone-correct.mp3"
+    },
+    {
+      "id": "semitone.correct-retry",
+      "text": "That’s clearer. Good — that’s a semitone: the smallest move on the keyboard. Stepping to a black key is a semitone too.",
+      "file": "semitone-correct-retry.mp3"
+    },
+    {
+      "id": "tone.say.0",
+      "text": "A tone is simply two semitones — two of those smallest steps joined together.",
+      "file": "tone-0.mp3"
+    },
+    {
+      "id": "tone.say.1",
+      "text": "From C, step up past the black key to D. You’ve moved two semitones — that is one tone.",
+      "file": "tone-1.mp3"
+    },
+    {
+      "id": "tone.correct",
+      "text": "Good — a tone: two semitones. Scales are built from tones and semitones in a set order, as you’ll see.",
+      "file": "tone-correct.mp3"
+    },
+    {
+      "id": "tone.correct-retry",
+      "text": "That’s clearer. Good — a tone: two semitones. Scales are built from tones and semitones in a set order, as you’ll see.",
+      "file": "tone-correct-retry.mp3"
+    },
+    {
+      "id": "scale-why.say.0",
+      "text": "Before we climb one, a word on why scales matter.",
+      "file": "scale-why-0.mp3"
+    },
+    {
+      "id": "scale-why.say.1",
+      "text": "A scale is an ordered set of steps — the basic vocabulary of a key. Melodies, chords and whole pieces are drawn from it, and practising one trains the hand to move evenly and find its shape.",
+      "file": "scale-why-1.mp3"
+    },
+    {
+      "id": "scale-why.say.2",
+      "text": "We’ll start in C because its steps are all white keys — easy to see and name. The hand-shape pathway then moves into B major, where the fingers fit the keys especially well.",
+      "file": "scale-why-2.mp3"
+    },
+    {
+      "id": "first-scale.say.0",
+      "text": "A scale is steps in order — a ladder of pitch.",
+      "file": "first-scale-0.mp3"
+    },
+    {
+      "id": "first-scale.say.1",
+      "text": "Climb the first three.",
+      "file": "first-scale-1.mp3"
+    },
+    {
+      "id": "first-scale.say.2",
+      "text": "C, then D, then E.",
+      "file": "first-scale-2.mp3"
+    },
+    {
+      "id": "first-scale.correct",
+      "text": "Good — C, D, E. That’s the opening of a scale: three steps climbing.",
+      "file": "first-scale-correct.mp3"
+    },
+    {
+      "id": "first-scale.correct-retry",
+      "text": "That’s clearer. Good — C, D, E. That’s the opening of a scale: three steps climbing.",
+      "file": "first-scale-correct-retry.mp3"
+    },
+    {
+      "id": "c-scale-five.say.0",
+      "text": "Let’s climb further — five steps of the C scale.",
+      "file": "c-scale-five-0.mp3"
+    },
+    {
+      "id": "c-scale-five.say.1",
+      "text": "C, D, E, F, G — each the very next white key.",
+      "file": "c-scale-five-1.mp3"
+    },
+    {
+      "id": "c-scale-five.say.2",
+      "text": "I’ll play it, then you climb it.",
+      "file": "c-scale-five-2.mp3"
+    },
+    {
+      "id": "c-scale-five.correct",
+      "text": "Good — C, D, E, F, G. The first five notes of the C major scale.",
+      "file": "c-scale-five-correct.mp3"
+    },
+    {
+      "id": "c-scale-five.correct-retry",
+      "text": "That’s clearer. Good — C, D, E, F, G. The first five notes of the C major scale.",
+      "file": "c-scale-five-correct-retry.mp3"
+    },
+    {
+      "id": "c-scale-down.say.0",
+      "text": "A scale comes down as well as up.",
+      "file": "c-scale-down-0.mp3"
+    },
+    {
+      "id": "c-scale-down.say.1",
+      "text": "From G, step down: G, F, E, D, C.",
+      "file": "c-scale-down-1.mp3"
+    },
+    {
+      "id": "c-scale-down.say.2",
+      "text": "Now you bring it home.",
+      "file": "c-scale-down-2.mp3"
+    },
+    {
+      "id": "c-scale-down.correct",
+      "text": "Good — up and down. You’ve played your first scale, both directions.",
+      "file": "c-scale-down-correct.mp3"
+    },
+    {
+      "id": "c-scale-down.correct-retry",
+      "text": "That’s clearer. Good — up and down. You’ve played your first scale, both directions.",
+      "file": "c-scale-down-correct-retry.mp3"
+    },
+    {
+      "id": "first-b-scale.explain",
+      "text": "Those notes moved upward. Now hear a different shape — the opening of B major. Copy the shape: B, then C#, then D#.",
+      "file": "first-b-scale-explain.mp3"
+    },
+    {
+      "id": "first-b-scale.correct",
+      "text": "That’s the opening of B major — B, C#, D#.",
+      "file": "first-b-scale-correct.mp3"
+    },
+    {
+      "id": "first-b-scale.correct-retry",
+      "text": "That’s clearer. That’s the opening of B major — B, C#, D#.",
+      "file": "first-b-scale-correct-retry.mp3"
+    },
+    {
+      "id": "first-b-scale.reteach",
+      "text": "B is the white key just left of the two black keys. Climb: B, C#, D#.",
+      "file": "first-b-scale-reteach.mp3"
+    },
+    {
+      "id": "b-major-why.say.0",
+      "text": "You just played the opening of B major.",
+      "file": "b-major-why-0.mp3"
+    },
+    {
+      "id": "b-major-why.say.1",
+      "text": "B major fits the hand beautifully — the black keys give your longer fingers natural resting points.",
+      "file": "b-major-why-1.mp3"
+    },
+    {
+      "id": "b-major-why.say.2",
+      "text": "That’s why KeyMaster PRO grows your playing from a B-major home: it builds confident, ergonomic technique.",
+      "file": "b-major-why-2.mp3"
+    },
+    {
+      "id": "bridge-scales.explain",
+      "text": "You found C and climbed your first steps upward — the beginning of a scale.",
+      "file": "bridge-scales-explain.mp3"
+    },
+    {
+      "id": "first-chord.explain",
+      "text": "A chord is several notes sounded together. Press C, E and G together.",
+      "file": "first-chord-explain.mp3"
+    },
+    {
+      "id": "first-chord.correct",
+      "text": "That’s a C major chord — C, E and G together.",
+      "file": "first-chord-correct.mp3"
+    },
+    {
+      "id": "first-chord.correct-retry",
+      "text": "That’s clearer. That’s a C major chord — C, E and G together.",
+      "file": "first-chord-correct-retry.mp3"
+    },
+    {
+      "id": "chord-g.say.0",
+      "text": "You know one chord. Here is a second.",
+      "file": "chord-g-0.mp3"
+    },
+    {
+      "id": "chord-g.say.1",
+      "text": "G, B and D, played together, make a G major chord.",
+      "file": "chord-g-1.mp3"
+    },
+    {
+      "id": "chord-g.say.2",
+      "text": "Press all three at once.",
+      "file": "chord-g-2.mp3"
+    },
+    {
+      "id": "chord-g.correct",
+      "text": "That’s a G major chord — G, B and D. You now have two chords.",
+      "file": "chord-g-correct.mp3"
+    },
+    {
+      "id": "chord-g.correct-retry",
+      "text": "That’s clearer. That’s a G major chord — G, B and D. You now have two chords.",
+      "file": "chord-g-correct-retry.mp3"
+    },
+    {
+      "id": "bridge-chords.explain",
+      "text": "You sounded your first chord — three notes ringing together.",
+      "file": "bridge-chords-explain.mp3"
+    },
+    {
+      "id": "staff-what.say.0",
+      "text": "A quick foundation that unlocks written music: the staff.",
+      "file": "staff-what-0.mp3"
+    },
+    {
+      "id": "staff-what.say.1",
+      "text": "The staff is the map musicians use to show pitch. Each staff has five lines. A note’s height on the staff tells you how high or low it sounds.",
+      "file": "staff-what-1.mp3"
+    },
+    {
+      "id": "staff-spaces.say.0",
+      "text": "Between the five lines are four spaces.",
+      "file": "staff-spaces-0.mp3"
+    },
+    {
+      "id": "staff-spaces.say.1",
+      "text": "A note can sit on a line, or in a space. Lines and spaces together give every pitch a place.",
+      "file": "staff-spaces-1.mp3"
+    },
+    {
+      "id": "treble-clef.say.0",
+      "text": "At the start of a staff sits a clef — it tells you which pitches the lines and spaces stand for.",
+      "file": "treble-clef-0.mp3"
+    },
+    {
+      "id": "treble-clef.say.1",
+      "text": "The treble clef usually helps us read higher notes — often the right hand at the piano.",
+      "file": "treble-clef-1.mp3"
+    },
+    {
+      "id": "bass-clef.say.0",
+      "text": "The bass clef usually helps us read lower notes — often the left hand at the piano.",
+      "file": "bass-clef-0.mp3"
+    },
+    {
+      "id": "bass-clef.say.1",
+      "text": "Same five lines and four spaces, but standing for lower pitches.",
+      "file": "bass-clef-1.mp3"
+    },
+    {
+      "id": "grand-staff.say.0",
+      "text": "Piano music often uses both clefs together, joined into one system. That is called the grand staff.",
+      "file": "grand-staff-0.mp3"
+    },
+    {
+      "id": "grand-staff.say.1",
+      "text": "Treble on top for the right hand, bass below for the left — to begin with. And right in the middle sits Middle C.",
+      "file": "grand-staff-1.mp3"
+    },
+    {
+      "id": "ledger-line.say.0",
+      "text": "When notes go above or below the five lines, we add small extra lines called ledger lines.",
+      "file": "ledger-line-0.mp3"
+    },
+    {
+      "id": "ledger-line.say.1",
+      "text": "They simply extend the staff. Middle C, just below the treble staff, sits on its own short ledger line — you can see it here.",
+      "file": "ledger-line-1.mp3"
+    },
+    {
+      "id": "staff-to-key.say.0",
+      "text": "Now connect it. This note on the staff is Middle C — and Middle C is a key you already know.",
+      "file": "staff-to-key-0.mp3"
+    },
+    {
+      "id": "staff-to-key.say.1",
+      "text": "Find it on the staff, then find it on the keyboard, and play it.",
+      "file": "staff-to-key-1.mp3"
+    },
+    {
+      "id": "staff-to-key.correct",
+      "text": "Good — you connected the written note to the key. That link, staff to keyboard, is the whole of reading.",
+      "file": "staff-to-key-correct.mp3"
+    },
+    {
+      "id": "staff-to-key.correct-retry",
+      "text": "That’s clearer. Good — you connected the written note to the key. That link, staff to keyboard, is the whole of reading.",
+      "file": "staff-to-key-correct-retry.mp3"
+    },
+    {
+      "id": "read-play-e.say.0",
+      "text": "Reading music means knowing a note, then playing it.",
+      "file": "read-play-e-0.mp3"
+    },
+    {
+      "id": "read-play-e.say.1",
+      "text": "The note is E. Find it and play it.",
+      "file": "read-play-e-1.mp3"
+    },
+    {
+      "id": "read-play-e.correct",
+      "text": "Good — you knew E, and you played it. That is where reading music begins.",
+      "file": "read-play-e-correct.mp3"
+    },
+    {
+      "id": "read-play-e.correct-retry",
+      "text": "That’s clearer. Good — you knew E, and you played it. That is where reading music begins.",
+      "file": "read-play-e-correct-retry.mp3"
+    },
+    {
+      "id": "read-play-g.say.0",
+      "text": "One more. The note is G.",
+      "file": "read-play-g-0.mp3"
+    },
+    {
+      "id": "read-play-g.say.1",
+      "text": "Find it and play it.",
+      "file": "read-play-g-1.mp3"
+    },
+    {
+      "id": "read-play-g.correct",
+      "text": "Good — know it, then play it. Cognitive Sight-Reading takes this much further.",
+      "file": "read-play-g-correct.mp3"
+    },
+    {
+      "id": "read-play-g.correct-retry",
+      "text": "That’s clearer. Good — know it, then play it. Cognitive Sight-Reading takes this much further.",
+      "file": "read-play-g-correct-retry.mp3"
+    },
+    {
+      "id": "first-reading.say.0",
+      "text": "Written music lives on lines and spaces — the staff.",
+      "file": "first-reading-0.mp3"
+    },
+    {
+      "id": "first-reading.say.1",
+      "text": "Middle C is the shared landmark between your two hands, the note we count outward from.",
+      "file": "first-reading-1.mp3"
+    },
+    {
+      "id": "first-reading.say.2",
+      "text": "You already know it on the keys. Play Middle C now, and hold it as your anchor.",
+      "file": "first-reading-2.mp3"
+    },
+    {
+      "id": "first-reading.correct",
+      "text": "Good — that’s your anchor. In Sight-Reading, every note is read from here.",
+      "file": "first-reading-correct.mp3"
+    },
+    {
+      "id": "first-reading.correct-retry",
+      "text": "That’s clearer. Good — that’s your anchor. In Sight-Reading, every note is read from here.",
+      "file": "first-reading-correct-retry.mp3"
+    },
+    {
+      "id": "bridge-sightreading.explain",
+      "text": "Reading grows from recognising landmarks like Middle C, then the patterns around them.",
+      "file": "bridge-sightreading-explain.mp3"
+    },
+    {
+      "id": "first-pulse.say.0",
+      "text": "Music moves in time, over a steady pulse — a calm, even heartbeat under the notes.",
+      "file": "first-pulse-0.mp3"
+    },
+    {
+      "id": "first-pulse.say.1",
+      "text": "Music groups beats in different ways. A very common pattern is four beats: one, two, three, four. We’ll start there.",
+      "file": "first-pulse-1.mp3"
+    },
+    {
+      "id": "first-pulse.say.2",
+      "text": "Listen to the count first, then play a note on each beat. Don’t rush.",
+      "file": "first-pulse-2.mp3"
+    },
+    {
+      "id": "first-pulse.correct",
+      "text": "Good — that’s pulse: an even beat you can rely on. Every piece you play sits on it.",
+      "file": "first-pulse-correct.mp3"
+    },
+    {
+      "id": "first-pulse.correct-retry",
+      "text": "That’s clearer. Good — that’s pulse: an even beat you can rely on. Every piece you play sits on it.",
+      "file": "first-pulse-correct-retry.mp3"
+    },
+    {
+      "id": "pulse-eight.say.0",
+      "text": "Let’s hold the pulse a little longer — two groups of four.",
+      "file": "pulse-eight-0.mp3"
+    },
+    {
+      "id": "pulse-eight.say.1",
+      "text": "Listen to the count, then play eight even notes — one on each beat.",
+      "file": "pulse-eight-1.mp3"
+    },
+    {
+      "id": "pulse-eight.correct",
+      "text": "Good — a steady pulse you can rely on. Other music counts in twos, threes, sixes and more, but a steady four is a strong place to start.",
+      "file": "pulse-eight-correct.mp3"
+    },
+    {
+      "id": "pulse-eight.correct-retry",
+      "text": "That’s clearer. Good — a steady pulse you can rely on. Other music counts in twos, threes, sixes and more, but a steady four is a strong place to start.",
+      "file": "pulse-eight-correct-retry.mp3"
+    },
+    {
+      "id": "review-c.say.0",
+      "text": "A quick checkpoint — a chance to use what you already know.",
+      "file": "review-c-0.mp3"
+    },
+    {
+      "id": "review-c.say.1",
+      "text": "Play Middle C.",
+      "file": "review-c-1.mp3"
+    },
+    {
+      "id": "review-c.correct",
+      "text": "That’s Middle C, near the centre — well remembered.",
+      "file": "review-c-correct.mp3"
+    },
+    {
+      "id": "review-c.correct-retry",
+      "text": "That’s clearer. That’s Middle C, near the centre — well remembered.",
+      "file": "review-c-correct-retry.mp3"
+    },
+    {
+      "id": "review-scale.say.0",
+      "text": "Now play the first three steps of the C scale.",
+      "file": "review-scale-0.mp3"
+    },
+    {
+      "id": "review-scale.correct",
+      "text": "Good — C, D, E. The scale is in your hands now.",
+      "file": "review-scale-correct.mp3"
+    },
+    {
+      "id": "review-scale.correct-retry",
+      "text": "That’s clearer. Good — C, D, E. The scale is in your hands now.",
+      "file": "review-scale-correct-retry.mp3"
+    },
+    {
+      "id": "review-chord.say.0",
+      "text": "Last checkpoint — a chord.",
+      "file": "review-chord-0.mp3"
+    },
+    {
+      "id": "review-chord.say.1",
+      "text": "Play C, E and G together.",
+      "file": "review-chord-1.mp3"
+    },
+    {
+      "id": "review-chord.correct",
+      "text": "That’s a C major chord. Orientation, names, scales, reading, rhythm and harmony — you’ve begun them all.",
+      "file": "review-chord-correct.mp3"
+    },
+    {
+      "id": "review-chord.correct-retry",
+      "text": "That’s clearer. That’s a C major chord. Orientation, names, scales, reading, rhythm and harmony — you’ve begun them all.",
+      "file": "review-chord-correct-retry.mp3"
+    },
+    {
+      "id": "stage1-complete.say.0",
+      "text": "That’s Stage 1 complete — the foundations are yours.",
+      "file": "stage1-complete-0.mp3"
+    },
+    {
+      "id": "stage1-complete.say.1",
+      "text": "You can name the white keys, climb a scale up and down, play two chords, name a note and play it, and hold a steady pulse.",
+      "file": "stage1-complete-1.mp3"
+    },
+    {
+      "id": "stage1-complete.say.2",
+      "text": "The Course now continues into Stage 2, where we begin shaping these notes into music. The masterclasses are there too, any time, for deeper practice.",
+      "file": "stage1-complete-2.mp3"
+    },
+    {
+      "id": "stage2-welcome.say.0",
+      "text": "Welcome to Stage 2. In Stage 1 you learned the keyboard; now we start to shape those notes into music.",
+      "file": "stage2-welcome-0.mp3"
+    },
+    {
+      "id": "stage2-welcome.say.1",
+      "text": "Short phrases, a little harmony, and a steady pulse underneath — one small step at a time.",
+      "file": "stage2-welcome-1.mp3"
+    },
+    {
+      "id": "bmaj-shape.say.0",
+      "text": "Here’s something pianists know: B major sits beautifully under the hand.",
+      "file": "bmaj-shape-0.mp3"
+    },
+    {
+      "id": "bmaj-shape.say.1",
+      "text": "Your long fingers — two, three and four — fall naturally onto the raised black keys, while the thumb and little finger rest on the white keys. C major actually asks more of a beginner’s flat hand.",
+      "file": "bmaj-shape-1.mp3"
+    },
+    {
+      "id": "bmaj-shape.say.2",
+      "text": "C major stays our reference for naming and reading. But B major is the KeyMaster hand-shape pathway — the shape your hand wants to make.",
+      "file": "bmaj-shape-2.mp3"
+    },
+    {
+      "id": "bmaj-rh.say.0",
+      "text": "Let’s play the first three notes of B major with the right hand.",
+      "file": "bmaj-rh-0.mp3"
+    },
+    {
+      "id": "bmaj-rh.say.1",
+      "text": "Thumb on B — finger one. Then finger two on C sharp, the black key. Then finger three on D sharp, the next black key.",
+      "file": "bmaj-rh-1.mp3"
+    },
+    {
+      "id": "bmaj-rh.say.2",
+      "text": "Play them in order: B, C sharp, D sharp — fingers one, two, three.",
+      "file": "bmaj-rh-2.mp3"
+    },
+    {
+      "id": "bmaj-rh.correct",
+      "text": "That’s the B-major hand shape, right hand — thumb on white, long fingers reaching the black keys. It already feels natural.",
+      "file": "bmaj-rh-correct.mp3"
+    },
+    {
+      "id": "bmaj-rh.correct-retry",
+      "text": "That’s clearer. That’s the B-major hand shape, right hand — thumb on white, long fingers reaching the black keys. It already feels natural.",
+      "file": "bmaj-rh-correct-retry.mp3"
+    },
+    {
+      "id": "bmaj-lh.say.0",
+      "text": "The left hand has its own rule in the B family: it begins on the fourth finger.",
+      "file": "bmaj-lh-0.mp3"
+    },
+    {
+      "id": "bmaj-lh.say.1",
+      "text": "Finger four on B, finger three on C sharp, finger two on D sharp. The fourth finger is your anchor for the B-major shape.",
+      "file": "bmaj-lh-1.mp3"
+    },
+    {
+      "id": "bmaj-lh.say.2",
+      "text": "Play them in order: B, C sharp, D sharp — left-hand fingers four, three, two.",
+      "file": "bmaj-lh-2.mp3"
+    },
+    {
+      "id": "bmaj-lh.correct",
+      "text": "That’s the left-hand B anchor — fourth finger on B. Hand by hand first; both hands together comes later, once each is sure.",
+      "file": "bmaj-lh-correct.mp3"
+    },
+    {
+      "id": "bmaj-lh.correct-retry",
+      "text": "That’s clearer. That’s the left-hand B anchor — fourth finger on B. Hand by hand first; both hands together comes later, once each is sure.",
+      "file": "bmaj-lh-correct-retry.mp3"
+    },
+    {
+      "id": "phrase-up.say.0",
+      "text": "A phrase is a few notes that belong together — a small musical idea.",
+      "file": "phrase-up-0.mp3"
+    },
+    {
+      "id": "phrase-up.say.1",
+      "text": "Play C, then D, then E — three steps up.",
+      "file": "phrase-up-1.mp3"
+    },
+    {
+      "id": "phrase-up.correct",
+      "text": "That’s it — three notes rising, cleanly in order. That ordered shape is the start of a musical line.",
+      "file": "phrase-up-correct.mp3"
+    },
+    {
+      "id": "phrase-up.correct-retry",
+      "text": "That’s clearer. That’s it — three notes rising, cleanly in order. That ordered shape is the start of a musical line.",
+      "file": "phrase-up-correct-retry.mp3"
+    },
+    {
+      "id": "phrase-down.say.0",
+      "text": "Now the same idea, coming back down.",
+      "file": "phrase-down-0.mp3"
+    },
+    {
+      "id": "phrase-down.say.1",
+      "text": "Play E, then D, then C.",
+      "file": "phrase-down-1.mp3"
+    },
+    {
+      "id": "phrase-down.correct",
+      "text": "Good — you kept the notes in order, both directions. Up and back down: a phrase has shape.",
+      "file": "phrase-down-correct.mp3"
+    },
+    {
+      "id": "phrase-down.correct-retry",
+      "text": "That’s clearer. Good — you kept the notes in order, both directions. Up and back down: a phrase has shape.",
+      "file": "phrase-down-correct-retry.mp3"
+    },
+    {
+      "id": "read-pattern.say.0",
+      "text": "Reading music is naming notes, then playing them in order — a few at a time to start.",
+      "file": "read-pattern-0.mp3"
+    },
+    {
+      "id": "read-pattern.say.1",
+      "text": "Here is a short pattern: C, then E, then D, then C again. Look at each, then play them in order.",
+      "file": "read-pattern-1.mp3"
+    },
+    {
+      "id": "read-pattern.correct",
+      "text": "Good — you held the order: C, E, D, C. Reading is this, growing a little longer over time.",
+      "file": "read-pattern-correct.mp3"
+    },
+    {
+      "id": "read-pattern.correct-retry",
+      "text": "That’s clearer. Good — you held the order: C, E, D, C. Reading is this, growing a little longer over time.",
+      "file": "read-pattern-correct-retry.mp3"
+    },
+    {
+      "id": "play-on-pulse.say.0",
+      "text": "Now let’s put notes on the pulse.",
+      "file": "play-on-pulse-0.mp3"
+    },
+    {
+      "id": "play-on-pulse.say.1",
+      "text": "Listen to the count of four, then play a note on each beat — four notes, steady.",
+      "file": "play-on-pulse-1.mp3"
+    },
+    {
+      "id": "play-on-pulse.correct",
+      "text": "That’s music on a pulse — notes riding a steady beat. No rush, nothing scored — just the feel of it.",
+      "file": "play-on-pulse-correct.mp3"
+    },
+    {
+      "id": "play-on-pulse.correct-retry",
+      "text": "That’s clearer. That’s music on a pulse — notes riding a steady beat. No rush, nothing scored — just the feel of it.",
+      "file": "play-on-pulse-correct-retry.mp3"
+    },
+    {
+      "id": "pattern-pulse.say.0",
+      "text": "Now a small pattern, kept in time.",
+      "file": "pattern-pulse-0.mp3"
+    },
+    {
+      "id": "pattern-pulse.say.1",
+      "text": "Listen to the count of four. Then play four notes, one on each beat — try C, D, E, then C again, kept even.",
+      "file": "pattern-pulse-1.mp3"
+    },
+    {
+      "id": "pattern-pulse.correct",
+      "text": "Good — a pattern sitting on a steady pulse. Notes and time together: that connection is the heart of rhythm.",
+      "file": "pattern-pulse-correct.mp3"
+    },
+    {
+      "id": "pattern-pulse.correct-retry",
+      "text": "That’s clearer. Good — a pattern sitting on a steady pulse. Notes and time together: that connection is the heart of rhythm.",
+      "file": "pattern-pulse-correct-retry.mp3"
+    },
+    {
+      "id": "scale-shape-up.say.0",
+      "text": "A scale isn’t just notes — it’s a shape your hand learns.",
+      "file": "scale-shape-up-0.mp3"
+    },
+    {
+      "id": "scale-shape-up.say.1",
+      "text": "Climb the C scale all the way up to the next C: C, D, E, F, G, A, B, C.",
+      "file": "scale-shape-up-1.mp3"
+    },
+    {
+      "id": "scale-shape-up.correct",
+      "text": "That’s the scale shape — a full octave. The Scales Masterclass takes this much further whenever you want it.",
+      "file": "scale-shape-up-correct.mp3"
+    },
+    {
+      "id": "scale-shape-up.correct-retry",
+      "text": "That’s clearer. That’s the scale shape — a full octave. The Scales Masterclass takes this much further whenever you want it.",
+      "file": "scale-shape-up-correct-retry.mp3"
+    },
+    {
+      "id": "pattern-fingered.say.0",
+      "text": "A pattern becomes easy when each note has a finger ready for it.",
+      "file": "pattern-fingered-0.mp3"
+    },
+    {
+      "id": "pattern-fingered.say.1",
+      "text": "Right hand: thumb on C — one. Finger two on D. Finger three on E. Then play them in order.",
+      "file": "pattern-fingered-1.mp3"
+    },
+    {
+      "id": "pattern-fingered.correct",
+      "text": "Smooth — each finger ready for its note. That readiness is what fingering gives you.",
+      "file": "pattern-fingered-correct.mp3"
+    },
+    {
+      "id": "pattern-fingered.correct-retry",
+      "text": "That’s clearer. Smooth — each finger ready for its note. That readiness is what fingering gives you.",
+      "file": "pattern-fingered-correct-retry.mp3"
+    },
+    {
+      "id": "arpeggio-c.say.0",
+      "text": "You’ve played C, E and G together — a chord.",
+      "file": "arpeggio-c-0.mp3"
+    },
+    {
+      "id": "arpeggio-c.say.1",
+      "text": "Now play the same three notes one at a time: C, then E, then G. That’s an arpeggio.",
+      "file": "arpeggio-c-1.mp3"
+    },
+    {
+      "id": "arpeggio-c.correct",
+      "text": "That’s an arpeggio — a chord spread out in time. Same notes, different feel.",
+      "file": "arpeggio-c-correct.mp3"
+    },
+    {
+      "id": "arpeggio-c.correct-retry",
+      "text": "That’s clearer. That’s an arpeggio — a chord spread out in time. Same notes, different feel.",
+      "file": "arpeggio-c-correct-retry.mp3"
+    },
+    {
+      "id": "motif-echo.say.0",
+      "text": "Music is full of small patterns you start to recognise.",
+      "file": "motif-echo-0.mp3"
+    },
+    {
+      "id": "motif-echo.say.1",
+      "text": "Listen to this little shape, then play it back: G, E, C.",
+      "file": "motif-echo-1.mp3"
+    },
+    {
+      "id": "motif-echo.correct",
+      "text": "You heard the pattern and played it back — that’s musical recognition at work.",
+      "file": "motif-echo-correct.mp3"
+    },
+    {
+      "id": "motif-echo.correct-retry",
+      "text": "That’s clearer. You heard the pattern and played it back — that’s musical recognition at work.",
+      "file": "motif-echo-correct-retry.mp3"
+    },
+    {
+      "id": "first-phrase.say.0",
+      "text": "Let’s put it together into a small melody.",
+      "file": "first-phrase-0.mp3"
+    },
+    {
+      "id": "first-phrase.say.1",
+      "text": "Play C, E, G, then the C above — a rising phrase that lands home.",
+      "file": "first-phrase-1.mp3"
+    },
+    {
+      "id": "first-phrase.correct",
+      "text": "Good — C, E, G, and home. Rising, then settling: that shape is the beginning of a musical phrase.",
+      "file": "first-phrase-correct.mp3"
+    },
+    {
+      "id": "first-phrase.correct-retry",
+      "text": "That’s clearer. Good — C, E, G, and home. Rising, then settling: that shape is the beginning of a musical phrase.",
+      "file": "first-phrase-correct-retry.mp3"
+    },
+    {
+      "id": "practise-slow.say.0",
+      "text": "A quick word on practising — because how you practise matters more than how much.",
+      "file": "practise-slow-0.mp3"
+    },
+    {
+      "id": "practise-slow.say.1",
+      "text": "Musicians practise slowly, on purpose. Slow and even builds control; control is what later becomes speed. Rushing only teaches rushing.",
+      "file": "practise-slow-1.mp3"
+    },
+    {
+      "id": "practise-slow.say.2",
+      "text": "Play your melody once more — slower than feels natural, every note even and unhurried.",
+      "file": "practise-slow-2.mp3"
+    },
+    {
+      "id": "practise-slow.correct",
+      "text": "That’s real practice — slow, even, intentional. This habit will carry you further than any shortcut.",
+      "file": "practise-slow-correct.mp3"
+    },
+    {
+      "id": "practise-slow.correct-retry",
+      "text": "That’s clearer. That’s real practice — slow, even, intentional. This habit will carry you further than any shortcut.",
+      "file": "practise-slow-correct-retry.mp3"
+    },
+    {
+      "id": "listen-tone.say.0",
+      "text": "One more musician’s habit: listening.",
+      "file": "listen-tone-0.mp3"
+    },
+    {
+      "id": "listen-tone.say.1",
+      "text": "Play a single note and really listen — hear it begin, then slowly fade. The sound you make is something you shape and notice, not just trigger.",
+      "file": "listen-tone-1.mp3"
+    },
+    {
+      "id": "listen-tone.say.2",
+      "text": "Play any one note, and listen to it all the way until it fades.",
+      "file": "listen-tone-2.mp3"
+    },
+    {
+      "id": "listen-tone.correct",
+      "text": "That’s listening — the habit behind good tone. You’re starting to connect sound, movement and attention, which is what musicianship is built on.",
+      "file": "listen-tone-correct.mp3"
+    },
+    {
+      "id": "listen-tone.correct-retry",
+      "text": "That’s clearer. That’s listening — the habit behind good tone. You’re starting to connect sound, movement and attention, which is what musicianship is built on.",
+      "file": "listen-tone-correct-retry.mp3"
+    },
+    {
+      "id": "review-phrase.say.0",
+      "text": "A calm checkpoint — a chance to bring it together.",
+      "file": "review-phrase-0.mp3"
+    },
+    {
+      "id": "review-phrase.say.1",
+      "text": "Play your melody once more, from memory: C, E, G, C.",
+      "file": "review-phrase-1.mp3"
+    },
+    {
+      "id": "review-phrase.correct",
+      "text": "Held together from memory — a phrase that’s yours now.",
+      "file": "review-phrase-correct.mp3"
+    },
+    {
+      "id": "review-phrase.correct-retry",
+      "text": "That’s clearer. Held together from memory — a phrase that’s yours now.",
+      "file": "review-phrase-correct-retry.mp3"
+    },
+    {
+      "id": "stage2-onward.say.0",
+      "text": "That’s Stage 2 — you’re connecting notes, fingers, pattern and pulse, not just finding keys.",
+      "file": "stage2-onward-0.mp3"
+    },
+    {
+      "id": "stage2-onward.say.1",
+      "text": "Stage 3 brings it together: reading from the staff while your right hand plays. The Course continues — the masterclasses stay here too, any time, for deeper practice.",
+      "file": "stage2-onward-1.mp3"
+    },
+    {
+      "id": "s3-welcome.say.0",
+      "text": "Welcome to Stage 3. Here we join two things you already have: reading the staff, and playing with your hand.",
+      "file": "s3-welcome-0.mp3"
+    },
+    {
+      "id": "s3-welcome.say.1",
+      "text": "From now on, when you play, you’ll often see the note on the staff, the key on the keyboard, and the finger to use — all at once. Eye, staff, finger, key, sound.",
+      "file": "s3-welcome-1.mp3"
+    },
+    {
+      "id": "s3-landmark-g.say.0",
+      "text": "A landmark to anchor your reading: the note G sits on the second line of the treble staff — the line the treble clef curls around.",
+      "file": "s3-landmark-g-0.mp3"
+    },
+    {
+      "id": "s3-landmark-g.say.1",
+      "text": "That G is the G just above Middle C. Find it and play it with finger two.",
+      "file": "s3-landmark-g-1.mp3"
+    },
+    {
+      "id": "s3-landmark-g.correct",
+      "text": "Yes — G on the second line. Landmarks like this let you read by sight, without counting every line.",
+      "file": "s3-landmark-g-correct.mp3"
+    },
+    {
+      "id": "s3-landmark-g.correct-retry",
+      "text": "That’s clearer. Yes — G on the second line. Landmarks like this let you read by sight, without counting every line.",
+      "file": "s3-landmark-g-correct-retry.mp3"
+    },
+    {
+      "id": "s3-read-up.say.0",
+      "text": "Now follow a short rise: C, D, E, climbing from Middle C — each note a step higher on the staff.",
+      "file": "s3-read-up-0.mp3"
+    },
+    {
+      "id": "s3-read-up.say.1",
+      "text": "Higher on the staff means higher in sound. Play them in order, fingers one, two, three.",
+      "file": "s3-read-up-1.mp3"
+    },
+    {
+      "id": "s3-read-up.correct",
+      "text": "There — the notes rose on the staff and your hand rose with them. That match is reading.",
+      "file": "s3-read-up-correct.mp3"
+    },
+    {
+      "id": "s3-read-up.correct-retry",
+      "text": "That’s clearer. There — the notes rose on the staff and your hand rose with them. That match is reading.",
+      "file": "s3-read-up-correct-retry.mp3"
+    },
+    {
+      "id": "s3-direction.say.0",
+      "text": "A quick test of direction. Two notes are on the staff — one sits higher than the other.",
+      "file": "s3-direction-0.mp3"
+    },
+    {
+      "id": "s3-direction.say.1",
+      "text": "The higher note on the staff is the higher sound. Play the higher one.",
+      "file": "s3-direction-1.mp3"
+    },
+    {
+      "id": "s3-direction.correct",
+      "text": "Yes — higher on the staff, higher in sound, further right on the keyboard. Direction connects all three.",
+      "file": "s3-direction-correct.mp3"
+    },
+    {
+      "id": "s3-direction.correct-retry",
+      "text": "That’s clearer. Yes — higher on the staff, higher in sound, further right on the keyboard. Direction connects all three.",
+      "file": "s3-direction-correct-retry.mp3"
+    },
+    {
+      "id": "s3-read-fingered.say.0",
+      "text": "Now follow a small pattern with a finger ready for each note: C, D, E, then back to D.",
+      "file": "s3-read-fingered-0.mp3"
+    },
+    {
+      "id": "s3-read-fingered.say.1",
+      "text": "Fingers one, two, three, two. Let your eye lead and your hand follow.",
+      "file": "s3-read-fingered-1.mp3"
+    },
+    {
+      "id": "s3-read-fingered.correct",
+      "text": "Good — read, fingered, played. The eye-to-hand loop is getting smoother.",
+      "file": "s3-read-fingered-correct.mp3"
+    },
+    {
+      "id": "s3-read-fingered.correct-retry",
+      "text": "That’s clearer. Good — read, fingered, played. The eye-to-hand loop is getting smoother.",
+      "file": "s3-read-fingered-correct-retry.mp3"
+    },
+    {
+      "id": "s3-rh-pattern.say.0",
+      "text": "A longer line now, still all steps: C, D, E, F, E.",
+      "file": "s3-rh-pattern-0.mp3"
+    },
+    {
+      "id": "s3-rh-pattern.say.1",
+      "text": "Fingers one, two, three, four, three. Keep the hand quiet — only the fingers move.",
+      "file": "s3-rh-pattern-1.mp3"
+    },
+    {
+      "id": "s3-rh-pattern.correct",
+      "text": "That’s it — a five-note line, played in order. Your hand is learning to stay home while the fingers travel.",
+      "file": "s3-rh-pattern-correct.mp3"
+    },
+    {
+      "id": "s3-rh-pattern.correct-retry",
+      "text": "That’s clearer. That’s it — a five-note line, played in order. Your hand is learning to stay home while the fingers travel.",
+      "file": "s3-rh-pattern-correct-retry.mp3"
+    },
+    {
+      "id": "s3-rh-down.say.0",
+      "text": "Now from the top down: G, F, E, D, C — the five-finger position, descending.",
+      "file": "s3-rh-down-0.mp3"
+    },
+    {
+      "id": "s3-rh-down.say.1",
+      "text": "Fingers five, four, three, two, one. Even and unhurried.",
+      "file": "s3-rh-down-1.mp3"
+    },
+    {
+      "id": "s3-rh-down.correct",
+      "text": "Good — the five-finger position, top to bottom. This shape underlies the C scale and much more.",
+      "file": "s3-rh-down-correct.mp3"
+    },
+    {
+      "id": "s3-rh-down.correct-retry",
+      "text": "That’s clearer. Good — the five-finger position, top to bottom. This shape underlies the C scale and much more.",
+      "file": "s3-rh-down-correct-retry.mp3"
+    },
+    {
+      "id": "s3-read-pulse.say.0",
+      "text": "Let’s add the pulse back. Listen to the count of four, then play four steady notes — C, D, E, F, one on each beat.",
+      "file": "s3-read-pulse-0.mp3"
+    },
+    {
+      "id": "s3-read-pulse.say.1",
+      "text": "Reading, fingering and pulse together now — unhurried.",
+      "file": "s3-read-pulse-1.mp3"
+    },
+    {
+      "id": "s3-read-pulse.correct",
+      "text": "Yes — reading and playing carried on a steady pulse. That’s how written music actually moves.",
+      "file": "s3-read-pulse-correct.mp3"
+    },
+    {
+      "id": "s3-read-pulse.correct-retry",
+      "text": "That’s clearer. Yes — reading and playing carried on a steady pulse. That’s how written music actually moves.",
+      "file": "s3-read-pulse-correct-retry.mp3"
+    },
+    {
+      "id": "s3-bmaj-staff.say.0",
+      "text": "Bring the B-major shape into your reading. These three notes are B, C sharp, D sharp — the start of B major, right hand.",
+      "file": "s3-bmaj-staff-0.mp3"
+    },
+    {
+      "id": "s3-bmaj-staff.say.1",
+      "text": "Thumb on B, finger two on C sharp, finger three on D sharp. The long fingers reach the black keys, just as your hand wants to.",
+      "file": "s3-bmaj-staff-1.mp3"
+    },
+    {
+      "id": "s3-bmaj-staff.correct",
+      "text": "Good — the B-major hand shape, played from the staff. This is the pathway the Scales Masterclass develops in full.",
+      "file": "s3-bmaj-staff-correct.mp3"
+    },
+    {
+      "id": "s3-bmaj-staff.correct-retry",
+      "text": "That’s clearer. Good — the B-major hand shape, played from the staff. This is the pathway the Scales Masterclass develops in full.",
+      "file": "s3-bmaj-staff-correct-retry.mp3"
+    },
+    {
+      "id": "s3-phrase.say.0",
+      "text": "Let’s shape a longer line: C, E, G, E, C — up through a chord shape and back home.",
+      "file": "s3-phrase-0.mp3"
+    },
+    {
+      "id": "s3-phrase.say.1",
+      "text": "Fingers one, two, three, two, one. Let it sound like one idea, not five separate notes.",
+      "file": "s3-phrase-1.mp3"
+    },
+    {
+      "id": "s3-phrase.correct",
+      "text": "Good — up and home again. Read, fingered, shaped: that is a phrase, and you played it whole.",
+      "file": "s3-phrase-correct.mp3"
+    },
+    {
+      "id": "s3-phrase.correct-retry",
+      "text": "That’s clearer. Good — up and home again. Read, fingered, shaped: that is a phrase, and you played it whole.",
+      "file": "s3-phrase-correct-retry.mp3"
+    },
+    {
+      "id": "s3-review.say.0",
+      "text": "A calm checkpoint — let’s bring this together. Play this short rise once more: C, D, E, F, G.",
+      "file": "s3-review-0.mp3"
+    },
+    {
+      "id": "s3-review.say.1",
+      "text": "The whole five-finger position, going up. Fingers one to five.",
+      "file": "s3-review-1.mp3"
+    },
+    {
+      "id": "s3-review.correct",
+      "text": "Good — the five-finger position, played from the staff, top to bottom. Stage 3 is yours.",
+      "file": "s3-review-correct.mp3"
+    },
+    {
+      "id": "s3-review.correct-retry",
+      "text": "That’s clearer. Good — the five-finger position, played from the staff, top to bottom. Stage 3 is yours.",
+      "file": "s3-review-correct-retry.mp3"
+    },
+    {
+      "id": "s3-onward.say.0",
+      "text": "That’s Stage 3 — you’re reading from the staff and playing in one motion, right hand leading.",
+      "file": "s3-onward-0.mp3"
+    },
+    {
+      "id": "s3-onward.say.1",
+      "text": "Stage 4 brings in the left hand and the bass clef, and joins them on the grand staff. The Course keeps going.",
+      "file": "s3-onward-1.mp3"
+    },
+    {
+      "id": "s4-welcome.say.0",
+      "text": "Welcome to Stage 4. Until now the right hand has led. Now the left hand joins, and with it the bass clef.",
+      "file": "s4-welcome-0.mp3"
+    },
+    {
+      "id": "s4-welcome.say.1",
+      "text": "We’ll take it hand by hand first — the way good practice always begins — then let them meet on the grand staff.",
+      "file": "s4-welcome-1.mp3"
+    },
+    {
+      "id": "s4-bass-clef.say.0",
+      "text": "The bass clef carries the lower notes — usually the left hand at the piano.",
+      "file": "s4-bass-clef-0.mp3"
+    },
+    {
+      "id": "s4-bass-clef.say.1",
+      "text": "Its landmark is F: the note F sits on the fourth line, between the two dots of the clef.",
+      "file": "s4-bass-clef-1.mp3"
+    },
+    {
+      "id": "s4-lh-fingers.say.0",
+      "text": "A reminder of the left hand. Same numbers — thumb is one, little finger is five — mirrored, with the thumb toward the middle.",
+      "file": "s4-lh-fingers-0.mp3"
+    },
+    {
+      "id": "s4-lh-fingers.say.1",
+      "text": "Watch them light: one, two, three, four, five.",
+      "file": "s4-lh-fingers-1.mp3"
+    },
+    {
+      "id": "s4-lh-note.say.0",
+      "text": "A note sits in the bass clef for the left hand. This is C — the C below Middle C.",
+      "file": "s4-lh-note-0.mp3"
+    },
+    {
+      "id": "s4-lh-note.say.1",
+      "text": "It sits in the second space of the bass staff. Play it with your left thumb, finger one.",
+      "file": "s4-lh-note-1.mp3"
+    },
+    {
+      "id": "s4-lh-note.correct",
+      "text": "Good — a bass note, played from the staff with the left hand. The left hand reads its own clef.",
+      "file": "s4-lh-note-correct.mp3"
+    },
+    {
+      "id": "s4-lh-note.correct-retry",
+      "text": "That’s clearer. Good — a bass note, played from the staff with the left hand. The left hand reads its own clef.",
+      "file": "s4-lh-note-correct-retry.mp3"
+    },
+    {
+      "id": "s4-lh-pattern.say.0",
+      "text": "Now a short left-hand rise: C, D, E, low on the keyboard.",
+      "file": "s4-lh-pattern-0.mp3"
+    },
+    {
+      "id": "s4-lh-pattern.say.1",
+      "text": "The left hand climbs with fingers three, two, one — the thumb arriving on top.",
+      "file": "s4-lh-pattern-1.mp3"
+    },
+    {
+      "id": "s4-lh-pattern.correct",
+      "text": "Good — the left hand reads and plays too. Notice it climbs toward the thumb, mirroring the right.",
+      "file": "s4-lh-pattern-correct.mp3"
+    },
+    {
+      "id": "s4-lh-pattern.correct-retry",
+      "text": "That’s clearer. Good — the left hand reads and plays too. Notice it climbs toward the thumb, mirroring the right.",
+      "file": "s4-lh-pattern-correct-retry.mp3"
+    },
+    {
+      "id": "s4-grand.say.0",
+      "text": "Here is the grand staff with a note for each hand: a low C for the left, a G for the right.",
+      "file": "s4-grand-0.mp3"
+    },
+    {
+      "id": "s4-grand.say.1",
+      "text": "Play the low note first with the left hand, then the high note with the right. Two clefs, two hands, one keyboard.",
+      "file": "s4-grand-1.mp3"
+    },
+    {
+      "id": "s4-grand.correct",
+      "text": "There — left below, right above, joined on the grand staff. That division is how piano reading begins.",
+      "file": "s4-grand-correct.mp3"
+    },
+    {
+      "id": "s4-grand.correct-retry",
+      "text": "That’s clearer. There — left below, right above, joined on the grand staff. That division is how piano reading begins.",
+      "file": "s4-grand-correct-retry.mp3"
+    },
+    {
+      "id": "s4-anchor.say.0",
+      "text": "A first taste of two hands with a job each: the left hand holds a low anchor note, and the right plays a little melody above it.",
+      "file": "s4-anchor-0.mp3"
+    },
+    {
+      "id": "s4-anchor.say.1",
+      "text": "Play your low left-hand C, then a short right-hand line above. Left grounds, right sings.",
+      "file": "s4-anchor-1.mp3"
+    },
+    {
+      "id": "s4-anchor.correct",
+      "text": "Yes — an anchor below and a voice above. You’re hearing how the two hands share a single piece of music.",
+      "file": "s4-anchor-correct.mp3"
+    },
+    {
+      "id": "s4-anchor.correct-retry",
+      "text": "That’s clearer. Yes — an anchor below and a voice above. You’re hearing how the two hands share a single piece of music.",
+      "file": "s4-anchor-correct-retry.mp3"
+    },
+    {
+      "id": "s4-chord-arp.say.0",
+      "text": "A reminder that pays off with two hands. Three notes together make a chord; the same three one at a time make an arpeggio.",
+      "file": "s4-chord-arp-0.mp3"
+    },
+    {
+      "id": "s4-chord-arp.say.1",
+      "text": "Play C, E, G one at a time — an arpeggio — with the right hand, fingers one, two, three.",
+      "file": "s4-chord-arp-1.mp3"
+    },
+    {
+      "id": "s4-chord-arp.correct",
+      "text": "Good — a clean arpeggio. Chords and arpeggios are the same harmony, shaped two ways.",
+      "file": "s4-chord-arp-correct.mp3"
+    },
+    {
+      "id": "s4-chord-arp.correct-retry",
+      "text": "That’s clearer. Good — a clean arpeggio. Chords and arpeggios are the same harmony, shaped two ways.",
+      "file": "s4-chord-arp-correct-retry.mp3"
+    },
+    {
+      "id": "s4-scale-rh.say.0",
+      "text": "Toward scales. The right hand’s five-finger position is the front half of the C scale: C, D, E, F, G.",
+      "file": "s4-scale-rh-0.mp3"
+    },
+    {
+      "id": "s4-scale-rh.say.1",
+      "text": "Play it up, fingers one to five — even and connected.",
+      "file": "s4-scale-rh-1.mp3"
+    },
+    {
+      "id": "s4-scale-rh.correct",
+      "text": "Good — half a scale, evenly fingered. This is the foundation the Scales Masterclass takes all the way.",
+      "file": "s4-scale-rh-correct.mp3"
+    },
+    {
+      "id": "s4-scale-rh.correct-retry",
+      "text": "That’s clearer. Good — half a scale, evenly fingered. This is the foundation the Scales Masterclass takes all the way.",
+      "file": "s4-scale-rh-correct-retry.mp3"
+    },
+    {
+      "id": "s4-scale-lh.say.0",
+      "text": "The same shape, left hand, low on the keyboard: C, D, E, F, G.",
+      "file": "s4-scale-lh-0.mp3"
+    },
+    {
+      "id": "s4-scale-lh.say.1",
+      "text": "Ascending, the left hand starts on the little finger: five, four, three, two, one.",
+      "file": "s4-scale-lh-1.mp3"
+    },
+    {
+      "id": "s4-scale-lh.correct",
+      "text": "Good — the left hand has the shape too, mirrored. Now both hands are ready for scale work.",
+      "file": "s4-scale-lh-correct.mp3"
+    },
+    {
+      "id": "s4-scale-lh.correct-retry",
+      "text": "That’s clearer. Good — the left hand has the shape too, mirrored. Now both hands are ready for scale work.",
+      "file": "s4-scale-lh-correct-retry.mp3"
+    },
+    {
+      "id": "s4-practise.say.0",
+      "text": "A word on practising two hands. Always learn each hand on its own first — sure and even — before joining them.",
+      "file": "s4-practise-0.mp3"
+    },
+    {
+      "id": "s4-practise.say.1",
+      "text": "Joining too early just teaches confusion. Hands separately, slowly, then together: that is the whole secret.",
+      "file": "s4-practise-1.mp3"
+    },
+    {
+      "id": "s4-piece.say.0",
+      "text": "Let’s end with a short piece for the right hand — a real little line: C, D, E, F, E, D, C.",
+      "file": "s4-piece-0.mp3"
+    },
+    {
+      "id": "s4-piece.say.1",
+      "text": "Up to F and all the way home. Fingers one, two, three, four, three, two, one. Slowly, evenly, listening.",
+      "file": "s4-piece-1.mp3"
+    },
+    {
+      "id": "s4-piece.correct",
+      "text": "Good — you played a whole short line from the staff, up and home. That is a real piece of music, played from notation.",
+      "file": "s4-piece-correct.mp3"
+    },
+    {
+      "id": "s4-piece.correct-retry",
+      "text": "That’s clearer. Good — you played a whole short line from the staff, up and home. That is a real piece of music, played from notation.",
+      "file": "s4-piece-correct-retry.mp3"
+    },
+    {
+      "id": "s4-review.say.0",
+      "text": "A calm checkpoint. Play the left-hand five-finger shape once more: low C, D, E, F, G.",
+      "file": "s4-review-0.mp3"
+    },
+    {
+      "id": "s4-review.say.1",
+      "text": "Fingers five, four, three, two, one — from memory and from the bass clef.",
+      "file": "s4-review-1.mp3"
+    },
+    {
+      "id": "s4-review.correct",
+      "text": "Good — both hands now know their own clef and the five-finger shape. Stage 4 is yours.",
+      "file": "s4-review-correct.mp3"
+    },
+    {
+      "id": "s4-review.correct-retry",
+      "text": "That’s clearer. Good — both hands now know their own clef and the five-finger shape. Stage 4 is yours.",
+      "file": "s4-review-correct-retry.mp3"
+    },
+    {
+      "id": "s4-onward.say.0",
+      "text": "Look how far this has come. You sit and shape your hands, you know the finger numbers, you read both clefs, you play patterns and a short piece, and you feel a steady pulse.",
+      "file": "s4-onward-0.mp3"
+    },
+    {
+      "id": "s4-onward.say.1",
+      "text": "From here the path widens: full scales hand over hand, longer pieces, two hands together. The Scales Masterclass and Cognitive Sight-Reading are ready whenever you want to go deeper — and more Course is on the way.",
+      "file": "s4-onward-1.mp3"
+    },
+    {
+      "id": "play-echo.say.0",
+      "text": "Here is a small idea. Listen first — then echo it back.",
+      "file": "play-echo-0.mp3"
+    },
+    {
+      "id": "play-echo.say.1",
+      "text": "I play two notes: a low one, then a higher one. You answer with the same two.",
+      "file": "play-echo-1.mp3"
+    },
+    {
+      "id": "play-echo.correct",
+      "text": "That is the sound we were looking for — you heard the idea and answered it.",
+      "file": "play-echo-correct.mp3"
+    },
+    {
+      "id": "play-echo.correct-retry",
+      "text": "That is the sound we were looking for — you heard the idea and answered it.",
+      "file": "play-echo-correct-retry.mp3"
+    },
+    {
+      "id": "study-steps.say.0",
+      "text": "Now a short study — a calm line that climbs, then settles home.",
+      "file": "study-steps-0.mp3"
+    },
+    {
+      "id": "study-steps.say.1",
+      "text": "Listen first. Then play it evenly, one step at a time: C, D, E, F, G.",
+      "file": "study-steps-1.mp3"
+    },
+    {
+      "id": "study-steps.correct",
+      "text": "A clean line, played evenly. Let it settle under the hand — that is a study doing its work.",
+      "file": "study-steps-correct.mp3"
+    },
+    {
+      "id": "study-steps.correct-retry",
+      "text": "A clean line, played evenly. Let it settle under the hand — that is a study doing its work.",
+      "file": "study-steps-correct-retry.mp3"
+    },
+    {
+      "id": "study-qa.say.0",
+      "text": "Music often asks a question, then answers it.",
+      "file": "study-qa-0.mp3"
+    },
+    {
+      "id": "study-qa.say.1",
+      "text": "The line rises like a question, then falls home like its answer. Listen, then play it through.",
+      "file": "study-qa-1.mp3"
+    },
+    {
+      "id": "study-qa.correct",
+      "text": "A question and its answer — rising, then resting home. That is a complete musical idea.",
+      "file": "study-qa-correct.mp3"
+    },
+    {
+      "id": "study-qa.correct-retry",
+      "text": "A question and its answer — rising, then resting home. That is a complete musical idea.",
+      "file": "study-qa-correct-retry.mp3"
+    },
+    {
+      "id": "call-response.say.0",
+      "text": "In call and response, I play a phrase — and you answer it.",
+      "file": "call-response-0.mp3"
+    },
+    {
+      "id": "call-response.say.1",
+      "text": "My call rises: C, D, E. Your answer comes back down: E, D, C.",
+      "file": "call-response-1.mp3"
+    },
+    {
+      "id": "call-response.correct",
+      "text": "A clear answer — the call rose, and you brought it home. That is a musical conversation.",
+      "file": "call-response-correct.mp3"
+    },
+    {
+      "id": "call-response.correct-retry",
+      "text": "A clear answer — the call rose, and you brought it home. That is a musical conversation.",
+      "file": "call-response-correct-retry.mp3"
+    },
+    {
+      "id": "chord-warm.say.0",
+      "text": "A chord is several notes sounding together — a single, fuller colour.",
+      "file": "chord-warm-0.mp3"
+    },
+    {
+      "id": "chord-warm.say.1",
+      "text": "Press C, E and G together, and let the sound ring. Hear how it settles.",
+      "file": "chord-warm-1.mp3"
+    },
+    {
+      "id": "chord-warm.correct",
+      "text": "A warm chord — three notes becoming one colour. This is the sound that will sit under your melodies later.",
+      "file": "chord-warm-correct.mp3"
+    },
+    {
+      "id": "chord-warm.correct-retry",
+      "text": "A warm chord — three notes becoming one colour. This is the sound that will sit under your melodies later.",
+      "file": "chord-warm-correct-retry.mp3"
+    },
+    {
+      "id": "study-tune.say.0",
+      "text": "One more study — this time a small tune you can almost sing.",
+      "file": "study-tune-0.mp3"
+    },
+    {
+      "id": "study-tune.say.1",
+      "text": "Listen, then play it gently: E, D, C, D, E, and up to G.",
+      "file": "study-tune-1.mp3"
+    },
+    {
+      "id": "study-tune.correct",
+      "text": "A small tune, shaped and played whole — that is real music-making, not just notes.",
+      "file": "study-tune-correct.mp3"
+    },
+    {
+      "id": "study-tune.correct-retry",
+      "text": "A small tune, shaped and played whole — that is real music-making, not just notes.",
+      "file": "study-tune-correct-retry.mp3"
+    },
+    {
+      "id": "recall-register.say.0",
+      "text": "Let’s bring something back — no markers this time.",
+      "file": "recall-register-0.mp3"
+    },
+    {
+      "id": "recall-register.say.1",
+      "text": "Play a low note, then a higher one. Listen to the difference between them.",
+      "file": "recall-register-1.mp3"
+    },
+    {
+      "id": "recall-register.correct",
+      "text": "You found low and high without help — your ear is leading your hand now.",
+      "file": "recall-register-correct.mp3"
+    },
+    {
+      "id": "recall-register.correct-retry",
+      "text": "You found low and high without help — your ear is leading your hand now.",
+      "file": "recall-register-correct-retry.mp3"
+    },
+    {
+      "id": "recall-middlec.say.0",
+      "text": "Now find Middle C — this time without the marker.",
+      "file": "recall-middlec-0.mp3"
+    },
+    {
+      "id": "recall-middlec.say.1",
+      "text": "Let the two black keys near the centre guide you, and play the C just to their left.",
+      "file": "recall-middlec-1.mp3"
+    },
+    {
+      "id": "recall-middlec.correct",
+      "text": "Found from the pattern alone — that is the landmark becoming truly yours.",
+      "file": "recall-middlec-correct.mp3"
+    },
+    {
+      "id": "recall-middlec.correct-retry",
+      "text": "Found from the pattern alone — that is the landmark becoming truly yours.",
+      "file": "recall-middlec-correct-retry.mp3"
+    },
+    {
+      "id": "recall-echo.say.0",
+      "text": "One short pattern to hold in your ear.",
+      "file": "recall-echo-0.mp3"
+    },
+    {
+      "id": "recall-echo.say.1",
+      "text": "Listen first. Then echo it back from memory — there are three notes.",
+      "file": "recall-echo-1.mp3"
+    },
+    {
+      "id": "recall-echo.correct",
+      "text": "Heard, held, and played back — that is your musical memory at work.",
+      "file": "recall-echo-correct.mp3"
+    },
+    {
+      "id": "recall-echo.correct-retry",
+      "text": "Heard, held, and played back — that is your musical memory at work.",
+      "file": "recall-echo-correct-retry.mp3"
+    },
+    {
+      "id": "recall-register.reteach",
+      "text": "No need to rush — here is the low-to-high cue again. Take a moment, then play a low note and a higher one.",
+      "file": "recall-register-reteach.mp3"
+    },
+    {
+      "id": "recall-middlec.reteach",
+      "text": "Here is the Middle C marker again. Take your time, then play it once more.",
+      "file": "recall-middlec-reteach.mp3"
+    },
+    {
+      "id": "recall-echo.reteach",
+      "text": "Let’s hear the pattern once more — then echo it back, in your own time.",
+      "file": "recall-echo-reteach.mp3"
+    }
+  ]
+}
