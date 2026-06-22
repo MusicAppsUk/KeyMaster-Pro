@@ -25,7 +25,7 @@
 
 import { createTutorVoice } from './tutorVoice.js?v=rc2-74';
 import { createTutorAudio } from './tutorAudio.js?v=rc2-107';
-import { VOICE_PACK } from './voicePackData.js?v=rc2-101';
+import { VOICE_PACK } from './voicePackData.js?v=rc2-116';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-108';
 import { buildScale } from './scaleEngine.js';
