@@ -17,14 +17,15 @@
 // =============================================================================
 
 import { createTutorAudio } from './tutorAudio.js?v=rc2-107';
-import { createVoiceControl } from './voiceControl.js?v=rc2-126';
+import { createVoiceControl } from './voiceControl.js?v=rc2-127';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-116';
 
-const BUILD = 'rc2-126';
+const BUILD = 'rc2-127';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
 const WELCOME_TEXT = 'Welcome to the KeyMaster PRO Course.';
+try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).voiceTest = BUILD; } catch (_) { /* no-op */ }
 
 let panel = null;
 let lastExtra = {};
@@ -54,26 +55,54 @@ function refresh(extra) {
   const st = c && c.diag ? c.diag.state() : null;
   const res = c && c.diag ? c.diag.resolved(WELCOME_ID) : { file: WELCOME_FILE, url: WELCOME_URL };
   const body = panel.querySelector('[data-body]');
+  const expected = BUILD;
+  const ver = (window.__kmVer || {});
+  const vcCode = (st && st.code) || ver.voiceControl || null;
+  const files = [
+    ['foundations.js', ver.foundations || '(open Course once)'],
+    ['voiceControl.js', vcCode || '** STALE: pre-rc2-127 — re-upload **'],
+    ['voiceTest.js',    ver.voiceTest || expected],
+    ['pwaUpdate.js',    ver.pwaUpdate || '(not reporting)'],
+  ];
+  const isV = (v) => /^rc2-/.test(String(v));
+  const stale = files.filter((f) => isV(f[1]) && f[1] !== expected).map((f) => f[0]);
+  const absent = files.filter((f) => !isV(f[1])).map((f) => f[0]);
+  const known = files.filter((f) => isV(f[1]));
+  const allCurrent = known.length > 0 && stale.length === 0 && absent.length === 0;
+  const verdict = allCurrent
+    ? `<span style="color:#7fd68a">ALL FILES CURRENT (${expected})</span>`
+    : `<span style="color:#e6a96b">RE-UPLOAD: ${[...new Set(stale.concat(absent))].join(', ') || 'mixed build'}</span>`;
+  const vColor = (v) => (v === expected ? '#7fd68a' : (isV(v) ? '#e6a96b' : '#e6a96b'));
+  const engines = st ? (st.engines != null ? String(st.engines) : '(field absent — voiceControl is stale)') : '—';
+  const last = (st && st.recent && st.recent.length) ? st.recent[st.recent.length - 1] : null;
   body.innerHTML =
-    row('Build / version', `<b>${(st && st.build) || (window.__kmBuild) || BUILD}</b>`) +
-    row('Active cache', extra && extra.cache != null ? extra.cache : '… (loading)') +
-    row('Voice enabled', st ? String(st.voiceEnabled) : 'n/a (open Course once)') +
+    row('Expected build', `<b>${expected}</b>`) +
+    row('Verdict', verdict) +
+    files.map((f) => row('&nbsp;&nbsp;· ' + f[0], `<span style="color:${vColor(f[1])}">${f[1]}</span>`)).join('') +
+    row('Service-worker cache', extra && extra.cache != null ? extra.cache : '… (loading)') +
+    `<div style="margin-top:8px;color:#9a9488">Voice arbitration</div>` +
+    row('Audio engine', st ? String(st.engine || '—') : 'n/a (open Course once)') +
+    row('Registered engines', engines) +
+    row('Active narrations', st ? String(st.activeCount) : '—') +
     row('Controllers (instances)', st ? String(st.controllers) : '—') +
-    row('Audio engine', st ? String(st.engine || '—') : '—') +
     row('Prev audio stopped (count)', st ? String(st.stops) : '—') +
     row('Speak requests (total)', st ? String(st.requests) : '—') +
     row('Duplicates blocked (total)', st ? String(st.blocked) : '—') +
-    row('Welcome line ID', WELCOME_ID) +
+    row('Voice enabled', st ? String(st.voiceEnabled) : '—') +
+    `<div style="margin-top:8px;color:#9a9488">Welcome line</div>` +
+    row('Line ID', WELCOME_ID) +
     row('Resolved MP3', res.file || '—') +
     row('Resolved URL', res.url || '—') +
-    row('Fetch status', extra && extra.fetch != null ? extra.fetch : '— (tap “Check Stage 1 file”)') +
+    row('MP3 fetch (200/404)', extra && extra.fetch != null ? extra.fetch : '— (tap “Check Stage 1 file”)') +
+    `<div style="margin-top:8px;color:#9a9488">Last self-test action</div>` +
     row('Playback started', extra && extra.started != null ? String(extra.started) : '—') +
-    row('Duplicate blocked', extra && extra.blocked != null ? String(extra.blocked) : '—') +
-    row('Active narrations', st ? String(st.activeCount) : '—') +
+    row('Duplicate suppressed', extra && extra.blocked != null ? String(extra.blocked) : '—') +
+    row('Previous cancelled', extra && extra.stopped != null ? String(extra.stopped) : '—') +
+    row('Last request', last ? `${last.fn} ${last.id} &lt;${last.src}&gt; → ${last.result}${last.reason ? ' (' + last.reason + ')' : ''}${last.stoppedPrev ? ' +stoppedPrev' : ''}` : '—') +
     `<div style="margin-top:8px;color:#9a9488">Last 5 requests</div>` +
     `<pre style="margin:4px 0 0;white-space:pre-wrap;color:#cfc9bd;font-size:12px">${
       (st && st.recent && st.recent.length)
-        ? st.recent.map((r) => `${new Date(r.t).toLocaleTimeString()}  ${r.fn} ${r.id}  <${r.src}>  ${r.result}${r.reason ? ' (' + r.reason + ')' : ''}`).join('\n')
+        ? st.recent.map((r) => `${new Date(r.t).toLocaleTimeString()}  ${r.fn} ${r.id}  <${r.src}>  ${r.result}${r.reason ? ' (' + r.reason + ')' : ''}${r.stoppedPrev ? ' +stoppedPrev' : ''}`).join('\n')
         : '—'
     }</pre>`;
   if (lastExtra.cache == null) {
@@ -117,7 +146,7 @@ function build() {
       const before = (window.__kmVoiceTrace || []).length;
       c && c.say(WELCOME_ID, WELCOME_TEXT, { source: 'selftest' });
       const after = (window.__kmVoiceTrace || []).slice(before);
-      refresh({ started: after.some((r) => r.result === 'play'), blocked: after.some((r) => r.result === 'blocked') });
+      refresh({ started: after.some((r) => r.result === 'play'), blocked: after.some((r) => r.result === 'blocked'), stopped: after.some((r) => r.stoppedPrev) });
     } else if (act === 'twice') {
       const before = (window.__kmVoiceTrace || []).length;
       c && c.say(WELCOME_ID, WELCOME_TEXT, { source: 'selftest' });
@@ -125,7 +154,7 @@ function build() {
       const after = (window.__kmVoiceTrace || []).slice(before);
       const plays = after.filter((r) => r.result === 'play').length;
       const blocked = after.filter((r) => r.result === 'blocked').length;
-      refresh({ started: plays === 1 ? 'yes (exactly 1)' : `** ${plays} **`, blocked: blocked >= 1 ? `yes (${blocked})` : '** none **' });
+      refresh({ started: plays === 1 ? 'yes (exactly 1)' : `** ${plays} — investigate **`, blocked: blocked >= 1 ? `yes (${blocked})` : '** none **', stopped: after.some((r) => r.stoppedPrev) });
     } else if (act === 'stop') {
       c && c.cancel();
       refresh({ started: 'stopped' });

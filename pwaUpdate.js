@@ -11,7 +11,7 @@
 // on window load and adds no UI unless an update is actually available.
 // =============================================================================
 
-const BUILD = 'rc2-126';
+const BUILD = 'rc2-127';
 let userInitiated = false;
 
 function showBanner(reg) {
@@ -82,5 +82,6 @@ function init() {
 
 if (typeof window !== 'undefined') {
   window.__kmBuild = BUILD;
+  try { (window.__kmVer = window.__kmVer || {}).pwaUpdate = BUILD; } catch (_) { /* no-op */ }
   window.addEventListener('load', init);
 }

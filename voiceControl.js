@@ -1,6 +1,6 @@
 // voiceControl.js — the single GLOBAL authority + single audio ENGINE for Jack.
 // =============================================================================
-// rc2-126 recovery: this is now a true singleton. The FIRST call binds one
+// rc2-127 recovery: this is now a true singleton. The FIRST call binds one
 // tutorAudio engine and one guard to window.__kmVoice; every later call (e.g. a
 // second Course instance) gets that SAME controller back and its own tutorAudio
 // is discarded, unused. Because tutorAudio keeps a single `current` Audio element
@@ -20,6 +20,11 @@
 // the in-app Voice Self-Test (#voice-test) — no console needed.
 // =============================================================================
 
+// Hardcoded version of THIS file, so the diagnostic can prove which voiceControl
+// is actually live (independent of the build string a caller passes in).
+const CODE_VERSION = 'rc2-127';
+try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).voiceControl = CODE_VERSION; } catch (_) { /* no-op */ }
+
 function sharedGuard(build) {
   const w = (typeof window !== 'undefined') ? window : globalThis;
   if (!w.__kmVoiceGuard) {
@@ -37,6 +42,7 @@ export function createVoiceControl(audio, opts = {}) {
   const w = (typeof window !== 'undefined') ? window : globalThis;
   const G = sharedGuard(opts.build || 'dev');
   G.controllers += 1;
+  try { (w.__kmVer = w.__kmVer || {}).voiceControl = CODE_VERSION; } catch (_) { /* no-op */ }
 
   // Global engine registry: track EVERY tutorAudio ever created (even the ones a
   // second instance hands us and we discard). stop-before-start cancels all of
@@ -109,11 +115,13 @@ export function createVoiceControl(audio, opts = {}) {
     lang() { return audio.lang?.() ?? diagLang; },
     diag: {
       build,
+      code: CODE_VERSION,
       voiceEnabled: () => !!(diagPack && Object.keys(diagPack).length),
       resolved(lineId) { const f = diagPack ? diagPack[lineId] : null; return { lineId, file: f || null, url: f ? `voice/${diagLang}/${f}` : null }; },
       state() {
         return {
           build: G.build,
+          code: CODE_VERSION,
           engine: 'shared-singleton',
           engines: (w.__kmEngines || []).length,
           voiceEnabled: !!(diagPack && Object.keys(diagPack).length),
