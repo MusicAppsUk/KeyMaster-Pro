@@ -1,68 +1,60 @@
-// staffViz.js — original KeyMaster PRO music-staff teaching diagrams.
+// staffViz.js — KeyMaster PRO Course music-staff teaching diagrams.
 // =============================================================================
-// Built entirely from geometry here. No scraped images, no stock notation art,
-// no method-book or competitor graphics. Original SVG: staff lines drawn from
-// scratch; clef indicators use standard Unicode music symbols (notation, not
-// art) with a plain-text label fallback so the lesson reads even if a font
-// lacks the glyph.
+// Original geometry only: no scraped images, no stock notation art, no method-
+// book or competitor graphics. Staff lines, note-heads, stems, ledgers and rests
+// are all drawn from scratch as SVG; clefs/rests use standard Unicode music
+// symbols (notation, not art) with text fallbacks.
 //
-// Renders, for teaching:
-//   • a treble staff, a bass staff, or the grand staff (both joined)
-//   • the five lines and four spaces (highlightable)
-//   • note-heads at real pitch positions, with ledger lines when needed
-//   • Middle C between the staves
-//   • the convention KeyMaster uses elsewhere: treble ≈ right hand (≥ C4),
-//     bass ≈ left hand (≤ B3)
-//
-// LAYOUT ROBUSTNESS (rc2-86): two guarantees, enforced here for every Course
-// staff view regardless of how many notes or how high/low they sit:
-//   1. HORIZONTAL — notes always lay out inside the drawn staff lines. They use
-//      a comfortable spacing when there is room and compress to fit when there
-//      are many; they never run past the lines or off the canvas.
-//   2. VERTICAL — the SVG viewBox auto-fits to contain every note-head and its
-//      ledger lines (plus the clef and labels). A note can therefore never
-//      "float" off the staff background: the canvas always grows to hold it.
+// rc2-129 — PREMIUM COURSE NOTATION. Brings the Course staff up to the standard
+// of Scales Masterclass / Cognitive Sight Reading:
+//   • a larger, full-width staff (wider canvas, tablet-readable sizing)
+//   • proper BLACK engraving ink (note-heads, stems, lines) — not brown/placeholder
+//   • real note-heads WITH STEMS, and note-value support: crotchet (quarter,
+//     filled + stem), minim (half, open + stem), semibreve (whole, open, no stem)
+//   • rests (whole/half/quarter/eighth) for rhythm/silence
+//   • treble / bass / grand staff with correct pitch placement + ledger lines
+//   • feedback that mirrors the keyboard: correct → emerald glow, wrong → soft
+//     rose (state lives on the SAME `km-staff__note` class the Course already
+//     toggles, so existing feedback wiring lights up with no Course change)
+//   • fingering numbers bound to the existing toggle (html[data-fingering=hidden])
+// The premium look ships as a <style> injected by THIS module, so it overrides
+// the older Course staff CSS without editing the large theme stylesheet, and the
+// whole upgrade deploys as one small file. Class names are unchanged, so the
+// Course's flashStaff() feedback and fingering preference keep working verbatim.
 // =============================================================================
 
-const GAP = 16;            // vertical distance between adjacent staff lines
+const GAP = 18;            // vertical distance between adjacent staff lines (larger = more readable)
 const HALF = GAP / 2;      // one diatonic step = half a line gap
+const STEM = Math.round(3.4 * GAP);   // stem length
 
-// Wider staff (rc2-86): more presence, and room for a full octave of notes to
-// breathe like real sheet music instead of crowding.
-const W = 400;             // canvas width
-const LEFT = 56;           // x where the five lines begin (after the clef)
-const RIGHT = 384;         // x where the lines end
+// Wider canvas so the Course staff reads like real sheet music across the width.
+const W = 720;
+const LEFT = 64;           // x where the five lines begin (after the clef)
+const RIGHT = 700;         // x where the lines end
 
-// Horizontal note layout. Notes must always sit WITHIN the drawn staff (never
-// float past RIGHT or off-canvas), for any number of notes. We lay them out in
-// the span [NOTE_L, NOTE_R] with a comfortable spacing when there is room, and
-// compress to fit when there are many — always centred, always inside the lines.
-// This is the single source of horizontal positioning for every staff view.
-const NOTE_L = 112;             // first note sits clear of the clef
-const NOTE_R = RIGHT - 18;      // last note stays inside the staff + ledger width
-const NOTE_SPACING = 40;        // preferred gap between note centres
+// Horizontal note layout: always inside [NOTE_L, NOTE_R], comfortable when there
+// is room, compressing to fit when there are many — centred, never past the lines.
+const NOTE_L = 138;
+const NOTE_R = RIGHT - 26;
+const NOTE_SPACING = 58;
 function noteXs(n) {
   if (n <= 0) return [];
   if (n === 1) return [Math.round((NOTE_L + NOTE_R) / 2)];
   const span = NOTE_R - NOTE_L;
-  const spacing = Math.min(NOTE_SPACING, span / (n - 1)); // compress only if needed
+  const spacing = Math.min(NOTE_SPACING, span / (n - 1));
   const groupW = spacing * (n - 1);
-  const start = NOTE_L + (span - groupW) / 2;             // centre the group
+  const start = NOTE_L + (span - groupW) / 2;
   return Array.from({ length: n }, (_, i) => Math.round(start + i * spacing));
 }
 
-// Diatonic "staff step" of a MIDI pitch: 7 per octave, C=0 … B=6. Sharps/flats
-// share their natural letter's position (fine for white-key foundations).
 const LETTER = [0, 0, 1, 1, 2, 3, 3, 4, 4, 5, 5, 6]; // C C# D D# E F F# G G# A A# B
 function staffStep(midi) {
-  const octave = Math.floor(midi / 12) - 1;   // MIDI 60 (C4) -> octave 4
+  const octave = Math.floor(midi / 12) - 1;
   return 7 * octave + LETTER[midi % 12];
 }
-
-// Bottom line of each staff (reference): treble bottom = E4 (64), bass = G2 (43).
 const REF = {
-  treble: { midi: 64, step: staffStep(64) },
-  bass:   { midi: 43, step: staffStep(43) },
+  treble: { midi: 64, step: staffStep(64) },   // bottom line E4
+  bass:   { midi: 43, step: staffStep(43) },   // bottom line G2
 };
 
 function staffLines(topY, highlight) {
@@ -83,33 +75,31 @@ function staffLines(topY, highlight) {
 
 function clefMark(clef, topY) {
   if (clef === 'treble') {
-    return `<text class="km-staff__clef" x="24" y="${topY + 3.4 * GAP}" text-anchor="middle">\uD834\uDD1E</text>`
-      + `<text class="km-staff__cleflabel" x="24" y="${topY + 5 * GAP + 14}" text-anchor="middle">treble</text>`;
+    return `<text class="km-staff__clef" x="28" y="${topY + 3.4 * GAP}" text-anchor="middle">\uD834\uDD1E</text>`
+      + `<text class="km-staff__cleflabel" x="28" y="${topY + 5 * GAP + 15}" text-anchor="middle">treble</text>`;
   }
-  return `<text class="km-staff__clef km-staff__clef--bass" x="24" y="${topY + 1.7 * GAP}" text-anchor="middle">\uD834\uDD22</text>`
-    + `<text class="km-staff__cleflabel" x="24" y="${topY + 5 * GAP + 14}" text-anchor="middle">bass</text>`;
+  return `<text class="km-staff__clef km-staff__clef--bass" x="28" y="${topY + 1.7 * GAP}" text-anchor="middle">\uD834\uDD22</text>`
+    + `<text class="km-staff__cleflabel" x="28" y="${topY + 5 * GAP + 15}" text-anchor="middle">bass</text>`;
 }
 
-// y for a pitch on a given staff block (topY = its top line's y).
 function noteY(midi, clef, topY) {
   const bottomLineY = topY + 4 * GAP;
   const ref = REF[clef];
   return bottomLineY - (staffStep(midi) - ref.step) * HALF;
 }
 
-// Ledger lines for notes sitting outside a staff block.
 function ledgersFor(midi, clef, topY, cx) {
   const ref = REF[clef];
   const step = staffStep(midi);
-  const topLineStep = ref.step + 8;   // 5 lines span 8 diatonic steps
+  const topLineStep = ref.step + 8;
   let out = '';
-  const half = 12;
-  if (step < ref.step) {              // below the staff
+  const half = 13;
+  if (step < ref.step) {
     for (let s = ref.step - 2; s >= step; s -= 2) {
       const y = topY + 4 * GAP - (s - ref.step) * HALF;
       out += `<line class="km-staff__ledger" x1="${cx - half}" y1="${y}" x2="${cx + half}" y2="${y}"/>`;
     }
-  } else if (step > topLineStep) {     // above the staff
+  } else if (step > topLineStep) {
     for (let s = topLineStep + 2; s <= step; s += 2) {
       const y = topY - (s - topLineStep) * HALF;
       out += `<line class="km-staff__ledger" x1="${cx - half}" y1="${y}" x2="${cx + half}" y2="${y}"/>`;
@@ -118,121 +108,145 @@ function ledgersFor(midi, clef, topY, cx) {
   return out;
 }
 
-// state: 'on' (amber teaching target) | 'correct' (green) | 'wrong' (rose) | null.
-// A truthy non-string is treated as 'on' for backward compatibility.
+// state: 'on' (amber target) | 'correct' (emerald) | 'wrong' (rose) | null.
 function stateClass(state) {
   const s = (state === true) ? 'on' : (typeof state === 'string' ? state : null);
   return s ? ` is-${s}` : '';
 }
-function noteHead(midi, clef, topY, cx, state, finger) {
+
+// One value of a note's footprint, used for the vertical auto-fit so nothing clips.
+function noteHeadGeom(value) {
+  if (value === 'whole') return { rx: 11.6, ry: 8.2, rot: 0, open: true, stem: false };
+  if (value === 'half') return { rx: 10.4, ry: 7.6, rot: -20, open: true, stem: true };
+  return { rx: 10.4, ry: 7.6, rot: -20, open: false, stem: true };   // quarter (crotchet) default
+}
+
+function noteHead(midi, clef, topY, cx, state, finger, value) {
   const y = noteY(midi, clef, topY);
-  const cls = 'km-staff__note' + stateClass(state);
+  const g = noteHeadGeom(value);
+  const cls = 'km-staff__note' + (g.open ? ' km-staff__note--open' : '') + stateClass(state);
   let out = ledgersFor(midi, clef, topY, cx)
-    + `<ellipse class="${cls}" cx="${cx}" cy="${y}" rx="9.5" ry="7.2" transform="rotate(-18 ${cx} ${y})"/>`;
-  // Fingering number, sat clear above the note-head. Always drawn; the app's
-  // existing fingering toggle (html[data-fingering="hidden"]) hides it in CSS,
-  // so the staff respects the same preference as the hand and keyboard.
+    + `<ellipse class="${cls}" cx="${cx}" cy="${y}" rx="${g.rx}" ry="${g.ry}" transform="rotate(${g.rot} ${cx} ${y})"/>`;
+  let stemUp = true;
+  if (g.stem) {
+    const midLineY = topY + 2 * GAP;     // middle (3rd) line
+    stemUp = y >= midLineY;              // note on/below middle line -> stem up
+    const sx = stemUp ? (cx + g.rx - 1.6) : (cx - g.rx + 1.6);
+    const y2 = stemUp ? (y - STEM) : (y + STEM);
+    out += `<line class="km-staff__stem" x1="${sx}" y1="${y}" x2="${sx}" y2="${y2}"/>`;
+  }
   if (Number.isFinite(finger)) {
-    out += `<text class="km-staff__finger" x="${cx}" y="${y - 15}" text-anchor="middle">${finger}</text>`;
+    const fy = (g.stem && stemUp) ? (y - STEM - 7) : (y - g.ry - 11);
+    out += `<text class="km-staff__finger" x="${cx}" y="${fy}" text-anchor="middle">${finger}</text>`;
   }
   return out;
 }
 
-// Original rest glyphs (standard Unicode music symbols — notation, not art),
-// centred on the middle line so rhythm lessons can show silence beside sound.
+// Vertical extent [top, bottom] of a note + stem + fingering, for auto-fit.
+function noteBounds(midi, clef, topY, value, hasFinger) {
+  const y = noteY(midi, clef, topY);
+  const g = noteHeadGeom(value);
+  let top = y - g.ry - 4;
+  let bot = y + g.ry + 4;
+  let stemUp = true;
+  if (g.stem) {
+    const midLineY = topY + 2 * GAP;
+    stemUp = y >= midLineY;
+    if (stemUp) top = y - STEM - 4; else bot = y + STEM + 4;
+  }
+  if (hasFinger) top = Math.min(top, ((g.stem && stemUp) ? (y - STEM) : (y - g.ry)) - 20);
+  return [top, bot];
+}
+
+// Original rest glyphs (standard Unicode music symbols — notation, not art).
 const REST_GLYPH = {
   whole: '\uD834\uDD3B', half: '\uD834\uDD3C', quarter: '\uD834\uDD3D', eighth: '\uD834\uDD3E',
 };
 function restGlyph(type, cx, topY) {
   const g = REST_GLYPH[type] || REST_GLYPH.quarter;
-  const y = topY + 2 * GAP + 6;   // sit around the middle line
+  const y = topY + 2 * GAP + 7;
   return `<text class="km-staff__rest" x="${cx}" y="${y}" text-anchor="middle">${g}</text>`;
 }
 
-// Normalise a notes array: each entry may be a MIDI number, a { midi, state,
-// finger } object, or a { rest: 'quarter'|... } object. Always returns objects.
+// Normalise: entries may be a MIDI number, { midi, state, finger, value }, or
+// { rest: 'quarter'|'half'|'whole'|'eighth' }. value defaults to 'quarter'.
 function normaliseSeq(notes) {
   return notes.map((n) => {
-    if (typeof n === 'number') return { midi: n, state: 'on' };
+    if (typeof n === 'number') return { midi: n, state: 'on', value: 'quarter' };
     if (n && typeof n === 'object') {
       if (n.rest) return { rest: String(n.rest) };
-      return { midi: n.midi, state: (n.state === undefined ? 'on' : n.state), finger: n.finger };
+      return {
+        midi: n.midi,
+        state: (n.state === undefined ? 'on' : n.state),
+        finger: n.finger,
+        value: (typeof n.value === 'string' ? n.value : 'quarter'),
+      };
     }
-    return { midi: n, state: 'on' };
+    return { midi: n, state: 'on', value: 'quarter' };
   });
 }
 
-// Half-height of a note-head's visual footprint (head + a little air), used for
-// the vertical auto-fit so a note is never clipped at the canvas edge.
-const NOTE_PAD = 11;
+const REST_TOP_MARK = 2 * GAP + 12;
 
 /**
  * Build a staff diagram.
  * @param {object} opts
- *   clef       'treble' | 'bass' | 'grand'        (default 'treble')
- *   highlight  'lines' | 'spaces' | null          (default null)
- *   notes      Array of MIDI numbers, or { midi, state, finger } objects, or
- *              { rest: 'quarter'|'half'|'whole'|'eighth' } entries. state is
- *              'on' (amber target) | 'correct' (green) | 'wrong' (rose).   (default [])
- *   middleC    boolean   mark Middle C on the grand staff      (default false)
+ *   clef       'treble' | 'bass' | 'grand'   (default 'treble')
+ *   highlight  'lines' | 'spaces' | null      (default null)
+ *   notes      Array of MIDI numbers, or { midi, state, finger, value } objects,
+ *              or { rest: 'quarter'|'half'|'whole'|'eighth' } entries.
+ *   middleC    boolean   mark Middle C on the grand staff   (default false)
  * @returns {HTMLDivElement} <div class="km-staff km-staff--{clef}">
  */
 export function buildStaff(opts = {}) {
+  injectStaffStyles();
   const clef = (opts.clef === 'bass' || opts.clef === 'grand') ? opts.clef : 'treble';
   const highlight = (opts.highlight === 'lines' || opts.highlight === 'spaces') ? opts.highlight : null;
   const seq = normaliseSeq(Array.isArray(opts.notes) ? opts.notes : []);
   const middleC = !!opts.middleC;
 
   let body = '';
-  // Track the vertical extent of everything drawn, so the viewBox can grow to
-  // contain it. Seed with nothing; structural + note bounds are added below.
   const ys = [];
   const mark = (y) => { if (Number.isFinite(y)) ys.push(y); };
 
   if (clef === 'grand') {
-    const trebleTop = 30;
-    const bassTop = trebleTop + 4 * GAP + 3 * GAP + 6;   // gap holds Middle C
+    const trebleTop = 34;
+    const bassTop = trebleTop + 4 * GAP + 3 * GAP + 8;
     body += staffLines(trebleTop, highlight) + clefMark('treble', trebleTop);
     body += staffLines(bassTop, highlight) + clefMark('bass', bassTop);
-    // brace + connecting barlines
     body += `<line class="km-staff__brace" x1="${LEFT}" y1="${trebleTop}" x2="${LEFT}" y2="${bassTop + 4 * GAP}"/>`;
     body += `<line class="km-staff__brace" x1="${RIGHT}" y1="${trebleTop}" x2="${RIGHT}" y2="${bassTop + 4 * GAP}"/>`;
-    mark(trebleTop - 12);                  // clef curl above the treble staff
-    mark(bassTop + 5 * GAP + 16);          // bass clef label below
+    mark(trebleTop - 14);
+    mark(bassTop + 5 * GAP + 18);
     if (middleC) {
-      const cx = (LEFT + RIGHT) / 2;
-      body += noteHead(60, 'treble', trebleTop, cx, 'on');   // Middle C: ledger below treble
-      body += `<text class="km-staff__mc" x="${cx + 18}" y="${noteY(60, 'treble', trebleTop) + 4}">Middle C</text>`;
-      mark(noteY(60, 'treble', trebleTop) + NOTE_PAD);
+      const cx = Math.round((LEFT + RIGHT) / 2);
+      body += noteHead(60, 'treble', trebleTop, cx, 'on', undefined, 'quarter');
+      body += `<text class="km-staff__mc" x="${cx + 20}" y="${noteY(60, 'treble', trebleTop) + 4}">Middle C</text>`;
+      const [t, b] = noteBounds(60, 'treble', trebleTop, 'quarter', false); mark(t); mark(b);
     }
     const gxs = noteXs(seq.length);
     seq.forEach((it, i) => {
       const cx = gxs[i];
-      if (it.rest) { body += restGlyph(it.rest, cx, trebleTop); mark(trebleTop + 2 * GAP + 10); return; }
+      if (it.rest) { body += restGlyph(it.rest, cx, trebleTop); mark(trebleTop + REST_TOP_MARK); return; }
       const useClef = (it.midi >= 60) ? 'treble' : 'bass';
       const top = (useClef === 'treble') ? trebleTop : bassTop;
-      body += noteHead(it.midi, useClef, top, cx, it.state, it.finger);
-      const ny = noteY(it.midi, useClef, top);
-      mark(ny - NOTE_PAD - (Number.isFinite(it.finger) ? 14 : 0)); mark(ny + NOTE_PAD);
+      body += noteHead(it.midi, useClef, top, cx, it.state, it.finger, it.value);
+      const [t, b] = noteBounds(it.midi, useClef, top, it.value, Number.isFinite(it.finger)); mark(t); mark(b);
     });
   } else {
-    const topY = 30;
+    const topY = 34;
     body += staffLines(topY, highlight) + clefMark(clef, topY);
-    mark(topY - 12);                       // clef curl / top air
-    mark(topY + 5 * GAP + 16);             // clef label below the staff
+    mark(topY - 14);
+    mark(topY + 5 * GAP + 18);
     const xs = noteXs(seq.length);
     seq.forEach((it, i) => {
-      if (it.rest) { body += restGlyph(it.rest, xs[i], topY); mark(topY + 2 * GAP + 10); return; }
-      body += noteHead(it.midi, clef, topY, xs[i], it.state, it.finger);
-      const ny = noteY(it.midi, clef, topY);
-      mark(ny - NOTE_PAD - (Number.isFinite(it.finger) ? 14 : 0)); mark(ny + NOTE_PAD);
+      if (it.rest) { body += restGlyph(it.rest, xs[i], topY); mark(topY + REST_TOP_MARK); return; }
+      body += noteHead(it.midi, clef, topY, xs[i], it.state, it.finger, it.value);
+      const [t, b] = noteBounds(it.midi, clef, topY, it.value, Number.isFinite(it.finger)); mark(t); mark(b);
     });
   }
 
-  // Vertical auto-fit: the viewBox spans from the highest to the lowest thing
-  // drawn, with a little padding. A note (however high or low) is therefore
-  // always inside the canvas, sitting on its line/space/ledger — never floating.
-  const PAD = 6;
+  const PAD = 8;
   const yTop = Math.floor(Math.min(0, ...ys) - PAD);
   const yBot = Math.ceil(Math.max(...ys) + PAD);
   const vbH = Math.max(1, yBot - yTop);
@@ -243,4 +257,47 @@ export function buildStaff(opts = {}) {
   wrap.className = `km-staff km-staff--${clef}`;
   wrap.innerHTML = svg;
   return wrap;
+}
+
+// Premium Course-staff styling, injected once and scoped exactly like the Course
+// stylesheet (.view[data-view="learn"] .km-staff*) so it overrides the older
+// rules by cascade order without touching the large theme stylesheet. Note-head
+// colours are true engraving black; feedback mirrors the keyboard (emerald/rose);
+// the fingering toggle rule is restated so it works regardless of theme version.
+let stylesInjected = false;
+function injectStaffStyles() {
+  if (stylesInjected) return;
+  if (typeof document === 'undefined') return;
+  if (document.getElementById('km-staff-premium-css')) { stylesInjected = true; return; }
+  const css = `
+.view[data-view="learn"] .km-staff{display:block;width:min(720px,100%);margin-inline:auto;padding:clamp(.8rem,2.4vw,1.25rem) clamp(.9rem,3vw,1.5rem);background:linear-gradient(176deg,#FCFAF5 0%,#F2EDE2 100%);border-radius:14px;border:1px solid rgba(20,17,11,.14);box-shadow:0 14px 30px -10px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.7);}
+.view[data-view="learn"] .km-staff__svg{display:block;width:100%;max-width:100%;height:auto;overflow:visible;}
+.view[data-view="learn"] .km-staff__line{stroke:#1b1814;stroke-width:1.9;}
+.view[data-view="learn"] .km-staff__ledger{stroke:#1b1814;stroke-width:1.9;}
+.view[data-view="learn"] .km-staff__brace{stroke:#141210;stroke-width:2.8;stroke-linecap:round;}
+.view[data-view="learn"] .km-staff__stem{stroke:#141210;stroke-width:2;stroke-linecap:round;}
+.view[data-view="learn"] .km-staff__clef{fill:#141210;font-size:66px;font-weight:400;}
+.view[data-view="learn"] .km-staff__clef--bass{font-size:52px;}
+.view[data-view="learn"] .km-staff__cleflabel{fill:#6b6456;font-size:12.5px;letter-spacing:.05em;}
+.view[data-view="learn"] .km-staff__note{fill:#141210;stroke:none;transition:fill .18s ease,filter .2s ease,stroke .18s ease;}
+.view[data-view="learn"] .km-staff__note--open{fill:#FCFAF5;stroke:#141210;stroke-width:2.4;}
+.view[data-view="learn"] .km-staff__mc{fill:#141210;font-size:13.5px;font-weight:700;}
+.view[data-view="learn"] .km-staff__rest{fill:#141210;font-size:36px;}
+.view[data-view="learn"] .km-staff__finger{fill:#4a4436;font-size:15px;font-weight:700;font-family:var(--font-ui,system-ui,sans-serif);}
+html[data-fingering="hidden"] .view[data-view="learn"] .km-staff__finger{display:none;}
+.view[data-view="learn"] .km-staff__line.is-hl{stroke:#E0A94B;stroke-width:3.2;}
+.view[data-view="learn"] .km-staff__space.is-hl{fill:rgba(224,169,75,.28);}
+.view[data-view="learn"] .km-staff__note.is-on{fill:#E0A94B;stroke:color-mix(in srgb,#E0A94B 60%,#3a2a08);stroke-width:1.6;}
+.view[data-view="learn"] .km-staff__note--open.is-on{fill:#FCFAF5;stroke:#E0A94B;stroke-width:2.6;}
+.view[data-view="learn"] .km-staff__note.is-correct{fill:#46C08A;stroke:none;filter:drop-shadow(0 0 5px rgba(70,192,138,.5));}
+.view[data-view="learn"] .km-staff__note--open.is-correct{fill:#46C08A;stroke:none;}
+.view[data-view="learn"] .km-staff__note.is-wrong{fill:#D98A92;stroke:rgba(217,138,146,.55);stroke-width:1.4;}
+.view[data-view="learn"] .km-staff__note--open.is-wrong{fill:#D98A92;}
+@media (prefers-reduced-motion:reduce){.view[data-view="learn"] .km-staff__note{transition:none;}.view[data-view="learn"] .km-staff__note.is-correct{filter:none;}}
+`;
+  const style = document.createElement('style');
+  style.id = 'km-staff-premium-css';
+  style.textContent = css;
+  document.head.appendChild(style);
+  stylesInjected = true;
 }
