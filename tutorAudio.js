@@ -1,31 +1,37 @@
 // tutorAudio.js
 //
-// Premium-voice-first tutor audio layer for KeyMaster PRO. It resolves a spoken
-// tutor line by a STABLE ID, in this order:
+// Premium-voice-first tutor audio layer for KeyMaster PRO. Resolves a spoken tutor
+// line by a STABLE ID: (1) PREMIUM bundled MP3 if registered for that ID in the
+// active pack; (2) DEV TTS fallback (off in production); (3) CAPTIONS always shown
+// by the caller, so no lesson depends on audio.
 //
-//   1. PREMIUM — if a high-quality audio file is registered for that ID in the
-//      active voice pack, play that file. This is the intended KeyMaster PRO
-//      experience: a warm, human, bundled (offline-capable) tutor voice.
-//   2. PROTOTYPE/FALLBACK — otherwise speak the caption text through the browser's
-//      on-device SpeechSynthesis (via the tutorVoice wrapper). This is explicitly a
-//      development prototype, NOT the final voice, and is labelled as such in the UI.
-//   3. CAPTIONS — always rendered by the caller from the same text, so no lesson
-//      ever depends on audio being present or working.
-//
-// Doctrine (Tim, rc2-53): browser TTS is a temporary prototype/fallback; the premium
-// tutor voice is a core product requirement; captions are always present but the
-// intended experience is spoken, warm, and tutor-led.
-//
-// No audio assets are bundled yet — the pack starts EMPTY, so every line falls back
-// to TTS today. Dropping one approved, licensed file in and registering its ID under
-// the active language is all that's needed to make the premium path play for that line
-// (Option C: proves the mechanism with zero further code change). Packs are keyed by
-// language/accent (e.g. 'en-GB', 'en-US', 'es-ES') so they can be lazy-loaded later
-// for accents and localisation. Dynamic lines that interpolate a name or a lesson
-// title (e.g. the greeting) cannot be a single pre-recorded file; those stay on TTS
-// until a templated/segmented audio approach is chosen.
+// rc2-128 — SINGLE-ENGINE GUARANTEE (voice-stability fix):
+//   All playback state (current audio element, beat sequence, last-id, pack) lives
+//   in ONE shared object on window, so EVERY tutorAudio instance drives the SAME
+//   single audio element. No matter how many Course instances exist (or which
+//   foundations.js is live), there is only ever one active Jack voice: starting any
+//   new line first stops the previous one. This makes overlapping Jack voices
+//   structurally impossible at the engine level. pianoVoice / Scales / demo audio
+//   are entirely separate modules and are NOT affected by this change.
 
 const HAS_AUDIO = typeof window !== 'undefined' && typeof window.Audio !== 'undefined';
+
+// ONE shared engine-state for the whole app. Every createTutorAudio() instance
+// reads and writes THIS object, so they cannot each hold their own audio element.
+function engineState() {
+  const w = (typeof window !== 'undefined') ? window : globalThis;
+  if (!w.__kmTutorEngine) {
+    w.__kmTutorEngine = {
+      pack: {}, lang: 'en-GB',
+      current: null,     // the one HTMLAudioElement in flight
+      lastId: null,      // de-dupe: never repeat the same line back-to-back
+      seqActive: false,  // a beat sequence is in progress
+      seqTimer: null,    // inter-beat pause timer
+      silentTimer: null, // captions-only pacing timer
+    };
+  }
+  return w.__kmTutorEngine;
+}
 
 export function createTutorAudio(options = {}) {
   const {
@@ -36,51 +42,47 @@ export function createTutorAudio(options = {}) {
     ttsFallback = false, // emergency/DEV ONLY: speak captions via browser TTS when no MP3 exists
   } = options;
 
-  let activePack = (pack && typeof pack === 'object') ? { ...pack } : {};
-  let activeLang = lang;
-  let current = null;    // current HTMLAudioElement (for cancel)
-  let lastId = null;     // de-dupe: never repeat the same line back-to-back
-  let seqActive = false; // a beat sequence is in progress
-  let seqTimer = null;   // inter-beat pause timer (held so we can cancel)
-  let silentTimer = null; // captions-only line pacing (no MP3 + TTS off)
+  const S = engineState();
+  // Seed the shared pack/lang. A non-empty pack from any instance becomes the shared
+  // pack; lang is set so all instances resolve under the same accent folder.
+  if (pack && typeof pack === 'object' && Object.keys(pack).length) S.pack = { ...pack };
+  if (lang) S.lang = lang;
+
   const readTimeMs = (t) => { const n = t ? String(t).length : 0; return Math.max(900, Math.min(9000, n * 48)); };
-  function clearSilent() { if (silentTimer) { clearTimeout(silentTimer); silentTimer = null; } }
-  function silentHold(text, cb) { clearSilent(); silentTimer = setTimeout(() => { silentTimer = null; if (cb) cb(); }, readTimeMs(text)); }
+  function clearSilent() { if (S.silentTimer) { clearTimeout(S.silentTimer); S.silentTimer = null; } }
+  function silentHold(text, cb) { clearSilent(); S.silentTimer = setTimeout(() => { S.silentTimer = null; if (cb) cb(); }, readTimeMs(text)); }
 
   function urlFor(lineId) {
-    const file = activePack[lineId];
-    return file ? `${basePath}/${activeLang}/${file}` : null;
+    const file = S.pack[lineId];
+    return file ? `${basePath}/${S.lang}/${file}` : null;
   }
-  function hasPremium(lineId) { return !!activePack[lineId]; }
-  function isPremiumActive() { return Object.keys(activePack).length > 0; }
+  function hasPremium(lineId) { return !!S.pack[lineId]; }
+  function isPremiumActive() { return Object.keys(S.pack).length > 0; }
 
   function stopAudio() {
     clearSilent();
-    if (current) {
-      try { current.pause(); current.src = ''; } catch (_) { /* no-op */ }
-      current = null;
+    if (S.current) {
+      try { S.current.pause(); S.current.src = ''; } catch (_) { /* no-op */ }
+      S.current = null;
     }
   }
   function cancelSeq() {
-    seqActive = false;
-    if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
+    S.seqActive = false;
+    if (S.seqTimer) { clearTimeout(S.seqTimer); S.seqTimer = null; }
     stopAudio();
   }
   function cancel() {
-    lastId = null;
+    S.lastId = null;
     cancelSeq();
     voice?.cancel?.();
   }
 
-  // Speak a line by stable ID. `text` is the caption text, used verbatim for the TTS
-  // fallback (and shown by the caller). `opts.dedupe` defaults true; opts.volume sets
-  // the premium-file volume.
   function say(lineId, text, opts = {}) {
     const done = (typeof opts.onDone === 'function') ? opts.onDone : null;
-    if (seqActive) cancelSeq();   // a single line interrupts a beat sequence
+    if (S.seqActive) cancelSeq();   // a single line interrupts a beat sequence
     const dedupe = opts.dedupe !== false;
-    if (dedupe && lineId != null && lineId === lastId) { if (done) done(); return; }
-    lastId = (lineId != null) ? lineId : null;
+    if (dedupe && lineId != null && lineId === S.lastId) { if (done) done(); return; }
+    S.lastId = (lineId != null) ? lineId : null;
 
     const url = HAS_AUDIO ? urlFor(lineId) : null;
     if (url) {
@@ -88,73 +90,66 @@ export function createTutorAudio(options = {}) {
         stopAudio();
         const a = new window.Audio(url);
         a.volume = (opts.volume != null) ? opts.volume : 0.9;
-        current = a;
-        // If the premium file is missing or fails, fall back to TTS so we are never silent.
-        const fallback = () => { current = null; if (ttsFallback && voice) voice.speak(text, lineId, done); else silentHold(text, done); };
+        S.current = a;
+        const fallback = () => { S.current = null; if (ttsFallback && voice) voice.speak(text, lineId, done); else silentHold(text, done); };
         a.addEventListener('error', fallback, { once: true });
-        if (done) a.addEventListener('ended', () => { current = null; done(); }, { once: true });
+        if (done) a.addEventListener('ended', () => { if (S.current === a) S.current = null; done(); }, { once: true });
         const p = a.play?.();
         if (p && typeof p.catch === 'function') p.catch(fallback);
         return;
       } catch (_) {
-        current = null;   // fall through to TTS
+        S.current = null;   // fall through to TTS
       }
     }
     if (ttsFallback && voice) voice.speak(text, lineId, done);  // DEV fallback only — never under Jack
     else silentHold(text, done);                                // captions remain; no robot voice
   }
 
-  // Speak a line as a SEQUENCE of short beats with real pauses between them, so the
-  // prototype voice "breathes" instead of reading one flat block — and so the script
-  // is already shaped for premium performance. Each beat:
-  //   { text, pauseAfter?, tone?, emphasis?, voiceDirection? }
-  // `text` + `pauseAfter` drive timing now; `tone` / `emphasis` / `voiceDirection` are
-  // CARRIED for the premium recording / AI-generation phase (browser TTS cannot perform
-  // them). A premium file per beat resolves at `${baseId}.${i}`; otherwise the beat is
-  // spoken by the TTS prototype and the next beat is chained on its completion.
   function sayBeats(baseId, beats, opts = {}) {
     const done = (typeof opts.onDone === 'function') ? opts.onDone : null;
+    // If THIS exact sequence is already in progress, ignore the duplicate entirely —
+    // no cancel, no restart. This stops a second instance from cutting off or
+    // layering over a welcome that is already playing.
+    if (opts.dedupe !== false && baseId != null && baseId === S.lastId && S.seqActive) { if (done) done(); return; }
     cancelSeq();
     if (!Array.isArray(beats) || !beats.length) { if (done) done(); return; }
-    if (opts.dedupe !== false && baseId != null && baseId === lastId) { if (done) done(); return; }
-    lastId = (baseId != null) ? baseId : null;
-    seqActive = true;
+    if (opts.dedupe !== false && baseId != null && baseId === S.lastId) { if (done) done(); return; }
+    S.lastId = (baseId != null) ? baseId : null;
+    S.seqActive = true;
     let i = 0;
     const run = () => {
-      if (!seqActive) return;
-      if (i >= beats.length) { seqActive = false; if (done) done(); return; }
+      if (!S.seqActive) return;
+      if (i >= beats.length) { S.seqActive = false; if (done) done(); return; }
       const beat = beats[i] || {};
       const bid = `${baseId}.${i}`;
       i += 1;
       const after = (typeof beat.pauseAfter === 'number') ? beat.pauseAfter : 360;
-      const next = () => { if (seqActive) seqTimer = setTimeout(run, after); };
+      const next = () => { if (S.seqActive) S.seqTimer = setTimeout(run, after); };
       const url = HAS_AUDIO ? urlFor(bid) : null;
       if (url) playFile(url, beat.text, bid, next);
       else if (ttsFallback && voice) voice.speak(beat.text, bid, next);  // DEV fallback only
-      else { seqTimer = setTimeout(next, readTimeMs(beat.text)); }         // captions-only pacing
+      else { S.seqTimer = setTimeout(next, readTimeMs(beat.text)); }       // captions-only pacing
     };
     run();
   }
   function playFile(url, fallbackText, bid, onDone) {
-    const fb = () => { current = null; if (ttsFallback && voice) voice.speak(fallbackText, bid, onDone); else { seqTimer = setTimeout(onDone, readTimeMs(fallbackText)); } };
+    const fb = () => { S.current = null; if (ttsFallback && voice) voice.speak(fallbackText, bid, onDone); else { S.seqTimer = setTimeout(onDone, readTimeMs(fallbackText)); } };
     try {
       stopAudio();
       const a = new window.Audio(url);
       a.volume = 0.9;
-      current = a;
-      a.addEventListener('ended', () => { if (onDone) onDone(); }, { once: true });
+      S.current = a;
+      a.addEventListener('ended', () => { if (S.current === a) S.current = null; if (onDone) onDone(); }, { once: true });
       a.addEventListener('error', fb, { once: true });
       const p = a.play?.();
       if (p && typeof p.catch === 'function') p.catch(fb);
     } catch (_) { fb(); }
   }
 
-  // Lazy-load hook for future language/accent packs. No network today; a caller can
-  // later fetch a manifest and hand it in here, optionally switching language.
   function setPack(map, forLang) {
-    activePack = (map && typeof map === 'object') ? { ...map } : {};
-    if (forLang) activeLang = forLang;
-    lastId = null;
+    S.pack = (map && typeof map === 'object') ? { ...map } : {};
+    if (forLang) S.lang = forLang;
+    S.lastId = null;
   }
 
   return {
@@ -164,6 +159,6 @@ export function createTutorAudio(options = {}) {
     hasPremium,
     isPremiumActive,
     setPack,
-    lang: () => activeLang,
+    lang: () => S.lang,
   };
 }
