@@ -17,10 +17,10 @@
 // =============================================================================
 
 import { createTutorAudio } from './tutorAudio.js?v=rc2-107';
-import { createVoiceControl } from './voiceControl.js?v=rc2-120';
+import { createVoiceControl } from './voiceControl.js?v=rc2-121';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-116';
 
-const BUILD = 'rc2-120';
+const BUILD = 'rc2-121';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
@@ -141,8 +141,23 @@ function check() {
   if ((location.hash || '').toLowerCase() === '#voice-test') show(); else hide();
 }
 
+// Discreet always-visible build badge → instantly reveals a stale/mixed deploy,
+// and is a one-tap route to the Voice Self-Test. Deliberately tiny and muted.
+function badge() {
+  if (typeof document === 'undefined' || document.getElementById('km-build-badge')) return;
+  const b = document.createElement('button');
+  b.id = 'km-build-badge';
+  b.textContent = BUILD;
+  b.title = 'KeyMaster build — tap for Voice Self-Test';
+  b.style.cssText = 'position:fixed;right:6px;bottom:6px;z-index:2147483646;'
+    + 'font:11px/1 system-ui,sans-serif;color:#9a9488;background:rgba(22,19,13,.55);'
+    + 'border:1px solid rgba(154,148,136,.3);border-radius:6px;padding:3px 6px;opacity:.6;';
+  b.addEventListener('click', () => { try { location.hash = '#voice-test'; } catch (_) {} });
+  document.body.appendChild(b);
+}
+
 if (typeof window !== 'undefined') {
   window.addEventListener('hashchange', check);
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', check);
-  else check();
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { badge(); check(); });
+  else { badge(); check(); }
 }

@@ -25,7 +25,7 @@
 
 import { createTutorVoice } from './tutorVoice.js?v=rc2-74';
 import { createTutorAudio } from './tutorAudio.js?v=rc2-107';
-import { createVoiceControl } from './voiceControl.js?v=rc2-120';
+import { createVoiceControl } from './voiceControl.js?v=rc2-121';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-116';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-108';
@@ -1841,7 +1841,7 @@ export default function createView(ctx) {
   // can never speak under Jack. Flip to true only for development without a voice pack.
   const TTS_DEV_FALLBACK = false;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-120';
+  const KM_BUILD = 'rc2-121';
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate
   // same-line requests from any path. The frozen tutorAudio.js is wrapped, never
@@ -2965,9 +2965,11 @@ export default function createView(ctx) {
           const prompt0 = (c0 && c0.mode && c0.mode !== 'none' && c0.tryPrompt) ? c0.tryPrompt : '';
           pendingGreeting = [greetText, intro0, prompt0].filter(Boolean).join(' ');
           suppressSpeakOnce = true;   // render won't auto-speak card 0; the greeting covers it
-          // If voice is already unlocked this session (a prior gesture), speak now;
-          // otherwise wait for the first tap (Start / Continue / key) — mobile autoplay.
-          if (voice && voiceOn && voice.isUnlocked?.()) speakPending();
+          // DETERMINISTIC OWNERSHIP: the welcome is spoken ONLY by an explicit user
+          // gesture (Start / voice toggle / Continue / first key) via speakPending().
+          // Route init / progress restore no longer auto-speak it — that removed the
+          // last non-gesture trigger that could overlap the gesture-driven one.
+          // (pendingGreeting waits here until the first gesture fires speakPending.)
         }
         updateVoiceStatus();
       }
