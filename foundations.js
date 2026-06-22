@@ -1858,6 +1858,7 @@ export default function createView(ctx) {
   let voiceOn = PREMIUM_VOICE_READY;   // Jack is the product voice: ON by default when the pack exists
   let greeted = false;            // speak the greeting at most once per session
   let suppressSpeakOnce = false;  // first render after greeting must not cut it off
+  let lastAutoSpokenIndex = -1;   // last card whose intro render() auto-narrated (dedupe re-renders)
   let pendingGreeting = null;     // greeting+intro awaiting the first user gesture (mobile autoplay)
   let stepAttempts = 0;           // learn: interactions on the current step (gentle progression gate)
   let wrongCount = 0;             // learn: wrong attempts on the current step (graduated re-teach)
@@ -2218,6 +2219,7 @@ export default function createView(ctx) {
     if (progress) progress.reset();
     index = 0;
     greeted = false;
+    lastAutoSpokenIndex = -1;
     setVoice(false);
     render();
   }
@@ -2563,10 +2565,16 @@ export default function createView(ctx) {
       // ejecting to the dashboard. (Exit/Home remain available via the chrome.)
       try { ctx.nav?.set?.([{ label: 'Master Training', go: goBack }, { label: ch ? ch.name : `Lesson ${index + 1}` }]); } catch (_) { /* nav is non-critical */ }
       // Teaching rhythm: tutor speaks, then (after a pause) the keyboard
-      // demonstrates. Step 0's speech is covered by the greeting, so we skip
-      // straight to the demonstration there.
-      const skipSpeech = suppressSpeakOnce;
+      // demonstrates. Step 0's speech is owned by the greeting/speakPending path
+      // (once per session), and an incidental re-render of the SAME card must not
+      // restart its narration — sayBeats() interrupts and replays from the top,
+      // which is the "Jack starts again" double-play. Explicit replay (Hear it
+      // again) bypasses this by calling runLearnSequence directly.
+      const greetingOwnsCard0 = (index === 0) && (pendingGreeting != null || greeted);
+      const sameCardReRender = (index === lastAutoSpokenIndex);
+      const skipSpeech = suppressSpeakOnce || greetingOwnsCard0 || sameCardReRender;
       if (suppressSpeakOnce) suppressSpeakOnce = false;
+      if (!skipSpeech) lastAutoSpokenIndex = index;
       runLearnSequence(c, skipSpeech);
       // Gently bring the active teaching area into view (device-tuned; never jumps if visible).
       try { card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) { /* no-op */ }
