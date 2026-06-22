@@ -342,3 +342,60 @@
 @media (prefers-reduced-motion: reduce) {
   .mf-ovl__stroke, .mf-ovl__arrow, .mf-ovl__label { animation: none; }
 }
+
+/* ==========================================================================
+   rc2-131 — Course key-feedback safety net.
+   ROOT CAUSE of "the keyboard goes black after a few notes": the Course success
+   highlight (.hl-success) is styled in theme.css with an animation that fades the
+   KEY'S OPACITY to 0 and an animation-fill-mode of `both` — so any key whose
+   highlight is not cleared in time is left fully transparent. Against the dark
+   deck that reads as black, and it stacks up over several notes. keyboard.css
+   loads AFTER theme.css, so these Course-scoped rules win at equal specificity,
+   and the extra .key--white / .key--black (0,4,1) also outranks theme's (0,3,1).
+   The fix: every key stays fully OPAQUE under feedback and keeps its real surface
+   (white = ivory, black = ebony, no darkening filter); the glow now rides on
+   box-shadow ONLY — a brief emerald confirm that fades to nothing, a warm amber
+   tutor-demo ring, and the brass target disc (the ::after, left untouched). So
+   feedback can never blank or blacken the keyboard, and black keys stay distinct
+   from white. Course-only; the Scales / Chord / Sight-Reading evaluator feedback
+   (hl-match / hl-mismatch) is a different system and is unaffected.
+   ========================================================================== */
+html[data-view="learn"] .key.hl-target.key--white,
+html[data-view="learn"] .key.hl-demo.key--white,
+html[data-view="learn"] .key.hl-success.key--white {
+  background: var(--ivory-key);
+  filter: none;
+  opacity: 1;
+}
+html[data-view="learn"] .key.hl-target.key--black,
+html[data-view="learn"] .key.hl-demo.key--black,
+html[data-view="learn"] .key.hl-success.key--black {
+  background: var(--ebony-key);
+  filter: none;
+  opacity: 1;
+}
+/* Tutor is playing this key — a warm amber ring (no opacity change). */
+html[data-view="learn"] .key.hl-demo.key--white,
+html[data-view="learn"] .key.hl-demo.key--black {
+  box-shadow: inset 0 0 0 2px var(--amber, #E6B45A),
+              0 0 16px -1px rgba(230, 180, 90, 0.55);
+}
+/* Correct — a brief, refined emerald confirmation on the keys just played. The
+   glow lives on box-shadow only and fades to nothing; the key never loses
+   opacity, so it cannot blank to black even if the class lingers. */
+@keyframes kmKbdSuccess {
+  0%   { box-shadow: inset 0 0 0 2px var(--good, #36c46a), 0 0 7px -1px var(--good, #36c46a); }
+  28%  { box-shadow: inset 0 0 0 2px var(--good, #36c46a), 0 0 22px -2px var(--good, #36c46a); }
+  100% { box-shadow: inset 0 0 0 0 rgba(54,196,106,0), 0 0 0 0 rgba(54,196,106,0); }
+}
+html[data-view="learn"] .key.hl-success.key--white,
+html[data-view="learn"] .key.hl-success.key--black {
+  animation: kmKbdSuccess 0.9s ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-view="learn"] .key.hl-success.key--white,
+  html[data-view="learn"] .key.hl-success.key--black {
+    animation: none;
+    box-shadow: inset 0 0 0 2px var(--good, #36c46a);
+  }
+}

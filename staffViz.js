@@ -271,7 +271,8 @@ function injectStaffStyles() {
   if (document.getElementById('km-staff-premium-css')) { stylesInjected = true; return; }
   const css = `
 .view[data-view="learn"] .km-staff{display:block;width:min(720px,100%);margin-inline:auto;padding:clamp(.8rem,2.4vw,1.25rem) clamp(.9rem,3vw,1.5rem);background:linear-gradient(176deg,#FCFAF5 0%,#F2EDE2 100%);border-radius:14px;border:1px solid rgba(20,17,11,.14);box-shadow:0 14px 30px -10px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.7);}
-.view[data-view="learn"] .km-staff__svg{display:block;width:100%;max-width:100%;height:auto;overflow:visible;}
+.view[data-view="learn"] .km-staff__svg{display:block;width:100%;max-width:100%;height:auto;max-height:min(34vh,300px);overflow:visible;}
+.view[data-view="learn"] .km-staff--grand{padding-top:.55rem;padding-bottom:.5rem;}
 .view[data-view="learn"] .km-staff__line{stroke:#1b1814;stroke-width:1.9;}
 .view[data-view="learn"] .km-staff__ledger{stroke:#1b1814;stroke-width:1.9;}
 .view[data-view="learn"] .km-staff__brace{stroke:#141210;stroke-width:2.8;stroke-linecap:round;}
