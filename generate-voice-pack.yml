@@ -1,0 +1,71 @@
+name: Generate Jack voice pack (full KeyMaster PRO pack)
+
+# Generates the CURRENT, FULL Jack voice pack from tools/generate-jack.mjs
+# (every line in the live course — not the old proof pack). Filenames follow the
+# canonical convention used by the app's runtime resolver, and generation is
+# additive: existing MP3s are never re-recorded or re-billed.
+#
+# The run summary page shows totals (existing / missing / generated / skipped /
+# failed) and whether files were committed — no need to open step logs.
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "true = preview only (no cost, no files written). false = generate the full pack and commit new MP3s to main."
+        type: choice
+        default: "true"
+        options:
+          - "true"
+          - "false"
+
+permissions:
+  contents: write
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Runs the current full generator. Writes a Markdown table to the run
+      # summary (existing / missing / generated / skipped / failed). Dry run
+      # makes no API calls and writes no files.
+      - name: Generate or preview the full Jack voice pack
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+          DRY: ${{ inputs.dry_run }}
+        run: node tools/generate-jack.mjs
+
+      # Option A — commit any newly generated MP3s straight to main, so GitHub
+      # Pages serves them automatically. Additive only: nothing else is touched.
+      - name: Commit new MP3s to main
+        if: ${{ inputs.dry_run == 'false' }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          CHANGES=$(git status --porcelain voice/en-GB | wc -l | tr -d ' ')
+          {
+            echo ""
+            echo "### Publishing"
+            echo ""
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$CHANGES" -gt 0 ]; then
+            git add voice/en-GB
+            git commit -m "Jack voice pack: add ${CHANGES} generated MP3(s)"
+            git push origin HEAD:main
+            {
+              echo "- Committed: **yes** — ${CHANGES} new MP3(s)"
+              echo "- Target branch: **main** (GitHub Pages serves \`voice/en-GB/\` automatically)"
+              echo "- Live in a minute or two at: \`https://musicappsuk.github.io/KeyMaster-Pro/voice/en-GB/\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "- Committed: **no** — no new MP3s (every line already present in \`voice/en-GB/\`)."
+              echo "- Target branch: **main**"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
