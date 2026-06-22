@@ -1,31 +1,31 @@
-// voiceControl.js — the single GLOBAL authority for Jack narration.
+// voiceControl.js — the single GLOBAL authority + single audio ENGINE for Jack.
 // =============================================================================
-// rc2-122 recovery: the guard state lives on ONE window-level singleton
-// (window.__kmVoiceGuard), shared by every controller and every Course instance.
-// This is the fix for the device double-start: even if the Course component is
-// instantiated more than once (two routes, a prefetch, a stale un-left view),
-// each instance wraps tutorAudio with its own facade — but they all consult the
-// SAME guard, so only ONE Jack voice can ever play.
+// rc2-124 recovery: this is now a true singleton. The FIRST call binds one
+// tutorAudio engine and one guard to window.__kmVoice; every later call (e.g. a
+// second Course instance) gets that SAME controller back and its own tutorAudio
+// is discarded, unused. Because tutorAudio keeps a single `current` Audio element
+// and pauses it before each new one, sharing ONE engine makes overlapping Jack
+// voices structurally impossible — there is only ever one audio element.
 //
-// Rules (global):
-//   - one active Jack playback at a time;
-//   - a request for the line already playing is ignored ("already-playing");
-//   - a request for the same line inside a short debounce window is ignored;
-//   - a "once" line (the welcome) plays at most once per session ("once-done");
-//   - an explicit replay ("Hear it again", opts.explicit) always plays;
-//   - a genuinely different line stops the old and plays — never two at once.
+// Guarantees (global, cross-instance):
+//   • exactly one Jack narration plays at a time (one engine, one element);
+//   • before any new line, the active audio is stopped/disposed (stop-before-start);
+//   • a request for the line already playing is ignored ("already-playing");
+//   • a same-line request inside a short window is ignored ("debounce");
+//   • a "once" line (the welcome) plays at most once per session ("once-done");
+//   • an explicit replay ("Hear it again") always plays;
+//   • cancel() stops everything (used on route exit / session reset).
 //
-// tutorAudio.js is wrapped, never modified. Diagnostics are exposed on
-// window.__kmVoice for the in-app Voice Self-Test (#voice-test) — no console.
+// tutorAudio.js is wrapped, never modified. Diagnostics on window.__kmVoice feed
+// the in-app Voice Self-Test (#voice-test) — no console needed.
 // =============================================================================
 
 function sharedGuard(build) {
   const w = (typeof window !== 'undefined') ? window : globalThis;
   if (!w.__kmVoiceGuard) {
     w.__kmVoiceGuard = {
-      build,
-      activeKey: null, activeToken: 0, lastKey: null, lastAt: 0,
-      oncePlayed: {}, controllers: 0, requests: 0, blocked: 0, recent: [],
+      build, activeKey: null, activeToken: 0, lastKey: null, lastAt: 0,
+      oncePlayed: {}, controllers: 0, requests: 0, blocked: 0, stops: 0, recent: [],
     };
   }
   if (build) w.__kmVoiceGuard.build = build;
@@ -34,10 +34,17 @@ function sharedGuard(build) {
 
 export function createVoiceControl(audio, opts = {}) {
   if (!audio) return audio;
+  const w = (typeof window !== 'undefined') ? window : globalThis;
+  const G = sharedGuard(opts.build || 'dev');
+  G.controllers += 1;
+
+  // SINGLETON: reuse the one shared controller/engine if it already exists, so the
+  // whole app shares a single audio element. The extra tutorAudio passed here is
+  // discarded (never played) — that is what prevents two voices at once.
+  if (w.__kmVoice && w.__kmVoiceEngineBound) return w.__kmVoice;
+
   const build = opts.build || 'dev';
   const DEBOUNCE_MS = Number.isFinite(opts.debounceMs) ? opts.debounceMs : 2500;
-  const G = sharedGuard(build);
-  G.controllers += 1;
   let diagPack = null;
   let diagLang = opts.lang || 'en-GB';
 
@@ -47,13 +54,10 @@ export function createVoiceControl(audio, opts = {}) {
     G.recent.push(rec);
     if (G.recent.length > 12) G.recent.shift();
     try {
-      const w = (typeof window !== 'undefined') ? window : globalThis;
       const t = (w.__kmVoiceTrace = w.__kmVoiceTrace || []);
-      t.push(rec);
-      if (t.length > 50) t.shift();
+      t.push(rec); if (t.length > 50) t.shift();
     } catch (_) { /* no-op */ }
   }
-
   function decide(key, explicit, once) {
     if (explicit) return { ok: true, reason: 'explicit' };
     if (once && G.oncePlayed[key]) return { ok: false, reason: 'once-done' };
@@ -63,14 +67,19 @@ export function createVoiceControl(audio, opts = {}) {
   }
   function begin(key, once) { G.activeToken += 1; const tok = G.activeToken; G.activeKey = key; G.lastKey = key; G.lastAt = Date.now(); if (once) G.oncePlayed[key] = true; return tok; }
   function endIf(tok) { if (tok === G.activeToken) G.activeKey = null; }
+  function hardStop() { try { audio.cancel?.(); G.stops += 1; } catch (_) { /* no-op */ } G.activeKey = null; G.activeToken += 1; }
 
-  function run(fn, key, payload, options) {
+  function run(fnName, fn, key, payload, options) {
     const explicit = !!options.explicit;
     const once = !!options.once;
     const source = options.source || (explicit ? 'repeat' : 'auto');
     const d = decide(key, explicit, once);
-    record({ t: Date.now(), build, fn: options._fn || 'say', id: key, src: source, result: d.ok ? 'play' : 'blocked', reason: d.reason });
+    record({ t: Date.now(), build, fn: fnName, id: key, src: source, result: d.ok ? 'play' : 'blocked', reason: d.reason, stoppedPrev: false });
     if (!d.ok) { if (typeof options.onDone === 'function') { try { options.onDone(); } catch (_) {} } return undefined; }
+    // STOP-BEFORE-START: dispose any active Jack audio before the new line.
+    const hadActive = G.activeKey != null;
+    hardStop();
+    if (hadActive) { const r = G.recent[G.recent.length - 1]; if (r) r.stoppedPrev = true; }
     const tok = begin(key, once);
     const userDone = options.onDone;
     const wrapped = { ...options };
@@ -80,10 +89,10 @@ export function createVoiceControl(audio, opts = {}) {
   }
 
   const facade = {
-    say(lineId, text, options = {}) { return run((id, t, o) => audio.say(id, t, o), lineId, text, { ...options, _fn: 'say' }); },
-    sayBeats(baseId, beats, options = {}) { return run((id, b, o) => audio.sayBeats(id, b, o), baseId, beats, { ...options, _fn: 'sayBeats' }); },
+    say(lineId, text, options = {}) { return run('say', (id, t, o) => audio.say(id, t, o), lineId, text, options); },
+    sayBeats(baseId, beats, options = {}) { return run('sayBeats', (id, b, o) => audio.sayBeats(id, b, o), baseId, beats, options); },
     setPack(map, lang) { diagPack = (map && typeof map === 'object') ? map : null; if (lang) diagLang = lang; return audio.setPack?.(map, lang); },
-    cancel() { G.activeKey = null; G.activeToken += 1; return audio.cancel?.(); },
+    cancel() { hardStop(); return undefined; },
     hasPremium(id) { return audio.hasPremium?.(id); },
     isPremiumActive() { return audio.isPremiumActive?.(); },
     lang() { return audio.lang?.() ?? diagLang; },
@@ -94,10 +103,12 @@ export function createVoiceControl(audio, opts = {}) {
       state() {
         return {
           build: G.build,
+          engine: 'shared-singleton',
           voiceEnabled: !!(diagPack && Object.keys(diagPack).length),
           controllers: G.controllers,
           requests: G.requests,
           blocked: G.blocked,
+          stops: G.stops,
           activeKey: G.activeKey,
           activeCount: G.activeKey ? 1 : 0,
           lastKey: G.lastKey,
@@ -111,6 +122,7 @@ export function createVoiceControl(audio, opts = {}) {
   try {
     if (typeof window !== 'undefined') {
       window.__kmVoice = facade;
+      window.__kmVoiceEngineBound = true;   // marks the singleton engine as bound
       window.addEventListener('pagehide', () => facade.cancel(), { once: false });
     }
   } catch (_) { /* no-op */ }

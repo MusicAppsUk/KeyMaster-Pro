@@ -17,10 +17,10 @@
 // =============================================================================
 
 import { createTutorAudio } from './tutorAudio.js?v=rc2-107';
-import { createVoiceControl } from './voiceControl.js?v=rc2-123';
+import { createVoiceControl } from './voiceControl.js?v=rc2-124';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-116';
 
-const BUILD = 'rc2-123';
+const BUILD = 'rc2-124';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
@@ -59,6 +59,8 @@ function refresh(extra) {
     row('Active cache', extra && extra.cache != null ? extra.cache : '… (loading)') +
     row('Voice enabled', st ? String(st.voiceEnabled) : 'n/a (open Course once)') +
     row('Controllers (instances)', st ? String(st.controllers) : '—') +
+    row('Audio engine', st ? String(st.engine || '—') : '—') +
+    row('Prev audio stopped (count)', st ? String(st.stops) : '—') +
     row('Speak requests (total)', st ? String(st.requests) : '—') +
     row('Duplicates blocked (total)', st ? String(st.blocked) : '—') +
     row('Welcome line ID', WELCOME_ID) +
