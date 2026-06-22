@@ -25,7 +25,7 @@
 
 import { createTutorVoice } from './tutorVoice.js?v=rc2-74';
 import { createTutorAudio } from './tutorAudio.js?v=rc2-107';
-import { createVoiceControl } from './voiceControl.js?v=rc2-124';
+import { createVoiceControl } from './voiceControl.js?v=rc2-125';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-116';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-108';
@@ -1841,7 +1841,7 @@ export default function createView(ctx) {
   // can never speak under Jack. Flip to true only for development without a voice pack.
   const TTS_DEV_FALLBACK = false;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-124';
+  const KM_BUILD = 'rc2-125';
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate
   // same-line requests from any path. The frozen tutorAudio.js is wrapped, never
@@ -2922,6 +2922,10 @@ export default function createView(ctx) {
   // ---- Lifecycle ------------------------------------------------------------
   return {
     enter() {
+      // ROUTE-IN HARD STOP: entering the Course cancels any narration still alive
+      // from the front door / greeting / a prior instance, so the welcome can never
+      // layer over an earlier line. One engine + this = a single clean voice on entry.
+      audio?.cancel?.();
       if (!unsub && input?.subscribe) unsub = input.subscribe(onNote);
       if (learnMode) {
         if (progress) {

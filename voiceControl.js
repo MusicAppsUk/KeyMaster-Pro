@@ -1,6 +1,6 @@
 // voiceControl.js — the single GLOBAL authority + single audio ENGINE for Jack.
 // =============================================================================
-// rc2-124 recovery: this is now a true singleton. The FIRST call binds one
+// rc2-125 recovery: this is now a true singleton. The FIRST call binds one
 // tutorAudio engine and one guard to window.__kmVoice; every later call (e.g. a
 // second Course instance) gets that SAME controller back and its own tutorAudio
 // is discarded, unused. Because tutorAudio keeps a single `current` Audio element
