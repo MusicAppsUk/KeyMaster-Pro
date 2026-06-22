@@ -1859,6 +1859,33 @@ export default function createView(ctx) {
   let greeted = false;            // speak the greeting at most once per session
   let suppressSpeakOnce = false;  // first render after greeting must not cut it off
   let lastAutoSpokenIndex = -1;   // last card whose intro render() auto-narrated (dedupe re-renders)
+  // --- Central narration stability guard (Course voice layer; tutorAudio frozen) ---
+  // Guarantees one welcome auto-play per session and blocks auto re-narration of the
+  // same card within a short window, no matter which path requests it (greeting,
+  // render, resume, audio-unlock, re-render). Explicit "Hear it again" bypasses it.
+  const KM_BUILD = 'rc2-119';
+  let welcomeAutoPlayed = false;  // welcome.say.* may auto-play at most once per session
+  let lastAutoNarrId = null;      // last auto-narrated card id (debounce key)
+  let lastAutoNarrAt = 0;         // timestamp of that narration (ms)
+  const NARR_DEDUPE_MS = 2500;    // identical auto requests inside this window are ignored
+  const VOICE_TRACE = true;       // TEMP diagnostic — set false to silence; safe to delete later
+  const voiceTrace = (action, id, source, reason) => {
+    if (!VOICE_TRACE) return;
+    try {
+      if (typeof window !== 'undefined') {
+        const log = (window.__kmVoiceTrace = window.__kmVoiceTrace || []);
+        log.push({ t: Date.now(), build: KM_BUILD, action, id, source: source || '?', reason: reason || '' });
+        if (log.length > 30) log.shift();
+        window.__kmBuild = KM_BUILD;
+      }
+      console.debug(`[KM ${KM_BUILD} voice] ${action} ${id} <- ${source || '?'}${reason ? ' (' + reason + ')' : ''}`);
+    } catch (_) { /* no-op */ }
+  };
+  if (typeof window !== 'undefined' && !window.__kmBuildLogged) {
+    window.__kmBuildLogged = true;
+    window.__kmBuild = KM_BUILD;
+    try { console.info(`KeyMaster build ${KM_BUILD} — voice stability guard active`); } catch (_) { /* no-op */ }
+  }
   let pendingGreeting = null;     // greeting+intro awaiting the first user gesture (mobile autoplay)
   let stepAttempts = 0;           // learn: interactions on the current step (gentle progression gate)
   let wrongCount = 0;             // learn: wrong attempts on the current step (graduated re-teach)
@@ -2093,7 +2120,7 @@ export default function createView(ctx) {
       if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
       if (demoTimer) { clearTimeout(demoTimer); demoTimer = null; }
       audio?.cancel?.();
-      runLearnSequence(steps[index], false);            // speak, then demonstrate — never both at once
+      runLearnSequence(steps[index], false, { explicit: true, source: 'repeat' });  // explicit replay bypasses the guard
     });
     resetBtn.addEventListener('click', onReset);
     if (typeof window !== 'undefined') window.addEventListener('resize', () => overlay?.reflow?.());
@@ -2200,7 +2227,7 @@ export default function createView(ctx) {
         || (Array.isArray(progress.get('learnCompleted')) && progress.get('learnCompleted').length > 0)));
       const c0 = steps[index];
       if (!resuming && c0 && Array.isArray(c0.say) && c0.say.length) {
-        speakCard(c0);                       // spoken Course introduction (existing MP3s)
+        speakCard(c0, undefined, { source: 'greeting' });   // spoken Course introduction (existing MP3s)
       } else {
         audio.say((resuming ? 'greeting.back.' : 'greeting.') + tod, pendingGreeting);
       }
@@ -2220,13 +2247,28 @@ export default function createView(ctx) {
     index = 0;
     greeted = false;
     lastAutoSpokenIndex = -1;
+    welcomeAutoPlayed = false; lastAutoNarrId = null; lastAutoNarrAt = 0;
     setVoice(false);
     render();
   }
-  function speakCard(c, onDone) {
+  function speakCard(c, onDone, opts = {}) {
     let fired = false;
     const done = () => { if (fired) return; fired = true; if (typeof onDone === 'function') onDone(); };
     if (!voice || !voiceOn || !c) { done(); return; }
+    // ---- Narration guard: one welcome per session; debounce identical auto reqs ----
+    const explicit = !!opts.explicit;                       // "Hear it again" sets this
+    const source = opts.source || (explicit ? 'repeat' : 'auto');
+    const isWelcome = c.id === (steps[0] && steps[0].id);
+    if (!explicit) {
+      const now = Date.now();
+      if (isWelcome && welcomeAutoPlayed) { voiceTrace('suppress', `${c.id}.say`, source, 'welcome-once'); done(); return; }
+      if (c.id === lastAutoNarrId && (now - lastAutoNarrAt) < NARR_DEDUPE_MS) {
+        voiceTrace('suppress', `${c.id}.say`, source, 'debounce'); done(); return;
+      }
+      lastAutoNarrId = c.id; lastAutoNarrAt = now;
+      if (isWelcome) welcomeAutoPlayed = true;
+    }
+    voiceTrace('play', `${c.id}.say`, source, explicit ? 'explicit' : 'allowed');
     // Failsafe: never let a dropped end-event stall the lesson.
     const fs = setTimeout(done, speechBudgetMs(c));
     const wrapped = () => { clearTimeout(fs); done(); };
@@ -2247,7 +2289,7 @@ export default function createView(ctx) {
   // Nothing overlaps; the demo waits for the voice; reflective 'come next' bridge
   // steps then advance along the main Course path. Cancels cleanly if the card
   // changes (demoToken, bumped by render()).
-  function runLearnSequence(c, skipSpeech) {
+  function runLearnSequence(c, skipSpeech, opts = {}) {
     const seqToken = demoToken;
     const alive = () => seqToken === demoToken;
     const interactive = !!(c.mode && c.mode !== 'none' && !c.autoNext);
@@ -2293,7 +2335,7 @@ export default function createView(ctx) {
     };
     const afterSpeech = () => { if (alive()) seqTimer = setTimeout(doDemo, gapBeforeDemo(c)); };
     if (skipSpeech) afterSpeech();
-    else speakCard(c, afterSpeech);
+    else speakCard(c, afterSpeech, opts);
   }
 
   // ---- Lesson-control state machine (learn only) ---------------------------
@@ -2575,7 +2617,7 @@ export default function createView(ctx) {
       const skipSpeech = suppressSpeakOnce || greetingOwnsCard0 || sameCardReRender;
       if (suppressSpeakOnce) suppressSpeakOnce = false;
       if (!skipSpeech) lastAutoSpokenIndex = index;
-      runLearnSequence(c, skipSpeech);
+      runLearnSequence(c, skipSpeech, { source: 'render' });
       // Gently bring the active teaching area into view (device-tuned; never jumps if visible).
       try { card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) { /* no-op */ }
     }
