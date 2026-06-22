@@ -110,7 +110,7 @@ export const LEARN_STEPS = [
     explain: ['Let\u2019s orient the keyboard first. Lower notes live to your left, higher notes to your right.', 'Play any key, and listen to where its sound sits.'],
     show: { kind: 'keys', midis: [48, 60, 72, 88], caption: 'One row \u2014 low on the left, high on the right.', label: 'Low \u2190                      \u2192 High' },
     demo: [48, 88], demoGap: 0.6,
-    tryPrompt: 'Play any key, and listen to where its sound sits on the keyboard.', mode: 'any',
+    tryPrompt: 'Play any key, and listen to where its sound sits — low to the left, high to the right.', mode: 'any',
     okMsg: 'Good. That is your first landmark: sound moves across the keyboard, low to high.',
   },
   {
@@ -121,10 +121,10 @@ export const LEARN_STEPS = [
       { text: 'Keys to the left sound lower; keys to the right sound higher.', pauseAfter: 560 },
       { text: 'Play a low note on the left \u2014 then a high note on the right.', pauseAfter: 300, tone: 'instruct' },
     ],
-    explain: ['The keyboard is laid out by pitch \u2014 keys to the left sound lower, keys to the right higher.', 'Play a low note on the left, then a high note on the right.'],
+    explain: ['The keyboard is laid out by pitch. To the left the sound is lower and deeper; to the right it grows higher and brighter.', 'Touch a low note on the left and hear how deep it sounds. Then find a higher note on the right, and notice how the sound brightens.'],
     show: { kind: 'keys', midis: [48, 88], caption: 'Left is low \u2014 right is high, across the whole keyboard.', label: 'low                          high' },
     demo: [48, 88], demoGap: 0.6,
-    tryPrompt: 'Play a low note on the left, then a high note on the right.', mode: 'lowhigh',
+    tryPrompt: 'Touch a low note on the left, then a higher note on the right \u2014 and listen to how the sound changes.', mode: 'lowhigh',
     okMsg: 'Good \u2014 low on the left, high on the right. You\u2019re hearing the shape of the keyboard.',
   },
 
@@ -260,7 +260,7 @@ export const LEARN_STEPS = [
   },
   {
     eyebrow: 'The landmark C', title: 'Find C', id: 'find-c',
-    cues: { arrow: { from: [61, 63], to: 60 }, labels: [{ midi: 60, text: 'C', place: 'below' }] },
+    cues: { arrow: { from: [61, 63], to: 60 }, labels: [{ midi: 60, text: 'C', place: 'below', badge: true }] },
     say: [
       { text: 'Find a group of two black keys.', pauseAfter: 520 },
       { text: 'The white key just to their left is C.', pauseAfter: 560, tone: 'warm', emphasis: 'C' },
@@ -347,7 +347,7 @@ export const LEARN_STEPS = [
   },
   {
     eyebrow: 'Your home note', title: 'Find exact Middle C', id: 'middle-c',
-    cues: { arrow: { from: [61, 63], to: 60 }, labels: [{ midi: 60, text: 'Middle C', place: 'below' }] },
+    cues: { arrow: { from: [61, 63], to: 60 }, labels: [{ midi: 60, text: 'Middle C', place: 'below', badge: true }] },
     say: [
       { text: 'Look near the centre of the keyboard.', pauseAfter: 520 },
       { text: 'Find the two black keys there.', pauseAfter: 520 },
@@ -365,7 +365,7 @@ export const LEARN_STEPS = [
   },
   {
     eyebrow: 'The note B', title: 'Find B below Middle C', id: 'b-below',
-    cues: { arrow: { from: 60, to: 59 }, labels: [{ midi: 60, text: 'C', place: 'below' }, { midi: 59, text: 'B', place: 'below' }] },
+    cues: { arrow: { from: 60, to: 59 }, labels: [{ midi: 60, text: 'C', place: 'below', badge: true }, { midi: 59, text: 'B', place: 'below' }] },
     say: [
       { text: 'Start from Middle C.', pauseAfter: 500 },
       { text: 'Step one white key to the left.', pauseAfter: 540, tone: 'warm' },
@@ -824,6 +824,7 @@ export const LEARN_STEPS = [
     ],
     explain: ['A phrase is a few notes that belong together \u2014 a small musical idea.', 'Play three steps up: C, D, E.'],
     show: { kind: 'keys', midis: [60, 62, 64], caption: 'Up: C, D, E.', label: 'C D E' },
+    cues: { arrow: { from: 60, to: 64 } },
     staffHint: { clef: 'treble', notes: [60, 62, 64] },
     handHint: { hand: 'right', highlight: [1, 2, 3] },
     demo: [60, 62, 64], demoGap: 0.5,
@@ -839,6 +840,7 @@ export const LEARN_STEPS = [
     ],
     explain: ['Now reverse it \u2014 a phrase coming down.', 'Play E, then D, then C.'],
     show: { kind: 'keys', midis: [64, 62, 60], caption: 'Down: E, D, C.', label: 'E D C' },
+    cues: { arrow: { from: 64, to: 60 } },
     staffHint: { clef: 'treble', notes: [64, 62, 60] },
     handHint: { hand: 'right', highlight: [3, 2, 1] },
     demo: [64, 62, 60], demoGap: 0.5,
@@ -958,6 +960,98 @@ export const LEARN_STEPS = [
   },
 
   // ===========================================================================
+  // MAKING MUSIC \u2014 STUDIES. The first real feel of making music: a call-and-
+  // response echo, then two short ORIGINAL KeyMaster studies (a stepwise line;
+  // question & answer). Ear-led and listen-first, NOT reading-heavy. Spoken lines
+  // are queued for voice generation \u2014 captions carry them until then (no browser
+  // TTS); the musical demo uses the stabilised pianoVoice path. Provenance and
+  // note data: STAGE1_STUDIES.md.
+  // ===========================================================================
+  {
+    eyebrow: 'Call and response', title: 'Listen, then echo', id: 'play-echo',
+    say: [
+      { text: 'Here is a small idea. Listen first \u2014 then echo it back.', pauseAfter: 540, tone: 'warm' },
+      { text: 'I play two notes: a low one, then a higher one. You answer with the same two.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['Call and response is how musicians learn by ear: listen to a short idea, then answer it.', 'Listen to the two notes \u2014 a low C, then a higher G \u2014 then play them back in the same order.'],
+    show: { kind: 'keys', midis: [60, 67], caption: 'A low note, then a higher note.', label: 'low \u2192 high' },
+    demo: [60, 67], demoGap: 0.55,
+    tryPrompt: 'Echo it back: the low note first, then the higher note.', targets: [60, 67], mode: 'sequence',
+    okMsg: 'That is the sound we were looking for \u2014 you heard the idea and answered it.',
+    hint: 'The low note first (C), then the higher note (G).',
+    cues: { range: { from: 60, to: 67, lowLabel: 'low', highLabel: 'high' } },
+  },
+  {
+    eyebrow: 'A short study', title: 'Morning Steps', id: 'study-steps',
+    say: [
+      { text: 'Now a short study \u2014 a calm line that climbs, then settles home.', pauseAfter: 540, tone: 'warm' },
+      { text: 'Listen first. Then play it evenly, one step at a time: C, D, E, F, G.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['A study is a short, musical exercise. This one moves by single steps \u2014 a smooth line climbing from C up to G.', 'Listen to the whole line first \u2014 up, then back home \u2014 then play the climb evenly, with a relaxed hand. There is no rush.'],
+    show: { kind: 'keys', midis: [60, 62, 64, 65, 67], caption: 'Stepwise: C D E F G (the study returns home).', label: 'C D E F G' },
+    handHint: { hand: 'right', highlight: [1, 2, 3, 4, 5] },
+    demo: [60, 62, 64, 65, 67, 65, 64, 62, 60], demoGap: 0.4,
+    tryPrompt: 'Play the climb evenly: C, D, E, F, G.', targets: [60, 62, 64, 65, 67], mode: 'sequence',
+    okMsg: 'A clean line, played evenly. Let it settle under the hand \u2014 that is a study doing its work.',
+    hint: 'Step up one white key at a time, starting on C: C, D, E, F, G.',
+    cues: { arrow: { from: 60, to: 67 } },
+  },
+  {
+    eyebrow: 'A short study', title: 'Question and Answer', id: 'study-qa',
+    say: [
+      { text: 'Music often asks a question, then answers it.', pauseAfter: 540, tone: 'warm' },
+      { text: 'The line rises like a question, then falls home like its answer. Listen, then play it through.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['A phrase can feel like a question \u2014 rising and left open \u2014 answered by a phrase that falls and comes to rest.', 'Listen to the whole idea, then play it through: up to G, then stepping home to C.'],
+    show: { kind: 'keys', midis: [60, 62, 64, 67, 65, 64, 62, 60], caption: 'Rises to G (question), falls home to C (answer).', label: 'C D E G \u00B7 F E D C' },
+    demo: [60, 62, 64, 67, 65, 64, 62, 60], demoGap: 0.42,
+    tryPrompt: 'Play it through: C, D, E, G, then F, E, D, C.', targets: [60, 62, 64, 67, 65, 64, 62, 60], mode: 'sequence',
+    okMsg: 'A question and its answer \u2014 rising, then resting home. That is a complete musical idea.',
+    hint: 'Climb C, D, E, G; then step home F, E, D, C.',
+  },
+  {
+    eyebrow: 'Call and response', title: 'Answer the phrase', id: 'call-response',
+    say: [
+      { text: 'In call and response, I play a phrase \u2014 and you answer it.', pauseAfter: 540, tone: 'warm' },
+      { text: 'My call rises: C, D, E. Your answer comes back down: E, D, C.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['Call and response is a conversation in music: one phrase is offered, another replies.', 'Listen to the rising call \u2014 C, D, E \u2014 then answer by coming back down: E, D, C.'],
+    show: { kind: 'keys', midis: [64, 62, 60], caption: 'Your answer, coming down: E, D, C.', label: 'E D C' },
+    demo: [60, 62, 64, 64, 62, 60], demoGap: 0.42,
+    tryPrompt: 'Answer the call: play E, then D, then C \u2014 coming down.', targets: [64, 62, 60], mode: 'sequence',
+    okMsg: 'A clear answer \u2014 the call rose, and you brought it home. That is a musical conversation.',
+    hint: 'Start on E (just right of the two black keys), then D, then C.',
+    cues: { arrow: { from: 64, to: 60 } },
+  },
+  {
+    eyebrow: 'Chords as colour', title: 'A warm chord', id: 'chord-warm',
+    say: [
+      { text: 'A chord is several notes sounding together \u2014 a single, fuller colour.', pauseAfter: 540, tone: 'warm' },
+      { text: 'Press C, E and G together, and let the sound ring. Hear how it settles.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['Where a melody is one note at a time, a chord is several notes heard together \u2014 a warm, fuller sound that can sit beneath a tune.', 'Press C, E and G together and let them ring. Keep the hand relaxed.'],
+    show: { kind: 'keys', midis: [60, 64, 67], caption: 'C, E and G together \u2014 one warm sound.', label: 'C + E + G' },
+    demo: [60, 64, 67], demoGap: 0.06,
+    tryPrompt: 'Press C, E and G together \u2014 and let them ring.', targets: [60, 64, 67], mode: 'set',
+    okMsg: 'A warm chord \u2014 three notes becoming one colour. This is the sound that will sit under your melodies later.',
+    hint: 'Press the three highlighted keys at the same time: C, E and G.',
+  },
+  {
+    eyebrow: 'A short study', title: 'A Little Tune', id: 'study-tune',
+    say: [
+      { text: 'One more study \u2014 this time a small tune you can almost sing.', pauseAfter: 540, tone: 'warm' },
+      { text: 'Listen, then play it gently: E, D, C, D, E, and up to G.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['Not every study is a scale or a chord \u2014 some are simply a small, singable tune. This one dips down, returns, and lifts to a brighter note.', 'Listen first, then play it gently and evenly: E, D, C, D, E, G.'],
+    show: { kind: 'keys', midis: [64, 62, 60, 62, 64, 67], caption: 'A little tune: E D C D E G.', label: 'E D C D E G' },
+    handHint: { hand: 'right', highlight: [3, 2, 1, 2, 3, 5] },
+    demo: [64, 62, 60, 62, 64, 67], demoGap: 0.42,
+    tryPrompt: 'Play the tune gently: E, D, C, D, E, then G.', targets: [64, 62, 60, 62, 64, 67], mode: 'sequence',
+    okMsg: 'A small tune, shaped and played whole \u2014 that is real music-making, not just notes.',
+    hint: 'E down to C, back up to E, then a lift to G.',
+  },
+
+  // ===========================================================================
   // BECOMING A MUSICIAN \u2014 the habits, not just the notes: practise slowly with
   // intention, and listen to the sound you make. Developing-musician thinking,
   // started early and kept calm and adult.
@@ -989,6 +1083,59 @@ export const LEARN_STEPS = [
     tryPrompt: 'Play any single note \u2014 then listen to it fade.', mode: 'any',
     okMsg: 'That\u2019s listening \u2014 the habit behind good tone. You\u2019re starting to connect sound, movement and attention, which is what musicianship is built on.',
     hint: 'Any single note \u2014 the point is to play it, then truly listen to the sound.',
+  },
+  // ===========================================================================
+  // BRING IT BACK \u2014 a gentle review that trains RETRIEVAL. Help is deliberately
+  // removed: no marker, no demo (except the echo), no directional cue \u2014 so the
+  // learner recalls register, the Middle C landmark, and a heard pattern FROM
+  // MEMORY. Calm, never punitive. Spoken lines queued for generation (captions
+  // carry them; no browser TTS). Cognitive targets noted per step.
+  // ===========================================================================
+  {
+    // Trains: register recall + listening discrimination (no audio model given).
+    eyebrow: 'Bring it back', title: 'Low and high, from memory', id: 'recall-register',
+    say: [
+      { text: 'Let\u2019s bring something back \u2014 no markers this time.', pauseAfter: 540, tone: 'warm' },
+      { text: 'Play a low note, then a higher one. Listen to the difference between them.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['From memory: lower sounds live to the left, higher sounds to the right.', 'Play a low note, then a higher one \u2014 and hear the distance between them. Nothing is marked; trust your ear. Take your time \u2014 if you need it, the cue will appear.'],
+    show: { kind: 'keys', midis: [], caption: 'From memory: a low note, then a higher note.' },
+    tryPrompt: 'From memory: play a low note, then a higher note.', mode: 'lowhigh',
+    okMsg: 'You found low and high without help \u2014 your ear is leading your hand now.',
+    hint: 'Anywhere low on the left, then anywhere higher to the right.',
+    reteach: 'No need to rush \u2014 here is the low-to-high cue again. Take a moment, then play a low note and a higher one.',
+    support: { highlight: [48, 88], cue: { range: { from: 48, to: 88, lowLabel: 'low', highLabel: 'high' } } },
+  },
+  {
+    // Trains: landmark retrieval \u2014 locate Middle C from the black-key pattern, unaided.
+    eyebrow: 'Bring it back', title: 'Find Middle C, unaided', id: 'recall-middlec',
+    say: [
+      { text: 'Now find Middle C \u2014 this time without the marker.', pauseAfter: 540, tone: 'warm' },
+      { text: 'Let the two black keys near the centre guide you, and play the C just to their left.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['From memory: Middle C is the white key just left of the group of two black keys, near the centre of the keyboard.', 'No marker this time \u2014 read the pattern, then play Middle C. If you need help, the marker will return.'],
+    show: { kind: 'keys', midis: [], caption: 'Find Middle C from the pattern \u2014 no marker.' },
+    tryPrompt: 'Find and play Middle C, without help.', targets: [60], exact: true, mode: 'one',
+    okMsg: 'Found from the pattern alone \u2014 that is the landmark becoming truly yours.',
+    hint: 'Look for a group of two black keys near the centre; Middle C is the white key just to their left.',
+    reteach: 'Here is the Middle C marker again. Take your time, then play it once more.',
+    support: { highlight: [60], cue: { labels: [{ midi: 60, text: 'C', place: 'below', badge: true }] } },
+  },
+  {
+    // Trains: auditory working memory \u2014 hold a heard pattern, then reproduce it unaided.
+    eyebrow: 'Bring it back', title: 'Echo from memory', id: 'recall-echo',
+    say: [
+      { text: 'One short pattern to hold in your ear.', pauseAfter: 540, tone: 'warm' },
+      { text: 'Listen first. Then echo it back from memory \u2014 there are three notes.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['Listen to the three-note pattern and hold it in your ear, then play it back \u2014 the keys are not marked.', 'This trains your musical memory: hear it, keep it, reproduce it. If you need it, the pattern will play again.'],
+    show: { kind: 'keys', midis: [], caption: 'Listen, then echo the three notes \u2014 from memory.' },
+    demo: [60, 64, 62], demoGap: 0.5,
+    tryPrompt: 'Listen, then echo the three notes back from memory.', targets: [60, 64, 62], mode: 'sequence',
+    okMsg: 'Heard, held, and played back \u2014 that is your musical memory at work.',
+    hint: 'The pattern was C, then E, then D. Listen again, then echo it.',
+    reteach: 'Let\u2019s hear the pattern once more \u2014 then echo it back, in your own time.',
+    support: { replay: true },
   },
   {
     eyebrow: 'Stage 2 review', title: 'Checkpoint: your phrase', id: 'review-phrase',
@@ -1425,8 +1572,14 @@ const COURSE_CHAPTERS = [
     intro: 'A chord spread out in time becomes an arpeggio.' },
   { stage: 2, name: 'Patterns & phrases', ids: ['motif-echo', 'first-phrase'],
     intro: 'Recognise a small pattern, then play your first melody.' },
+  { stage: 2, name: 'Making music \u2014 studies', ids: ['play-echo', 'study-steps', 'study-qa'],
+    intro: 'Echo a short idea, then play two original studies \u2014 the first real feel of making music.' },
+  { stage: 2, name: 'Making music \u2014 answers & a tune', ids: ['call-response', 'chord-warm', 'study-tune'],
+    intro: 'Answer a musical call, play a warm chord, and shape a little tune of your own.' },
   { stage: 2, name: 'Becoming a musician', ids: ['practise-slow', 'listen-tone'],
     intro: 'The habits behind the notes \u2014 practising slowly, and listening.' },
+  { stage: 2, name: 'Bring it back \u2014 a gentle review', ids: ['recall-register', 'recall-middlec', 'recall-echo'],
+    intro: 'A calm recall \u2014 find low and high, find Middle C, and echo a short pattern, all from memory.' },
   { stage: 2, name: 'Stage 2 review', ids: ['review-phrase', 'stage2-onward'],
     intro: 'A calm review, and the road into Stage 3.' },
 
@@ -1785,10 +1938,14 @@ export default function createView(ctx) {
     // (piano / pianoVoice) — the proven, always-ready path. The sampler is NOT
     // the demo path until it's verified working in the real Course; this
     // guarantees "Hear it" is never silent.
+    // Soften high-register autonomous notes so early demos are never piercing:
+    // roll velocity (and a touch of length) down above C5 (midi 72).
+    let v = vel, d = durSec;
+    if (midi > 72) { const over = midi - 72; v = Math.max(26, vel - over * 2.2); d = Math.max(0.18, durSec * 0.85); }
     if (piano && typeof piano.noteOn === 'function') {
       try {
-        piano.noteOn(midi, vel, t);
-        piano.noteOff(midi, t + durSec);
+        piano.noteOn(midi, v, t);
+        piano.noteOff(midi, t + d);
         demoVoices.push({ release: (rt) => { try { piano.noteOff(midi, Math.max(rt ?? synth.ctx.currentTime, synth.ctx.currentTime)); } catch (_) { /* no-op */ } } });
       } catch (_) { /* no-op */ }
     }
@@ -1905,6 +2062,7 @@ export default function createView(ctx) {
     root.insertBefore(greetingEl, head);
     root.insertBefore(ctrls, dots);
     root.insertBefore(statusEl, dots);
+    setVoice(voiceOn);   // reflect on-by-default state immediately (no off/red flash)
     bridgeBtn = el('button', { class: 'mf__bridgelink', type: 'button' });
     bridgeBtn.style.display = 'none';
     card.appendChild(bridgeBtn);
@@ -2483,6 +2641,18 @@ export default function createView(ctx) {
   function complete(msg) {
     if (!tryState || tryState.done) return;
     tryState.done = true;
+    // Premium soft success confirmation: the keys just played glow warmly for a
+    // moment (kmSuccessGlow via the 'success' highlight variant). Visual only.
+    try {
+      const cc = steps[index];
+      const okKeys = (cc && Array.isArray(cc.targets) && cc.targets.length)
+        ? cc.targets
+        : (cc && cc.show && Array.isArray(cc.show.midis) ? cc.show.midis : []);
+      if (okKeys.length) {
+        keyboard?.highlight?.(okKeys, 'success');
+        setTimeout(() => { try { keyboard?.clearHighlight?.('success'); } catch (_) { /* no-op */ } }, 950);
+      }
+    } catch (_) { /* success glow is a flourish, never required */ }
     let shown = msg || 'Correct.';
     // Acknowledge a correct answer that came after a stumble (deterministic, not flattery).
     if (learnMode && wrongCount > 0) shown = `That\u2019s clearer. ${shown}`;
@@ -2517,6 +2687,20 @@ export default function createView(ctx) {
       wrongCount += 1;
       const c = steps[index];
       if (wrongCount >= 2 && c && c.reteach) msg = c.reteach;
+      // Graduated SUPPORT for retrieval steps: on the 2nd miss, gently REVEAL the
+      // help that was deliberately withheld (the highlight, the cue, and/or a
+      // replay of the pattern) so recall never becomes failure. Recall -> try ->
+      // support if needed -> try again. Best-effort; never blocks the retry.
+      if (wrongCount >= 2 && c && c.support) {
+        try {
+          if (Array.isArray(c.support.highlight) && c.support.highlight.length) {
+            keyboard?.highlight?.(c.support.highlight, 'target');
+            viewport?.frame?.(c.support.highlight);
+          }
+          if (c.support.cue) overlay?.render?.(c.support.cue);
+          if (c.support.replay && Array.isArray(c.demo) && c.demo.length) demoCard(c);
+        } catch (_) { /* support is a kindness, not a requirement */ }
+      }
     }
     tryStatus.textContent = speakable(msg);
     tryStatus.classList.remove('is-done');
@@ -2663,7 +2847,15 @@ export default function createView(ctx) {
       if (!unsub && input?.subscribe) unsub = input.subscribe(onNote);
       if (learnMode) {
         if (progress) {
-          const storedVoice = progress.get('voiceOn');
+          // KeyMaster PRO is tutor-led: Jack is ON by default. Migrate any stale
+          // 'voice off' left over from earlier sessions to the new default once;
+          // genuine user choices made after this are respected.
+          let storedVoice = progress.get('voiceOn');
+          if (!progress.get('voicePrefMigrated')) {
+            storedVoice = PREMIUM_VOICE_READY;
+            progress.set('voicePrefMigrated', true);
+            progress.set('voiceOn', PREMIUM_VOICE_READY);
+          }
           voiceOn = (storedVoice === undefined || storedVoice === null) ? PREMIUM_VOICE_READY : !!storedVoice;
           let resume = progress.get('learnLesson');
           if (!Number.isInteger(resume) || resume < 0 || resume > steps.length - 1) resume = 0;

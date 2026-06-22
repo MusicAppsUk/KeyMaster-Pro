@@ -1935,3 +1935,108 @@ html.fd-open, html.fd-open body { overflow: hidden; height: 100%; }
   box-shadow: 0 1px 3px rgba(0,0,0,0.28), inset 0 0 0 1px rgba(255,255,255,0.35);
   letter-spacing: 0.02em;
 }
+
+/* Premium teaching brackets (rc2-109): the black-key-group brackets share the
+   emerald + soft-glow language of the arrows and range sweep, so the whole
+   teaching canvas reads as one designed system rather than debug strokes. */
+html[data-view="learn"] .mf-ovl__stroke {
+  stroke: color-mix(in srgb, var(--emerald, #2f9e74) 82%, var(--ivory, #efe9dd) 18%);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 3px color-mix(in srgb, var(--emerald, #2f9e74) 40%, transparent));
+  animation: mfOvlIn 0.34s ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  html[data-view="learn"] .mf-ovl__stroke { animation: none; }
+}
+
+/* ==========================================================================
+   PREMIUM MOTION-GUIDANCE SYSTEM (rc2-114) — teaching-led, reusable.
+   Jack guides; the visuals point. A small, named vocabulary of CALM cues so the
+   learner's eye always knows where to look. Vanilla CSS only; GPU-friendly
+   (opacity / box-shadow / filter); every motion is disabled under
+   prefers-reduced-motion. Tablet-light: cues are few, short, and never stack
+   heavy continuous shadows across many nodes. Built on the existing highlight
+   API (.hl-target / .hl-demo / .hl-success) and overlay classes — no new DOM
+   coupling, no audio-path involvement.
+   --------------------------------------------------------------------------
+   Reusable names (applied via the classes below):
+     kmFocusHalo     -> .key.hl-target   (breathing ring: "look / play here")
+     kmPulseHighlight-> .key.hl-demo      (soft glow as the tutor plays a key)
+     kmSuccessGlow   -> .key.hl-success   (warm confirmation on the played keys)
+     kmRangeSweep    -> .mf-ovl__range     (low->high line eases in + breathes)
+     kmDirectionArrow-> .mf-ovl__arrow     (emerald pointer + calm pulse)
+     kmBracket       -> .mf-ovl__stroke    (black-key group bracket glows in)
+     kmLandmarkBadge -> .mf-ovl__label--badge (Middle C badge scales/pulses in)
+     kmChordGlow     -> .key.hl-demo (chord) (notes lit together read as a shape)
+     kmBeatPulse     -> .km-beat-dot        (calm count/pulse dots)
+     kmSoftDim       -> .km-soft-dim         (optional dim of non-relevant area)
+   ========================================================================== */
+
+/* kmFocusHalo — a soft breathing emerald ring around the active target key, so
+   the eye lands exactly where Jack is pointing. box-shadow only (no layout). */
+html[data-view="learn"] .key.hl-target {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--emerald, #2f9e74) 50%, transparent),
+              0 0 15px 4px color-mix(in srgb, var(--emerald, #2f9e74) 36%, transparent);
+  animation: kmHaloBreath 2.2s ease-in-out infinite;
+}
+@keyframes kmHaloBreath { 0%, 100% { opacity: 0.6; } 50% { opacity: 1; } }
+
+/* kmSuccessGlow — a brief warm confirmation on the keys just played correctly. */
+html[data-view="learn"] .key.hl-success {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--emerald, #2f9e74) 72%, white 10%),
+              0 0 22px 6px color-mix(in srgb, var(--emerald, #2f9e74) 52%, transparent);
+  z-index: 5;
+  animation: kmSuccessGlow 0.95s cubic-bezier(0.22,0.61,0.36,1) both;
+}
+@keyframes kmSuccessGlow { 0% { opacity: 0; } 22% { opacity: 1; } 100% { opacity: 0; } }
+
+/* kmRangeSweep — the low->high range line eases in, then breathes gently. */
+html[data-view="learn"] .mf-ovl__range {
+  animation: kmFadeIn 0.5s cubic-bezier(0.22,0.61,0.36,1) both, kmGlowBreath 2.6s ease-in-out 0.5s infinite;
+}
+@keyframes kmFadeIn { from { opacity: 0; } to { opacity: 0.95; } }
+@keyframes kmGlowBreath { 0%, 100% { opacity: 0.8; } 50% { opacity: 1; } }
+
+/* kmBracket — black-key group brackets glow in with the same calm vocabulary. */
+html[data-view="learn"] .mf-ovl__stroke {
+  animation: kmFadeIn 0.42s cubic-bezier(0.22,0.61,0.36,1) both, kmGlowBreath 2.8s ease-in-out 0.6s infinite;
+}
+
+/* kmLandmarkBadge — the Middle C badge scales+fades in, then a soft gold pulse.
+   (Inline transform is translate(-50%,0) for place:'below'; matched here.) */
+html[data-view="learn"] .mf-ovl__label--badge {
+  animation: kmBadgeIn 0.42s cubic-bezier(0.22,0.61,0.36,1) both, kmBadgePulse 2.9s ease-in-out 0.7s infinite;
+  transform-origin: center bottom;
+}
+@keyframes kmBadgeIn {
+  from { opacity: 0; transform: translate(-50%, 0) scale(0.72); }
+  to   { opacity: 1; transform: translate(-50%, 0) scale(1); }
+}
+@keyframes kmBadgePulse { 0%, 100% { filter: none; } 50% { filter: drop-shadow(0 0 5px rgba(216,175,69,0.6)); } }
+
+/* kmBeatPulse — calm count/pulse dots (reusable; applied to .km-beat-dot). */
+html[data-view="learn"] .km-beat-dot {
+  display: inline-block; width: 0.6rem; height: 0.6rem; border-radius: 50%;
+  background: color-mix(in srgb, var(--emerald, #2f9e74) 60%, transparent);
+  margin: 0 0.28rem;
+}
+html[data-view="learn"] .km-beat-dot.is-on { animation: kmBeat 0.5s ease-out; }
+@keyframes kmBeat {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 color-mix(in srgb, var(--emerald, #2f9e74) 50%, transparent); }
+  40% { transform: scale(1.28); box-shadow: 0 0 12px 3px color-mix(in srgb, var(--emerald, #2f9e74) 55%, transparent); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 transparent; }
+}
+
+/* kmSoftDim — optional, calm de-emphasis of non-relevant areas. */
+html[data-view="learn"] .km-soft-dim { opacity: 0.42; transition: opacity 0.4s ease; }
+
+/* Reduced motion: keep every cue STATIC and legible, no animation. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-view="learn"] .key.hl-target { animation: none; }
+  html[data-view="learn"] .key.hl-success { animation: none; opacity: 1; }
+  html[data-view="learn"] .mf-ovl__range,
+  html[data-view="learn"] .mf-ovl__stroke { animation: none; opacity: 0.95; }
+  html[data-view="learn"] .mf-ovl__label--badge { animation: none; transform: translate(-50%, 0); }
+  html[data-view="learn"] .km-beat-dot.is-on { animation: none; }
+}

@@ -60,3 +60,23 @@ This ladder is already partly present (`first-chord`, `chord-g`, `arpeggio-c`,
 
 The Sight-Reading Assessment Prototype stays a **separate, isolated** future route.
 It does not replace Cognitive Sight Reading and is not wired into Foundation/Stage 1.
+
+## rc2-112 — cognitive targets per live step (depth pass)
+
+Every live Stage 1 study/recall step now has an explicit skill it trains:
+
+| Step             | Trains (cognitive / musical)                                  |
+|------------------|---------------------------------------------------------------|
+| play-echo        | listening discrimination + short auditory memory (2-note echo)|
+| study-steps      | even motor sequencing; stepwise pitch direction               |
+| study-qa         | phrase shape; tension/resolution by ear (antecedent/consequent)|
+| call-response    | musical response (transform, not copy); falling-direction recall|
+| chord-warm       | harmonic listening; chord-as-colour; simultaneous hand-shape  |
+| study-tune       | melodic shape & phrasing beyond scales; singable contour      |
+| recall-register  | register RETRIEVAL + listening discrimination (no model given)|
+| recall-middlec   | landmark RETRIEVAL from the black-key pattern (no marker)     |
+| recall-echo      | auditory working memory (hold a heard pattern, reproduce it)  |
+
+Design rule applied: retrieval steps deliberately REMOVE help (no marker, no demo,
+no cue) so the learner recalls rather than copies. Never punitive — calm wording,
+hints always available.
