@@ -1,6 +1,6 @@
 // voiceControl.js — the single GLOBAL authority + single audio ENGINE for Jack.
 // =============================================================================
-// rc2-125 recovery: this is now a true singleton. The FIRST call binds one
+// rc2-126 recovery: this is now a true singleton. The FIRST call binds one
 // tutorAudio engine and one guard to window.__kmVoice; every later call (e.g. a
 // second Course instance) gets that SAME controller back and its own tutorAudio
 // is discarded, unused. Because tutorAudio keeps a single `current` Audio element
@@ -38,6 +38,12 @@ export function createVoiceControl(audio, opts = {}) {
   const G = sharedGuard(opts.build || 'dev');
   G.controllers += 1;
 
+  // Global engine registry: track EVERY tutorAudio ever created (even the ones a
+  // second instance hands us and we discard). stop-before-start cancels all of
+  // them, so even a stray engine cannot keep sounding underneath the active line.
+  const reg = (w.__kmEngines = w.__kmEngines || []);
+  if (audio && reg.indexOf(audio) === -1) reg.push(audio);
+
   // SINGLETON: reuse the one shared controller/engine if it already exists, so the
   // whole app shares a single audio element. The extra tutorAudio passed here is
   // discarded (never played) — that is what prevents two voices at once.
@@ -67,7 +73,12 @@ export function createVoiceControl(audio, opts = {}) {
   }
   function begin(key, once) { G.activeToken += 1; const tok = G.activeToken; G.activeKey = key; G.lastKey = key; G.lastAt = Date.now(); if (once) G.oncePlayed[key] = true; return tok; }
   function endIf(tok) { if (tok === G.activeToken) G.activeKey = null; }
-  function hardStop() { try { audio.cancel?.(); G.stops += 1; } catch (_) { /* no-op */ } G.activeKey = null; G.activeToken += 1; }
+  function hardStop() {
+    const engines = (w.__kmEngines || [audio]);
+    for (const eng of engines) { try { eng && eng.cancel?.(); } catch (_) { /* no-op */ } }
+    try { audio.cancel?.(); } catch (_) { /* no-op */ }
+    G.stops += 1; G.activeKey = null; G.activeToken += 1;
+  }
 
   function run(fnName, fn, key, payload, options) {
     const explicit = !!options.explicit;
@@ -104,6 +115,7 @@ export function createVoiceControl(audio, opts = {}) {
         return {
           build: G.build,
           engine: 'shared-singleton',
+          engines: (w.__kmEngines || []).length,
           voiceEnabled: !!(diagPack && Object.keys(diagPack).length),
           controllers: G.controllers,
           requests: G.requests,

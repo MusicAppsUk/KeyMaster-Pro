@@ -15,7 +15,7 @@
    Bump CACHE on each release so activate clears the previous cache.
    ============================================================================= */
 
-const CACHE = 'keymaster-rc2-125';
+const CACHE = 'keymaster-rc2-126';
 const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './icon-180.png'];
 // Course teaching-piano samples (small, fixed set) — precached so Course demos
 // work offline immediately. Fault-tolerant: a missing one won't fail install.
@@ -26,6 +26,11 @@ const COURSE_SAMPLES = [36,40,44,48,52,56,60,64,68,72,76,80,84,88,92,96]
 // precaching the whole (large, growing) pack at install time.
 
 self.addEventListener('install', (event) => {
+  // Take over ASAP. A previous worker without this line could otherwise keep
+  // serving old JS forever (the update banner that releases it lives in code the
+  // old worker won't load — a catch-22). skipWaiting + network-first HTML +
+  // controllerchange-reload makes a deploy land automatically on next open.
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE)
       .then((c) => c.addAll(CORE).catch(() => {})

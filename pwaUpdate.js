@@ -11,7 +11,7 @@
 // on window load and adds no UI unless an update is actually available.
 // =============================================================================
 
-const BUILD = 'rc2-125';
+const BUILD = 'rc2-126';
 let userInitiated = false;
 
 function showBanner(reg) {
@@ -55,6 +55,12 @@ function watch(reg) {
 
 function init() {
   if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+  // Capture whether a worker already controlled this page at load. If so, a later
+  // controllerchange means a NEW build just took over -> reload once automatically
+  // so the fix lands without a banner tap. First-ever install (no prior controller)
+  // does NOT force a reload, avoiding a first-load refresh loop.
+  const hadController = !!navigator.serviceWorker.controller;
+  let refreshing = false;
   navigator.serviceWorker.register('./sw.js').then((reg) => {
     watch(reg);
     // Re-check for a new build when the user returns to the app, and periodically.
@@ -67,7 +73,9 @@ function init() {
   // The new worker has taken control after the user chose "Update now" — reload
   // once so the page is wholly on the new build. (Ignored on first install.)
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (!userInitiated) return;
+    if (refreshing) return;
+    if (!hadController && !userInitiated) return;   // skip on first install only
+    refreshing = true;
     window.location.reload();
   });
 }

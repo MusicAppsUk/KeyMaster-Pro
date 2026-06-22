@@ -17,10 +17,10 @@
 // =============================================================================
 
 import { createTutorAudio } from './tutorAudio.js?v=rc2-107';
-import { createVoiceControl } from './voiceControl.js?v=rc2-125';
+import { createVoiceControl } from './voiceControl.js?v=rc2-126';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-116';
 
-const BUILD = 'rc2-125';
+const BUILD = 'rc2-126';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
