@@ -17,16 +17,17 @@
 // =============================================================================
 
 import { createTutorAudio } from './tutorAudio.js?v=rc2-107';
-import { createVoiceControl } from './voiceControl.js?v=rc2-121';
+import { createVoiceControl } from './voiceControl.js?v=rc2-122';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-116';
 
-const BUILD = 'rc2-121';
+const BUILD = 'rc2-122';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
 const WELCOME_TEXT = 'Welcome to the KeyMaster PRO Course.';
 
 let panel = null;
+let lastExtra = {};
 
 function controller() {
   if (typeof window === 'undefined') return null;
@@ -47,13 +48,19 @@ function row(label, value) {
 
 function refresh(extra) {
   if (!panel) return;
+  lastExtra = Object.assign({}, lastExtra, extra || {});
+  extra = lastExtra;
   const c = controller();
   const st = c && c.diag ? c.diag.state() : null;
   const res = c && c.diag ? c.diag.resolved(WELCOME_ID) : { file: WELCOME_FILE, url: WELCOME_URL };
   const body = panel.querySelector('[data-body]');
   body.innerHTML =
     row('Build / version', `<b>${(st && st.build) || (window.__kmBuild) || BUILD}</b>`) +
+    row('Active cache', extra && extra.cache != null ? extra.cache : '… (loading)') +
     row('Voice enabled', st ? String(st.voiceEnabled) : 'n/a (open Course once)') +
+    row('Controllers (instances)', st ? String(st.controllers) : '—') +
+    row('Speak requests (total)', st ? String(st.requests) : '—') +
+    row('Duplicates blocked (total)', st ? String(st.blocked) : '—') +
     row('Welcome line ID', WELCOME_ID) +
     row('Resolved MP3', res.file || '—') +
     row('Resolved URL', res.url || '—') +
@@ -67,6 +74,15 @@ function refresh(extra) {
         ? st.recent.map((r) => `${new Date(r.t).toLocaleTimeString()}  ${r.fn} ${r.id}  <${r.src}>  ${r.result}${r.reason ? ' (' + r.reason + ')' : ''}`).join('\n')
         : '—'
     }</pre>`;
+  if (lastExtra.cache == null) {
+    try {
+      if (window.caches && caches.keys) caches.keys().then((ks) => {
+        const km = ks.filter((k) => /keymaster/i.test(k));
+        const lbl = (km.length ? km.join(', ') : (ks[0] || 'none')) + (km.length > 1 ? '  ** MULTIPLE — stale mix **' : '');
+        if (lastExtra.cache !== lbl) refresh({ cache: lbl });
+      });
+    } catch (_) { /* no-op */ }
+  }
 }
 
 function build() {
@@ -133,7 +149,7 @@ function build() {
   return panel;
 }
 
-function show() { build().style.display = 'block'; refresh(); }
+function show() { lastExtra = {}; build().style.display = 'block'; refresh(); }
 function hide() { if (panel) panel.style.display = 'none'; }
 
 function check() {

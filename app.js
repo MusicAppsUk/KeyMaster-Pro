@@ -24,7 +24,7 @@ import { Synth } from './synth.js';
 import { PianoSynth } from './pianoVoice.js';
 import { Scheduler } from './scheduler.js';
 import { Metronome } from './metronome.js';
-import './voiceTest.js?v=rc2-121';  // visible Voice Self-Test at #voice-test (no console needed)
+import './voiceTest.js?v=rc2-122';  // visible Voice Self-Test at #voice-test (no console needed)
 import { NoteInput } from './noteInput.js';
 import { createMidiEvaluator } from './midiEvaluator.js';
 import { createDevReadout, isDevMode } from './devReadout.js';
@@ -119,8 +119,8 @@ function savePrefs(prefs) {
 const VIEW_REGISTRY = {
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-121',
-    load: () => import('./foundations.js?v=rc2-121'),
+    src: './foundations.js?v=rc2-122',
+    load: () => import('./foundations.js?v=rc2-122'),
   },
   scales: {
     slot: 'scales',
@@ -140,8 +140,8 @@ const VIEW_REGISTRY = {
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-121',
-    load: () => import('./foundations.js?v=rc2-121'),
+    src: './foundations.js?v=rc2-122',
+    load: () => import('./foundations.js?v=rc2-122'),
   },
 };
 
@@ -262,6 +262,14 @@ class KeyMasterApp {
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('./sw.js').catch((err) => console.info('[KeyMaster] SW registration skipped:', err?.message ?? err));
+        });
+        // When a new service worker takes control (after a fresh build activates),
+        // reload ONCE so the page is never a mix of old and new assets. Guarded so
+        // it can't loop. This removes the need to clear cache manually.
+        let kmReloaded = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (kmReloaded) return; kmReloaded = true;
+          try { window.location.reload(); } catch (_) { /* no-op */ }
         });
       }
     } catch { /* ignore */ }
@@ -506,7 +514,7 @@ class KeyMasterApp {
     if (!overlay || !body) return;
     overlay.hidden = false;
     body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Loading the journey\u2026</p>';
-    import('./foundations.js?v=rc2-121').then((F) => {
+    import('./foundations.js?v=rc2-122').then((F) => {
       const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
       const chapterAt = (typeof F.chapterAtIndex === 'function') ? F.chapterAtIndex : null;
       if (!steps.length || !chapterAt) { body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Course map unavailable right now.</p>'; return; }
@@ -1120,7 +1128,7 @@ class KeyMasterApp {
       const cta = this.root.querySelector('#learn-cta');
       if (cta) cta.textContent = started ? 'Continue the Course' : 'Start the KeyMaster PRO Course';
       set('#course-hero-title', started ? 'Continue the KeyMaster PRO Course' : COURSE_NAME);
-      import('./foundations.js?v=rc2-121').then((F) => {
+      import('./foundations.js?v=rc2-122').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
         const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];

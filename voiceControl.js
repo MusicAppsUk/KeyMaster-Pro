@@ -1,103 +1,113 @@
-// voiceControl.js — the single authority for Jack narration.
+// voiceControl.js — the single GLOBAL authority for Jack narration.
 // =============================================================================
-// Wraps the (frozen) tutorAudio instance so EVERY narration request — from any
-// caller or render path — passes through ONE guard before any audio starts:
+// rc2-122 recovery: the guard state lives on ONE window-level singleton
+// (window.__kmVoiceGuard), shared by every controller and every Course instance.
+// This is the fix for the device double-start: even if the Course component is
+// instantiated more than once (two routes, a prefetch, a stale un-left view),
+// each instance wraps tutorAudio with its own facade — but they all consult the
+// SAME guard, so only ONE Jack voice can ever play.
 //
-//   • one active Jack playback at a time;
-//   • a duplicate request for the line already playing is ignored;
-//   • a duplicate request for the same line inside a short debounce window is
-//     ignored;
-//   • an explicit replay ("Hear it again", opts.explicit) always plays;
-//   • a genuinely different line stops the old one and plays (tutorAudio already
-//     cancels prior playback) — never two voices at once.
+// Rules (global):
+//   - one active Jack playback at a time;
+//   - a request for the line already playing is ignored ("already-playing");
+//   - a request for the same line inside a short debounce window is ignored;
+//   - a "once" line (the welcome) plays at most once per session ("once-done");
+//   - an explicit replay ("Hear it again", opts.explicit) always plays;
+//   - a genuinely different line stops the old and plays — never two at once.
 //
-// This sits at the central voice-control level, NOT in one render path, so even
-// if two callers accidentally request the same line, only one plays. tutorAudio.js
-// itself is never modified. A live diagnostic is exposed on window.__kmVoice for
-// the in-app Voice Self-Test (#voice-test), so no console work is needed.
+// tutorAudio.js is wrapped, never modified. Diagnostics are exposed on
+// window.__kmVoice for the in-app Voice Self-Test (#voice-test) — no console.
 // =============================================================================
+
+function sharedGuard(build) {
+  const w = (typeof window !== 'undefined') ? window : globalThis;
+  if (!w.__kmVoiceGuard) {
+    w.__kmVoiceGuard = {
+      build,
+      activeKey: null, activeToken: 0, lastKey: null, lastAt: 0,
+      oncePlayed: {}, controllers: 0, requests: 0, blocked: 0, recent: [],
+    };
+  }
+  if (build) w.__kmVoiceGuard.build = build;
+  return w.__kmVoiceGuard;
+}
 
 export function createVoiceControl(audio, opts = {}) {
   if (!audio) return audio;
   const build = opts.build || 'dev';
   const DEBOUNCE_MS = Number.isFinite(opts.debounceMs) ? opts.debounceMs : 2500;
-
-  let activeKey = null;   // key of the playback currently sounding (null = idle)
-  let activeToken = 0;    // bumps on every start; identifies the live playback
-  let lastKey = null;     // last key we started
-  let lastAt = 0;         // when we started it (ms)
-  let diagPack = null;    // captured from setPack, for diagnostic URL resolution
+  const G = sharedGuard(build);
+  G.controllers += 1;
+  let diagPack = null;
   let diagLang = opts.lang || 'en-GB';
-  const recent = [];      // last requests, for the self-test panel
 
   function record(rec) {
-    recent.push(rec);
-    if (recent.length > 12) recent.shift();
+    G.requests += 1;
+    if (rec.result === 'blocked') G.blocked += 1;
+    G.recent.push(rec);
+    if (G.recent.length > 12) G.recent.shift();
     try {
-      if (typeof window !== 'undefined') {
-        const g = (window.__kmVoiceTrace = window.__kmVoiceTrace || []);
-        g.push(rec);
-        if (g.length > 40) g.shift();
-      }
+      const w = (typeof window !== 'undefined') ? window : globalThis;
+      const t = (w.__kmVoiceTrace = w.__kmVoiceTrace || []);
+      t.push(rec);
+      if (t.length > 50) t.shift();
     } catch (_) { /* no-op */ }
   }
 
-  function decide(key, explicit) {
+  function decide(key, explicit, once) {
     if (explicit) return { ok: true, reason: 'explicit' };
-    if (activeKey !== null && activeKey === key) return { ok: false, reason: 'already-playing' };
-    if (key === lastKey && (Date.now() - lastAt) < DEBOUNCE_MS) return { ok: false, reason: 'debounce' };
+    if (once && G.oncePlayed[key]) return { ok: false, reason: 'once-done' };
+    if (G.activeKey !== null && G.activeKey === key) return { ok: false, reason: 'already-playing' };
+    if (key === G.lastKey && (Date.now() - G.lastAt) < DEBOUNCE_MS) return { ok: false, reason: 'debounce' };
     return { ok: true, reason: 'allowed' };
   }
-  function begin(key) { activeToken += 1; const tok = activeToken; activeKey = key; lastKey = key; lastAt = Date.now(); return tok; }
-  function endIf(tok) { if (tok === activeToken) activeKey = null; }
+  function begin(key, once) { G.activeToken += 1; const tok = G.activeToken; G.activeKey = key; G.lastKey = key; G.lastAt = Date.now(); if (once) G.oncePlayed[key] = true; return tok; }
+  function endIf(tok) { if (tok === G.activeToken) G.activeKey = null; }
 
-  function run(fn, key, beatsOrText, options) {
+  function run(fn, key, payload, options) {
     const explicit = !!options.explicit;
+    const once = !!options.once;
     const source = options.source || (explicit ? 'repeat' : 'auto');
-    const d = decide(key, explicit);
-    record({ t: Date.now(), build, fn, id: key, src: source, result: d.ok ? 'play' : 'blocked', reason: d.reason });
+    const d = decide(key, explicit, once);
+    record({ t: Date.now(), build, fn: options._fn || 'say', id: key, src: source, result: d.ok ? 'play' : 'blocked', reason: d.reason });
     if (!d.ok) { if (typeof options.onDone === 'function') { try { options.onDone(); } catch (_) {} } return undefined; }
-    const tok = begin(key);
-    const wrapped = { ...options };
+    const tok = begin(key, once);
     const userDone = options.onDone;
+    const wrapped = { ...options };
+    delete wrapped._fn;
     wrapped.onDone = () => { endIf(tok); if (typeof userDone === 'function') { try { userDone(); } catch (_) {} } };
-    return fn(key, beatsOrText, wrapped);
+    return fn(key, payload, wrapped);
   }
 
   const facade = {
-    // ---- mirror of tutorAudio's interface, guarded ----
-    say(lineId, text, options = {}) { return run((id, t, o) => audio.say(id, t, o), lineId, text, options); },
-    sayBeats(baseId, beats, options = {}) { return run((id, b, o) => audio.sayBeats(id, b, o), baseId, beats, options); },
+    say(lineId, text, options = {}) { return run((id, t, o) => audio.say(id, t, o), lineId, text, { ...options, _fn: 'say' }); },
+    sayBeats(baseId, beats, options = {}) { return run((id, b, o) => audio.sayBeats(id, b, o), baseId, beats, { ...options, _fn: 'sayBeats' }); },
     setPack(map, lang) { diagPack = (map && typeof map === 'object') ? map : null; if (lang) diagLang = lang; return audio.setPack?.(map, lang); },
-    cancel() { activeKey = null; activeToken += 1; return audio.cancel?.(); },
+    cancel() { G.activeKey = null; G.activeToken += 1; return audio.cancel?.(); },
     hasPremium(id) { return audio.hasPremium?.(id); },
     isPremiumActive() { return audio.isPremiumActive?.(); },
     lang() { return audio.lang?.() ?? diagLang; },
-
-    // ---- diagnostics for the Voice Self-Test (#voice-test) ----
     diag: {
       build,
       voiceEnabled: () => !!(diagPack && Object.keys(diagPack).length),
-      resolved(lineId) {
-        const file = diagPack ? diagPack[lineId] : null;
-        return { lineId, file: file || null, url: file ? `voice/${diagLang}/${file}` : null };
-      },
+      resolved(lineId) { const f = diagPack ? diagPack[lineId] : null; return { lineId, file: f || null, url: f ? `voice/${diagLang}/${f}` : null }; },
       state() {
         return {
-          build,
+          build: G.build,
           voiceEnabled: !!(diagPack && Object.keys(diagPack).length),
-          activeKey,
-          activeCount: activeKey ? 1 : 0,
-          lastKey,
-          lastAt,
-          recent: recent.slice(-5),
+          controllers: G.controllers,
+          requests: G.requests,
+          blocked: G.blocked,
+          activeKey: G.activeKey,
+          activeCount: G.activeKey ? 1 : 0,
+          lastKey: G.lastKey,
+          oncePlayed: Object.keys(G.oncePlayed),
+          recent: G.recent.slice(-5),
         };
       },
     },
   };
 
-  // Stop cleanly when the page/app is hidden or closed (route exit and session
-  // reset already call cancel() explicitly in the Course controller).
   try {
     if (typeof window !== 'undefined') {
       window.__kmVoice = facade;

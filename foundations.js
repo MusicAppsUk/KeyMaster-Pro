@@ -25,7 +25,7 @@
 
 import { createTutorVoice } from './tutorVoice.js?v=rc2-74';
 import { createTutorAudio } from './tutorAudio.js?v=rc2-107';
-import { createVoiceControl } from './voiceControl.js?v=rc2-121';
+import { createVoiceControl } from './voiceControl.js?v=rc2-122';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-116';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-108';
@@ -1841,7 +1841,7 @@ export default function createView(ctx) {
   // can never speak under Jack. Flip to true only for development without a voice pack.
   const TTS_DEV_FALLBACK = false;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-121';
+  const KM_BUILD = 'rc2-122';
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate
   // same-line requests from any path. The frozen tutorAudio.js is wrapped, never
@@ -2237,7 +2237,7 @@ export default function createView(ctx) {
       if (!resuming && c0 && Array.isArray(c0.say) && c0.say.length) {
         speakCard(c0, undefined, { source: 'greeting' });   // spoken Course introduction (existing MP3s)
       } else {
-        audio.say((resuming ? 'greeting.back.' : 'greeting.') + tod, pendingGreeting);
+        audio.say((resuming ? 'greeting.back.' : 'greeting.') + tod, pendingGreeting, { source: 'greeting', once: true });
       }
       if (progress && c0) progress.addToSet('heardNarration', `narr:${c0.title}`);
       pendingGreeting = null;
@@ -2281,13 +2281,13 @@ export default function createView(ctx) {
     const fs = setTimeout(done, speechBudgetMs(c));
     const wrapped = () => { clearTimeout(fs); done(); };
     if (Array.isArray(c.say) && c.say.length) {
-      audio.sayBeats(`${c.id}.say`, c.say, { onDone: wrapped });   // performed as short, paced beats
+      audio.sayBeats(`${c.id}.say`, c.say, { onDone: wrapped, source, explicit, once: isWelcome });   // guarded centrally
     } else {
       const parts = [];
       if (Array.isArray(c.explain) && c.explain[0]) parts.push(c.explain[0]);
       if (c.mode && c.mode !== 'none' && c.tryPrompt) parts.push(c.tryPrompt);
       const text = parts.join(' ');
-      if (text) audio.say(`${c.id}.explain`, text, { onDone: wrapped });
+      if (text) audio.say(`${c.id}.explain`, text, { onDone: wrapped, source, explicit, once: isWelcome });
       else wrapped();
     }
     if (progress) progress.addToSet('heardNarration', `narr:${c.title}`);
