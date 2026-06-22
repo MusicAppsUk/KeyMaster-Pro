@@ -25,6 +25,7 @@
 
 import { createTutorVoice } from './tutorVoice.js?v=rc2-74';
 import { createTutorAudio } from './tutorAudio.js?v=rc2-107';
+import { createVoiceControl } from './voiceControl.js?v=rc2-120';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-116';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-108';
@@ -1839,7 +1840,15 @@ export default function createView(ctx) {
   // Browser SpeechSynthesis is an emergency/DEV fallback only — OFF by default so it
   // can never speak under Jack. Flip to true only for development without a voice pack.
   const TTS_DEV_FALLBACK = false;
-  const audio = learnMode ? createTutorAudio({ voice, lang: 'en-GB', ttsFallback: TTS_DEV_FALLBACK }) : null;
+  // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
+  const KM_BUILD = 'rc2-120';
+  // Jack's audio goes through ONE central controller (voiceControl.js): a single
+  // narration authority that guarantees one active playback and ignores duplicate
+  // same-line requests from any path. The frozen tutorAudio.js is wrapped, never
+  // modified. Every audio.say / audio.sayBeats below is therefore guarded centrally.
+  const audio = learnMode
+    ? createVoiceControl(createTutorAudio({ voice, lang: 'en-GB', ttsFallback: TTS_DEV_FALLBACK }), { build: KM_BUILD, lang: 'en-GB' })
+    : null;
   // Recorded-human voice pilot (route A). Maps the Course's stable opening line IDs
   // to local audio files under voice/en-GB/. The architecture (premium file -> TTS
   // -> captions) already lives in tutorAudio.js; this only supplies the manifest.
@@ -1863,7 +1872,6 @@ export default function createView(ctx) {
   // Guarantees one welcome auto-play per session and blocks auto re-narration of the
   // same card within a short window, no matter which path requests it (greeting,
   // render, resume, audio-unlock, re-render). Explicit "Hear it again" bypasses it.
-  const KM_BUILD = 'rc2-119';
   let welcomeAutoPlayed = false;  // welcome.say.* may auto-play at most once per session
   let lastAutoNarrId = null;      // last auto-narrated card id (debounce key)
   let lastAutoNarrAt = 0;         // timestamp of that narration (ms)
