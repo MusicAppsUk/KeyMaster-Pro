@@ -13,7 +13,7 @@ export const STAGE1_MAKING_STEPS = [
   // is scored. Masterclasses remain optional deeper practice, never the Course.
   // ===========================================================================
   {
-    eyebrow: 'Stage 2 \u00B7 Making music', title: 'Welcome to Stage 2', id: 'stage2-welcome',
+    eyebrow: 'Foundation Course \u00B7 Stage 2 \u00B7 Making music', title: 'Welcome to Stage 2', id: 'stage2-welcome',
     say: [
       { text: 'Welcome to Stage 2. In Stage 1 you learned the keyboard; now we start to shape those notes into music.', pauseAfter: 620, tone: 'warm' },
       { text: 'Short phrases, a little harmony, and a steady pulse underneath \u2014 one small step at a time.', pauseAfter: 360 },
@@ -23,13 +23,13 @@ export const STAGE1_MAKING_STEPS = [
     mode: 'none',
   },
   {
-    eyebrow: 'The B-major pathway', title: 'Why B major fits the hand', id: 'bmaj-shape',
+    eyebrow: 'Foundation Course \u00B7 Stage 2', title: 'Why B major fits the hand', id: 'bmaj-shape',
     say: [
       { text: 'Here\u2019s something pianists know: B major sits beautifully under the hand.', pauseAfter: 580, tone: 'warm' },
       { text: 'Your long fingers \u2014 two, three and four \u2014 fall naturally onto the raised black keys, while the thumb and little finger rest on the white keys. C major actually asks more of a beginner\u2019s flat hand.', pauseAfter: 720 },
       { text: 'C major stays our reference for naming and reading. But B major is the KeyMaster hand-shape pathway \u2014 the shape your hand wants to make.', pauseAfter: 360, tone: 'warm' },
     ],
-    explain: ['B major fits the hand: the long fingers (2, 3, 4) fall onto the raised black keys, while the thumb (1) and little finger (5) take the white keys.', 'C major is our reference for naming and reading; B major is the KeyMaster hand-shape pathway. Watch the long fingers light \u2014 those are the ones that reach the black keys.'],
+    explain: ['B major fits the hand: the long fingers (2, 3, 4) fall onto the raised black keys, while the thumb (1) and little finger (5) take the white keys.', 'Fr\u00E9d\u00E9ric Chopin (1810\u20131849), one of the greatest pianist-composers in history, placed great importance on the natural shape of the hand \u2014 and is said to have started pupils not from C major but from a position where the long fingers rest on the black keys. He understood something the keyboard hides at first glance: the easiest notes to read are not always the easiest notes for the hand.', 'So C major stays our landmark for reading and naming; B major is the KeyMaster hand-shape pathway, introduced early not to be difficult but to let the hand feel organised and supported. Watch the long fingers light \u2014 those are the ones that reach the black keys.'],
     show: { kind: 'hand', hand: 'right', sweep: [2, 3, 4], caption: 'Long fingers 2, 3, 4 reach the black keys; 1 and 5 stay on white.' },
     mode: 'none',
   },

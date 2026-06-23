@@ -1107,7 +1107,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       if (progress) progress.set('learnLesson', index);
       // Own the chrome Back too: it now steps back through the Course instead of
       // ejecting to the dashboard. (Exit/Home remain available via the chrome.)
-      try { ctx.nav?.set?.([{ label: 'Master Training', go: goBack }, { label: ch ? ch.name : `Lesson ${index + 1}` }]); } catch (_) { /* nav is non-critical */ }
+      try { ctx.nav?.set?.([{ label: 'Foundation Course', go: goBack }, { label: ch ? ch.name : `Lesson ${index + 1}` }]); } catch (_) { /* nav is non-critical */ }
       // Teaching rhythm: tutor speaks, then (after a pause) the keyboard
       // demonstrates. Step 0's speech is owned by the greeting/speakPending path
       // (once per session), and an incidental re-render of the SAME card must not
