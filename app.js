@@ -1107,6 +1107,11 @@ class KeyMasterApp {
           scheduler: this.scheduler,
           metronome: this.metronome,
           nav: this._makeNav(viewId),
+          // Course Focus Mode: lets the Course collapse/show the on-screen
+          // keyboard per step via the existing data-keyboard mechanism. It does
+          // NOT persist, so the manual keyboard toggle's saved preference is left
+          // intact and the toggle button label stays in sync.
+          setKeyboardVisible: (visible) => this._applyKeyboardPref(!visible),
         });
       }
       record.instance.enter?.();

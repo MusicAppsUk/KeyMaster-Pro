@@ -965,6 +965,18 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   }
   function render() {
     const c = steps[index];
+    // ---- Course Focus Mode (learn route only) ----------------------------
+    // Collapse the on-screen keyboard on passive teaching steps (hand-shape /
+    // staff / pulse-explanation / video / image / text), and show it whenever the
+    // learner is expected to play (any interactive mode) or the step points at
+    // keys/sharps. Drives the existing data-keyboard collapse via the app hook and
+    // re-applies every step, so the manual keyboard toggle still works as a peek
+    // and re-syncs on the next step. Never touches the keyboard engine or scaling.
+    if (learnMode) {
+      const needsKeyboard = (c.mode && c.mode !== 'none')
+        || (c.show && (c.show.kind === 'keys' || c.show.kind === 'sharps'));
+      try { ctx.setKeyboardVisible?.(needsKeyboard); } catch (_) { /* non-critical */ }
+    }
     stopPulse();
     clearCountIn();
     stopDemoAudio();
@@ -1506,6 +1518,9 @@ function injectStyles() {
   const s = document.createElement('style');
   s.id = 'mf-styles';
   s.textContent = `
+    /* Course Focus Mode: compress the top bar in the Course only, so the lesson
+       area gains a little height. Back / Continue / Repeat / MIDI stay reachable. */
+    html[data-view="learn"] { --bar-h: 44px; }
     .mf { max-width: 56rem; margin: 0 auto; padding: 0.5rem 0 1rem; color: var(--ivory, #F4EFE6); }
     .mf__head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
     .mf__eyebrow { margin: 0; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase;

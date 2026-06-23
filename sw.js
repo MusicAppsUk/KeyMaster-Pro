@@ -15,7 +15,7 @@
    Bump CACHE on each release so activate clears the previous cache.
    ============================================================================= */
 
-const CACHE = 'keymaster-rc2-141';
+const CACHE = 'keymaster-rc2-142';
 const CORE = ['./', './index.html', './manifest.json', './icon-192.png', './icon-512.png', './icon-maskable-192.png', './icon-maskable-512.png', './icon-180.png'];
 // Course teaching-piano samples (small, fixed set) — precached so Course demos
 // work offline immediately. Fault-tolerant: a missing one won't fail install.
