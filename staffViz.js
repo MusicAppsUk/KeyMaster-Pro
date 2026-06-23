@@ -2,35 +2,55 @@
 // =============================================================================
 // Original geometry only: no scraped images, no stock notation art, no method-
 // book or competitor graphics. Staff lines, note-heads, stems, ledgers and rests
-// are all drawn from scratch as SVG; clefs/rests use standard Unicode music
-// symbols (notation, not art) with text fallbacks.
+// are all drawn from scratch as SVG; clefs/rests/time-signatures use standard
+// Unicode music symbols (notation, not art) with text fallbacks.
 //
-// rc2-129 — PREMIUM COURSE NOTATION. Brings the Course staff up to the standard
-// of Scales Masterclass / Cognitive Sight Reading:
-//   • a larger, full-width staff (wider canvas, tablet-readable sizing)
-//   • proper BLACK engraving ink (note-heads, stems, lines) — not brown/placeholder
-//   • real note-heads WITH STEMS, and note-value support: crotchet (quarter,
-//     filled + stem), minim (half, open + stem), semibreve (whole, open, no stem)
-//   • rests (whole/half/quarter/eighth) for rhythm/silence
-//   • treble / bass / grand staff with correct pitch placement + ledger lines
-//   • feedback that mirrors the keyboard: correct → emerald glow, wrong → soft
-//     rose (state lives on the SAME `km-staff__note` class the Course already
-//     toggles, so existing feedback wiring lights up with no Course change)
-//   • fingering numbers bound to the existing toggle (html[data-fingering=hidden])
-// The premium look ships as a <style> injected by THIS module, so it overrides
-// the older Course staff CSS without editing the large theme stylesheet, and the
-// whole upgrade deploys as one small file. Class names are unchanged, so the
-// Course's flashStaff() feedback and fingering preference keep working verbatim.
+// rc2-134 — PREMIUM COURSE NOTATION v2. Closes the gap to Scales Masterclass /
+// Cognitive Sight Reading (staffView.js + notation.css), which are the in-app
+// reference standard. Those files are NOT touched; their proven values are
+// re-used here in this module's own injected stylesheet:
+//   • LARGER, tablet-readable staff (GAP 20, fluid full-width canvas, generous
+//     vertical room so the grand staff is no longer squashed)
+//   • PROPER BLACK ENGRAVING INK on note-heads (was a brown/amber "target"
+//     tint — the most-reported issue). Resting/target notes are now true black
+//     (#14110B, the masterclass --ink); the staff only takes on colour for
+//     feedback. "Success glows. Mistakes guide."
+//   • CRISP CLEFS / RESTS via the same music-font stack the masterclass uses
+//     ('Bravura','Noto Music',serif) — on Android 'Noto Music' is a system
+//     font, so the Course clef now renders like the masterclass instead of in a
+//     dull default glyph.
+//   • a real TIME SIGNATURE (stacked serif digits), shown where rhythm is being
+//     taught and kept off plain single-note Foundation moments (conservative
+//     heuristic, overridable via opts.timeSig).
+//   • REST glyphs (whole/half/quarter/eighth) for silence/rhythm.
+//   • TREBLE / BASS / GRAND staff with correct pitch placement + ledger lines.
+//   • FEEDBACK bound to the SAME tokens the keyboard uses: correct → var(--good)
+//     glow, wrong → soft var(--bad) rose. Staff and keyboard therefore always
+//     agree, and a wrong note keeps the intended note VISIBLE (recolour, never
+//     hidden, never a harsh/arcade flash) then settles back to black.
+//   • FINGERING numbers bound to the existing toggle (html[data-fingering=
+//     hidden]) in the masterclass's premium gold — rendered ONLY where the step
+//     supplies a finger (no invented fingering).
+// The premium look ships as a <style> injected by THIS module, scoped exactly
+// like the Course staff (.view[data-view="learn"] .km-staff*), so it overrides
+// the older Course staff CSS by cascade order WITHOUT editing the large theme
+// stylesheet — the whole upgrade deploys as one small file. Class names and the
+// buildStaff() signature are unchanged, so the Course's flashStaff() feedback
+// and fingering preference keep working verbatim.
 // =============================================================================
 
-const GAP = 18;            // vertical distance between adjacent staff lines (larger = more readable)
+const GAP = 20;            // vertical distance between adjacent staff lines (larger = more readable)
 const HALF = GAP / 2;      // one diatonic step = half a line gap
-const STEM = Math.round(3.4 * GAP);   // stem length
+const STEM = Math.round(3.4 * GAP);   // stem length (matches masterclass 3.4 staff-spaces)
+const LEDGER_HALF = Math.round(0.72 * GAP);   // half-width of a ledger line
 
 // Wider canvas so the Course staff reads like real sheet music across the width.
 const W = 720;
-const LEFT = 64;           // x where the five lines begin (after the clef)
+const LEFT = 64;           // x where the five lines begin (after the clef + meter)
 const RIGHT = 700;         // x where the lines end
+
+// Time-signature column (after the clef, before the first note).
+const TS_X = 66;
 
 // Horizontal note layout: always inside [NOTE_L, NOTE_R], comfortable when there
 // is room, compressing to fit when there are many — centred, never past the lines.
@@ -75,11 +95,20 @@ function staffLines(topY, highlight) {
 
 function clefMark(clef, topY) {
   if (clef === 'treble') {
-    return `<text class="km-staff__clef" x="28" y="${topY + 3.4 * GAP}" text-anchor="middle">\uD834\uDD1E</text>`
-      + `<text class="km-staff__cleflabel" x="28" y="${topY + 5 * GAP + 15}" text-anchor="middle">treble</text>`;
+    return `<text class="km-staff__clef" x="30" y="${topY + 3.35 * GAP}" text-anchor="middle">\uD834\uDD1E</text>`
+      + `<text class="km-staff__cleflabel" x="30" y="${topY + 5 * GAP + 16}" text-anchor="middle">treble</text>`;
   }
-  return `<text class="km-staff__clef km-staff__clef--bass" x="28" y="${topY + 1.7 * GAP}" text-anchor="middle">\uD834\uDD22</text>`
-    + `<text class="km-staff__cleflabel" x="28" y="${topY + 5 * GAP + 15}" text-anchor="middle">bass</text>`;
+  return `<text class="km-staff__clef km-staff__clef--bass" x="30" y="${topY + 1.75 * GAP}" text-anchor="middle">\uD834\uDD22</text>`
+    + `<text class="km-staff__cleflabel" x="30" y="${topY + 5 * GAP + 16}" text-anchor="middle">bass</text>`;
+}
+
+// Stacked time-signature digits (serif, like the masterclass — NOT the music
+// font). numerator sits in the upper half of the staff, denominator in the lower.
+function timeSigMark(num, den, topY) {
+  const ny = topY + Math.round(1.55 * GAP);
+  const dy = topY + Math.round(3.62 * GAP);
+  return `<text class="km-staff__timesig" x="${TS_X}" y="${ny}" text-anchor="middle">${num}</text>`
+    + `<text class="km-staff__timesig" x="${TS_X}" y="${dy}" text-anchor="middle">${den}</text>`;
 }
 
 function noteY(midi, clef, topY) {
@@ -93,32 +122,32 @@ function ledgersFor(midi, clef, topY, cx) {
   const step = staffStep(midi);
   const topLineStep = ref.step + 8;
   let out = '';
-  const half = 13;
   if (step < ref.step) {
     for (let s = ref.step - 2; s >= step; s -= 2) {
       const y = topY + 4 * GAP - (s - ref.step) * HALF;
-      out += `<line class="km-staff__ledger" x1="${cx - half}" y1="${y}" x2="${cx + half}" y2="${y}"/>`;
+      out += `<line class="km-staff__ledger" x1="${cx - LEDGER_HALF}" y1="${y}" x2="${cx + LEDGER_HALF}" y2="${y}"/>`;
     }
   } else if (step > topLineStep) {
     for (let s = topLineStep + 2; s <= step; s += 2) {
       const y = topY - (s - topLineStep) * HALF;
-      out += `<line class="km-staff__ledger" x1="${cx - half}" y1="${y}" x2="${cx + half}" y2="${y}"/>`;
+      out += `<line class="km-staff__ledger" x1="${cx - LEDGER_HALF}" y1="${y}" x2="${cx + LEDGER_HALF}" y2="${y}"/>`;
     }
   }
   return out;
 }
 
-// state: 'on' (amber target) | 'correct' (emerald) | 'wrong' (rose) | null.
+// state: 'on' (target) | 'correct' | 'wrong' | null. NOTE: 'on' now renders as
+// black engraving ink (see CSS) — colour is reserved for correct/wrong feedback.
 function stateClass(state) {
   const s = (state === true) ? 'on' : (typeof state === 'string' ? state : null);
   return s ? ` is-${s}` : '';
 }
 
-// One value of a note's footprint, used for the vertical auto-fit so nothing clips.
+// A note's head footprint (scaled to GAP), used for drawing + vertical auto-fit.
 function noteHeadGeom(value) {
-  if (value === 'whole') return { rx: 11.6, ry: 8.2, rot: 0, open: true, stem: false };
-  if (value === 'half') return { rx: 10.4, ry: 7.6, rot: -20, open: true, stem: true };
-  return { rx: 10.4, ry: 7.6, rot: -20, open: false, stem: true };   // quarter (crotchet) default
+  if (value === 'whole') return { rx: 0.64 * GAP, ry: 0.45 * GAP, rot: 0, open: true, stem: false };
+  if (value === 'half') return { rx: 0.58 * GAP, ry: 0.42 * GAP, rot: -20, open: true, stem: true };
+  return { rx: 0.58 * GAP, ry: 0.42 * GAP, rot: -20, open: false, stem: true };   // quarter (crotchet) default
 }
 
 function noteHead(midi, clef, topY, cx, state, finger, value) {
@@ -126,18 +155,18 @@ function noteHead(midi, clef, topY, cx, state, finger, value) {
   const g = noteHeadGeom(value);
   const cls = 'km-staff__note' + (g.open ? ' km-staff__note--open' : '') + stateClass(state);
   let out = ledgersFor(midi, clef, topY, cx)
-    + `<ellipse class="${cls}" cx="${cx}" cy="${y}" rx="${g.rx}" ry="${g.ry}" transform="rotate(${g.rot} ${cx} ${y})"/>`;
+    + `<ellipse class="${cls}" cx="${cx}" cy="${y}" rx="${g.rx.toFixed(2)}" ry="${g.ry.toFixed(2)}" transform="rotate(${g.rot} ${cx} ${y})"/>`;
   let stemUp = true;
   if (g.stem) {
     const midLineY = topY + 2 * GAP;     // middle (3rd) line
     stemUp = y >= midLineY;              // note on/below middle line -> stem up
     const sx = stemUp ? (cx + g.rx - 1.6) : (cx - g.rx + 1.6);
     const y2 = stemUp ? (y - STEM) : (y + STEM);
-    out += `<line class="km-staff__stem" x1="${sx}" y1="${y}" x2="${sx}" y2="${y2}"/>`;
+    out += `<line class="km-staff__stem" x1="${sx.toFixed(2)}" y1="${y}" x2="${sx.toFixed(2)}" y2="${y2}"/>`;
   }
   if (Number.isFinite(finger)) {
-    const fy = (g.stem && stemUp) ? (y - STEM - 7) : (y - g.ry - 11);
-    out += `<text class="km-staff__finger" x="${cx}" y="${fy}" text-anchor="middle">${finger}</text>`;
+    const fy = (g.stem && stemUp) ? (y - STEM - 8) : (y - g.ry - 12);
+    out += `<text class="km-staff__finger" x="${cx}" y="${fy.toFixed(1)}" text-anchor="middle">${finger}</text>`;
   }
   return out;
 }
@@ -154,7 +183,7 @@ function noteBounds(midi, clef, topY, value, hasFinger) {
     stemUp = y >= midLineY;
     if (stemUp) top = y - STEM - 4; else bot = y + STEM + 4;
   }
-  if (hasFinger) top = Math.min(top, ((g.stem && stemUp) ? (y - STEM) : (y - g.ry)) - 20);
+  if (hasFinger) top = Math.min(top, ((g.stem && stemUp) ? (y - STEM) : (y - g.ry)) - 22);
   return [top, bot];
 }
 
@@ -186,6 +215,28 @@ function normaliseSeq(notes) {
   });
 }
 
+// Decide the time signature to engrave.
+//   • explicit opts.timeSig: '4/4' | '3/4' | [n, d] | false (force off)  → honoured
+//   • otherwise (undefined): show common time ONLY when the staff is clearly a
+//     RHYTHM exercise — ≥2 sounding notes AND (a rest is present OR a note uses a
+//     value other than a plain quarter). Plain single notes / pitch-reading rows
+//     stay clean (no meter), so early Foundation moments are uncluttered.
+function resolveTimeSig(opt, seq) {
+  if (opt === false) return null;
+  if (typeof opt === 'string') {
+    const m = /^(\d{1,2})\s*\/\s*(\d{1,2})$/.exec(opt.trim());
+    if (m) return [m[1], m[2]];
+    return null;
+  }
+  if (Array.isArray(opt) && opt.length === 2) return [String(opt[0]), String(opt[1])];
+  // Heuristic default.
+  const sounding = seq.filter((it) => !it.rest);
+  const hasRest = seq.some((it) => it.rest);
+  const hasRhythm = seq.some((it) => !it.rest && it.value && it.value !== 'quarter');
+  if (sounding.length >= 2 && (hasRest || hasRhythm)) return ['4', '4'];
+  return null;
+}
+
 const REST_TOP_MARK = 2 * GAP + 12;
 
 /**
@@ -196,6 +247,7 @@ const REST_TOP_MARK = 2 * GAP + 12;
  *   notes      Array of MIDI numbers, or { midi, state, finger, value } objects,
  *              or { rest: 'quarter'|'half'|'whole'|'eighth' } entries.
  *   middleC    boolean   mark Middle C on the grand staff   (default false)
+ *   timeSig    '4/4' | '3/4' | [n,d] | false  (optional; see resolveTimeSig)
  * @returns {HTMLDivElement} <div class="km-staff km-staff--{clef}">
  */
 export function buildStaff(opts = {}) {
@@ -204,6 +256,7 @@ export function buildStaff(opts = {}) {
   const highlight = (opts.highlight === 'lines' || opts.highlight === 'spaces') ? opts.highlight : null;
   const seq = normaliseSeq(Array.isArray(opts.notes) ? opts.notes : []);
   const middleC = !!opts.middleC;
+  const tsig = resolveTimeSig(opts.timeSig, seq);
 
   let body = '';
   const ys = [];
@@ -214,8 +267,9 @@ export function buildStaff(opts = {}) {
     const bassTop = trebleTop + 4 * GAP + 3 * GAP + 8;
     body += staffLines(trebleTop, highlight) + clefMark('treble', trebleTop);
     body += staffLines(bassTop, highlight) + clefMark('bass', bassTop);
+    if (tsig) { body += timeSigMark(tsig[0], tsig[1], trebleTop) + timeSigMark(tsig[0], tsig[1], bassTop); }
     body += `<line class="km-staff__brace" x1="${LEFT}" y1="${trebleTop}" x2="${LEFT}" y2="${bassTop + 4 * GAP}"/>`;
-    body += `<line class="km-staff__brace" x1="${RIGHT}" y1="${trebleTop}" x2="${RIGHT}" y2="${bassTop + 4 * GAP}"/>`;
+    body += `<line class="km-staff__endbar" x1="${RIGHT}" y1="${trebleTop}" x2="${RIGHT}" y2="${bassTop + 4 * GAP}"/>`;
     mark(trebleTop - 14);
     mark(bassTop + 5 * GAP + 18);
     if (middleC) {
@@ -236,6 +290,7 @@ export function buildStaff(opts = {}) {
   } else {
     const topY = 34;
     body += staffLines(topY, highlight) + clefMark(clef, topY);
+    if (tsig) { body += timeSigMark(tsig[0], tsig[1], topY); }
     mark(topY - 14);
     mark(topY + 5 * GAP + 18);
     const xs = noteXs(seq.length);
@@ -261,39 +316,48 @@ export function buildStaff(opts = {}) {
 
 // Premium Course-staff styling, injected once and scoped exactly like the Course
 // stylesheet (.view[data-view="learn"] .km-staff*) so it overrides the older
-// rules by cascade order without touching the large theme stylesheet. Note-head
-// colours are true engraving black; feedback mirrors the keyboard (emerald/rose);
-// the fingering toggle rule is restated so it works regardless of theme version.
+// rules by cascade order without touching the large theme stylesheet. Ink colours
+// are the masterclass engraving black; feedback is bound to the SAME --good /
+// --bad tokens the keyboard uses, so staff and keyboard always agree; the
+// fingering toggle rule is restated so it works regardless of theme version.
 let stylesInjected = false;
 function injectStaffStyles() {
   if (stylesInjected) return;
   if (typeof document === 'undefined') return;
   if (document.getElementById('km-staff-premium-css')) { stylesInjected = true; return; }
+  const INK = '#14110B';        // note-heads / stems / clefs / time-sig (masterclass --ink)
+  const INK_DIM = '#2E2A22';    // staff lines / ledgers / barlines (masterclass --ink-dim)
+  const PAPER = '#FCFAF5';      // open note-head fill
+  const MUSIC_FONT = "'Bravura','Noto Music',serif";
+  const SERIF = "var(--font-display,'Iowan Old Style','Palatino Linotype',Georgia,serif)";
   const css = `
-.view[data-view="learn"] .km-staff{display:block;width:min(720px,100%);margin-inline:auto;padding:clamp(.8rem,2.4vw,1.25rem) clamp(.9rem,3vw,1.5rem);background:linear-gradient(176deg,#FCFAF5 0%,#F2EDE2 100%);border-radius:14px;border:1px solid rgba(20,17,11,.14);box-shadow:0 14px 30px -10px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.7);}
-.view[data-view="learn"] .km-staff__svg{display:block;width:100%;max-width:100%;height:auto;max-height:min(34vh,300px);overflow:visible;}
-.view[data-view="learn"] .km-staff--grand{padding-top:.55rem;padding-bottom:.5rem;}
-.view[data-view="learn"] .km-staff__line{stroke:#1b1814;stroke-width:1.9;}
-.view[data-view="learn"] .km-staff__ledger{stroke:#1b1814;stroke-width:1.9;}
-.view[data-view="learn"] .km-staff__brace{stroke:#141210;stroke-width:2.8;stroke-linecap:round;}
-.view[data-view="learn"] .km-staff__stem{stroke:#141210;stroke-width:2;stroke-linecap:round;}
-.view[data-view="learn"] .km-staff__clef{fill:#141210;font-size:66px;font-weight:400;}
-.view[data-view="learn"] .km-staff__clef--bass{font-size:52px;}
-.view[data-view="learn"] .km-staff__cleflabel{fill:#6b6456;font-size:12.5px;letter-spacing:.05em;}
-.view[data-view="learn"] .km-staff__note{fill:#141210;stroke:none;transition:fill .18s ease,filter .2s ease,stroke .18s ease;}
-.view[data-view="learn"] .km-staff__note--open{fill:#FCFAF5;stroke:#141210;stroke-width:2.4;}
-.view[data-view="learn"] .km-staff__mc{fill:#141210;font-size:13.5px;font-weight:700;}
-.view[data-view="learn"] .km-staff__rest{fill:#141210;font-size:36px;}
-.view[data-view="learn"] .km-staff__finger{fill:#4a4436;font-size:15px;font-weight:700;font-family:var(--font-ui,system-ui,sans-serif);}
+.view[data-view="learn"] .km-staff{display:block;width:min(720px,100%);margin-inline:auto;padding:clamp(.85rem,2.6vw,1.35rem) clamp(.9rem,3vw,1.5rem);background:linear-gradient(176deg,#FCFAF5 0%,#F1ECE0 100%);border-radius:14px;border:1px solid rgba(20,17,11,.16);box-shadow:0 16px 34px -12px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,255,255,.72);}
+.view[data-view="learn"] .km-staff__svg{display:block;width:100%;max-width:100%;height:auto;max-height:min(46vh,420px);overflow:visible;}
+.view[data-view="learn"] .km-staff--grand .km-staff__svg{max-height:min(58vh,520px);}
+.view[data-view="learn"] .km-staff--grand{padding-top:.5rem;padding-bottom:.45rem;}
+.view[data-view="learn"] .km-staff__line{stroke:${INK_DIM};stroke-width:1.9;}
+.view[data-view="learn"] .km-staff__ledger{stroke:${INK_DIM};stroke-width:1.9;}
+.view[data-view="learn"] .km-staff__brace{stroke:${INK};stroke-width:3;stroke-linecap:round;}
+.view[data-view="learn"] .km-staff__endbar{stroke:${INK_DIM};stroke-width:1.8;}
+.view[data-view="learn"] .km-staff__stem{stroke:${INK};stroke-width:2;stroke-linecap:round;}
+.view[data-view="learn"] .km-staff__clef{fill:${INK};font-family:${MUSIC_FONT};font-size:68px;font-weight:400;}
+.view[data-view="learn"] .km-staff__clef--bass{font-size:54px;}
+.view[data-view="learn"] .km-staff__cleflabel{fill:#857C6B;font-size:12px;letter-spacing:.06em;font-family:var(--font-ui,system-ui,sans-serif);}
+.view[data-view="learn"] .km-staff__timesig{fill:${INK};font-family:${SERIF};font-weight:700;font-size:40px;}
+.view[data-view="learn"] .km-staff__note{fill:${INK};stroke:none;transition:fill .18s ease,filter .2s ease,stroke .18s ease;}
+.view[data-view="learn"] .km-staff__note--open{fill:${PAPER};stroke:${INK};stroke-width:2.6;}
+.view[data-view="learn"] .km-staff__note.is-on{fill:${INK};}
+.view[data-view="learn"] .km-staff__note--open.is-on{fill:${PAPER};stroke:${INK};stroke-width:2.6;}
+.view[data-view="learn"] .km-staff__mc{fill:${INK};font-size:14px;font-weight:700;font-family:var(--font-ui,system-ui,sans-serif);}
+.view[data-view="learn"] .km-staff__rest{fill:${INK_DIM};font-family:${MUSIC_FONT};font-size:38px;}
+.view[data-view="learn"] .km-staff__finger{fill:var(--brass-deep,#9A7330);font-size:16px;font-weight:700;font-family:var(--font-mono,ui-monospace,monospace);}
 html[data-fingering="hidden"] .view[data-view="learn"] .km-staff__finger{display:none;}
 .view[data-view="learn"] .km-staff__line.is-hl{stroke:#E0A94B;stroke-width:3.2;}
 .view[data-view="learn"] .km-staff__space.is-hl{fill:rgba(224,169,75,.28);}
-.view[data-view="learn"] .km-staff__note.is-on{fill:#E0A94B;stroke:color-mix(in srgb,#E0A94B 60%,#3a2a08);stroke-width:1.6;}
-.view[data-view="learn"] .km-staff__note--open.is-on{fill:#FCFAF5;stroke:#E0A94B;stroke-width:2.6;}
-.view[data-view="learn"] .km-staff__note.is-correct{fill:#46C08A;stroke:none;filter:drop-shadow(0 0 5px rgba(70,192,138,.5));}
-.view[data-view="learn"] .km-staff__note--open.is-correct{fill:#46C08A;stroke:none;}
-.view[data-view="learn"] .km-staff__note.is-wrong{fill:#D98A92;stroke:rgba(217,138,146,.55);stroke-width:1.4;}
-.view[data-view="learn"] .km-staff__note--open.is-wrong{fill:#D98A92;}
+.view[data-view="learn"] .km-staff__note.is-correct{fill:var(--good,#36c46a);stroke:none;filter:drop-shadow(0 0 5px color-mix(in srgb,var(--good,#36c46a) 55%,transparent));}
+.view[data-view="learn"] .km-staff__note--open.is-correct{fill:var(--good,#36c46a);stroke:none;}
+.view[data-view="learn"] .km-staff__note.is-wrong{fill:color-mix(in srgb,var(--bad,#e0566a) 86%,#F4EFE6);stroke:none;}
+.view[data-view="learn"] .km-staff__note--open.is-wrong{fill:color-mix(in srgb,var(--bad,#e0566a) 86%,#F4EFE6);stroke:none;}
 @media (prefers-reduced-motion:reduce){.view[data-view="learn"] .km-staff__note{transition:none;}.view[data-view="learn"] .km-staff__note.is-correct{filter:none;}}
 `;
   const style = document.createElement('style');
