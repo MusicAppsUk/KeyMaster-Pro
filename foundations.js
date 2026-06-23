@@ -1519,8 +1519,12 @@ function injectStyles() {
   s.id = 'mf-styles';
   s.textContent = `
     /* Course Focus Mode: compress the top bar in the Course only, so the lesson
-       area gains a little height. Back / Continue / Repeat / MIDI stay reachable. */
+       area gains a little height. Back / Continue / Repeat / MIDI stay reachable.
+       The bar row grows to fit its content (brand + the "Modules / Foundation
+       Course / chapter" breadcrumb) so that trail is never clipped against the
+       compressed bar; --bar-h remains the compressed floor. */
     html[data-view="learn"] { --bar-h: 44px; }
+    html[data-view="learn"] .app { grid-template-rows: minmax(var(--bar-h), auto) 1fr auto; }
     .mf { max-width: 56rem; margin: 0 auto; padding: 0.5rem 0 1rem; color: var(--ivory, #F4EFE6); }
     .mf__head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
     .mf__eyebrow { margin: 0; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase;
