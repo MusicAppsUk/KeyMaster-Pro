@@ -16,6 +16,7 @@
 
 import { PianoEngine, PIANO_MIN_MIDI, PIANO_MAX_MIDI } from './pianoEngine.js';
 import { Viewport } from './viewport.js';
+import { createKeyboardCompass } from './keyboardCompass.js?v=rc2-139';
 import { MidiRouter } from './midiRouter.js';
 import { getAudioContext, unlockAudio, isAudioSupported } from './audioContext.js';
 import { routeToMasterBus } from './audioBus.js';
@@ -595,6 +596,11 @@ class KeyMasterApp {
       octaves: 4,
       startMidi: clampStart(prefs.startMidi ?? 48), // C3 default
     });
+    // Orientation overlay: marks the C keys (Middle C most prominent). Decorates
+    // existing key elements only — no engine/viewport/mapping/pitch changes.
+    // Visibility is gated to the Foundation Course via html[data-view="learn"].
+    try { this.compass = createKeyboardCompass({ keyboard: this.keyboard }); this.compass.mount(); }
+    catch (err) { console.info('[KeyMaster] keyboard compass skipped:', err?.message ?? err); }
     this.midi = new MidiRouter(this.keyboard);
 
     // ---- Input hub: one normalized note stream for every device ----

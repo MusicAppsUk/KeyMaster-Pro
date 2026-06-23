@@ -368,7 +368,10 @@ export const FOUNDATION_STEPS = [
     ],
     explain: ['A scale is an ordered set of steps \u2014 the vocabulary of a key. Melodies, chords and pieces are built from it, and practising one trains the hand to move evenly.', 'We start in C (all white keys, easy to see), then the hand-shape pathway moves into B major, where the fingers fit the keys especially well.'],
     show: { kind: 'keys', midis: [60, 62, 64, 65, 67], caption: 'A scale: steps in order, C upward.', label: 'a scale = steps in order' },
-    mode: 'none',
+    tryPrompt: 'Play these five notes in order: C, D, E, F, then G.',
+    targets: [60, 62, 64, 65, 67], mode: 'sequence',
+    okMsg: 'That\u2019s it \u2014 five steps climbing. That is the shape of a scale.',
+    hint: 'They\u2019re the white keys from C, in order: C, D, E, F, G.',
   },
   {
     eyebrow: 'Notes in order', title: 'First scale idea', id: 'first-scale',
