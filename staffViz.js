@@ -5,6 +5,19 @@
 // are all drawn from scratch as SVG; clefs/rests/time-signatures use standard
 // Unicode music symbols (notation, not art) with text fallbacks.
 //
+// rc2-135 — COURSE NOTATION LAYOUT FIXES (on top of the rc2-134 premium staff):
+//   1. BASS CLEF alignment. The bass clef now shares the treble clef's exact
+//      baseline + size. In a SMuFL music font every clef is registered to print
+//      correctly at the same baseline, so the F-clef dots land on the F line
+//      when it sits where the (confirmed-correct) treble clef sits. The earlier
+//      heuristic baseline placed the bass clef ~1.5 staff-spaces too high.
+//   2. HAND vs STAFF priority. When a Course step shows BOTH a hand diagram and
+//      a staff (the staff-reading exercises), notation wins: the hand shrinks to
+//      a compact reference badge so the grand staff is fully visible. Pure hand-
+//      teaching steps carry no staff and are untouched (full-size hand kept).
+//      Done in this module's injected stylesheet via :has(), with a JS
+//      `is-aside` fallback — no change to the frozen theme stylesheet.
+//
 // rc2-134 — PREMIUM COURSE NOTATION v2. Closes the gap to Scales Masterclass /
 // Cognitive Sight Reading (staffView.js + notation.css), which are the in-app
 // reference standard. Those files are NOT touched; their proven values are
@@ -98,7 +111,12 @@ function clefMark(clef, topY) {
     return `<text class="km-staff__clef" x="30" y="${topY + 3.35 * GAP}" text-anchor="middle">\uD834\uDD1E</text>`
       + `<text class="km-staff__cleflabel" x="30" y="${topY + 5 * GAP + 16}" text-anchor="middle">treble</text>`;
   }
-  return `<text class="km-staff__clef km-staff__clef--bass" x="30" y="${topY + 1.75 * GAP}" text-anchor="middle">\uD834\uDD22</text>`
+  // Bass clef shares the treble's baseline + size: in a SMuFL music font
+  // (Bravura / Noto Music) every clef is registered to print correctly at the
+  // SAME baseline, so the F-clef dots land on the F line when it sits exactly
+  // where the (confirmed-correct) treble clef sits. The earlier 1.75*GAP guess
+  // placed it ~1.5 spaces too high — that was the off-centre bass clef.
+  return `<text class="km-staff__clef km-staff__clef--bass" x="30" y="${topY + 3.35 * GAP}" text-anchor="middle">\uD834\uDD22</text>`
     + `<text class="km-staff__cleflabel" x="30" y="${topY + 5 * GAP + 16}" text-anchor="middle">bass</text>`;
 }
 
@@ -311,7 +329,31 @@ export function buildStaff(opts = {}) {
   const wrap = document.createElement('div');
   wrap.className = `km-staff km-staff--${clef}`;
   wrap.innerHTML = svg;
+  scheduleHandDemotion();
   return wrap;
+}
+
+// Fallback for the "notation has priority" layout when :has() is unavailable.
+// A Course step that shows BOTH a hand and a staff should demote the hand to a
+// compact badge so the staff is fully visible. The CSS does this via :has();
+// this JS belt-and-suspenders sets an `is-aside` class on the (per-step) .km-hand
+// when its .mf__show also contains a staff, and clears it otherwise. It runs on
+// the next frame, after the Course has rendered both slots, and targets the
+// freshly-created .km-hand each step, so no stale state can linger. Pure hand-
+// teaching steps (no staff) never get the class, so the full hand is preserved.
+function scheduleHandDemotion() {
+  if (typeof document === 'undefined') return;
+  const raf = (typeof requestAnimationFrame === 'function')
+    ? requestAnimationFrame : (fn) => setTimeout(fn, 0);
+  raf(() => {
+    try {
+      document.querySelectorAll('.view[data-view="learn"] .mf__show').forEach((show) => {
+        const hasStaff = !!show.querySelector('.km-staff');
+        const hand = show.querySelector('.km-hand');
+        if (hand) hand.classList.toggle('is-aside', hasStaff);
+      });
+    } catch (_) { /* layout assist only, never required */ }
+  });
 }
 
 // Premium Course-staff styling, injected once and scoped exactly like the Course
@@ -341,7 +383,7 @@ function injectStaffStyles() {
 .view[data-view="learn"] .km-staff__endbar{stroke:${INK_DIM};stroke-width:1.8;}
 .view[data-view="learn"] .km-staff__stem{stroke:${INK};stroke-width:2;stroke-linecap:round;}
 .view[data-view="learn"] .km-staff__clef{fill:${INK};font-family:${MUSIC_FONT};font-size:68px;font-weight:400;}
-.view[data-view="learn"] .km-staff__clef--bass{font-size:54px;}
+.view[data-view="learn"] .km-staff__clef--bass{font-size:68px;}
 .view[data-view="learn"] .km-staff__cleflabel{fill:#857C6B;font-size:12px;letter-spacing:.06em;font-family:var(--font-ui,system-ui,sans-serif);}
 .view[data-view="learn"] .km-staff__timesig{fill:${INK};font-family:${SERIF};font-weight:700;font-size:40px;}
 .view[data-view="learn"] .km-staff__note{fill:${INK};stroke:none;transition:fill .18s ease,filter .2s ease,stroke .18s ease;}
@@ -358,6 +400,17 @@ html[data-fingering="hidden"] .view[data-view="learn"] .km-staff__finger{display
 .view[data-view="learn"] .km-staff__note--open.is-correct{fill:var(--good,#36c46a);stroke:none;}
 .view[data-view="learn"] .km-staff__note.is-wrong{fill:color-mix(in srgb,var(--bad,#e0566a) 86%,#F4EFE6);stroke:none;}
 .view[data-view="learn"] .km-staff__note--open.is-wrong{fill:color-mix(in srgb,var(--bad,#e0566a) 86%,#F4EFE6);stroke:none;}
+/* HAND vs STAFF priority. When a step shows BOTH a hand diagram and a staff
+   (the staff-reading exercises), notation wins: the hand shrinks to a compact
+   reference badge so the grand staff stays fully visible. Pure hand-teaching
+   steps carry no staff, so they never match and keep the full-size hand. Two
+   delivery paths in SEPARATE rule blocks (a browser without :has() must still
+   honour the .is-aside fallback set by JS, so they are not comma-joined). */
+.view[data-view="learn"] .mf__show:has(.km-staff) .mf__hand{margin:.15rem 0 .5rem;}
+.view[data-view="learn"] .mf__show:has(.km-staff) .km-hand__svg{width:118px;max-width:34%;max-height:min(22vh,168px);filter:drop-shadow(0 5px 12px rgba(0,0,0,.4));}
+.view[data-view="learn"] .mf__show:has(.km-staff) .km-hand--both .km-hand__svg{width:94px;max-width:40%;}
+.view[data-view="learn"] .km-hand.is-aside .km-hand__svg{width:118px;max-width:34%;max-height:min(22vh,168px);filter:drop-shadow(0 5px 12px rgba(0,0,0,.4));}
+.view[data-view="learn"] .km-hand--both.is-aside .km-hand__svg{width:94px;max-width:40%;}
 @media (prefers-reduced-motion:reduce){.view[data-view="learn"] .km-staff__note{transition:none;}.view[data-view="learn"] .km-staff__note.is-correct{filter:none;}}
 `;
   const style = document.createElement('style');
