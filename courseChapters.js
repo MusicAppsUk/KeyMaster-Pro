@@ -23,7 +23,7 @@ export const COURSE_CHAPTERS = [
     intro: 'A first taste of the B-major pathway, and why it fits the hand.' },
   { stage: 1, name: 'Harmony', ids: ['first-chord', 'chord-g', 'bridge-chords'],
     intro: 'Notes sounded together make chords \u2014 the colour of music.' },
-  { stage: 1, name: 'Reading the staff', ids: ['staff-what', 'staff-spaces', 'treble-clef', 'bass-clef', 'grand-staff', 'ledger-line', 'staff-to-key'],
+  { stage: 1, name: 'Reading the staff', ids: ['staff-what', 'staff-spaces', 'treble-clef', 'bass-clef', 'grand-staff', 'grand-staff-map', 'ledger-line', 'staff-to-key'],
     intro: 'The staff is the map musicians read \u2014 lines, spaces, clefs, the grand staff, and how it connects to the keys.' },
   { stage: 1, name: 'Reading', ids: ['read-play-e', 'read-play-g', 'first-reading', 'bridge-sightreading'],
     intro: 'Reading music means knowing a note, then playing it \u2014 now linked to the staff.' },

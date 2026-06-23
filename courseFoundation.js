@@ -530,6 +530,18 @@ export const FOUNDATION_STEPS = [
     mode: 'none',
   },
   {
+    eyebrow: 'Reading the staff', title: 'The whole staff map', id: 'grand-staff-map',
+    say: [
+      { text: 'Before we name every note, let\u2019s see the whole map.', pauseAfter: 600, tone: 'warm' },
+      { text: 'The treble clef sits above, the bass clef sits below, and Middle C joins them in the centre.', pauseAfter: 720 },
+      { text: 'Notes climb through lines and spaces, one step at a time. Their names follow the musical alphabet \u2014 A, B, C, D, E, F, G \u2014 then begin again.', pauseAfter: 760 },
+      { text: 'And when notes move beyond the five lines, ledger lines simply carry the same map onward.', pauseAfter: 360, tone: 'warm' },
+    ],
+    explain: ['Before naming every note, see the whole map: the treble staff above, the bass staff below, and Middle C joining them in the centre.', 'Notes move up and down through lines and spaces, one step at a time, and their names follow the musical alphabet \u2014 A B C D E F G \u2014 then repeat. Ledger lines extend the same map beyond the five lines. It is one continuous landscape, not separate puzzles.'],
+    show: { kind: 'staff', clef: 'grand', middleC: true, notes: [71, 50], caption: 'The grand staff \u2014 treble above, bass below, Middle C between.' },
+    mode: 'none',
+  },
+  {
     eyebrow: 'Reading the staff', title: 'Ledger lines', id: 'ledger-line',
     say: [
       { text: 'When notes go above or below the five lines, we add small extra lines called ledger lines.', pauseAfter: 620, tone: 'warm' },
