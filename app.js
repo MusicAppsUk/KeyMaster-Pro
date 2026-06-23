@@ -118,6 +118,11 @@ function savePrefs(prefs) {
  * shell stays usable and the keyboard remains playable.
  */
 const VIEW_REGISTRY = {
+  'learn-app': {
+    slot: 'learn-app',
+    src: './learnApp.js?v=rc2-138',
+    load: () => import('./learnApp.js?v=rc2-138'),
+  },
   foundations: {
     slot: 'foundations',
     src: './foundations.js?v=rc2-127',
@@ -150,6 +155,7 @@ const VIEW_REGISTRY = {
 const ROUTES = {
   '': 'home',
   '/': 'home',
+  '/learn-app': 'learn-app',
   '/foundations': 'foundations',
   '/scales': 'scales',
   '/sightreading': 'sightreading',
@@ -167,6 +173,7 @@ const ROUTES = {
  */
 const KEYBOARD_HIDDEN_DEFAULT = {
   home: true,
+  'learn-app': false,
   foundations: false,
   scales: true,
   sightreading: true,
@@ -183,6 +190,7 @@ const KEYBOARD_HIDDEN_DEFAULT = {
  */
 const FINGERING_HIDDEN_DEFAULT = {
   home: false,
+  'learn-app': false,
   foundations: false,
   scales: false,
   sightreading: false,
@@ -197,11 +205,12 @@ const FINGERING_HIDDEN_DEFAULT = {
  * the optional `ctx.nav` helper.
  */
 const MODULE_NAME = {
+  'learn-app': 'Learn the App',
   foundations: 'Musical Foundations',
   scales: 'Scales Masterclass',
   sightreading: 'Cognitive Sight-Reading',
   chords: 'Chord Masterclass',
-  learn: 'Master Training',
+  learn: 'Foundation Course',
 };
 
 /* ===========================================================================
@@ -427,7 +436,7 @@ class KeyMasterApp {
         const started = this._hasCourseProgress();
         const lbl = $('km-menu-continue-label'); const sub = $('km-menu-continue-sub');
         if (lbl) lbl.textContent = started ? 'Continue the Course' : 'Start the Course';
-        if (sub) sub.textContent = started ? 'Pick up where you left off' : 'Begin Stage 1';
+        if (sub) sub.textContent = started ? 'Pick up where you left off' : 'Begin the Foundation Course';
         const b = $('km-menu-build'); if (b) b.textContent = `KeyMaster PRO \u00B7 ${BUILD}`;
       } catch { /* ignore */ }
       menu.hidden = false;
@@ -442,6 +451,7 @@ class KeyMasterApp {
         const action = btn.getAttribute('data-menu');
         closeMenu();
         if (action === 'continue') { location.hash = '#/learn'; }
+        else if (action === 'learn-app') { location.hash = '#/learn-app'; }
         else if (action === 'map') { this._openCourseMap(); }
         else if (action === 'review') { resumeAt(Math.max(0, resumeIndex() - 1)); }
         else if (action === 'rooms') { location.hash = '#/'; setTimeout(() => { this.root.querySelector('#practice-rooms-heading')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); }
@@ -452,6 +462,13 @@ class KeyMasterApp {
 
     // ---- Hub chips on home --------------------------------------------------
     $('hub-map')?.addEventListener('click', () => this._openCourseMap());
+    $('hub-learnapp')?.addEventListener('click', () => { location.hash = '#/learn-app'; });
+    // First-run nudge: emphasise the Learn-the-App chip until the tour is done.
+    try {
+      const onboarded = !!this.progress?.get?.('appOnboarded');
+      const laLbl = $('hub-learnapp')?.querySelector('.hub-chip__label');
+      if (laLbl && !onboarded) laLbl.textContent = 'Start here \u2014 Learn the App';
+    } catch { /* ignore */ }
     $('hub-review')?.addEventListener('click', () => resumeAt(Math.max(0, resumeIndex() - 1)));
     // Primary launch from the home hub also requests immersive fullscreen on the
     // tap (synchronously, before the anchor navigates). Never blocks navigation.
@@ -1118,8 +1135,8 @@ class KeyMasterApp {
       const started = (Number.isInteger(lesson) && lesson > 0)
         || (Array.isArray(completed) && completed.length > 0);
       const cta = this.root.querySelector('#learn-cta');
-      if (cta) cta.textContent = started ? 'Continue the Course' : 'Start the KeyMaster PRO Course';
-      set('#course-hero-title', started ? 'Continue the KeyMaster PRO Course' : COURSE_NAME);
+      if (cta) cta.textContent = started ? 'Continue the Foundation Course' : 'Start the Foundation Course';
+      set('#course-hero-title', started ? 'Continue the Foundation Course' : COURSE_NAME);
       import('./foundations.js?v=rc2-127').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
