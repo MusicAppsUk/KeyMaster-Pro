@@ -703,10 +703,12 @@ export const FOUNDATION_STEPS = [
   {
     eyebrow: 'Reading by shape', title: 'Reading by shape', id: 'shape-reading-intro',
     say: [
-      { text: 'You can name the notes now. The next skill is to stop reading them one at a time.', pauseAfter: 600, tone: 'warm' },
-      { text: 'Notes travel in shapes \u2014 small steps, leaps that skip a note, and notes that simply repeat. Read the shape, and music comes faster.', pauseAfter: 360, tone: 'instruct' },
+      { text: 'You\u2019ve learned the map of the staff, and you\u2019ve started naming the notes. Now we build on that foundation.', pauseAfter: 620, tone: 'warm' },
+      { text: 'Music is not just one note after another \u2014 it is made of shapes, patterns, rhythm, and sound.', pauseAfter: 520, tone: 'instruct' },
+      { text: 'We begin with how notes move: a step to the next note, a skip over one, or a repeat of the same note.', pauseAfter: 480, tone: 'warm' },
+      { text: 'Then we turn these into short musical phrases. This is where reading becomes music.', pauseAfter: 360, tone: 'warm' },
     ],
-    explain: ['You have learned to name notes. Now begin reading how they move, rather than decoding each one.', 'Notes move in shapes: a step to the next note, a skip over one, or a repeat of the same note. Reading shapes is how fluent players read quickly.'],
+    explain: ['You have learned the map of the staff and begun naming notes. Now we move from naming notes to making music.', 'Music is made of shapes, patterns, rhythm, and sound \u2014 not just one note after another. We begin with steps, skips, and repeats, then build them into short musical phrases.'],
     show: { kind: 'staff', clef: 'treble', notes: [ { midi: 67, value: 'whole' }, { midi: 69, value: 'whole' }, { midi: 71, value: 'whole' } ], caption: 'Notes move in shapes \u2014 not one note at a time.' },
     mode: 'none',
   },
