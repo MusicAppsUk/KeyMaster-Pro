@@ -49,12 +49,13 @@
   --royal-deep:   #1E4D8C;
   --midnight:     #15213A;   /* structural navy (= text)              */
 
-  /* brass — restrained accent ONLY */
-  --brass:        #A9842F;
-  --brass-bright: #C09A45;
-  --brass-deep:   #87671F;
-  --brass-glow:   rgba(169, 132, 47, 0.16);
-  --champagne:    var(--brass-bright);
+  /* brass tokens RETIRED → mapped to blue so no gold survives anywhere
+     (the brand mark, eyebrows, etc. read these tokens and now turn blue) */
+  --brass:        #4E84C4;
+  --brass-bright: #6E9BC9;
+  --brass-deep:   #285FA6;
+  --brass-glow:   rgba(78, 132, 196, 0.18);
+  --champagne:    #356FBC;
 
   /* teaching feedback — true red / clear green */
   --good:         #15A24A;   /* correct                               */
@@ -120,6 +121,10 @@ h1, h2, h3, h4 { color: var(--ivory); }
   flex-direction: column;
   overflow: hidden;            /* the lesson card scrolls, not the page */
 }
+/* CRUCIAL: stop .app__main itself from scrolling in the cockpit, so the card
+   is the only scroll container and the footer action bar pins reliably above
+   the keyboard — nothing hides behind the white action strip. */
+[data-view="learn"] .app__main { overflow: hidden !important; }
 .view[data-view="learn"] .mf {
   max-width: none !important;
   width: 100%;
@@ -168,7 +173,7 @@ h1, h2, h3, h4 { color: var(--ivory); }
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  padding: clamp(1.5rem,4vw,2.8rem) clamp(1.1rem,4.5vw,2.6rem) 1.4rem !important;
+  padding: clamp(1.5rem,4vw,2.8rem) clamp(1.1rem,4.5vw,2.6rem) 2.2rem !important;
 }
 .view[data-view="learn"] .mf__card::before { display: none !important; }
 
@@ -180,7 +185,7 @@ h1, h2, h3, h4 { color: var(--ivory); }
   padding-bottom: max(clamp(.8rem,2.2vw,1.1rem), env(safe-area-inset-bottom)) !important;
   background: #FFFFFF;
   border-top: 1px solid var(--ebony-edge);
-  box-shadow: 0 -8px 22px -14px rgba(21,33,58,0.22);
+  box-shadow: 0 -1px 0 rgba(255,255,255,0.9);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -233,7 +238,7 @@ h1, h2, h3, h4 { color: var(--ivory); }
 .view[data-view="learn"] .mf__dot { background: var(--powder-edge); }
 .view[data-view="learn"] .mf__dot.is-done { background: var(--powder-deep); }
 .view[data-view="learn"] .mf__dot.is-current {
-  background: var(--brass); box-shadow: 0 0 0 3px var(--brass-glow);
+  background: var(--royal); box-shadow: 0 0 0 3px rgba(40,95,166,0.22);
 }
 /* pulse beats — powder, active amber */
 .view[data-view="learn"] .mf__beat { background: var(--powder-edge); }
@@ -375,3 +380,85 @@ h1, h2, h3, h4 { color: var(--ivory); }
 .signin-seam__btn:hover { background: var(--royal) !important; color: #FFFFFF !important; border-color: var(--royal) !important; }
 .build-tag { color: var(--ivory-faint) !important; }
 a { color: var(--royal); }
+
+/* ============================================================================
+   rc2-155 CORRECTIONS
+   ========================================================================== */
+
+/* ----------------------------------------------------------------------------
+   13. KEYBOARD — shorter (proportions preserved) + light frame, no red felt
+   --key-h drives white-key height; black keys scale off it, so the ratio holds.
+   -------------------------------------------------------------------------- */
+.piano { --key-h: clamp(92px, 26dvh, 188px) !important; }
+.keyboard-frame {
+  background: var(--ebony-sink) !important;
+  border-top: 3px solid var(--powder) !important;
+  box-shadow: inset 0 2px 8px rgba(21,33,58,0.10) !important;
+}
+
+/* ----------------------------------------------------------------------------
+   14. MIDDLE C MARKER — red label on the C4 key only (reuses hidden .key__label;
+   no pseudo-element conflict with finger badges / highlight rings; no JS).
+   -------------------------------------------------------------------------- */
+.key[data-midi="60"] .key__label {
+  display: block !important;
+  position: absolute;
+  left: 50%; bottom: 7%;
+  transform: translateX(-50%);
+  padding: 1px 5px;
+  font-size: 0.6rem; font-weight: 800; letter-spacing: 0.02em; line-height: 1.25;
+  color: #FFFFFF; background: #DC2626;
+  border-radius: 6px;
+  box-shadow: 0 1px 4px rgba(220,38,38,0.45);
+  pointer-events: none; z-index: 5;
+}
+
+/* ----------------------------------------------------------------------------
+   15. TOP CONTROL ROW — collapses in the cockpit; MIDI status stays visible.
+   The ⋯ toggle (added by cockpitUI.js) reveals the full row on tap.
+   -------------------------------------------------------------------------- */
+/* compact, always-visible MIDI/device status pill */
+.midi-pill {
+  background: #FFFFFF !important;
+  border: 1px solid var(--ebony-edge-2) !important;
+  color: var(--ivory-dim) !important;
+}
+.midi-pill__dot { background: var(--ivory-faint) !important; }
+.midi-pill.is-connected { border-color: var(--emerald) !important; color: var(--ivory) !important; }
+.midi-pill.is-connected .midi-pill__dot { background: var(--emerald) !important; }
+
+/* the reveal affordance */
+.cockpit-ctrl-toggle {
+  display: none;
+  appearance: none; cursor: pointer;
+  width: 38px; height: 34px; border-radius: 9px;
+  background: #FFFFFF; border: 1px solid var(--ebony-edge-2); color: var(--ivory);
+  font-size: 1.15rem; line-height: 1;
+  align-items: center; justify-content: center;
+  transition: background .15s ease, border-color .15s ease;
+}
+.cockpit-ctrl-toggle:hover { background: var(--powder-soft); border-color: var(--powder); }
+.cockpit-ctrl-toggle[aria-expanded="true"] { background: var(--powder-soft); border-color: var(--powder-deep); }
+
+/* in the cockpit: show the toggle, and (unless opened) hide the bulky controls
+   while keeping the MIDI pill. Anywhere else the row behaves normally. */
+html[data-view="learn"] .cockpit-ctrl-toggle { display: inline-flex; }
+html[data-view="learn"]:not([data-controls="open"]) .app__controls > :not(.midi-pill) {
+  display: none !important;
+}
+
+/* ----------------------------------------------------------------------------
+   16. BELT-AND-SUSPENDERS — eliminate any remaining gold (brand / eyebrows /
+   titles), independent of the token remap above.
+   -------------------------------------------------------------------------- */
+.brand__mark {
+  background: radial-gradient(120% 120% at 30% 25%, var(--powder), var(--royal-deep)) !important;
+  box-shadow: 0 2px 8px -2px rgba(40,95,166,0.30), inset 0 1px 0 rgba(255,255,255,0.4) !important;
+}
+.brand__name { color: var(--ivory) !important; }
+.brand__pro  { color: var(--royal) !important; -webkit-text-fill-color: var(--royal) !important; background: none !important; }
+.frontdoor__wordmark span {
+  color: var(--royal) !important; -webkit-text-fill-color: var(--royal) !important; background: none !important;
+}
+.course-hero__eyebrow, .km-map__eyebrow, .view__eyebrow { color: var(--powder-deep) !important; }
+.view__title, .km-map__title, #course-hero-title, #learn-heading { color: var(--ivory) !important; }
