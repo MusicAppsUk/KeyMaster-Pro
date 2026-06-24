@@ -745,7 +745,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   }
   function onReset() {
     const okToReset = (typeof window !== 'undefined' && typeof window.confirm === 'function')
-      ? window.confirm('Reset your learning progress on this device? This clears saved lessons and the voice preference.')
+      ? window.confirm('Reset your learning progress on this device? This clears your saved lessons and restarts the course from the beginning.')
       : true;
     if (!okToReset) return;
     audio?.cancel?.();
@@ -754,7 +754,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
     greeted = false;
     lastAutoSpokenIndex = -1;
     welcomeAutoPlayed = false; lastAutoNarrId = null; lastAutoNarrAt = 0;
-    setVoice(false);
+    setVoice(voiceOn);   // rc2-159: keep the voice preference — Reset must not silently mute Jack
     render();
   }
   function speakCard(c, onDone, opts = {}) {
@@ -1481,16 +1481,13 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
         // giving e.g. "Hello, Tim. Good morning." (morning/afternoon/evening as before).
         // Greeting in the Warm Precision register: name + time of day, then a warm
         // continuation. greetingFor(date, name) returns e.g. "Good afternoon, Tim."
-        const greet = greetingFor(new Date(), LEARNER_NAME);
         const started = !!(progress && (((progress.get('learnLesson') || 0) > 0)
           || (Array.isArray(progress.get('learnCompleted')) && progress.get('learnCompleted').length > 0)));
-        // Continuous Learning: name the lesson actually last reached (factual, from progressStore).
-        const lastTitle = (index > 0 && steps[index - 1]) ? steps[index - 1].title : null;
-        const greetText = !started
-          ? `${greet} Let\u2019s begin by orienting the keyboard.`
-          : (lastTitle
-            ? `${greet} Welcome back. Let\u2019s continue where you left off \u2014 ${lastTitle}.`
-            : `${greet} Welcome back. Let\u2019s continue where you left off.`);
+        // rc2-159: clean, resume-aware greeting. A fresh start (or after Reset) reads
+        // "Welcome to the course." and flows into Meet the keyboard. A genuine resume
+        // gives a short "Welcome back, Tim." The Continue button is the resume CTA, so
+        // the lesson page stays uncluttered (no "continue where you left off" line).
+        const greetText = started ? `Welcome back, ${LEARNER_NAME}.` : 'Welcome to the course.';
         if (greetingEl) greetingEl.textContent = greetText;
         if (!greeted) {
           const c0 = steps[index];

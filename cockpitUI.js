@@ -26,7 +26,8 @@
     toggle.setAttribute('aria-expanded', 'false');
     toggle.innerHTML = '<span aria-hidden="true">\u22EF</span>'; /* ⋯ */
 
-    toggle.addEventListener('click', function () {
+    toggle.addEventListener('click', function (e) {
+      if (e && e.stopPropagation) e.stopPropagation();   // contain the tap — reveal controls only, never touch the lesson or voice
       var open = root.getAttribute('data-controls') === 'open';
       if (open) { root.removeAttribute('data-controls'); }
       else { root.setAttribute('data-controls', 'open'); }

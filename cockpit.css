@@ -559,3 +559,10 @@ html[data-view="learn"] { --bar-h: 46px; }
 
 /* 22. REMAINING GOLD — degold the amber key-label decorative text. */
 .view[data-view="learn"] .mf__keylabel { color: var(--royal) !important; }
+
+/* ============================================================================
+   rc2-159  greeting gold dot  (greeting copy · voice-on-reset · fullscreen = JS)
+   ========================================================================== */
+/* remove the amber dot before the greeting on the lesson page (theme draws it via
+   .mf__greeting::before using --amber; we hide it here since theme.css is frozen) */
+.view[data-view="learn"] .mf__greeting::before { display: none !important; }

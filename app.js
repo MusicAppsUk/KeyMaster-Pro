@@ -794,10 +794,16 @@ class KeyMasterApp {
   async _requestImmersiveFullscreen() {
     try {
       const root = document.documentElement;
-      if (!document.fullscreenEnabled) return false;
-      if (document.fullscreenElement) return true;
-      await root.requestFullscreen({ navigationUI: 'hide' });
-      return true;
+      if (document.fullscreenElement || document.webkitFullscreenElement) return true;
+      if (root.requestFullscreen && document.fullscreenEnabled) {
+        await root.requestFullscreen({ navigationUI: 'hide' });
+        return true;
+      }
+      if (root.webkitRequestFullscreen) {            // older Android/Safari WebKit path
+        root.webkitRequestFullscreen();
+        return true;
+      }
+      return false;
     } catch (err) {
       console.info('[KeyMaster] fullscreen request not accepted:', err?.message ?? err);
       return false;
