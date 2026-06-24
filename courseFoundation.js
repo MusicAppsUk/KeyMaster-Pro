@@ -538,7 +538,7 @@ export const FOUNDATION_STEPS = [
       { text: 'And when notes move beyond the five lines, ledger lines simply carry the same map onward.', pauseAfter: 360, tone: 'warm' },
     ],
     explain: ['Before naming every note, see the whole map: the treble staff above, the bass staff below, and Middle C joining them in the centre.', 'Notes move up and down through lines and spaces, one step at a time, and their names follow the musical alphabet \u2014 A B C D E F G \u2014 then repeat. Ledger lines extend the same map beyond the five lines. It is one continuous landscape, not separate puzzles.'],
-    show: { kind: 'staff', clef: 'grand', middleC: true, notes: [71, 50], caption: 'The grand staff \u2014 treble above, bass below, Middle C between.' },
+    show: { kind: 'staff', clef: 'grand', middleC: true, caption: 'The grand staff \u2014 treble above, bass below, Middle C between.' },
     mode: 'none',
   },
   {
