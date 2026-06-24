@@ -1,0 +1,376 @@
+/* ============================================================================
+   cockpit.css  —  KeyMaster Pro "Music Room" light identity   (rc2-153)
+   ----------------------------------------------------------------------------
+   A clean, premium, blue-white learning cockpit.
+
+   HOW THIS WORKS (and why it is safe):
+   • This stylesheet is linked LAST in index.html, after theme.css / keyboard.css
+     / notation.css. It therefore wins the cascade and re-skins the app WITHOUT
+     editing the frozen theme.css (which stays byte-identical).
+   • The app is heavily design-token based, so re-defining the :root tokens flips
+     the great majority of surfaces from the old dark "ebony" system to porcelain
+     / ivory / white in one move. The handful of hardcoded-dark rules and the
+     decorative frontdoor layers are overridden explicitly below.
+   • Verified-safe linchpins: the piano keys are hardcoded white in keyboard.css
+     (not --ivory), and BOTH staves render on hardcoded cream paper with dark ink
+     (staffViz.js / notation.css) — so flipping --ivory to dark navy text and the
+     background to light leaves keys and manuscript looking correct.
+
+   ROLLBACK: remove the one <link> line in index.html. Nothing else is altered.
+
+   PALETTE
+     Surfaces .... porcelain / ivory / white
+     Structure ... deep navy / graphite-blue
+     Premium ..... champagne / brass (selected + accent warmth)
+     Progress .... powder-blue family (calm nav / progress / playhead)
+     Wrong ....... red / soft rose  (AFTER an attempt only — token-driven)
+     Correct ..... green            (success only — never the lead colour)
+   ========================================================================== */
+
+/* ----------------------------------------------------------------------------
+   1. DESIGN TOKENS — the palette flip
+   -------------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+
+  /* ---- Surfaces: porcelain / ivory / white (was dark ebony) ---- */
+  --ebony:        #EEF3FA;   /* app base → cool porcelain            */
+  --ebony-raise:  #FFFFFF;   /* cards / panels → white               */
+  --ebony-sink:   #E4EBF6;   /* wells / recesses → soft powder-grey  */
+  --ebony-edge:   #D6DFEF;   /* hairlines / borders → light blue-grey*/
+  --ebony-edge-2: #BFCFE6;   /* hover borders                        */
+
+  /* ---- Text: deep navy / graphite (was light ivory) ---- */
+  --ivory:        #1E2A45;   /* primary text → deep navy-graphite    */
+  --ivory-dim:    #58617A;   /* secondary text → graphite            */
+  --ivory-faint:  #98A4BA;   /* tertiary / disabled → light graphite */
+  --ivory-warm:   #FFFFFF;   /* warm reading surface → white         */
+
+  /* ---- Brass / champagne (premium, retuned for white) ---- */
+  --brass:        #B0823A;
+  --brass-bright: #CF9E45;
+  --brass-deep:   #876124;
+  --brass-glow:   rgba(176, 130, 58, 0.24);
+  --champagne:    var(--brass-bright);
+
+  /* ---- Powder-blue family (NEW) — calm progress / nav / playhead ---- */
+  --powder:       #8FB4D9;
+  --powder-deep:  #4E84C4;   /* active progress / playhead            */
+  --powder-soft:  #DCE8F5;
+  --powder-edge:  #B9D2EC;
+
+  /* ---- Structural navy (kept) ---- */
+  --midnight:     #1B2742;
+
+  /* ---- Functional: green = success, rose/red = correction ---- */
+  --good:         #2E9E68;
+  --warn:         #C0892F;
+  --felt:         #B84A5A;
+  --felt-bright:  #D4596E;
+  --bad:          var(--felt-bright);
+  --amber:        #D2982F;
+  --amber-glow:   rgba(210, 152, 47, 0.30);
+  --emerald:      #259A60;                       /* success — clear on white */
+  --emerald-glow: rgba(37, 154, 96, 0.26);
+  --rose:         #D98A92;                       /* gentle tutor correction  */
+  --rose-edge:    rgba(212, 89, 110, 0.50);
+}
+
+/* ----------------------------------------------------------------------------
+   2. BASE — body, light wash, scrollbars
+   -------------------------------------------------------------------------- */
+body {
+  background:
+    radial-gradient(125% 90% at 50% -12%, #FFFFFF 0%, var(--ebony) 58%) fixed;
+  color: var(--ivory);
+}
+h1, h2, h3 { color: var(--ivory); }
+
+/* light, quiet scrollbars */
+* { scrollbar-color: var(--powder-edge) transparent; }
+*::-webkit-scrollbar { width: 11px; height: 11px; }
+*::-webkit-scrollbar-thumb {
+  background: var(--powder-edge); border-radius: 8px;
+  border: 3px solid transparent; background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--powder); }
+
+/* ----------------------------------------------------------------------------
+   3. APP CHROME — top bar + instrument (keyboard) well
+   -------------------------------------------------------------------------- */
+.app__bar {
+  background: linear-gradient(180deg, #FFFFFF 0%, #F4F8FD 100%);
+  border-bottom: 1px solid var(--ebony-edge);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.9), 0 6px 18px -14px rgba(30,42,69,0.30);
+}
+/* a calm powder-blue orientation seam under the top bar */
+.app__bar::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--powder), transparent);
+  opacity: 0.55;
+}
+
+/* the keyboard well — light tray rather than a dark recess */
+.app__instrument {
+  background: linear-gradient(180deg, #F3F7FC 0%, var(--ebony-sink) 100%);
+  border-top: 1px solid var(--ebony-edge);
+}
+
+/* ----------------------------------------------------------------------------
+   4. BUTTONS — clean white treatment; brass for premium/primary
+   -------------------------------------------------------------------------- */
+.btn {
+  background: #FFFFFF;
+  color: var(--ivory);
+  border: 1px solid var(--ebony-edge-2);
+  box-shadow: 0 1px 2px rgba(30,42,69,0.06), 0 6px 16px -12px rgba(30,42,69,0.30);
+  transition: background .18s ease, border-color .18s ease,
+              box-shadow .18s ease, transform .12s ease;
+}
+.btn:hover {
+  background: var(--powder-soft);
+  border-color: var(--powder);
+  box-shadow: 0 2px 4px rgba(30,42,69,0.08), 0 10px 22px -12px rgba(78,132,196,0.40);
+}
+.btn:active { transform: translateY(1px); }
+.btn:focus-visible { outline: 2px solid var(--powder-deep); outline-offset: 2px; }
+
+/* a "primary / play / continue" emphasis where a button opts in */
+.btn--primary, .btn.is-primary {
+  background: linear-gradient(135deg, var(--brass-bright) 0%, var(--brass) 70%);
+  color: #2A1D06; border-color: var(--brass-deep);
+  box-shadow: 0 8px 22px -12px var(--brass-glow);
+}
+.btn--primary:hover, .btn.is-primary:hover {
+  background: linear-gradient(135deg, var(--brass-bright) 0%, var(--brass-bright) 100%);
+  border-color: var(--brass);
+}
+
+/* ----------------------------------------------------------------------------
+   5. FRONTDOOR — light, airy, premium (wording unchanged)
+   -------------------------------------------------------------------------- */
+.frontdoor {
+  background:
+    radial-gradient(130% 95% at 50% -10%, #FFFFFF 0%, #EAF1FA 55%, #E1EAF6 100%);
+  color: var(--ivory);
+}
+/* decorative stage layers → soft daylight rather than a dark aurora */
+.fd-stage { opacity: 1; }
+.fd-aurora {
+  background:
+    radial-gradient(60% 50% at 50% 12%, rgba(143,180,217,0.28) 0%, transparent 70%);
+  opacity: 0.9; mix-blend-mode: normal; filter: blur(8px);
+}
+.fd-spot {
+  background:
+    radial-gradient(45% 40% at 50% 0%, rgba(207,158,69,0.16) 0%, transparent 72%);
+  opacity: 0.9;
+}
+.fd-vignette {
+  background:
+    radial-gradient(120% 100% at 50% 50%, transparent 60%, rgba(30,42,69,0.05) 100%);
+}
+/* floating motes: faint powder-blue specks (were light specks on dark) */
+.fd-motes span { background: var(--powder); opacity: 0.30; box-shadow: none; }
+
+.frontdoor__eyebrow { color: var(--brass); }
+.frontdoor__wordmark { color: var(--ivory); }
+.frontdoor__wordmark span { color: var(--brass); }
+.frontdoor__greeting { color: var(--ivory-dim); }
+.fd-tagline, .frontdoor__tagline { color: var(--ivory-dim); }
+.frontdoor__build { color: var(--ivory-faint); }
+
+.frontdoor__enter {
+  background: linear-gradient(135deg, var(--brass-bright) 0%, var(--brass) 72%);
+  color: #2A1D06; border: 1px solid var(--brass-deep);
+  box-shadow: 0 12px 30px -14px var(--brass-glow);
+}
+.frontdoor__enter:hover { filter: brightness(1.04); }
+.frontdoor__secondary,
+.frontdoor__signin,
+.frontdoor__install,
+.frontdoor__fs {
+  background: #FFFFFF; color: var(--ivory);
+  border: 1px solid var(--ebony-edge-2);
+}
+.frontdoor__secondary:hover,
+.frontdoor__signin:hover,
+.frontdoor__install:hover,
+.frontdoor__fs:hover { background: var(--powder-soft); border-color: var(--powder); }
+.frontdoor__ioshint { color: var(--ivory-dim); }
+
+/* ----------------------------------------------------------------------------
+   6. COURSE HERO (the hub landing)
+   -------------------------------------------------------------------------- */
+.course-hero__greeting { color: var(--brass); }
+.course-hero__eyebrow  { color: var(--ivory-faint); }
+.course-hero__title    { color: var(--ivory); }
+.course-hero__next     { color: var(--ivory-dim); }
+.course-hero__progress { color: var(--ivory-faint); }
+
+.course-hero__cta {
+  background: linear-gradient(135deg, var(--brass-bright) 0%, var(--brass) 72%);
+  color: #2A1D06;
+  box-shadow: 0 10px 26px -12px var(--brass-glow);
+}
+.course-hero__cta:hover { filter: brightness(1.04); }
+
+/* progress bar → powder-blue */
+.course-hero__bar {
+  background: var(--ebony-sink);
+  border: 1px solid var(--ebony-edge);
+}
+.course-hero__bar-fill {
+  background: linear-gradient(90deg, var(--powder) 0%, var(--powder-deep) 100%);
+}
+
+/* ----------------------------------------------------------------------------
+   7. LESSON COCKPIT — central music card dominant, calm orientation, powder dots
+   -------------------------------------------------------------------------- */
+
+/* eyebrow = quiet orientation line (Key Level / chapter) */
+.view[data-view="learn"] .mf__eyebrow {
+  color: var(--brass);
+  letter-spacing: 0.08em;
+}
+.view[data-view="learn"] .mf__step { color: var(--ivory-faint); }
+
+/* progress dots → powder-blue, brass for the active step */
+.view[data-view="learn"] .mf__dots i,
+.view[data-view="learn"] .mf__dots span,
+.view[data-view="learn"] .mf__dots b {
+  background: var(--powder-edge);
+}
+.view[data-view="learn"] .mf__dots .is-done,
+.view[data-view="learn"] .mf__dots [data-done] {
+  background: var(--powder-deep);
+}
+.view[data-view="learn"] .mf__dots .is-current,
+.view[data-view="learn"] .mf__dots [data-current] {
+  background: var(--brass); box-shadow: 0 0 0 3px var(--brass-glow);
+}
+
+/* THE central card — light "music stand" surface, dominant, premium-quiet */
+.view[data-view="learn"] .mf__card {
+  background:
+    linear-gradient(168deg, #FFFFFF 0%, #F6F9FD 100%);
+  border: 1px solid color-mix(in srgb, var(--powder) 45%, var(--ebony-edge));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.9),
+    0 22px 50px -30px rgba(30,42,69,0.40),
+    0 2px 16px -10px rgba(78,132,196,0.18);
+}
+.view[data-view="learn"] .mf__card::before {
+  background: linear-gradient(90deg, transparent, var(--powder), transparent);
+  opacity: 0.6;
+}
+.view[data-view="learn"] .mf__title   { color: var(--ivory); }
+.view[data-view="learn"] .mf__explain p { color: var(--ivory-dim); }
+.view[data-view="learn"] .mf__explain p:first-child { color: var(--ivory); }
+
+/* the cream-paper staff already suits the light room — soften its dark
+   drop-shadow (tuned for the old dark bg) to a calm blue-grey lift */
+.view[data-view="learn"] .km-staff {
+  box-shadow:
+    0 14px 30px -16px rgba(30,42,69,0.28),
+    inset 0 1px 0 rgba(255,255,255,0.85) !important;
+  border: 1px solid rgba(30,42,69,0.12) !important;
+}
+
+/* ----------------------------------------------------------------------------
+   8. COURSE MAP + MENUS + SIGN-IN — clean light panels
+   -------------------------------------------------------------------------- */
+.km-coursemap, .km-menu, .km-signin {
+  background: rgba(238,243,250,0.86);
+  backdrop-filter: blur(6px);
+}
+.km-map__panel, .km-menu__panel, .km-signin__panel,
+.km-map__sheet, .km-menu__sheet {
+  background: #FFFFFF;
+  border: 1px solid var(--ebony-edge);
+  box-shadow: 0 30px 70px -30px rgba(30,42,69,0.40);
+  color: var(--ivory);
+}
+.km-map__title, .km-menu__title, .km-signin__title { color: var(--ivory); }
+.km-map__stage, .km-map__section, .km-map__course { color: var(--brass); }
+.km-map__chapter { color: var(--ivory); border-color: var(--ebony-edge); }
+.km-map__chapter:hover,
+.km-menu__item:hover, .km-menu__item:focus-visible,
+.km-provider:hover {
+  background: var(--powder-soft);
+  border-color: var(--powder);
+}
+.km-map__chapter.is-current, .km-map__chapter[aria-current] {
+  border-color: var(--brass); background: color-mix(in srgb, var(--brass) 8%, #fff);
+}
+.km-map__close:hover, .km-menu__close:hover, .km-signin__close:hover {
+  background: var(--powder-soft);
+}
+.km-provider {
+  background: #FFFFFF; color: var(--ivory); border: 1px solid var(--ebony-edge-2);
+}
+
+/* ----------------------------------------------------------------------------
+   9. FEEDBACK — wrong = rose/red (after attempt), correct = green (success)
+   These flow from the tokens above; reinforced here for clarity on white.
+   -------------------------------------------------------------------------- */
+/* staff feedback (staffViz is-correct / is-wrong already bind to --good/--bad) */
+.view[data-view="learn"] .km-staff__note.is-correct { fill: var(--emerald) !important; }
+.view[data-view="learn"] .km-staff__note.is-wrong   { fill: var(--felt-bright) !important; }
+
+/* keyboard feedback tokens read clearly on a light keyboard tray */
+.key.hl-success { box-shadow: 0 0 0 3px var(--emerald), 0 0 18px var(--emerald-glow); }
+.key.hl-mismatch, .key.hl-wrong { box-shadow: 0 0 0 3px var(--felt-bright); }
+.key.hl-target { box-shadow: 0 0 0 3px var(--brass), 0 0 16px var(--brass-glow); }
+
+/* ----------------------------------------------------------------------------
+   9b. INJECTED LESSON ELEMENTS — foundations.js appends its <style> AFTER this
+   file, so its rules need beating on specificity (prefix with the view scope).
+   Several use dark-era alpha values (rgba(244,239,230,α)) that vanish on white;
+   these restore visibility + the powder/brass/green language on the light room.
+   -------------------------------------------------------------------------- */
+
+/* lesson action buttons (.mf__btn--*) — clean, readable on white */
+.view[data-view="learn"] .mf__btn--ghost {
+  background: #FFFFFF;
+  border: 1px solid var(--ebony-edge-2);
+  color: var(--ivory);
+}
+.view[data-view="learn"] .mf__btn--ghost:hover {
+  background: var(--powder-soft); border-color: var(--powder); color: var(--ivory);
+}
+.view[data-view="learn"] .mf__btn--primary {
+  background: linear-gradient(135deg, var(--brass-bright) 0%, var(--brass) 72%);
+  color: #2A1D06;
+}
+.view[data-view="learn"] .mf__btn--primary.is-ready {
+  background: linear-gradient(135deg, var(--emerald) 0%, #1E8A54 100%);
+  color: #FFFFFF;
+}
+.view[data-view="learn"] .mf__btn--pause {
+  background: color-mix(in srgb, var(--amber) 16%, #fff);
+  border: 1px solid color-mix(in srgb, var(--amber) 55%, transparent);
+  color: var(--brass-deep);
+}
+
+/* undone progress dots + pulse "beat" dots — powder, not near-white */
+.view[data-view="learn"] .mf__dot { background: var(--powder-edge); }
+.view[data-view="learn"] .mf__dot.is-done { background: var(--powder-deep); }
+.view[data-view="learn"] .mf__dot.is-current {
+  background: var(--brass); box-shadow: 0 0 0 3px var(--brass-glow);
+}
+.view[data-view="learn"] .mf__beat { background: var(--powder-edge); }
+.view[data-view="learn"] .mf__beat.is-on { background: var(--amber); }
+
+/* try-status feedback: wrong = rose-red, done = green (consistent on white) */
+.view[data-view="learn"] .mf__trystatus.is-wrong { color: var(--felt-bright); }
+.view[data-view="learn"] .mf__trystatus.is-done  { color: var(--emerald); }
+.view[data-view="learn"] .mf__sharps { color: var(--brass); }
+
+/* ----------------------------------------------------------------------------
+   10. MISC — signin seam, build tag, generic links
+   -------------------------------------------------------------------------- */
+.signin-seam__btn { background: #FFFFFF; color: var(--ivory); border-color: var(--ebony-edge-2); }
+.signin-seam__btn:hover { background: var(--brass-bright); color: #2A1D06; border-color: var(--brass-bright); }
+.build-tag { color: var(--ivory-faint); }
+a { color: var(--powder-deep); }
