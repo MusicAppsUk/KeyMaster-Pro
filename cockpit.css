@@ -654,3 +654,92 @@ html[data-view="learn"] { --bar-h: 46px; }
   justify-content: center;
   min-height: 44px;
 }
+
+/* ========================================================================
+   rc2-168 — Cockpit layout correction (photo-driven, learn view only).
+   Music first · both menus persist · slim header · compact blue bottom bar.
+   No engine / keyboard / audio CSS is touched; all rules are scoped to learn.
+   ======================================================================== */
+
+/* --- 1. BOTH menu affordances persist through the whole course ----------- */
+/* Left hamburger = main nav (Course Map, Practice Rooms, Learn the App,
+   Settings, Reset). It must NOT vanish on entering a lesson (overrides the
+   frozen theme.css rule that hid it in the focused cockpit). */
+html[data-view="learn"] .app__menu { display: inline-flex !important; }
+/* Right three-dot = setup/options (keyboard, fingering, fullscreen, exit,
+   diagnostics). Reassert so it can never be hidden mid-course. */
+html[data-view="learn"] .cockpit-ctrl-toggle { display: inline-flex !important; }
+
+/* --- 2. Slim, finished course header ------------------------------------ */
+/* Show a SMALL course breadcrumb as the title; keep the large brand wordmark
+   out of the lesson so the bar stays light and professional. */
+html[data-view="learn"] .brand-wrap { display: flex !important; min-width: 0; }
+html[data-view="learn"] .brand      { display: none !important; }
+html[data-view="learn"] .breadcrumb { display: flex !important; font-size: .8rem; opacity: .95;
+  flex-wrap: nowrap; overflow: hidden; white-space: nowrap; min-width: 0; }
+html[data-view="learn"] .breadcrumb__crumb {
+  color: var(--royal); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46vw; }
+html[data-view="learn"] .breadcrumb__crumb.is-current { color: var(--midnight); }
+html[data-view="learn"] .breadcrumb__sep { color: var(--powder-edge); opacity: 1; }
+html[data-view="learn"] { --bar-h: 46px; }                 /* genuinely slim bar */
+html[data-view="learn"] .app__bar { padding-top: 0 !important; padding-bottom: 0 !important; }
+
+/* --- 3. Transport bar pins to the REAL bottom when keyboard is hidden ---- */
+/* On a passive step (Welcome, hand/staff/pulse), the keyboard auto-hides.
+   Force the instrument grid row to zero so the bar sits on the viewport floor
+   with NO reserved grey keyboard area beneath it. */
+html[data-keyboard="hidden"] .app__instrument { display: none !important; }
+html[data-view="learn"][data-keyboard="hidden"] .app {
+  grid-template-rows: var(--bar-h) 1fr 0 !important;
+}
+
+/* --- 4. Compact bottom transport bar (~2cm on tablet, one clean row) ----- */
+.view[data-view="learn"] .mf__footer {
+  gap: .45rem !important;
+  padding: clamp(.3rem,.8vw,.45rem) clamp(.8rem,3.5vw,1.8rem) !important;
+  padding-bottom: max(clamp(.3rem,.8vw,.45rem), env(safe-area-inset-bottom)) !important;
+}
+.view[data-view="learn"] .mf__footer .mf__btn {
+  padding: .32rem .82rem !important;
+  min-height: 36px !important;
+  font-size: .9rem !important;
+}
+.view[data-view="learn"] .mf__transport-mid { gap: .35rem !important; }
+.view[data-view="learn"] .mf__transport-end { gap: .4rem !important; }
+
+/* --- 5. Wedgwood / classical-blue buttons (white surfaces, blue ink) ----- */
+/* Secondary (Back / Listen / Repeat): white surface, blue outline + label. */
+.view[data-view="learn"] .mf__footer .mf__btn--ghost {
+  background: #FFFFFF !important;
+  border-color: var(--powder-edge) !important;
+  color: var(--royal) !important;
+}
+.view[data-view="learn"] .mf__footer .mf__btn--ghost:hover {
+  border-color: var(--royal) !important;
+  background: var(--powder-soft) !important;
+}
+/* Primary (Continue / Play to continue): solid classical blue, white label. */
+.view[data-view="learn"] .mf__footer .mf__btn--primary {
+  background: var(--royal) !important;
+  border-color: var(--royal-deep) !important;
+  color: #FFFFFF !important;
+}
+.view[data-view="learn"] .mf__footer .mf__btn--primary:hover {
+  background: var(--royal-bright) !important;
+}
+/* Success stays GREEN — correct / ready to continue. */
+.view[data-view="learn"] .mf__footer .mf__btn--primary.is-ready {
+  background: var(--emerald) !important;
+  border-color: var(--emerald) !important;
+  color: #FFFFFF !important;
+}
+/* Pause: a soft blue (deliberately NOT gold/amber). */
+.view[data-view="learn"] .mf__footer .mf__btn--pause {
+  background: var(--powder-soft) !important;
+  border-color: var(--powder) !important;
+  color: var(--royal-deep) !important;
+}
+.view[data-view="learn"] .mf__footer .mf__btn--pause:hover {
+  background: var(--powder-edge) !important;
+  color: var(--midnight) !important;
+}
