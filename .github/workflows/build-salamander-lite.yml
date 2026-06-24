@@ -4,8 +4,8 @@
 #
 # WHAT THIS DOES
 #   Runs on GitHub's own runners (which HAVE network), downloads a small curated
-#   set of Salamander Grand Piano notes (Yamaha C5, CC-BY 3.0), trims/encodes them
-#   to web-safe MP3, writes them to  assets/piano/salamander-lite/ , generates a
+#   set of Salamander Grand Piano notes (Yamaha C5, CC-BY 3.0), copies them as-is
+#   (already web-safe MP3, full natural tails), writes them to  assets/piano/salamander-lite/ , generates a
 #   manifest.json the in-app sampler reads, writes the CC-BY attribution into
 #   NOTICE, and commits the result back to the repo. No by-hand tablet uploads.
 #
@@ -20,9 +20,9 @@
 #   mirror of Alexander Holm's Salamander Grand Piano V3 whose folder carries the
 #   original CC-BY licence and author credit. CC-BY 3.0 permits redistribution
 #   (incl. commercial) with attribution, so the mirror is legally equivalent to
-#   the author's archive. Files are CONVERTED (re-encoded to MP3), TRIMMED (short
-#   decay) and given a short fade-out; these adaptations are declared in NOTICE +
-#   manifest. No loudness normalisation, no looping.
+#   the author's archive. Pass 1: files are copied AS-IS (already web-safe MP3) —
+#   full natural tails, no trim, no re-encode, no normalisation, no looping. Only
+#   selection + mirroring; declared in NOTICE + manifest.
 # =============================================================================
 
 name: Build Salamander lite piano pack
@@ -48,13 +48,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Ensure ffmpeg
-        run: |
-          if ! command -v ffmpeg >/dev/null 2>&1; then
-            sudo apt-get update -y && sudo apt-get install -y ffmpeg
-          fi
-          ffmpeg -version | head -n 1
-
       - name: Build lite pack + manifest + NOTICE
         run: |
           set -euo pipefail
@@ -72,17 +65,10 @@ jobs:
             note="${pair%%:*}"
             midi="${pair##*:}"
             url="${SRC}/${note}.mp3"
-            tmp="$(mktemp --suffix=.mp3)"
             echo "  - ${note} (midi ${midi})  <-  ${url}"
-            # Fail loudly if a source note is missing (never ship a half pack).
-            curl -fSL --retry 3 -o "$tmp" "$url"
-            # Cautious adaptation: trim to a 6 s decay + 200 ms fade-out, re-encode
-            # to 192 kbps stereo MP3. No per-note loudness normalisation (it would
-            # flatten the natural soft-low / bright-high balance of a real grand).
-            ffmpeg -y -hide_banner -loglevel error -i "$tmp" \
-              -t 6 -af "afade=t=out:st=5.8:d=0.2" \
-              -c:a libmp3lame -b:a 192k -ac 2 "${OUT}/${note}.mp3"
-            rm -f "$tmp"
+            # Pass 1: copy the source MP3 AS-IS — full natural tails, no trim and
+            # no re-encode (avoids a second lossy pass). Fail loudly if missing.
+            curl -fSL --retry 3 -o "${OUT}/${note}.mp3" "$url"
             sep=""; [ -n "$ZONES" ] && sep=","
             ZONES="${ZONES}${sep}{\"note\": \"${note}\", \"midi\": ${midi}, \"file\": \"${note}.mp3\"}"
           done
@@ -91,13 +77,14 @@ jobs:
           ATTR="Piano samples adapted from Salamander Grand Piano by Alexander Holm, licensed under Creative Commons Attribution 3.0 Unported."
           {
             printf '%s\n' '{'
+            printf '  "version": "p1",\n'
             printf '  "instrument": "Salamander Grand Piano (lite)",\n'
             printf '  "source": "Salamander Grand Piano V3 by Alexander Holm (Yamaha C5)",\n'
             printf '  "sourceUrl": "https://tonejs.github.io/audio/salamander/",\n'
             printf '  "license": "CC-BY-3.0",\n'
             printf '  "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",\n'
             printf '  "attribution": "%s",\n' "$ATTR"
-            printf '  "adaptations": "Mirrored from the Tone.js Salamander V3 set, re-encoded to MP3 (192 kbps, lossy), trimmed to ~6 s with a 200 ms fade-out. Original note filenames kept (not renamed); not loudness-normalised; not looped.",\n'
+            printf '  "adaptations": "Mirrored from the Tone.js Salamander V3 set; a curated 18-note subset selected. Files are otherwise UNMODIFIED: original MP3 with full natural tails, not re-encoded, not trimmed, not loudness-normalised, not looped. Filenames unchanged.",\n'
             printf '  "velocityLayers": 1,\n'
             printf '  "spacing": "minor-third (every 3 semitones)",\n'
             printf '  "zones": [%s\n' "$ZONES"
@@ -119,11 +106,10 @@ jobs:
             printf '%s\n' '         audio repository mirror (https://tonejs.github.io/audio/salamander/).'
             printf '\n'
             printf '%s\n' 'Adaptations made for KeyMaster Pro: a curated subset of 18 notes (every minor'
-            printf '%s\n' 'third, A1-C6) was MIRRORED from the Tone.js public Salamander V3 set, then'
-            printf '%s\n' 're-encoded to MP3 (192 kbps, lossy compression), trimmed to roughly a'
-            printf '%s\n' '6-second decay, and given a 200 ms fade-out. Original Salamander note'
-            printf '%s\n' 'filenames were kept (files were NOT renamed). The samples were NOT'
-            printf '%s\n' 'loudness-normalised and are NOT looped.'
+            printf '%s\n' 'third, A1-C6) was MIRRORED from the Tone.js public Salamander V3 set. The'
+            printf '%s\n' 'files are otherwise UNMODIFIED: original MP3 with full natural tails, not'
+            printf '%s\n' 're-encoded, not trimmed, not loudness-normalised, and not looped. Original'
+            printf '%s\n' 'Salamander note filenames were kept (files were NOT renamed).'
           } > NOTICE
           echo "wrote NOTICE"
 
