@@ -1235,6 +1235,8 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
     tryStatus.textContent = `\u2713 ${speakable(shown)}`;
     tryStatus.classList.remove('is-wrong');
     tryStatus.classList.add('is-done');
+    // rc2-161: pull the confirmation fully into view so it never hides behind the action strip / keyboard
+    try { tryStatus.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) { /* no-op */ }
     if (learnMode) {
       enableContinue();
       // Advance only after the confirmation has been fully delivered, then a calm

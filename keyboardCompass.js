@@ -29,12 +29,17 @@ function injectStyle() {
   }
   .km-compass-mark__oct{display:block;}
   .km-compass-mark--mid{
-    color:var(--gold,#E0A94B); font-size:.68rem;
-    text-shadow:0 1px 2px rgba(0,0,0,.35);
+    font-size:.62rem; text-shadow:none;
+  }
+  .km-compass-mark--mid .km-compass-mark__oct{
+    display:inline-block; padding:1px 5px; border-radius:5px;
+    background:#DC2626; color:#FFFFFF; font-weight:800; font-size:.66rem;
+    box-shadow:0 1px 3px rgba(220,38,38,.45);
   }
   .km-compass-mark--mid .km-compass-mark__name{
-    display:block; margin-top:.12rem; font-size:.5rem; font-weight:600;
-    letter-spacing:.05em; text-transform:uppercase; opacity:.92;
+    display:block; margin-top:.14rem; font-size:.52rem; font-weight:700;
+    letter-spacing:.04em; text-transform:uppercase;
+    color:#DC2626; text-shadow:0 0 2px rgba(255,255,255,.95), 0 1px 1px rgba(255,255,255,.7);
   }
   /* Show only inside the Foundation Course, and only on on-window keys. */
   html[data-view="learn"] .km-compass-mark{display:block;}

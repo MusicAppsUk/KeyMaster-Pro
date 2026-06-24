@@ -540,7 +540,7 @@ html[data-view="learn"] .app {
   grid-template-rows: var(--bar-h) minmax(0, 1fr) auto !important;
 }
 /* breathing room at the end of the scroll so the last prompt clears the bar */
-.view[data-view="learn"] .mf__card { padding-bottom: 3rem !important; }
+.view[data-view="learn"] .mf__card { padding-bottom: clamp(3.5rem, 7vh, 5rem) !important; }
 
 /* 20. PROGRESS DOTS — removed from the lesson page (course position lives in the
    Course Map). Declutters the top and removes the leftmost position dot. */
