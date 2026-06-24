@@ -106,9 +106,11 @@ h1, h2, h3, h4 { color: var(--ivory); }
 
 /* keyboard tray — clean light shelf under the cockpit */
 .app__instrument {
-  background: linear-gradient(180deg, #7C2A33 0%, #5C1E26 100%) !important;
-  border-top: 1px solid #491820 !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06) !important;
+  background: #FFFFFF !important;
+  border-top: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  padding-bottom: env(safe-area-inset-bottom) !important;
 }
 
 /* ============================================================================
@@ -398,9 +400,12 @@ a { color: var(--royal); }
    -------------------------------------------------------------------------- */
 .piano { --key-h: clamp(92px, 26dvh, 188px) !important; }
 .keyboard-frame {
-  background: #6B2530 !important;
-  border-top: 3px solid #93303A !important;
-  box-shadow: inset 0 2px 10px rgba(0,0,0,0.45) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+  /* the ONLY red: a fine felt-style line above the keys, like a real piano */
+  border-top: 2px solid #A23842 !important;
 }
 
 /* ----------------------------------------------------------------------------
@@ -521,3 +526,36 @@ html[data-view="learn"] .midi-pill {
   fill: #14C95E !important;
   filter: drop-shadow(0 0 6px rgba(20, 201, 94, 0.65)) !important;
 }
+
+/* ============================================================================
+   rc2-158  FOCUSED CORRECTION — clean keyboard · no hidden content · lighter top
+   ========================================================================== */
+
+/* 19. CONTENT-UNDER-KEYBOARD FIX.
+   Harden the shell grid so the middle row can SHRINK: the lesson card becomes the
+   sole scroller and the footer + keyboard always sit BELOW content, never over it.
+   Without minmax(0,1fr) a tall lesson (e.g. the inline keyboard on "Meet the
+   keyboard") grows the row and pushes the prompt under the bar/keyboard. */
+html[data-view="learn"] .app {
+  grid-template-rows: var(--bar-h) minmax(0, 1fr) auto !important;
+}
+/* breathing room at the end of the scroll so the last prompt clears the bar */
+.view[data-view="learn"] .mf__card { padding-bottom: 3rem !important; }
+
+/* 20. PROGRESS DOTS — removed from the lesson page (course position lives in the
+   Course Map). Declutters the top and removes the leftmost position dot. */
+.view[data-view="learn"] .mf__dots { display: none !important; }
+
+/* 21. LIGHTER TOP — shorter bar + tighter, quieter lesson head while learning. */
+html[data-view="learn"] { --bar-h: 46px; }
+.view[data-view="learn"] .mf__head {
+  padding: clamp(.45rem,1.4vw,.7rem) clamp(1rem,4.5vw,2.6rem) 0 !important;
+}
+.view[data-view="learn"] .mf__eyebrow {
+  color: var(--ivory-dim) !important;
+  font-size: .72rem !important;
+}
+.view[data-view="learn"] .mf__greeting { color: var(--ivory) !important; }
+
+/* 22. REMAINING GOLD — degold the amber key-label decorative text. */
+.view[data-view="learn"] .mf__keylabel { color: var(--royal) !important; }
