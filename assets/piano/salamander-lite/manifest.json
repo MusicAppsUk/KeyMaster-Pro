@@ -1,11 +1,12 @@
 {
+  "version": "p1",
   "instrument": "Salamander Grand Piano (lite)",
   "source": "Salamander Grand Piano V3 by Alexander Holm (Yamaha C5)",
   "sourceUrl": "https://tonejs.github.io/audio/salamander/",
   "license": "CC-BY-3.0",
   "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
   "attribution": "Piano samples adapted from Salamander Grand Piano by Alexander Holm, licensed under Creative Commons Attribution 3.0 Unported.",
-  "adaptations": "Mirrored from the Tone.js Salamander V3 set, re-encoded to MP3 (192 kbps, lossy), trimmed to ~6 s with a 200 ms fade-out. Original note filenames kept (not renamed); not loudness-normalised; not looped.",
+  "adaptations": "Mirrored from the Tone.js Salamander V3 set; a curated 18-note subset selected. Files are otherwise UNMODIFIED: original MP3 with full natural tails, not re-encoded, not trimmed, not loudness-normalised, not looped. Filenames unchanged.",
   "velocityLayers": 1,
   "spacing": "minor-third (every 3 semitones)",
   "zones": [{"note": "A1", "midi": 33, "file": "A1.mp3"},{"note": "C2", "midi": 36, "file": "C2.mp3"},{"note": "Ds2", "midi": 39, "file": "Ds2.mp3"},{"note": "Fs2", "midi": 42, "file": "Fs2.mp3"},{"note": "A2", "midi": 45, "file": "A2.mp3"},{"note": "C3", "midi": 48, "file": "C3.mp3"},{"note": "Ds3", "midi": 51, "file": "Ds3.mp3"},{"note": "Fs3", "midi": 54, "file": "Fs3.mp3"},{"note": "A3", "midi": 57, "file": "A3.mp3"},{"note": "C4", "midi": 60, "file": "C4.mp3"},{"note": "Ds4", "midi": 63, "file": "Ds4.mp3"},{"note": "Fs4", "midi": 66, "file": "Fs4.mp3"},{"note": "A4", "midi": 69, "file": "A4.mp3"},{"note": "C5", "midi": 72, "file": "C5.mp3"},{"note": "Ds5", "midi": 75, "file": "Ds5.mp3"},{"note": "Fs5", "midi": 78, "file": "Fs5.mp3"},{"note": "A5", "midi": 81, "file": "A5.mp3"},{"note": "C6", "midi": 84, "file": "C6.mp3"}

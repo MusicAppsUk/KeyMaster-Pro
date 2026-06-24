@@ -9,8 +9,7 @@ Source:  Salamander Grand Piano V3 (Yamaha C5), via the Tone.js public
          audio repository mirror (https://tonejs.github.io/audio/salamander/).
 
 Adaptations made for KeyMaster Pro: a curated subset of 18 notes (every minor
-third, A1-C6) was MIRRORED from the Tone.js public Salamander V3 set, then
-re-encoded to MP3 (192 kbps, lossy compression), trimmed to roughly a
-6-second decay, and given a 200 ms fade-out. Original Salamander note
-filenames were kept (files were NOT renamed). The samples were NOT
-loudness-normalised and are NOT looped.
+third, A1-C6) was MIRRORED from the Tone.js public Salamander V3 set. The
+files are otherwise UNMODIFIED: original MP3 with full natural tails, not
+re-encoded, not trimmed, not loudness-normalised, and not looped. Original
+Salamander note filenames were kept (files were NOT renamed).
