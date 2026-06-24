@@ -607,3 +607,30 @@ html[data-view="learn"] { --bar-h: 46px; }
   min-height: 32px !important;
   font-size: .82rem !important;
 }
+
+/* rc2-164 — Salamander CC-BY attribution line at the foot of the side menu.
+   Small, muted, readable; matches the menu's quiet metadata styling. */
+.km-menu__credit {
+  margin: .5rem .9rem .2rem !important;
+  font-size: .68rem !important;
+  line-height: 1.4 !important;
+  color: var(--slate-soft, #5b6677) !important;
+  opacity: .85 !important;
+}
+.km-menu__credit a {
+  color: var(--ink, #2b3442) !important;
+  text-decoration: underline !important;
+}
+
+/* rc2-165 — Course sampled-piano status line in the side menu. Colour-coded by
+   data-state so the voice state is obvious at a glance (no guessing by ear). */
+.km-menu__status {
+  margin: .55rem .9rem .1rem !important;
+  font-size: .72rem !important;
+  font-weight: 600 !important;
+  color: var(--slate, #46506a) !important;
+}
+.km-menu__status[data-state="ready"]   { color: #1f7a4d !important; }
+.km-menu__status[data-state="loading"] { color: #7a5a1f !important; }
+.km-menu__status[data-state="missing"],
+.km-menu__status[data-state="error"]   { color: #9a3b2f !important; }

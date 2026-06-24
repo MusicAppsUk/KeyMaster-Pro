@@ -19,10 +19,11 @@ import { Viewport } from './viewport.js';
 import { createKeyboardCompass } from './keyboardCompass.js?v=rc2-139';
 import { MidiRouter } from './midiRouter.js';
 import { getAudioContext, unlockAudio, isAudioSupported } from './audioContext.js';
-import { routeToMasterBus } from './audioBus.js';
+import { routeToMasterBus, getMasterBus } from './audioBus.js';
 import { runWelcomeExperience, getDisplayName, flourishEnabled } from './welcomeExperience.js';
 import { Synth } from './synth.js';
 import { PianoSynth } from './pianoVoice.js';
+import { createCoursePiano } from './coursePianoSampler.js';
 import { Scheduler } from './scheduler.js';
 import { Metronome } from './metronome.js';
 import './voiceTest.js?v=rc2-127';  // visible Voice Self-Test at #voice-test (no console needed)
@@ -440,6 +441,22 @@ class KeyMasterApp {
         if (sub) sub.textContent = started ? 'Pick up where you left off' : 'Begin the Foundation Course';
         const b = $('km-menu-build'); if (b) b.textContent = `KeyMaster PRO \u00B7 ${BUILD}`;
       } catch { /* ignore */ }
+      // Sampler status indicator — shows the Course voice state plainly so it
+      // never has to be guessed by ear. Reads the engine's getStatus().
+      try {
+        const ps = $('km-menu-piano-status');
+        if (ps) {
+          const st = (this.coursePiano && this.coursePiano.getStatus) ? this.coursePiano.getStatus() : null;
+          let label;
+          if (!st || st.code === 'idle') label = 'Grand piano: tap a key to load';
+          else if (st.code === 'loading') label = 'Grand piano: loading...';
+          else if (st.code === 'ready') label = 'Grand piano: ready (' + st.loaded + ' samples)';
+          else if (st.code === 'missing') label = st.manifest ? 'Grand piano: sample files missing - using synth' : 'Grand piano: manifest not found - using synth';
+          else label = 'Grand piano: load error - using synth';
+          ps.textContent = label;
+          ps.setAttribute('data-state', st ? st.code : 'idle');
+        }
+      } catch { /* ignore */ }
       menu.hidden = false;
       $('app-menu-btn')?.setAttribute('aria-expanded', 'true');
     };
@@ -636,7 +653,39 @@ class KeyMasterApp {
       this.synth = new Synth(ctx, { volume: 0.8 });
       // Free-play only: a richer piano voice for on-screen/MIDI key presses.
       // The protected synth above still drives Scales, the scheduler, and the flourish.
-      this.piano = new PianoSynth(ctx, { volume: 0.8 });
+      // Course voice: a real sampled grand (Salamander, CC-BY) once its samples
+      // have loaded, with the rc2-163 synth voice (pianoVoice) as the always-ready
+      // fallback. `this.piano` is a thin ROUTER over both; every call is guarded so
+      // a sampler fault can NEVER break a keypress or demo. The sampler lazy-loads
+      // after the audio-unlock gesture (see _wireSound); until it is ready, the
+      // engine's noteOn() returns false and the router uses the synth. Course-only:
+      // nothing else in the app calls this.piano.
+      const pianoFallback = new PianoSynth(ctx, { volume: 0.8 });
+      const coursePiano = createCoursePiano({ basePath: 'assets/piano/salamander-lite', volume: 0.85 });
+      this.coursePiano = coursePiano;   // kept so _wireSound can lazy-init after unlock
+      this.piano = {
+        limiter: pianoFallback.limiter,                 // routed to the master bus below
+        noteOn: (m, v, t) => {
+          try { if (coursePiano.isReady() && coursePiano.noteOn(m, v, t)) return; } catch (_) { /* fall through */ }
+          pianoFallback.noteOn(m, v, t);
+        },
+        noteOff: (m, t) => {
+          try { coursePiano.noteOff(m, t); } catch (_) { /* no-op */ }
+          try { pianoFallback.noteOff(m, t); } catch (_) { /* no-op */ }
+        },
+        allNotesOff: () => {
+          try { coursePiano.allNotesOff(); } catch (_) { /* no-op */ }
+          try { pianoFallback.allNotesOff(); } catch (_) { /* no-op */ }
+        },
+        panic: () => {
+          try { coursePiano.panic(); } catch (_) { /* no-op */ }
+          try { pianoFallback.panic(); } catch (_) { /* no-op */ }
+        },
+        setVolume: (x) => {
+          try { coursePiano.setVolume(x); } catch (_) { /* no-op */ }
+          try { pianoFallback.setVolume(x); } catch (_) { /* no-op */ }
+        },
+      };
       this.scheduler = new Scheduler(ctx, { tempo: 90, beatsPerBar: 4 });
       this.metronome = new Metronome(this.scheduler, { volume: 0.55, enabled: false });
       // ONE shared output chain: every engine feeds a single safety-limited bus
@@ -716,7 +765,16 @@ class KeyMasterApp {
   _wireSound() {
     let unlocked = false;
     const ensureAudio = () => {
-      if (!unlocked) { unlockAudio(); unlocked = true; this._playFlourish(); }
+      if (!unlocked) {
+        unlockAudio(); unlocked = true; this._playFlourish();
+        // Lazy-load the Course sampled grand now that the context is unlocked.
+        // Fire-and-forget: any failure (missing samples / decode error) simply
+        // leaves the rc2-163 synth fallback in place. Routes into the shared bus.
+        try {
+          const ac = getAudioContext();
+          this.coursePiano?.init(ac, { destination: getMasterBus(ac) }).catch(() => {});
+        } catch (_) { /* keep the synth voice */ }
+      }
     };
     // Any first gesture is enough to unlock; key presses are the common one.
     window.addEventListener('pointerdown', ensureAudio, { once: true });
