@@ -86,4 +86,11 @@ export const COURSE_CHAPTERS = [
     intro: 'Hands separately first, then together \u2014 the heart of good practice.' },
   { stage: 4, name: 'A piece & review', ids: ['s4-piece', 's4-review', 's4-onward'],
     intro: 'A first short piece, a checkpoint, and where you are now.' },
+
+  // ===== KeyMaster Course (the proper graded-style journey, after Foundation) =====
+  // course:'keymaster' switches the in-Course banner to "Key Level N" and gives the
+  // Course Map its own "KeyMaster Course" section. Foundation chapters above carry no
+  // `course` field and default to 'foundation', so they are entirely unchanged.
+  { course: 'keymaster', stage: 1, name: 'Reading Shapes into Music', ids: ['kl1-welcome', 'kl1-shapes-recap', 'kl1-first-phrase', 'kl1-phrase-echo'],
+    intro: 'The KeyMaster Course begins. In Key Level 1 \u2014 First Musicianship \u2014 the shapes you learned in the Foundation become music: read, heard, and played, as reading, rhythm, and your hands grow together.' },
 ];

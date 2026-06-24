@@ -36,6 +36,7 @@ import { FOUNDATION_STEPS } from './courseFoundation.js?v=rc2-136';
 import { STAGE1_MAKING_STEPS } from './courseStage1Making.js?v=rc2-136';
 import { STAGE2_READING_STEPS } from './courseStage2Reading.js?v=rc2-136';
 import { STAGE3_TWOHANDS_STEPS } from './courseStage3TwoHands.js?v=rc2-136';
+import { KEY_LEVEL1_STEPS } from './courseKeyLevel1.js?v=rc2-152';
 import { COURSE_CHAPTERS } from './courseChapters.js?v=rc2-136';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
@@ -95,6 +96,7 @@ export const LEARN_STEPS = [
   ...STAGE1_MAKING_STEPS,
   ...STAGE2_READING_STEPS,
   ...STAGE3_TWOHANDS_STEPS,
+  ...KEY_LEVEL1_STEPS,
 ];
 
 // ---- Course chapters -------------------------------------------------------
@@ -110,6 +112,7 @@ function chapterFor(stepId) {
       return {
         chIdx: i + 1, chTotal: COURSE_CHAPTERS.length, name: COURSE_CHAPTERS[i].name,
         stage: COURSE_CHAPTERS[i].stage || 1,
+        course: COURSE_CHAPTERS[i].course || 'foundation',
         pos: pos + 1, len: COURSE_CHAPTERS[i].ids.length, intro: COURSE_CHAPTERS[i].intro || null,
       };
     }
@@ -128,6 +131,7 @@ export function chapterAtIndex(idx) {
     chTotal: COURSE_CHAPTERS.length,
     name: ch ? ch.name : '',
     stage: ch ? ch.stage : 1,
+    course: ch ? ch.course : 'foundation',
     lessonsTotal: LEARN_STEPS.length,
   };
 }
@@ -996,7 +1000,10 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
     const ch = learnMode ? chapterFor(c.id) : null;
     if (ch) {
       // Journey framing: chapter + position. The title carries the specific step.
-      eyebrow.textContent = `Ch ${ch.chIdx} \u00B7 ${ch.name}`;
+      // Foundation reads "Ch N"; the KeyMaster Course reads "Key Level N".
+      eyebrow.textContent = (ch.course === 'keymaster')
+        ? `Key Level ${ch.stage} \u00B7 ${ch.name}`
+        : `Ch ${ch.chIdx} \u00B7 ${ch.name}`;
       stepLine.textContent = `${ch.pos} of ${ch.len}`;
     } else {
       eyebrow.textContent = c.eyebrow;

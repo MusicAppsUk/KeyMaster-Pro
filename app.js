@@ -532,18 +532,32 @@ class KeyMasterApp {
       const seen = new Set(); const chapters = [];
       for (let i = 0; i < steps.length; i += 1) {
         const c = chapterAt(i);
-        if (c && c.name && !seen.has(c.chIdx)) { seen.add(c.chIdx); chapters.push({ chIdx: c.chIdx, name: c.name, stage: c.stage, start: i }); }
+        if (c && c.name && !seen.has(c.chIdx)) { seen.add(c.chIdx); chapters.push({ chIdx: c.chIdx, name: c.name, stage: c.stage, course: c.course || 'foundation', start: i }); }
       }
       const li = this.progress?.get?.('learnLesson');
       const curIdx = Number.isInteger(li) ? li : 0;
       const curChIdx = chapterAt(curIdx).chIdx;
       body.innerHTML = '';
-      let lastStage = null;
+      let lastStage = null, lastCourse = null;
       chapters.forEach((ch) => {
+        const course = ch.course || 'foundation';
+        // A new top-level course (the KeyMaster Course) gets its own section header.
+        // Foundation keeps its original appearance (no course header), so the existing
+        // map is unchanged; only the appended KeyMaster section is labelled differently.
+        if (course !== lastCourse) {
+          lastCourse = course; lastStage = null;
+          if (course === 'keymaster') {
+            const ch2 = document.createElement('p'); ch2.className = 'km-map__course-name';
+            ch2.textContent = 'KeyMaster Course';
+            ch2.setAttribute('style', 'margin:1.3rem 0 0.15rem;font-size:0.72rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--brass-bright);opacity:0.92;');
+            body.appendChild(ch2);
+          }
+        }
         if (ch.stage !== lastStage) {
           lastStage = ch.stage;
           const wrap = document.createElement('div'); wrap.className = 'km-map__stage';
-          const sh = document.createElement('p'); sh.className = 'km-map__stage-name'; sh.textContent = `Stage ${ch.stage}`;
+          const sh = document.createElement('p'); sh.className = 'km-map__stage-name';
+          sh.textContent = (course === 'keymaster') ? `Key Level ${ch.stage}` : `Stage ${ch.stage}`;
           wrap.appendChild(sh); body.appendChild(wrap);
         }
         const row = document.createElement('button');
