@@ -619,6 +619,32 @@ export const FOUNDATION_STEPS = [
     mode: 'none',
   },
   {
+    eyebrow: 'Naming the notes', title: 'Name the space', id: 'treble-recall-spaces',
+    say: [
+      { text: 'Now without the letters. Here is a note sitting in one of the spaces.', pauseAfter: 600, tone: 'warm' },
+      { text: 'Remember the spaces spell FACE. Work out which space this is, then play that note.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['A note in one of the four treble spaces \u2014 but the letter is hidden now.', 'Use FACE (F, A, C, E from the bottom) to name it, then find and play that note on the keyboard.'],
+    show: { kind: 'staff', clef: 'treble', notes: [ { midi: 72, value: 'whole' } ], caption: 'Which space is this? Name it, then play it.' },
+    tryPrompt: 'Read the space using FACE, then play that note.',
+    targets: [72], mode: 'one',
+    okMsg: 'Yes \u2014 that is C, the third space in F-A-C-E. The map is sticking.',
+    hint: 'The spaces spell FACE from the bottom up: F, A, C, E. This note sits in the third space.',
+  },
+  {
+    eyebrow: 'Naming the notes', title: 'Name the line', id: 'treble-recall-lines',
+    say: [
+      { text: 'One more, this time on a line.', pauseAfter: 540, tone: 'warm' },
+      { text: 'The lines run E, G, B, D, F from the bottom. Name this line, then play it.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['A note sitting on one of the five treble lines, with the letter hidden.', 'Use E, G, B, D, F (bottom to top) to name it, then play that note.'],
+    show: { kind: 'staff', clef: 'treble', notes: [ { midi: 71, value: 'whole' } ], caption: 'Which line is this? Name it, then play it.' },
+    tryPrompt: 'Read the line using E G B D F, then play that note.',
+    targets: [71], mode: 'one',
+    okMsg: 'Yes \u2014 that is B, the middle line of E-G-B-D-F. Well recalled.',
+    hint: 'The lines run E, G, B, D, F from the bottom. This note sits on the middle line.',
+  },
+  {
     eyebrow: 'Reading', title: 'Name and play: E', id: 'read-play-e',
     say: [
       { text: 'Reading music means knowing a note, then playing it.', pauseAfter: 560, tone: 'warm' },
