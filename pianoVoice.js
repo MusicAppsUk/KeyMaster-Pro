@@ -1,23 +1,42 @@
-// pianoVoice.js — free-play / learner-keypress voice for KeyMaster PRO.
+// pianoVoice.js — free-play / learner-keypress voice for the KeyMaster Pro Course.
 // =============================================================================
-// rc2-104 — REBUILT as a clean, simple, warm tone to match courseVoice.
+// rc2-163 — WARMER, fuller Course piano voice. Still PURE SYNTHESIS (no samples),
+// so zero licensing / file-size / load-failure risk, and synth.js stays untouched.
 //
-// The previous version layered a harmonic PeriodicWave, a detuned twin, a filter
-// envelope and a filtered-noise hammer "knock". On tablet speakers that read as
-// brittle/clicky. Realism is not the goal — a clean stable teaching tone is. So
-// each note is now: ONE triangle oscillator → a STATIC gentle low-pass → a gain
-// envelope that starts and ends at TRUE zero (no onset or release click). Minimal
-// nodes per voice, so dense playing can't underrun the audio thread.
+// History worth keeping in mind: an earlier rich version (harmonic wave + detuned
+// twin + filter-envelope SWEEP + filtered-noise HAMMER) read brittle/clicky on
+// tablet speakers and was reverted (rc2-104) to a bare triangle — stable, but
+// plinky. This version recovers warmth while deliberately avoiding BOTH documented
+// failure causes:
+//   • NO noise hammer and NO filter sweep            → no clicks / pops
+//   • a WARM, gently rolled-off spectrum + low-pass  → full, not brittle
+//   • same modest node count (osc → low-pass → gain) → dense play stays stable
+//   • TRUE-zero start AND release preserved          → click-free onset / release
+// Each note: ONE oscillator on a cached warm piano PeriodicWave → a static (per-note,
+// velocity-brightened) low-pass → a two-stage decay (quick "ping", then slow tail).
 //
-// Interface unchanged (drop-in for the keyboard): noteOn / noteOff / allNotesOff /
-// panic / setVolume, plus a `ctx` field. app.js routes this engine's output into
-// the shared safety bus (audioBus.js) — synth.js (protected Scales) is untouched.
+// Interface unchanged (drop-in): noteOn / noteOff / allNotesOff / panic / setVolume,
+// plus a `ctx` field. app.js routes this engine into the shared safety bus
+// (audioBus.js); synth.js — Scales / Chord / Sight-Reading — is NOT touched.
 // =============================================================================
 
 import { getAudioContext } from './audioContext.js';
 
 const midiToFreq = (m) => 440 * Math.pow(2, (m - 69) / 12);
 const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+
+// Cached warm piano spectrum — built once (the AudioContext is a singleton, so one
+// cache entry serves every note; a PeriodicWave is bound to the context that made it).
+// Both even AND odd partials (fuller than a triangle's odd-only series) with a gentle
+// roll-off; the per-note low-pass tames the top so it reads warm, not bright/brittle.
+let _pianoWave = null;
+function getPianoWave(ctx) {
+  if (_pianoWave) return _pianoWave;
+  const imag = new Float32Array([0, 1.0, 0.5, 0.28, 0.16, 0.10, 0.06, 0.038, 0.024, 0.015, 0.009, 0.005]);
+  const real = new Float32Array(imag.length);          // sine-phase partials; real = zeros
+  _pianoWave = ctx.createPeriodicWave(real, imag);     // normalized by default → peak ±1, as the triangle was
+  return _pianoWave;
+}
 
 class PianoNote {
   constructor(ctx, dest, midi, velocity, when) {
@@ -30,22 +49,27 @@ class PianoNote {
     const f = midiToFreq(midi);
     const v = clamp(velocity, 1, 127) / 127;
     const t0 = Math.max(when, ctx.currentTime);
-    const level = 0.06 + v * 0.17;
+    const level = 0.058 + v * 0.165;   // richer spectrum carries more energy → a hair lower than before
 
     this.osc = ctx.createOscillator();
-    this.osc.type = 'triangle';
+    this.osc.setPeriodicWave(getPianoWave(ctx));          // warm piano spectrum (cached) — replaces 'triangle'
     this.osc.frequency.value = f;
 
     this.lp = ctx.createBiquadFilter();
     this.lp.type = 'lowpass';
-    this.lp.frequency.value = clamp(f * 4, 1300, 3600);   // static, no sweep
+    // STATIC per note (NO sweep — a filter sweep was a documented brittleness cause).
+    // Brighter on harder hits for natural dynamics; pitch-tracked so high notes keep life.
+    this.lp.frequency.value = clamp(f * 3.4 + v * 1500, 1300, 4200);
     this.lp.Q.value = 0.4;
 
     this.gain = ctx.createGain();
     const g = this.gain.gain;
     g.setValueAtTime(0, t0);                              // TRUE zero start → no click
-    g.linearRampToValueAtTime(level, t0 + 0.010);         // 10ms clean attack
-    g.exponentialRampToValueAtTime(Math.max(level * 0.28, 0.0006), t0 + 3.2); // slow natural decay while held
+    g.linearRampToValueAtTime(level, t0 + 0.008);         // fast, clean attack
+    // Two-stage decay: a quick initial drop (the piano-like "ping"), then a slow tail
+    // while the key is held — closer to a real decay than one straight slope.
+    g.exponentialRampToValueAtTime(Math.max(level * 0.62, 0.004), t0 + 0.090);
+    g.exponentialRampToValueAtTime(Math.max(level * 0.20, 0.0006), t0 + 3.6);
 
     this.osc.connect(this.lp); this.lp.connect(this.gain); this.gain.connect(dest);
     this.osc.start(t0);
