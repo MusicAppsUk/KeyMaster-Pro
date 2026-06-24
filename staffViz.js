@@ -168,7 +168,7 @@ function noteHeadGeom(value) {
   return { rx: 0.58 * GAP, ry: 0.42 * GAP, rot: -20, open: false, stem: true };   // quarter (crotchet) default
 }
 
-function noteHead(midi, clef, topY, cx, state, finger, value) {
+function noteHead(midi, clef, topY, cx, state, finger, value, letter) {
   const y = noteY(midi, clef, topY);
   const g = noteHeadGeom(value);
   const cls = 'km-staff__note' + (g.open ? ' km-staff__note--open' : '') + stateClass(state);
@@ -186,11 +186,15 @@ function noteHead(midi, clef, topY, cx, state, finger, value) {
     const fy = (g.stem && stemUp) ? (y - STEM - 8) : (y - g.ry - 12);
     out += `<text class="km-staff__finger" x="${cx}" y="${fy.toFixed(1)}" text-anchor="middle">${finger}</text>`;
   }
+  if (typeof letter === 'string' && letter) {
+    const ly = y + g.ry + 15;
+    out += `<text class="km-staff__letter" x="${cx}" y="${ly.toFixed(1)}" text-anchor="middle">${letter}</text>`;
+  }
   return out;
 }
 
 // Vertical extent [top, bottom] of a note + stem + fingering, for auto-fit.
-function noteBounds(midi, clef, topY, value, hasFinger) {
+function noteBounds(midi, clef, topY, value, hasFinger, hasLetter) {
   const y = noteY(midi, clef, topY);
   const g = noteHeadGeom(value);
   let top = y - g.ry - 4;
@@ -202,6 +206,7 @@ function noteBounds(midi, clef, topY, value, hasFinger) {
     if (stemUp) top = y - STEM - 4; else bot = y + STEM + 4;
   }
   if (hasFinger) top = Math.min(top, ((g.stem && stemUp) ? (y - STEM) : (y - g.ry)) - 22);
+  if (hasLetter) bot = Math.max(bot, y + g.ry + 24);
   return [top, bot];
 }
 
@@ -227,6 +232,7 @@ function normaliseSeq(notes) {
         state: (n.state === undefined ? 'on' : n.state),
         finger: n.finger,
         value: (typeof n.value === 'string' ? n.value : 'quarter'),
+        letter: (typeof n.letter === 'string' ? n.letter : undefined),
       };
     }
     return { midi: n, state: 'on', value: 'quarter' };
@@ -302,8 +308,8 @@ export function buildStaff(opts = {}) {
       if (it.rest) { body += restGlyph(it.rest, cx, trebleTop); mark(trebleTop + REST_TOP_MARK); return; }
       const useClef = (it.midi >= 60) ? 'treble' : 'bass';
       const top = (useClef === 'treble') ? trebleTop : bassTop;
-      body += noteHead(it.midi, useClef, top, cx, it.state, it.finger, it.value);
-      const [t, b] = noteBounds(it.midi, useClef, top, it.value, Number.isFinite(it.finger)); mark(t); mark(b);
+      body += noteHead(it.midi, useClef, top, cx, it.state, it.finger, it.value, it.letter);
+      const [t, b] = noteBounds(it.midi, useClef, top, it.value, Number.isFinite(it.finger), !!it.letter); mark(t); mark(b);
     });
   } else {
     const topY = 34;
@@ -314,8 +320,8 @@ export function buildStaff(opts = {}) {
     const xs = noteXs(seq.length);
     seq.forEach((it, i) => {
       if (it.rest) { body += restGlyph(it.rest, xs[i], topY); mark(topY + REST_TOP_MARK); return; }
-      body += noteHead(it.midi, clef, topY, xs[i], it.state, it.finger, it.value);
-      const [t, b] = noteBounds(it.midi, clef, topY, it.value, Number.isFinite(it.finger)); mark(t); mark(b);
+      body += noteHead(it.midi, clef, topY, xs[i], it.state, it.finger, it.value, it.letter);
+      const [t, b] = noteBounds(it.midi, clef, topY, it.value, Number.isFinite(it.finger), !!it.letter); mark(t); mark(b);
     });
   }
 
@@ -394,6 +400,7 @@ function injectStaffStyles() {
 .view[data-view="learn"] .km-staff__rest{fill:${INK_DIM};font-family:${MUSIC_FONT};font-size:38px;}
 .view[data-view="learn"] .km-staff__finger{fill:var(--brass-deep,#9A7330);font-size:16px;font-weight:700;font-family:var(--font-mono,ui-monospace,monospace);}
 html[data-fingering="hidden"] .view[data-view="learn"] .km-staff__finger{display:none;}
+.view[data-view="learn"] .km-staff__letter{fill:${INK};font-size:15px;font-weight:700;font-family:var(--font-ui,system-ui,sans-serif);}
 .view[data-view="learn"] .km-staff__line.is-hl{stroke:#E0A94B;stroke-width:3.2;}
 .view[data-view="learn"] .km-staff__space.is-hl{fill:rgba(224,169,75,.28);}
 .view[data-view="learn"] .km-staff__note.is-correct{fill:var(--good,#36c46a);stroke:none;filter:drop-shadow(0 0 5px color-mix(in srgb,var(--good,#36c46a) 55%,transparent));}

@@ -25,6 +25,8 @@ export const COURSE_CHAPTERS = [
     intro: 'Notes sounded together make chords \u2014 the colour of music.' },
   { stage: 1, name: 'Reading the staff', ids: ['staff-what', 'staff-spaces', 'treble-clef', 'bass-clef', 'grand-staff', 'grand-staff-map', 'ledger-line', 'staff-to-key'],
     intro: 'The staff is the map musicians read \u2014 lines, spaces, clefs, the grand staff, and how it connects to the keys.' },
+  { stage: 1, name: 'Naming the notes', ids: ['note-alphabet', 'treble-g-landmark', 'treble-spaces-face', 'treble-lines-egbdf'],
+    intro: 'Every line and space has a letter name \u2014 the treble G, the spaces that spell FACE, and the lines E G B D F.' },
   { stage: 1, name: 'Reading', ids: ['read-play-e', 'read-play-g', 'first-reading', 'bridge-sightreading'],
     intro: 'Reading music means knowing a note, then playing it \u2014 now linked to the staff.' },
   { stage: 1, name: 'Rhythm', ids: ['first-pulse', 'pulse-eight'],

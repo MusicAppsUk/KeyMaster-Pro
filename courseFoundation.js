@@ -566,6 +566,59 @@ export const FOUNDATION_STEPS = [
     hint: 'Middle C is the white key just left of the two black keys, near the centre.',
   },
   {
+    eyebrow: 'Naming the notes', title: 'The musical alphabet', id: 'note-alphabet',
+    say: [
+      { text: 'Music uses just seven letters \u2014 A, B, C, D, E, F, G \u2014 then it begins again.', pauseAfter: 620, tone: 'warm' },
+      { text: 'Climbing from Middle C, each step moves to the next letter: line, space, line, space, all the way up.', pauseAfter: 720 },
+      { text: 'After G, the alphabet starts over at A. Seven letters, repeating \u2014 that is the whole naming system.', pauseAfter: 360, tone: 'warm' },
+    ],
+    explain: ['Music names notes with seven letters \u2014 A B C D E F G \u2014 then repeats. Climbing the staff, each step moves to the next letter, alternating line and space.', 'From Middle C the notes rise C D E F G A B C: after G it begins again at A. The pattern simply repeats up and down the staff.'],
+    show: { kind: 'staff', clef: 'treble', notes: [
+      { midi: 60, letter: 'C', value: 'whole' }, { midi: 62, letter: 'D', value: 'whole' },
+      { midi: 64, letter: 'E', value: 'whole' }, { midi: 65, letter: 'F', value: 'whole' },
+      { midi: 67, letter: 'G', value: 'whole' }, { midi: 69, letter: 'A', value: 'whole' },
+      { midi: 71, letter: 'B', value: 'whole' }, { midi: 72, letter: 'C', value: 'whole' },
+    ], caption: 'From Middle C, the alphabet climbs \u2014 line, space, line, space.' },
+    mode: 'none',
+  },
+  {
+    eyebrow: 'Naming the notes', title: 'The treble G', id: 'treble-g-landmark',
+    say: [
+      { text: 'The treble clef has a secret: it curls around one line to mark it as G.', pauseAfter: 600, tone: 'warm' },
+      { text: 'That is your anchor. Find G, and every other note is just a step or a skip away from it.', pauseAfter: 360, tone: 'instruct', emphasis: 'G' },
+    ],
+    explain: ['The treble clef is also called the G clef \u2014 its curl wraps the second line from the bottom, marking it as G.', 'G is a landmark: once you know where it sits, you can find the notes around it by stepping or skipping.'],
+    show: { kind: 'staff', clef: 'treble', notes: [ { midi: 67, letter: 'G', value: 'whole' } ], caption: 'The treble clef curls around the G line.' },
+    mode: 'none',
+  },
+  {
+    eyebrow: 'Naming the notes', title: 'The spaces spell FACE', id: 'treble-spaces-face',
+    say: [
+      { text: 'Look at the four spaces between the lines, reading upward.', pauseAfter: 560, tone: 'warm' },
+      { text: 'They spell a word you already know \u2014 F, A, C, E. Face. Four spaces, bottom to top.', pauseAfter: 360, tone: 'instruct' },
+    ],
+    explain: ['The four spaces of the treble staff, read from the bottom up, are F, A, C and E \u2014 they spell the word FACE.', 'One easy word gives you all four space notes at once.'],
+    show: { kind: 'staff', clef: 'treble', notes: [
+      { midi: 65, letter: 'F', value: 'whole' }, { midi: 69, letter: 'A', value: 'whole' },
+      { midi: 72, letter: 'C', value: 'whole' }, { midi: 76, letter: 'E', value: 'whole' },
+    ], caption: 'The four spaces, bottom to top: F A C E.' },
+    mode: 'none',
+  },
+  {
+    eyebrow: 'Naming the notes', title: 'The lines: E G B D F', id: 'treble-lines-egbdf',
+    say: [
+      { text: 'Now the five lines, again reading upward: E, G, B, D, F.', pauseAfter: 600, tone: 'warm' },
+      { text: 'Notice they skip a letter each time \u2014 E, G, B \u2014 every other letter. That skipping pattern is how chords sit on the staff, which is where we go next.', pauseAfter: 360, tone: 'warm' },
+    ],
+    explain: ['The five lines of the treble staff, bottom to top, are E, G, B, D and F.', 'They rise by skipping a letter each time \u2014 E, G, B, D, F \u2014 the every-other-letter pattern. That same skipping shape is what a chord looks like on the staff, which the next stage builds on.'],
+    show: { kind: 'staff', clef: 'treble', notes: [
+      { midi: 64, letter: 'E', value: 'whole' }, { midi: 67, letter: 'G', value: 'whole' },
+      { midi: 71, letter: 'B', value: 'whole' }, { midi: 74, letter: 'D', value: 'whole' },
+      { midi: 77, letter: 'F', value: 'whole' },
+    ], caption: 'The five lines, bottom to top: E G B D F.' },
+    mode: 'none',
+  },
+  {
     eyebrow: 'Reading', title: 'Name and play: E', id: 'read-play-e',
     say: [
       { text: 'Reading music means knowing a note, then playing it.', pauseAfter: 560, tone: 'warm' },
