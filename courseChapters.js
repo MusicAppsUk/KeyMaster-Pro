@@ -6,7 +6,7 @@
 // so the Course renders identically. Original KeyMaster material; no third-party, method-book, or competitor content.
 
 export const COURSE_CHAPTERS = [
-  { stage: 1, name: 'Orientation', ids: ['welcome', 'meet-keyboard', 'low-high'] },
+  { stage: 1, name: 'Orientation', ids: ['welcome', 'course-opening', 'meet-keyboard', 'low-high'] },
   { stage: 1, name: 'Your hands', ids: ['sit-approach', 'hand-shape', 'fingers-rh', 'fingers-lh', 'hands-mirror', 'thumb-play', 'finger3-play', 'press-control'],
     intro: 'Before patterns, set up the hands: posture, a relaxed curved shape, the finger numbers, and control.' },
   { stage: 1, name: 'Black keys', ids: ['black-keys-two', 'black-keys-three'],

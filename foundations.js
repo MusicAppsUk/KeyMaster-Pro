@@ -1470,6 +1470,14 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
             progress.set('voiceOn', PREMIUM_VOICE_READY);
           }
           voiceOn = (storedVoice === undefined || storedVoice === null) ? PREMIUM_VOICE_READY : !!storedVoice;
+          // rc2-162: a course-opening preamble step was inserted at index 1. For anyone
+          // who saved progress under the old layout, shift their resume point forward by
+          // one so they land on the same step, not the one before it. One-time, idempotent.
+          if (!progress.get('preambleStepMigrated')) {
+            const _ll = progress.get('learnLesson');
+            if (Number.isInteger(_ll) && _ll >= 1) progress.set('learnLesson', _ll + 1);
+            progress.set('preambleStepMigrated', true);
+          }
           let resume = progress.get('learnLesson');
           if (!Number.isInteger(resume) || resume < 0 || resume > steps.length - 1) resume = 0;
           index = resume;

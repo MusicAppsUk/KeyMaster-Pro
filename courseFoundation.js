@@ -21,6 +21,17 @@ export const FOUNDATION_STEPS = [
     mode: 'none',
   },
   {
+    eyebrow: 'Before we begin', title: 'How this Course works', id: 'course-opening',
+    say: [
+      { text: 'Welcome to the Foundation Course.', pauseAfter: 520, tone: 'warm' },
+      { text: 'We\u2019ll begin very simply, with the keyboard itself \u2014 high sounds, low sounds, and how your hands find their way around.', pauseAfter: 620 },
+      { text: 'These first steps are deliberately gentle. As the Course develops, the music will become richer, more substantial, and more musical.', pauseAfter: 640, tone: 'warm' },
+      { text: 'For now, let\u2019s take the first step carefully.', pauseAfter: 320, tone: 'instruct' },
+    ],
+    explain: ['We\u2019ll begin very simply, with the keyboard itself: high sounds, low sounds, and how your hands find their way around. These first steps are deliberately gentle.', 'As the Course develops, the music will become richer, more substantial, and more musical \u2014 there\u2019s no need to rush. Let\u2019s take the first step carefully.'],
+    mode: 'none',
+  },
+  {
     eyebrow: 'The keyboard', title: 'Meet the keyboard', id: 'meet-keyboard',
     cues: { labels: [{ midi: 48, text: 'low', place: 'below' }, { midi: 88, text: 'high', place: 'below' }] },
     say: [
