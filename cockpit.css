@@ -1,92 +1,84 @@
 /* ============================================================================
-   cockpit.css  —  KeyMaster Pro "Music Room" light identity   (rc2-153)
+   cockpit.css  —  KeyMaster Pro learning cockpit   (rc2-154 · bold redesign)
    ----------------------------------------------------------------------------
-   A clean, premium, blue-white learning cockpit.
+   A clean, open, white + classical-blue music-learning cockpit.
 
-   HOW THIS WORKS (and why it is safe):
-   • This stylesheet is linked LAST in index.html, after theme.css / keyboard.css
-     / notation.css. It therefore wins the cascade and re-skins the app WITHOUT
-     editing the frozen theme.css (which stays byte-identical).
-   • The app is heavily design-token based, so re-defining the :root tokens flips
-     the great majority of surfaces from the old dark "ebony" system to porcelain
-     / ivory / white in one move. The handful of hardcoded-dark rules and the
-     decorative frontdoor layers are overridden explicitly below.
-   • Verified-safe linchpins: the piano keys are hardcoded white in keyboard.css
-     (not --ivory), and BOTH staves render on hardcoded cream paper with dark ink
-     (staffViz.js / notation.css) — so flipping --ivory to dark navy text and the
-     background to light leaves keys and manuscript looking correct.
+   TEACHING COLOUR LANGUAGE
+     white  = learning surface          blue  = navigation / progress / playhead
+     black  = staff lines + notation     red   = wrong note / needs attention
+     navy   = text + structure           green = correct / success
+     brass  = restrained premium accent ONLY (never body text, never dominant)
 
-   ROLLBACK: remove the one <link> line in index.html. Nothing else is altered.
+   SAFE METHOD: linked LAST in index.html, so it wins the cascade and re-skins
+   AND re-lays-out the app without editing the frozen theme.css (byte-identical).
+   Layout uses the existing DOM only — the lesson .mf already contains
+   head → dots → card → footer, which become: top orientation · open lesson ·
+   permanent bottom action bar. No HTML/JS changes; rollback = remove one <link>.
 
-   PALETTE
-     Surfaces .... porcelain / ivory / white
-     Structure ... deep navy / graphite-blue
-     Premium ..... champagne / brass (selected + accent warmth)
-     Progress .... powder-blue family (calm nav / progress / playhead)
-     Wrong ....... red / soft rose  (AFTER an attempt only — token-driven)
-     Correct ..... green            (success only — never the lead colour)
+   Verified-safe: piano keys are hardcoded white in keyboard.css (untouched);
+   both staves render on their own paper (here forced white) with ink forced
+   black; engines / MIDI / audio / content all untouched.
    ========================================================================== */
 
 /* ----------------------------------------------------------------------------
-   1. DESIGN TOKENS — the palette flip
+   1. TOKENS — white / classical-blue / black / red-green
    -------------------------------------------------------------------------- */
 :root {
   color-scheme: light;
 
-  /* ---- Surfaces: porcelain / ivory / white (was dark ebony) ---- */
-  --ebony:        #EEF3FA;   /* app base → cool porcelain            */
-  --ebony-raise:  #FFFFFF;   /* cards / panels → white               */
-  --ebony-sink:   #E4EBF6;   /* wells / recesses → soft powder-grey  */
-  --ebony-edge:   #D6DFEF;   /* hairlines / borders → light blue-grey*/
-  --ebony-edge-2: #BFCFE6;   /* hover borders                        */
+  /* surfaces → white / near-white cool */
+  --ebony:        #F4F7FC;   /* app base                              */
+  --ebony-raise:  #FFFFFF;   /* cards / surfaces                      */
+  --ebony-sink:   #EAF1F9;   /* wells / tracks                        */
+  --ebony-edge:   #D3E0EE;   /* hairlines                             */
+  --ebony-edge-2: #B4CAE2;   /* hover borders                         */
 
-  /* ---- Text: deep navy / graphite (was light ivory) ---- */
-  --ivory:        #1E2A45;   /* primary text → deep navy-graphite    */
-  --ivory-dim:    #58617A;   /* secondary text → graphite            */
-  --ivory-faint:  #98A4BA;   /* tertiary / disabled → light graphite */
-  --ivory-warm:   #FFFFFF;   /* warm reading surface → white         */
+  /* text → near-black navy / graphite */
+  --ivory:        #15213A;   /* primary text (near-black navy)        */
+  --ivory-dim:    #44506A;   /* secondary text                        */
+  --ivory-faint:  #7E8AA0;   /* tertiary / disabled                   */
+  --ivory-warm:   #FFFFFF;
 
-  /* ---- Brass / champagne (premium, retuned for white) ---- */
-  --brass:        #B0823A;
-  --brass-bright: #CF9E45;
-  --brass-deep:   #876124;
-  --brass-glow:   rgba(176, 130, 58, 0.24);
+  /* blue families — calm powder/Wedgwood + a stronger royal */
+  --powder:       #6E9BC9;   /* Wedgwood / powder blue                */
+  --powder-deep:  #3F77B5;   /* deeper progress / playhead            */
+  --powder-soft:  #DEEAF6;   /* soft tint (hover fills)               */
+  --powder-edge:  #AAC7E3;   /* powder edge                           */
+  --royal:        #285FA6;   /* stronger classical blue → primary     */
+  --royal-bright: #356FBC;
+  --royal-deep:   #1E4D8C;
+  --midnight:     #15213A;   /* structural navy (= text)              */
+
+  /* brass — restrained accent ONLY */
+  --brass:        #A9842F;
+  --brass-bright: #C09A45;
+  --brass-deep:   #87671F;
+  --brass-glow:   rgba(169, 132, 47, 0.16);
   --champagne:    var(--brass-bright);
 
-  /* ---- Powder-blue family (NEW) — calm progress / nav / playhead ---- */
-  --powder:       #8FB4D9;
-  --powder-deep:  #4E84C4;   /* active progress / playhead            */
-  --powder-soft:  #DCE8F5;
-  --powder-edge:  #B9D2EC;
-
-  /* ---- Structural navy (kept) ---- */
-  --midnight:     #1B2742;
-
-  /* ---- Functional: green = success, rose/red = correction ---- */
-  --good:         #2E9E68;
+  /* teaching feedback — true red / clear green */
+  --good:         #15A24A;   /* correct                               */
+  --emerald:      #15A24A;
+  --emerald-glow: rgba(21, 162, 74, 0.30);
   --warn:         #C0892F;
-  --felt:         #B84A5A;
-  --felt-bright:  #D4596E;
-  --bad:          var(--felt-bright);
   --amber:        #D2982F;
-  --amber-glow:   rgba(210, 152, 47, 0.30);
-  --emerald:      #259A60;                       /* success — clear on white */
-  --emerald-glow: rgba(37, 154, 96, 0.26);
-  --rose:         #D98A92;                       /* gentle tutor correction  */
-  --rose-edge:    rgba(212, 89, 110, 0.50);
+  --amber-glow:   rgba(210, 152, 47, 0.28);
+  --felt:         #C42121;
+  --felt-bright:  #DC2626;   /* WRONG — true red                      */
+  --bad:          #DC2626;
+  --rose:         #DC2626;    /* correction is now red, not pink       */
+  --rose-edge:    rgba(220, 38, 38, 0.50);
 }
 
 /* ----------------------------------------------------------------------------
-   2. BASE — body, light wash, scrollbars
+   2. BASE — clean white-blue page, no parchment, quiet blue scrollbars
    -------------------------------------------------------------------------- */
 body {
-  background:
-    radial-gradient(125% 90% at 50% -12%, #FFFFFF 0%, var(--ebony) 58%) fixed;
-  color: var(--ivory);
+  background: linear-gradient(180deg, #FFFFFF 0%, #F1F6FC 100%) fixed !important;
+  color: var(--ivory) !important;
 }
-h1, h2, h3 { color: var(--ivory); }
+h1, h2, h3, h4 { color: var(--ivory); }
 
-/* light, quiet scrollbars */
 * { scrollbar-color: var(--powder-edge) transparent; }
 *::-webkit-scrollbar { width: 11px; height: 11px; }
 *::-webkit-scrollbar-thumb {
@@ -96,281 +88,290 @@ h1, h2, h3 { color: var(--ivory); }
 *::-webkit-scrollbar-thumb:hover { background: var(--powder); }
 
 /* ----------------------------------------------------------------------------
-   3. APP CHROME — top bar + instrument (keyboard) well
+   3. APP SHELL — top bar + keyboard tray (grid rows untouched)
    -------------------------------------------------------------------------- */
+.app, .app__main, .view { background: transparent; }
+
 .app__bar {
-  background: linear-gradient(180deg, #FFFFFF 0%, #F4F8FD 100%);
+  background: #FFFFFF;
   border-bottom: 1px solid var(--ebony-edge);
-  box-shadow: 0 1px 0 rgba(255,255,255,0.9), 0 6px 18px -14px rgba(30,42,69,0.30);
+  box-shadow: 0 2px 12px -10px rgba(21,33,58,0.30);
 }
-/* a calm powder-blue orientation seam under the top bar */
 .app__bar::after {
   content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
   background: linear-gradient(90deg, transparent, var(--powder), transparent);
   opacity: 0.55;
 }
 
-/* the keyboard well — light tray rather than a dark recess */
+/* keyboard tray — clean light shelf under the cockpit */
 .app__instrument {
-  background: linear-gradient(180deg, #F3F7FC 0%, var(--ebony-sink) 100%);
+  background: linear-gradient(180deg, #F4F8FD 0%, #E9F0F8 100%) !important;
   border-top: 1px solid var(--ebony-edge);
 }
 
-/* ----------------------------------------------------------------------------
-   4. BUTTONS — clean white treatment; brass for premium/primary
-   -------------------------------------------------------------------------- */
-.btn {
+/* ============================================================================
+   4. THE COCKPIT  —  full-page open layout from the existing .mf DOM
+      top orientation (head+dots) · open lesson (card, scrolls) · bottom bar
+   ========================================================================== */
+.view[data-view="learn"] {
+  height: 100%;
+  padding: 0 !important;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;            /* the lesson card scrolls, not the page */
+}
+.view[data-view="learn"] .mf {
+  max-width: none !important;
+  width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- TOP orientation zone: head + (welcome ctrls) + dots --- */
+.view[data-view="learn"] .mf__head,
+.view[data-view="learn"] .mf__greeting,
+.view[data-view="learn"] .mf__learnctrls,
+.view[data-view="learn"] .mf__voicestatus,
+.view[data-view="learn"] .mf__dots {
+  flex: 0 0 auto;
   background: #FFFFFF;
-  color: var(--ivory);
-  border: 1px solid var(--ebony-edge-2);
-  box-shadow: 0 1px 2px rgba(30,42,69,0.06), 0 6px 16px -12px rgba(30,42,69,0.30);
-  transition: background .18s ease, border-color .18s ease,
-              box-shadow .18s ease, transform .12s ease;
 }
-.btn:hover {
-  background: var(--powder-soft);
-  border-color: var(--powder);
-  box-shadow: 0 2px 4px rgba(30,42,69,0.08), 0 10px 22px -12px rgba(78,132,196,0.40);
+.view[data-view="learn"] .mf__head {
+  padding: clamp(.7rem,2.2vw,1.1rem) clamp(1rem,4.5vw,2.6rem) 0;
 }
-.btn:active { transform: translateY(1px); }
-.btn:focus-visible { outline: 2px solid var(--powder-deep); outline-offset: 2px; }
-
-/* a "primary / play / continue" emphasis where a button opts in */
-.btn--primary, .btn.is-primary {
-  background: linear-gradient(135deg, var(--brass-bright) 0%, var(--brass) 70%);
-  color: #2A1D06; border-color: var(--brass-deep);
-  box-shadow: 0 8px 22px -12px var(--brass-glow);
+.view[data-view="learn"] .mf__greeting,
+.view[data-view="learn"] .mf__learnctrls,
+.view[data-view="learn"] .mf__voicestatus {
+  padding-left: clamp(1rem,4.5vw,2.6rem);
+  padding-right: clamp(1rem,4.5vw,2.6rem);
 }
-.btn--primary:hover, .btn.is-primary:hover {
-  background: linear-gradient(135deg, var(--brass-bright) 0%, var(--brass-bright) 100%);
-  border-color: var(--brass);
+.view[data-view="learn"] .mf__dots {
+  margin: 0 !important;
+  padding: .65rem clamp(1rem,4.5vw,2.6rem) .85rem;
+  border-bottom: 1px solid var(--ebony-edge);
+  gap: .5rem;
 }
 
-/* ----------------------------------------------------------------------------
-   5. FRONTDOOR — light, airy, premium (wording unchanged)
-   -------------------------------------------------------------------------- */
-.frontdoor {
-  background:
-    radial-gradient(130% 95% at 50% -10%, #FFFFFF 0%, #EAF1FA 55%, #E1EAF6 100%);
-  color: var(--ivory);
-}
-/* decorative stage layers → soft daylight rather than a dark aurora */
-.fd-stage { opacity: 1; }
-.fd-aurora {
-  background:
-    radial-gradient(60% 50% at 50% 12%, rgba(143,180,217,0.28) 0%, transparent 70%);
-  opacity: 0.9; mix-blend-mode: normal; filter: blur(8px);
-}
-.fd-spot {
-  background:
-    radial-gradient(45% 40% at 50% 0%, rgba(207,158,69,0.16) 0%, transparent 72%);
-  opacity: 0.9;
-}
-.fd-vignette {
-  background:
-    radial-gradient(120% 100% at 50% 50%, transparent 60%, rgba(30,42,69,0.05) 100%);
-}
-/* floating motes: faint powder-blue specks (were light specks on dark) */
-.fd-motes span { background: var(--powder); opacity: 0.30; box-shadow: none; }
-
-.frontdoor__eyebrow { color: var(--brass); }
-.frontdoor__wordmark { color: var(--ivory); }
-.frontdoor__wordmark span { color: var(--brass); }
-.frontdoor__greeting { color: var(--ivory-dim); }
-.fd-tagline, .frontdoor__tagline { color: var(--ivory-dim); }
-.frontdoor__build { color: var(--ivory-faint); }
-
-.frontdoor__enter {
-  background: linear-gradient(135deg, var(--brass-bright) 0%, var(--brass) 72%);
-  color: #2A1D06; border: 1px solid var(--brass-deep);
-  box-shadow: 0 12px 30px -14px var(--brass-glow);
-}
-.frontdoor__enter:hover { filter: brightness(1.04); }
-.frontdoor__secondary,
-.frontdoor__signin,
-.frontdoor__install,
-.frontdoor__fs {
-  background: #FFFFFF; color: var(--ivory);
-  border: 1px solid var(--ebony-edge-2);
-}
-.frontdoor__secondary:hover,
-.frontdoor__signin:hover,
-.frontdoor__install:hover,
-.frontdoor__fs:hover { background: var(--powder-soft); border-color: var(--powder); }
-.frontdoor__ioshint { color: var(--ivory-dim); }
-
-/* ----------------------------------------------------------------------------
-   6. COURSE HERO (the hub landing)
-   -------------------------------------------------------------------------- */
-.course-hero__greeting { color: var(--brass); }
-.course-hero__eyebrow  { color: var(--ivory-faint); }
-.course-hero__title    { color: var(--ivory); }
-.course-hero__next     { color: var(--ivory-dim); }
-.course-hero__progress { color: var(--ivory-faint); }
-
-.course-hero__cta {
-  background: linear-gradient(135deg, var(--brass-bright) 0%, var(--brass) 72%);
-  color: #2A1D06;
-  box-shadow: 0 10px 26px -12px var(--brass-glow);
-}
-.course-hero__cta:hover { filter: brightness(1.04); }
-
-/* progress bar → powder-blue */
-.course-hero__bar {
-  background: var(--ebony-sink);
-  border: 1px solid var(--ebony-edge);
-}
-.course-hero__bar-fill {
-  background: linear-gradient(90deg, var(--powder) 0%, var(--powder-deep) 100%);
-}
-
-/* ----------------------------------------------------------------------------
-   7. LESSON COCKPIT — central music card dominant, calm orientation, powder dots
-   -------------------------------------------------------------------------- */
-
-/* eyebrow = quiet orientation line (Key Level / chapter) */
-.view[data-view="learn"] .mf__eyebrow {
-  color: var(--brass);
-  letter-spacing: 0.08em;
-}
-.view[data-view="learn"] .mf__step { color: var(--ivory-faint); }
-
-/* progress dots → powder-blue, brass for the active step */
-.view[data-view="learn"] .mf__dots i,
-.view[data-view="learn"] .mf__dots span,
-.view[data-view="learn"] .mf__dots b {
-  background: var(--powder-edge);
-}
-.view[data-view="learn"] .mf__dots .is-done,
-.view[data-view="learn"] .mf__dots [data-done] {
-  background: var(--powder-deep);
-}
-.view[data-view="learn"] .mf__dots .is-current,
-.view[data-view="learn"] .mf__dots [data-current] {
-  background: var(--brass); box-shadow: 0 0 0 3px var(--brass-glow);
-}
-
-/* THE central card — light "music stand" surface, dominant, premium-quiet */
+/* --- CENTRAL lesson zone: open white page, dominant, scrolls --- */
 .view[data-view="learn"] .mf__card {
-  background:
-    linear-gradient(168deg, #FFFFFF 0%, #F6F9FD 100%);
-  border: 1px solid color-mix(in srgb, var(--powder) 45%, var(--ebony-edge));
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.9),
-    0 22px 50px -30px rgba(30,42,69,0.40),
-    0 2px 16px -10px rgba(78,132,196,0.18);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  width: 100%;
+  max-width: 60rem;
+  margin: 0 auto !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: clamp(1.5rem,4vw,2.8rem) clamp(1.1rem,4.5vw,2.6rem) 1.4rem !important;
 }
-.view[data-view="learn"] .mf__card::before {
-  background: linear-gradient(90deg, transparent, var(--powder), transparent);
-  opacity: 0.6;
+.view[data-view="learn"] .mf__card::before { display: none !important; }
+
+/* --- BOTTOM action bar: permanent, full-width, white, deliberate --- */
+.view[data-view="learn"] .mf__footer {
+  flex: 0 0 auto;
+  margin: 0 !important;
+  padding: clamp(.8rem,2.2vw,1.1rem) clamp(1rem,4.5vw,2.6rem) !important;
+  padding-bottom: max(clamp(.8rem,2.2vw,1.1rem), env(safe-area-inset-bottom)) !important;
+  background: #FFFFFF;
+  border-top: 1px solid var(--ebony-edge);
+  box-shadow: 0 -8px 22px -14px rgba(21,33,58,0.22);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: .8rem;
 }
+
+/* ----------------------------------------------------------------------------
+   5. STAFF — white paper, BLACK lines + notation (forced over staffViz CSS)
+   -------------------------------------------------------------------------- */
+.view[data-view="learn"] .km-staff {
+  background: #FFFFFF !important;
+  border: 1px solid var(--ebony-edge) !important;
+  box-shadow: 0 12px 30px -18px rgba(21,33,58,0.24),
+              inset 0 1px 0 rgba(255,255,255,0.9) !important;
+  border-radius: 12px !important;
+}
+.view[data-view="learn"] .km-staff__line,
+.view[data-view="learn"] .km-staff__ledger,
+.view[data-view="learn"] .km-staff__endbar { stroke: #0E0E12 !important; }
+.view[data-view="learn"] .km-staff__brace,
+.view[data-view="learn"] .km-staff__stem    { stroke: #000 !important; }
+.view[data-view="learn"] .km-staff__note,
+.view[data-view="learn"] .km-staff__clef,
+.view[data-view="learn"] .km-staff__timesig { fill: #000 !important; }
+.view[data-view="learn"] .km-staff__note--open {
+  fill: #FFFFFF !important; stroke: #000 !important;
+}
+.view[data-view="learn"] .km-staff__cleflabel { fill: var(--ivory-faint) !important; }
+/* feedback on the staff: green correct / red wrong */
+.view[data-view="learn"] .km-staff__note.is-correct { fill: var(--good) !important; }
+.view[data-view="learn"] .km-staff__note.is-wrong    { fill: var(--bad) !important; }
+
+/* ----------------------------------------------------------------------------
+   6. LESSON CONTENT — navy headings, graphite body, blue/white buttons, dots
+   -------------------------------------------------------------------------- */
+.view[data-view="learn"] .mf__eyebrow {
+  color: var(--royal); letter-spacing: .09em; font-weight: 700;
+}
+.view[data-view="learn"] .mf__step    { color: var(--ivory-faint); }
 .view[data-view="learn"] .mf__title   { color: var(--ivory); }
+.view[data-view="learn"] .mf__explain { border-left-color: var(--powder) !important; }
 .view[data-view="learn"] .mf__explain p { color: var(--ivory-dim); }
 .view[data-view="learn"] .mf__explain p:first-child { color: var(--ivory); }
+.view[data-view="learn"] .mf__showcap,
+.view[data-view="learn"] .mf__tryprompt { color: var(--ivory-dim); }
+.view[data-view="learn"] .mf__keylabel { color: var(--ivory); }
+.view[data-view="learn"] .mf__sharps { color: var(--royal); }
 
-/* the cream-paper staff already suits the light room — soften its dark
-   drop-shadow (tuned for the old dark bg) to a calm blue-grey lift */
-.view[data-view="learn"] .km-staff {
-  box-shadow:
-    0 14px 30px -16px rgba(30,42,69,0.28),
-    inset 0 1px 0 rgba(255,255,255,0.85) !important;
-  border: 1px solid rgba(30,42,69,0.12) !important;
-}
-
-/* ----------------------------------------------------------------------------
-   8. COURSE MAP + MENUS + SIGN-IN — clean light panels
-   -------------------------------------------------------------------------- */
-.km-coursemap, .km-menu, .km-signin {
-  background: rgba(238,243,250,0.86);
-  backdrop-filter: blur(6px);
-}
-.km-map__panel, .km-menu__panel, .km-signin__panel,
-.km-map__sheet, .km-menu__sheet {
-  background: #FFFFFF;
-  border: 1px solid var(--ebony-edge);
-  box-shadow: 0 30px 70px -30px rgba(30,42,69,0.40);
-  color: var(--ivory);
-}
-.km-map__title, .km-menu__title, .km-signin__title { color: var(--ivory); }
-.km-map__stage, .km-map__section, .km-map__course { color: var(--brass); }
-.km-map__chapter { color: var(--ivory); border-color: var(--ebony-edge); }
-.km-map__chapter:hover,
-.km-menu__item:hover, .km-menu__item:focus-visible,
-.km-provider:hover {
-  background: var(--powder-soft);
-  border-color: var(--powder);
-}
-.km-map__chapter.is-current, .km-map__chapter[aria-current] {
-  border-color: var(--brass); background: color-mix(in srgb, var(--brass) 8%, #fff);
-}
-.km-map__close:hover, .km-menu__close:hover, .km-signin__close:hover {
-  background: var(--powder-soft);
-}
-.km-provider {
-  background: #FFFFFF; color: var(--ivory); border: 1px solid var(--ebony-edge-2);
-}
-
-/* ----------------------------------------------------------------------------
-   9. FEEDBACK — wrong = rose/red (after attempt), correct = green (success)
-   These flow from the tokens above; reinforced here for clarity on white.
-   -------------------------------------------------------------------------- */
-/* staff feedback (staffViz is-correct / is-wrong already bind to --good/--bad) */
-.view[data-view="learn"] .km-staff__note.is-correct { fill: var(--emerald) !important; }
-.view[data-view="learn"] .km-staff__note.is-wrong   { fill: var(--felt-bright) !important; }
-
-/* keyboard feedback tokens read clearly on a light keyboard tray */
-.key.hl-success { box-shadow: 0 0 0 3px var(--emerald), 0 0 18px var(--emerald-glow); }
-.key.hl-mismatch, .key.hl-wrong { box-shadow: 0 0 0 3px var(--felt-bright); }
-.key.hl-target { box-shadow: 0 0 0 3px var(--brass), 0 0 16px var(--brass-glow); }
-
-/* ----------------------------------------------------------------------------
-   9b. INJECTED LESSON ELEMENTS — foundations.js appends its <style> AFTER this
-   file, so its rules need beating on specificity (prefix with the view scope).
-   Several use dark-era alpha values (rgba(244,239,230,α)) that vanish on white;
-   these restore visibility + the powder/brass/green language on the light room.
-   -------------------------------------------------------------------------- */
-
-/* lesson action buttons (.mf__btn--*) — clean, readable on white */
-.view[data-view="learn"] .mf__btn--ghost {
-  background: #FFFFFF;
-  border: 1px solid var(--ebony-edge-2);
-  color: var(--ivory);
-}
-.view[data-view="learn"] .mf__btn--ghost:hover {
-  background: var(--powder-soft); border-color: var(--powder); color: var(--ivory);
-}
-.view[data-view="learn"] .mf__btn--primary {
-  background: linear-gradient(135deg, var(--brass-bright) 0%, var(--brass) 72%);
-  color: #2A1D06;
-}
-.view[data-view="learn"] .mf__btn--primary.is-ready {
-  background: linear-gradient(135deg, var(--emerald) 0%, #1E8A54 100%);
-  color: #FFFFFF;
-}
-.view[data-view="learn"] .mf__btn--pause {
-  background: color-mix(in srgb, var(--amber) 16%, #fff);
-  border: 1px solid color-mix(in srgb, var(--amber) 55%, transparent);
-  color: var(--brass-deep);
-}
-
-/* undone progress dots + pulse "beat" dots — powder, not near-white */
+/* progress dots — powder blue; current = single restrained brass accent */
 .view[data-view="learn"] .mf__dot { background: var(--powder-edge); }
 .view[data-view="learn"] .mf__dot.is-done { background: var(--powder-deep); }
 .view[data-view="learn"] .mf__dot.is-current {
   background: var(--brass); box-shadow: 0 0 0 3px var(--brass-glow);
 }
+/* pulse beats — powder, active amber */
 .view[data-view="learn"] .mf__beat { background: var(--powder-edge); }
 .view[data-view="learn"] .mf__beat.is-on { background: var(--amber); }
 
-/* try-status feedback: wrong = rose-red, done = green (consistent on white) */
-.view[data-view="learn"] .mf__trystatus.is-wrong { color: var(--felt-bright); }
-.view[data-view="learn"] .mf__trystatus.is-done  { color: var(--emerald); }
-.view[data-view="learn"] .mf__sharps { color: var(--brass); }
+/* lesson buttons */
+.view[data-view="learn"] .mf__btn--ghost {
+  background: #FFFFFF; border: 1px solid var(--ebony-edge-2); color: var(--ivory);
+}
+.view[data-view="learn"] .mf__btn--ghost:hover {
+  background: var(--powder-soft); border-color: var(--powder); color: var(--ivory);
+}
+.view[data-view="learn"] .mf__btn--primary {
+  background: linear-gradient(135deg, var(--royal-bright) 0%, var(--royal) 75%);
+  color: #FFFFFF; border: 1px solid var(--royal-deep);
+  box-shadow: 0 8px 22px -12px rgba(40,95,166,0.55);
+}
+.view[data-view="learn"] .mf__btn--primary:hover { filter: brightness(1.06); }
+.view[data-view="learn"] .mf__btn--primary.is-ready {
+  background: linear-gradient(135deg, var(--emerald) 0%, #0F8A3E 100%);
+  color: #FFFFFF; border-color: #0F8A3E;
+}
+.view[data-view="learn"] .mf__btn--pause {
+  background: #FFFFFF; border: 1px solid var(--ebony-edge-2); color: var(--ivory-dim);
+}
+.view[data-view="learn"] .mf__trystatus.is-wrong { color: var(--bad); font-weight: 700; }
+.view[data-view="learn"] .mf__trystatus.is-done  { color: var(--emerald); font-weight: 700; }
+
+/* pause overlay */
+.view[data-view="learn"] .mf__pause { background: rgba(244,247,252,0.92) !important; }
+.view[data-view="learn"] .mf__pause-title { color: var(--ivory) !important; }
+.view[data-view="learn"] .mf__pause-text  { color: var(--ivory-dim) !important; }
 
 /* ----------------------------------------------------------------------------
-   10. MISC — signin seam, build tag, generic links
+   7. GENERIC BUTTONS — white default, royal-blue primary
    -------------------------------------------------------------------------- */
-.signin-seam__btn { background: #FFFFFF; color: var(--ivory); border-color: var(--ebony-edge-2); }
-.signin-seam__btn:hover { background: var(--brass-bright); color: #2A1D06; border-color: var(--brass-bright); }
-.build-tag { color: var(--ivory-faint); }
-a { color: var(--powder-deep); }
+.btn {
+  background: #FFFFFF; color: var(--ivory); border: 1px solid var(--ebony-edge-2);
+  box-shadow: 0 1px 2px rgba(21,33,58,0.06), 0 6px 16px -12px rgba(21,33,58,0.28);
+}
+.btn:hover { background: var(--powder-soft); border-color: var(--powder); }
+.btn:focus-visible { outline: 2px solid var(--royal); outline-offset: 2px; }
+.btn--primary, .btn.is-primary {
+  background: linear-gradient(135deg, var(--royal-bright) 0%, var(--royal) 75%);
+  color: #FFFFFF; border-color: var(--royal-deep);
+}
+
+/* ----------------------------------------------------------------------------
+   8. FRONT PAGE — readable, white-blue, gold removed
+   -------------------------------------------------------------------------- */
+.frontdoor {
+  background: linear-gradient(180deg, #FFFFFF 0%, #EAF1FA 100%) !important;
+  color: var(--ivory) !important;
+}
+/* tone the dark "aurora" stage down to faint daylight blue */
+.fd-stage { opacity: 1; }
+.fd-aurora {
+  background: radial-gradient(58% 48% at 50% 12%, rgba(110,155,201,0.20) 0%, transparent 72%) !important;
+  filter: blur(10px) !important; opacity: 0.8 !important;
+}
+.fd-spot { background: radial-gradient(45% 38% at 50% 0%, rgba(110,155,201,0.12) 0%, transparent 74%) !important; opacity: 0.7 !important; }
+.fd-vignette { background: radial-gradient(120% 100% at 50% 50%, transparent 62%, rgba(21,33,58,0.05) 100%) !important; }
+.fd-motes span { background: var(--powder) !important; opacity: 0.25 !important; box-shadow: none !important; }
+
+/* readable wordmark + tagline (no gold) */
+.frontdoor__eyebrow  { color: var(--royal) !important; }
+.frontdoor__wordmark { color: var(--ivory) !important; }
+.frontdoor__wordmark span { color: var(--royal) !important; -webkit-text-fill-color: var(--royal) !important; }
+.frontdoor__greeting { color: var(--ivory-dim) !important; }
+.fd-tagline, .frontdoor__tagline { color: var(--ivory-dim) !important; }
+.frontdoor__build { color: var(--ivory-faint) !important; }
+
+/* front-page buttons: royal primary, white secondary */
+.frontdoor__enter {
+  background: linear-gradient(135deg, var(--royal-bright) 0%, var(--royal) 78%) !important;
+  color: #FFFFFF !important; border: 1px solid var(--royal-deep) !important;
+  box-shadow: 0 12px 30px -14px rgba(40,95,166,0.55) !important;
+}
+.frontdoor__enter:hover { filter: brightness(1.05); }
+.frontdoor__secondary, .frontdoor__signin, .frontdoor__install, .frontdoor__fs {
+  background: #FFFFFF !important; color: var(--ivory) !important;
+  border: 1px solid var(--ebony-edge-2) !important;
+}
+.frontdoor__secondary:hover, .frontdoor__signin:hover,
+.frontdoor__install:hover, .frontdoor__fs:hover {
+  background: var(--powder-soft) !important; border-color: var(--powder) !important;
+}
+.frontdoor__ioshint { color: var(--ivory-dim) !important; }
+
+/* ----------------------------------------------------------------------------
+   9. COURSE HUB (hero) — navy text, royal CTA, powder progress
+   -------------------------------------------------------------------------- */
+.course-hero__greeting { color: var(--royal) !important; }
+.course-hero__eyebrow  { color: var(--ivory-faint) !important; }
+.course-hero__title    { color: var(--ivory) !important; }
+.course-hero__next     { color: var(--ivory-dim) !important; }
+.course-hero__progress { color: var(--ivory-faint) !important; }
+.course-hero__cta {
+  background: linear-gradient(135deg, var(--royal-bright) 0%, var(--royal) 78%) !important;
+  color: #FFFFFF !important;
+  box-shadow: 0 10px 26px -12px rgba(40,95,166,0.50) !important;
+}
+.course-hero__cta:hover { filter: brightness(1.05); }
+.course-hero__bar { background: var(--ebony-sink) !important; border: 1px solid var(--ebony-edge) !important; }
+.course-hero__bar-fill { background: linear-gradient(90deg, var(--powder) 0%, var(--powder-deep) 100%) !important; }
+
+/* ----------------------------------------------------------------------------
+   10. COURSE MAP + MENUS + SIGN-IN — white panels, blue accents, no gold
+   -------------------------------------------------------------------------- */
+.km-coursemap, .km-menu, .km-signin { background: rgba(238,243,250,0.90) !important; backdrop-filter: blur(7px); }
+.km-map__panel, .km-menu__panel, .km-signin__panel, .km-map__sheet, .km-menu__sheet {
+  background: #FFFFFF !important; border: 1px solid var(--ebony-edge) !important;
+  box-shadow: 0 30px 70px -30px rgba(21,33,58,0.40) !important; color: var(--ivory) !important;
+}
+.km-map__title, .km-menu__title, .km-signin__title { color: var(--ivory) !important; }
+.km-map__stage, .km-map__section, .km-map__course { color: var(--royal) !important; }
+.km-map__chapter { color: var(--ivory) !important; border-color: var(--ebony-edge) !important; }
+.km-map__chapter:hover, .km-menu__item:hover, .km-menu__item:focus-visible, .km-provider:hover {
+  background: var(--powder-soft) !important; border-color: var(--powder) !important;
+}
+.km-map__chapter.is-current, .km-map__chapter[aria-current] {
+  border-color: var(--royal) !important; background: var(--powder-soft) !important;
+}
+.km-map__close:hover, .km-menu__close:hover, .km-signin__close:hover { background: var(--powder-soft) !important; }
+.km-provider { background: #FFFFFF !important; color: var(--ivory) !important; border: 1px solid var(--ebony-edge-2) !important; }
+
+/* ----------------------------------------------------------------------------
+   11. KEYBOARD FEEDBACK — green correct / red wrong / royal target
+   (keys themselves untouched in keyboard.css; only the glow language aligns)
+   -------------------------------------------------------------------------- */
+.key.hl-success { box-shadow: 0 0 0 3px var(--emerald), 0 0 18px var(--emerald-glow) !important; }
+.key.hl-mismatch, .key.hl-wrong { box-shadow: 0 0 0 3px var(--bad), 0 0 16px rgba(220,38,38,0.45) !important; }
+.key.hl-target { box-shadow: 0 0 0 3px var(--royal), 0 0 16px rgba(40,95,166,0.45) !important; }
+
+/* ----------------------------------------------------------------------------
+   12. MISC
+   -------------------------------------------------------------------------- */
+.signin-seam__btn { background: #FFFFFF !important; color: var(--ivory) !important; border-color: var(--ebony-edge-2) !important; }
+.signin-seam__btn:hover { background: var(--royal) !important; color: #FFFFFF !important; border-color: var(--royal) !important; }
+.build-tag { color: var(--ivory-faint) !important; }
+a { color: var(--royal); }
