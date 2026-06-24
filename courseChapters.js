@@ -29,6 +29,8 @@ export const COURSE_CHAPTERS = [
     intro: 'Every line and space has a letter name \u2014 the treble G, the spaces that spell FACE, and the lines E G B D F.' },
   { stage: 1, name: 'Reading', ids: ['read-play-e', 'read-play-g', 'first-reading', 'bridge-sightreading'],
     intro: 'Reading music means knowing a note, then playing it \u2014 now linked to the staff.' },
+  { stage: 1, name: 'Reading by shape', ids: ['shape-reading-intro', 'shape-step', 'shape-skip', 'shape-repeat', 'first-shape-pattern'],
+    intro: 'Fluent readers see how notes move \u2014 steps, skips, and repeats \u2014 and read small groups as shapes, not one note at a time.' },
   { stage: 1, name: 'Rhythm', ids: ['first-pulse', 'pulse-eight'],
     intro: 'Music sits on a steady pulse \u2014 an even beat underneath the notes.' },
   { stage: 1, name: 'Checkpoint', ids: ['review-c', 'review-scale', 'review-chord'],
