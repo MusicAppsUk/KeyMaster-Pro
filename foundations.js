@@ -555,30 +555,35 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   replayBtn.textContent = 'Hear it again';
   const mediaEl = el('div', { class: 'mf__media' });
   mediaEl.style.display = 'none';
-  const showWrap = el('div', { class: 'mf__show' }, [keyLabel, handSlot, staffSlot, pulse, sharps, mediaEl, showCaption, replayBtn]);
+  const showWrap = el('div', { class: 'mf__show' }, [keyLabel, handSlot, staffSlot, pulse, sharps, mediaEl, showCaption]);
 
   const tryWrap = el('div', { class: 'mf__try' });
   const tryPrompt = el('p', { class: 'mf__tryprompt' });
   const tryStatus = el('p', { class: 'mf__trystatus', 'aria-live': 'polite' });
   tryWrap.append(tryPrompt, tryStatus);
 
-  const footer = el('div', { class: 'mf__footer' });
-  const backBtn = el('button', { class: 'mf__btn mf__btn--ghost', type: 'button' });
+  // rc2-167: ONE compact bottom transport strip is the lesson's control home.
+  //   left = Back · middle = Listen (replay) / Repeat / Pause · right = Stay / Continue.
+  //   (Repeat + Pause are appended in learn mode; plain Foundations shows Back / Listen / Continue.)
+  const footer = el('div', { class: 'mf__footer mf__transport' });
+  const backBtn = el('button', { class: 'mf__btn mf__btn--ghost mf__t-back', type: 'button' });
   backBtn.textContent = 'Back';
   const contBtn = el('button', { class: 'mf__btn mf__btn--primary', type: 'button' });
   const stayBtn = el('button', { class: 'mf__btn mf__btn--ghost mf__stay', type: 'button' });
   stayBtn.textContent = 'Stay here';
   stayBtn.style.display = 'none';
   stayBtn.addEventListener('click', () => { clearAutoCount(); setContinue('ready'); });
-  footer.append(backBtn, contBtn, stayBtn);
+  const navMid = el('div', { class: 'mf__transport-mid' }, [replayBtn]);   // Listen lives here; render() shows/hides it
+  const navEnd = el('div', { class: 'mf__transport-end' }, [stayBtn, contBtn]);
+  footer.append(backBtn, navMid, navEnd);
 
   const card = el('div', { class: 'mf__card' }, [title, explain, showWrap, tryWrap]);
-  root.append(head, dots, card, footer);
+  root.append(head, card, footer);   // rc2-167: progress dots detached (no dots on the lesson page)
   mount.replaceChildren(root);
 
   // ---- Learn-mode UI (greeting, voice toggle, reset, bridge) — built only in
   // Master Training; plain Foundations never creates these. --------------------
-  let greetingEl = null, voiceBtn = null, bridgeBtn = null, statusEl = null, startBtn = null;
+  let greetingEl = null, voiceBtn = null, bridgeBtn = null, statusEl = null, startBtn = null, resetBtn = null;
   if (learnMode) {
     greetingEl = el('p', { class: 'mf__greeting', 'aria-live': 'polite' });
     startBtn = el('button', { class: 'mf__btn mf__btn--primary mf__learnbtn mf__startvoice', type: 'button' });
@@ -589,13 +594,15 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
     pauseBtn.textContent = '\u275A\u275A  Pause lesson';
     const repeatBtn = el('button', { class: 'mf__btn mf__btn--ghost mf__learnbtn', type: 'button' });
     repeatBtn.textContent = 'Repeat';
-    const resetBtn = el('button', { class: 'mf__btn mf__btn--ghost mf__learnbtn', type: 'button' });
+    resetBtn = el('button', { class: 'mf__btn mf__btn--ghost mf__learnbtn', type: 'button' });
     resetBtn.textContent = 'Reset progress';
-    const ctrls = el('div', { class: 'mf__learnctrls' }, [startBtn, voiceBtn, pauseBtn, repeatBtn, resetBtn]);
+    // rc2-167: the bulky mf__learnctrls strip is retired.
+    //   Repeat + Pause -> bottom transport strip (navMid); Voice + Reset -> the ⋯ drawer
+    //   (placed in enter(), cleared in exit()). Start stays display:none (auto-managed).
+    navMid.append(repeatBtn, pauseBtn);
     statusEl = el('p', { class: 'mf__voicestatus', 'aria-live': 'polite' });
     root.insertBefore(greetingEl, head);
-    root.insertBefore(ctrls, dots);
-    root.insertBefore(statusEl, dots);
+    root.insertBefore(statusEl, card);   // tiny voice-status line, just above the lesson card
     setVoice(voiceOn);   // reflect on-by-default state immediately (no off/red flash)
     bridgeBtn = el('button', { class: 'mf__bridgelink', type: 'button' });
     bridgeBtn.style.display = 'none';
@@ -1511,11 +1518,22 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
           // last non-gesture trigger that could overlap the gesture-driven one.
           // (pendingGreeting waits here until the first gesture fires speakPending.)
         }
+        // rc2-167: show Voice + Reset inside the ⋯ drawer while a lesson is active.
+        try {
+          const host = (typeof document !== 'undefined') ? document.getElementById('km-menu-lesson') : null;
+          if (host && voiceBtn && resetBtn) { host.replaceChildren(voiceBtn, resetBtn); host.hidden = false; }
+        } catch (_) { /* drawer is optional chrome */ }
         updateVoiceStatus();
       }
       render();
     },
     exit() {
+      // rc2-167: pull the lesson's Voice/Reset back out of the drawer on the way out,
+      // so they never linger in the menu outside a lesson.
+      try {
+        const host = (typeof document !== 'undefined') ? document.getElementById('km-menu-lesson') : null;
+        if (host) { host.replaceChildren(); host.hidden = true; }
+      } catch (_) { /* no-op */ }
       if (unsub) { unsub(); unsub = null; }
       audio?.cancel?.();
       if (gateTimer) { clearTimeout(gateTimer); gateTimer = null; }
@@ -1560,7 +1578,7 @@ function injectStyles() {
     .mf__eyebrow { margin: 0; font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase;
       color: var(--champagne, #E8C57E); }
     .mf__step { margin: 0; font-size: 0.82rem; color: var(--ivory-faint, #7E7A72); }
-    .mf__dots { display: flex; gap: 0.4rem; margin: 0.6rem 0 1rem; }
+    .mf__dots { display: none; }   /* rc2-167: progress dots are off the lesson page */
     .mf__dot { width: 0.5rem; height: 0.5rem; border-radius: 50%;
       background: rgba(244,239,230,0.16); transition: background 0.25s, transform 0.25s; }
     .mf__dot.is-done { background: var(--brass, #C99A4B); }
@@ -1585,6 +1603,13 @@ function injectStyles() {
     .mf__trystatus.is-done { color: var(--emerald, #46C08A); font-weight: 600; }
     .mf__trystatus.is-wrong { color: #D8A28F; }
     .mf__footer { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1.25rem; }
+    /* rc2-167 — ONE compact bottom transport strip: Back | Listen·Repeat·Pause | Stay·Continue. */
+    .mf__footer.mf__transport { align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-start; }
+    .mf__transport-mid { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+    .mf__transport-end { display: flex; align-items: center; gap: 0.5rem; margin-left: auto; }
+    .mf__transport .mf__btn--ghost { padding: 0.5rem 0.9rem; min-height: 42px; font-size: 0.9rem; }
+    .mf__transport .mf__replay { margin-top: 0; }
+    .mf__transport .mf__btn--pause { min-height: 42px; }
     .mf__btn { appearance: none; border-radius: 11px; padding: 0.7rem 1.3rem; font-size: 1rem; font-weight: 600;
       cursor: pointer; min-height: 46px; border: 1px solid transparent; transition: filter 0.15s, background 0.15s; }
     .mf__btn--ghost { background: transparent; border-color: rgba(244,239,230,0.22); color: var(--ivory-dim, #B9B2A6); }
@@ -1620,6 +1645,9 @@ function injectStyles() {
     .mf.is-paused .mf__learnctrls { opacity: 0.4; pointer-events: none; }
     .mf.is-paused .km-hand, .mf.is-paused .km-staff, .mf.is-paused .mf__beat { animation-play-state: paused !important; }
     .mf__greeting { margin: 0 0 0.7rem; font-size: 1.08rem; font-weight: 600; color: var(--champagne, #E8C57E); }
+    /* rc2-167 — tiny, subtle voice-status line (the tutor never fails silently). */
+    .mf__voicestatus { margin: 0 0 0.7rem; font-size: 0.8rem; line-height: 1.35;
+      color: var(--ivory-faint, #7E7A72); opacity: 0.9; }
     .mf__learnctrls { display: flex; gap: 0.55rem; margin: 0 0 0.9rem; flex-wrap: wrap; }
     .mf__learnbtn { padding: 0.42rem 0.95rem; min-height: 38px; font-size: 0.85rem; }
     .mf__startvoice { font-weight: 650; }

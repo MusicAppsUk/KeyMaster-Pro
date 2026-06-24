@@ -634,3 +634,23 @@ html[data-view="learn"] { --bar-h: 46px; }
 .km-menu__status[data-state="loading"] { color: #7a5a1f !important; }
 .km-menu__status[data-state="missing"],
 .km-menu__status[data-state="error"]   { color: #9a3b2f !important; }
+
+/* ========================================================================
+   rc2-167 — Lesson controls relocated into the ⋯ drawer.
+   Voice + Reset are moved here (as real buttons, handlers intact) while a
+   lesson is active; the host is emptied + hidden the moment the lesson exits.
+   ======================================================================== */
+.km-menu__lesson {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin: 0.25rem 0 0.6rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(244, 239, 230, 0.08);
+}
+.km-menu__lesson:empty { display: none; }                 /* nothing to show outside a lesson */
+.km-menu__lesson .mf__btn {                               /* full-width, drawer-friendly */
+  width: 100%;
+  justify-content: center;
+  min-height: 44px;
+}
