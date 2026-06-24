@@ -106,8 +106,9 @@ h1, h2, h3, h4 { color: var(--ivory); }
 
 /* keyboard tray — clean light shelf under the cockpit */
 .app__instrument {
-  background: linear-gradient(180deg, #F4F8FD 0%, #E9F0F8 100%) !important;
-  border-top: 1px solid var(--ebony-edge);
+  background: linear-gradient(180deg, #7C2A33 0%, #5C1E26 100%) !important;
+  border-top: 1px solid #491820 !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06) !important;
 }
 
 /* ============================================================================
@@ -181,8 +182,8 @@ h1, h2, h3, h4 { color: var(--ivory); }
 .view[data-view="learn"] .mf__footer {
   flex: 0 0 auto;
   margin: 0 !important;
-  padding: clamp(.8rem,2.2vw,1.1rem) clamp(1rem,4.5vw,2.6rem) !important;
-  padding-bottom: max(clamp(.8rem,2.2vw,1.1rem), env(safe-area-inset-bottom)) !important;
+  padding: clamp(.35rem,1vw,.5rem) clamp(1rem,4.5vw,2.6rem) !important;
+  padding-bottom: max(clamp(.35rem,1vw,.5rem), env(safe-area-inset-bottom)) !important;
   background: #FFFFFF;
   border-top: 1px solid var(--ebony-edge);
   box-shadow: 0 -1px 0 rgba(255,255,255,0.9);
@@ -190,6 +191,12 @@ h1, h2, h3, h4 { color: var(--ivory); }
   justify-content: space-between;
   align-items: center;
   gap: .8rem;
+}
+/* slimmer-but-usable action buttons to match the shorter bar + smaller keyboard */
+.view[data-view="learn"] .mf__footer .mf__btn {
+  padding: .42rem 1.15rem !important;
+  min-height: 40px !important;
+  font-size: .98rem !important;
 }
 
 /* ----------------------------------------------------------------------------
@@ -391,9 +398,9 @@ a { color: var(--royal); }
    -------------------------------------------------------------------------- */
 .piano { --key-h: clamp(92px, 26dvh, 188px) !important; }
 .keyboard-frame {
-  background: var(--ebony-sink) !important;
-  border-top: 3px solid var(--powder) !important;
-  box-shadow: inset 0 2px 8px rgba(21,33,58,0.10) !important;
+  background: #6B2530 !important;
+  border-top: 3px solid #93303A !important;
+  box-shadow: inset 0 2px 10px rgba(0,0,0,0.45) !important;
 }
 
 /* ----------------------------------------------------------------------------
@@ -462,3 +469,55 @@ html[data-view="learn"]:not([data-controls="open"]) .app__controls > :not(.midi-
 }
 .course-hero__eyebrow, .km-map__eyebrow, .view__eyebrow { color: var(--powder-deep) !important; }
 .view__title, .km-map__title, #course-hero-title, #learn-heading { color: var(--ivory) !important; }
+
+/* ============================================================================
+   rc2-156 COCKPIT TIGHTENING
+   ========================================================================== */
+
+/* ----------------------------------------------------------------------------
+   17. FRONT PAGE — degold the Shakespeare verse + decorative gold glow
+   -------------------------------------------------------------------------- */
+.fd-verse { color: var(--ivory-dim) !important; }
+.fd-verse__line { color: var(--ivory-dim) !important; }
+.fd-verse__cite { color: var(--powder-deep) !important; }
+/* the decorative horizon "piano glow" SVG is hardcoded gold — desaturate it to a
+   faint neutral wisp so no gold reads on the clean splash */
+.fd-piano { opacity: 0.26 !important; filter: saturate(0.1) brightness(1.3) !important; }
+/* splash K mark → white on the now-blue crest (crest reads the blue tokens) */
+.fd-mark__k { color: #FFFFFF !important; -webkit-text-fill-color: #FFFFFF !important; }
+
+/* ----------------------------------------------------------------------------
+   18. TOP BAR — tighten in the cockpit to "menu + ⋯ + subtle MIDI" only.
+   Setup controls hide behind ⋯ (rc2-155); now also hide brand + breadcrumb so
+   only learning-relevant chrome remains. ☰ (navigation) and the MIDI pill stay.
+   -------------------------------------------------------------------------- */
+html[data-view="learn"] .brand-wrap { display: none !important; }
+html[data-view="learn"] .breadcrumb { display: none !important; }
+/* compact, subtle device status sitting beside the ⋯ affordance */
+html[data-view="learn"] .midi-pill {
+  padding: 3px 8px !important;
+  font-size: 0.72rem !important;
+  gap: 5px !important;
+}
+
+/* ============================================================================
+   rc2-157  WRONG-NOTE GHOST + brighter correct glow
+   ========================================================================== */
+/* The note the learner PLAYED, shown transiently at its real pitch: vivid red,
+   outline + translucent fill + soft glow. The target note is left NEUTRAL. */
+.view[data-view="learn"] .km-staff__ghost-head {
+  fill: rgba(220, 38, 38, 0.20);
+  stroke: #E5302F;
+  stroke-width: 2.6;
+  filter: drop-shadow(0 0 5px rgba(229, 48, 47, 0.60));
+  animation: km-ghost-in 0.13s ease-out;
+}
+@keyframes km-ghost-in { from { opacity: 0; } to { opacity: 1; } }
+/* a wildly-off (clamped) ghost rides the edge with a dashed outline = "off-staff" */
+.view[data-view="learn"] .km-staff__ghost.is-clamped .km-staff__ghost-head { stroke-dasharray: 4 3; }
+
+/* correct target note → bright illuminating green with a glow */
+.view[data-view="learn"] .km-staff__note.is-correct {
+  fill: #14C95E !important;
+  filter: drop-shadow(0 0 6px rgba(20, 201, 94, 0.65)) !important;
+}

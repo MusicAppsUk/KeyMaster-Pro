@@ -426,3 +426,59 @@ html[data-fingering="hidden"] .view[data-view="learn"] .km-staff__finger{display
   document.head.appendChild(style);
   stylesInjected = true;
 }
+
+// ---------------------------------------------------------------------------
+// rc2-157: transient WRONG-NOTE GHOST.
+// Draws "the note you actually played" at its real pitch over an already-rendered
+// staff, so the learner sees the spatial relationship to the (neutral) target.
+// ADDITIVE: buildStaff and all existing drawing are untouched — every existing
+// staff renders byte-identically; this only runs on a wrong attempt and removes
+// itself. The target note is never coloured red by this path.
+//   staffWrap : the .km-staff element returned by buildStaff (found in the DOM)
+//   midi      : the wrong MIDI the learner played
+//   ms        : lifetime in milliseconds (default ~900)
+export function flashPlayed(staffWrap, midi, ms) {
+  try {
+    if (!staffWrap || !Number.isFinite(midi)) return;
+    const svg = staffWrap.querySelector('.km-staff__svg');
+    if (!svg) return;
+
+    const clef = staffWrap.classList.contains('km-staff--bass')  ? 'bass'
+               : staffWrap.classList.contains('km-staff--grand') ? 'grand' : 'treble';
+    // top-Y mirrors buildStaff exactly (treble/bass single = 34; grand picks a clef)
+    let useClef = clef, topY = 34;
+    if (clef === 'grand') {
+      useClef = (midi >= 60) ? 'treble' : 'bass';
+      topY = (useClef === 'treble') ? 34 : (34 + 4 * GAP + 3 * GAP + 8);
+    }
+
+    const cx = Math.round((NOTE_L + NOTE_R) / 2);   // same x a single target sits at
+    let y = noteY(midi, useClef, topY);
+
+    // soft clamp: a wildly-off note rides the viewBox edge instead of blowing out
+    // the fixed layout; still clearly shows "you played far in this direction".
+    const vb = (svg.getAttribute('viewBox') || '').trim().split(/\s+/).map(Number);
+    let clamped = false;
+    if (vb.length === 4) {
+      const top = vb[1] + 12, bot = vb[1] + vb[3] - 12;
+      if (y < top) { y = top; clamped = true; }
+      else if (y > bot) { y = bot; clamped = true; }
+    }
+
+    const NS = 'http://www.w3.org/2000/svg';
+    const g = document.createElementNS(NS, 'g');
+    g.setAttribute('class', 'km-staff__ghost' + (clamped ? ' is-clamped' : ''));
+    const e = document.createElementNS(NS, 'ellipse');
+    e.setAttribute('class', 'km-staff__ghost-head');
+    e.setAttribute('cx', String(cx));
+    e.setAttribute('cy', y.toFixed(2));
+    e.setAttribute('rx', (0.58 * GAP).toFixed(2));
+    e.setAttribute('ry', (0.42 * GAP).toFixed(2));
+    e.setAttribute('transform', `rotate(-20 ${cx} ${y.toFixed(2)})`);
+    g.appendChild(e);
+    svg.appendChild(g);
+
+    const life = (Number.isFinite(ms) && ms > 0) ? ms : 900;
+    setTimeout(() => { try { g.remove(); } catch (_) {} }, life);
+  } catch (_) { /* feedback flourish, never required */ }
+}

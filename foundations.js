@@ -30,7 +30,7 @@ import { VOICE_PACK } from './voicePackData.js?v=rc2-116';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-108';
 import { buildHandSvg, setHandHighlight, FINGER_NAMES } from './handViz.js?v=rc2-81';
-import { buildStaff } from './staffViz.js?v=rc2-117';
+import { buildStaff, flashPlayed } from './staffViz.js?v=rc2-117';
 import { createCourseVoice } from './courseVoice.js?v=rc2-105';
 import { FOUNDATION_STEPS } from './courseFoundation.js?v=rc2-136';
 import { STAGE1_MAKING_STEPS } from './courseStage1Making.js?v=rc2-136';
@@ -1145,6 +1145,9 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   }
 
   // ---- Try detection — accurate, teaching feedback --------------------------
+  // rc2-157: remember the last MIDI the learner played, so a wrong attempt can
+  // show THAT pitch as a transient ghost on the staff (the target stays neutral).
+  let lastPlayedMidi = null;
   function onNote(ev) {
     if (paused) return;                            // lesson is paused — ignore presses
     if (learnMode) { voice?.unlock?.(); speakPending(); }
@@ -1153,6 +1156,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
     stopDemoAudio();   // the learner is playing now — never let the demo ring under their input/feedback
     if (learnMode) { stepAttempts += 1; if (stepAttempts >= 3) enableContinue(); }
     const midi = ev.midiNote;
+    lastPlayedMidi = midi;
     const pc = pcOf(midi);
     const name = NOTE_NAMES[pc];
     const targetsPc = (c.targets || []).map(pcOf);
@@ -1277,7 +1281,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
     tryStatus.textContent = speakable(msg);
     tryStatus.classList.remove('is-done');
     tryStatus.classList.add('is-wrong');
-    flashStaff('wrong');
+    showWrongGhost(lastPlayedMidi);   // played note → red ghost; target stays neutral
     if (learnMode && voice && voiceOn) {
       const c = steps[index];
       const sid = (c && c.id) ? c.id : `i${index}`;
@@ -1328,6 +1332,18 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   // correct -> the note glows emerald; wrong -> it shows soft rose, then settles
   // back to the amber target. Only acts when the current step shows a staff, so
   // keyboard-only steps are untouched. Success glows; mistakes guide.
+  // rc2-157: show the wrong note the learner just played as a transient red ghost
+  // at its real pitch. The target note is deliberately NOT reddened — it stays
+  // neutral so the correct answer is never visually branded as the mistake.
+  function showWrongGhost(midi) {
+    try {
+      const c = steps[index];
+      const hasStaff = c && ((c.show && c.show.kind === 'staff') || c.staffHint);
+      if (!hasStaff || !staffSlot || staffSlot.style.display === 'none') return;
+      const wrap = staffSlot.querySelector('.km-staff');
+      if (wrap && Number.isFinite(midi)) flashPlayed(wrap, midi, 900);
+    } catch (_) { /* feedback flourish, never required */ }
+  }
   function flashStaff(state) {
     try {
       const c = steps[index];
