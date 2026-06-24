@@ -607,7 +607,7 @@ class KeyMasterApp {
       showLabels: Boolean(prefs.showLabels),
     });
     this.viewport = new Viewport(this.keyboard, {
-      octaves: 4,
+      octaves: 5,                                   // rc2-160: show more of the keybed (was 4) — Piano-Marvel-style wider, thinner keys
       startMidi: clampStart(prefs.startMidi ?? 48), // C3 default
     });
     // Orientation overlay: marks the C keys (Middle C most prominent). Decorates
