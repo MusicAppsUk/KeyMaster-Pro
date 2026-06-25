@@ -754,8 +754,8 @@ html[data-view="learn"][data-keyboard="hidden"] .app {
    real fault to chase, not the rules. Tell me which you see and we proceed.
    (Trivially removable once the pipeline is confirmed.)
    ======================================================================== */
-body::after {
-  content: "KeyMaster rc2-169";
+html::after {
+  content: "rc2-170 " attr(data-view) "/" attr(data-keyboard);
   position: fixed;
   right: 3px;
   bottom: 1px;
@@ -763,8 +763,41 @@ body::after {
   font: 600 9px/1 ui-monospace, monospace;
   letter-spacing: .02em;
   color: #285FA6;
-  background: rgba(255,255,255,.80);
+  background: rgba(255,255,255,.82);
   padding: 2px 5px;
   border-radius: 3px;
   pointer-events: none;
+}
+
+/* ========================================================================
+   rc2-170 — exact-rule cockpit corrections (proven causes, learn view only).
+   ======================================================================== */
+
+/* #1 / #2 — the deep "Foundation Course" band is the STATIC heading
+   <h1 id="learn-heading" class="view__title">Foundation Course</h1> in index.html,
+   sized var(--step-xl) (1.953rem) with a large bottom margin. The top row's
+   breadcrumb already provides course context, so this redundant oversized
+   heading is removed from the lesson cockpit (its text still labels the region
+   for assistive tech via aria-labelledby). */
+html[data-view="learn"] .view__title,
+html[data-view="learn"] #learn-heading { display: none !important; }
+
+/* #4 (ROOT CAUSE) — the lesson (.mf) mounts into .view__body, which carried NO
+   flex rule, so .mf could not stretch: the transport strip sat at the bottom of
+   the SHORT welcome content, leaving a large empty (grey) area below it and the
+   strip floating mid-screen. Make .view__body a stretching flex column so .mf
+   fills the view and the transport pins to the real bottom — whether the
+   keyboard is hidden (strip at the viewport floor) or shown (strip above keys). */
+.view[data-view="learn"] .view__body {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* #3 — lesson title was document-sized; bring it to an app-like heading so the
+   surface reads calm and leaves more room for content. */
+.view[data-view="learn"] .mf__title {
+  font-size: clamp(1.1rem, 3vw, 1.35rem) !important;
+  margin-bottom: .5rem !important;
 }
