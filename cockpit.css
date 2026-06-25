@@ -755,7 +755,7 @@ html[data-view="learn"][data-keyboard="hidden"] .app {
    (Trivially removable once the pipeline is confirmed.)
    ======================================================================== */
 html::after {
-  content: "rc2-171 " attr(data-view) "/" attr(data-keyboard);
+  content: "rc2-172 " attr(data-view) "/" attr(data-keyboard);
   position: fixed;
   right: 3px;
   bottom: 1px;
@@ -847,4 +847,82 @@ html[data-view="learn"] .brand-wrap { flex: 0 1 auto; min-width: 0; overflow: hi
    stretched edge-to-edge. The card already caps at 60rem; just centre it. --- */
 @media (min-width: 1100px) {
   .view[data-view="learn"] .mf__card { margin-left: auto !important; margin-right: auto !important; }
+}
+
+/* ========================================================================
+   rc2-172 — VISUAL IDENTITY: thin Wedgwood-blue top/bottom rails + porcelain
+   teaching surface + crisp white music paper. Piano Marvel framing discipline,
+   KeyMaster's own blue/white identity. "soft teaching surfaces, crisp white
+   music paper." COLOUR/identity only — geometry, audio, keybed, red Middle C,
+   ghost note and staff LINES untouched. Scoped to the learn cockpit.
+   No gold, no dark cockpit, no parchment, no heavy slabs. Rails stay THIN
+   (heights unchanged from rc2-171); only colour changes.
+   ======================================================================== */
+
+/* ---- TOP RAIL: classical Wedgwood blue, deep enough for legible white text
+   (white on #285FA6 ~5:1). ------------------------------------------------ */
+html[data-view="learn"] .app__bar {
+  background: var(--royal) !important;
+  border-bottom: 1px solid rgba(255,255,255,0.18) !important;
+  box-shadow: 0 2px 14px -10px rgba(21,33,58,0.45) !important;
+}
+html[data-view="learn"] .app__bar::after { opacity: 0 !important; }
+
+html[data-view="learn"] .app__menu-bars,
+html[data-view="learn"] .app__menu-bars::before,
+html[data-view="learn"] .app__menu-bars::after { background: #FFFFFF !important; }
+html[data-view="learn"] .app__menu { border-color: rgba(255,255,255,0.30) !important; }
+html[data-view="learn"] .app__menu:hover { background: rgba(255,255,255,0.14) !important; border-color: rgba(255,255,255,0.5) !important; }
+
+html[data-view="learn"] .cockpit-ctrl-toggle { color: #FFFFFF !important; border-color: rgba(255,255,255,0.30) !important; background: transparent !important; }
+html[data-view="learn"] .cockpit-ctrl-toggle:hover,
+html[data-view="learn"] .cockpit-ctrl-toggle[aria-expanded="true"] { background: rgba(255,255,255,0.14) !important; border-color: rgba(255,255,255,0.5) !important; }
+
+html[data-view="learn"] .breadcrumb__crumb { color: rgba(255,255,255,0.92) !important; }
+html[data-view="learn"] .breadcrumb__crumb.is-current { color: #FFFFFF !important; }
+html[data-view="learn"] .breadcrumb__sep { color: rgba(255,255,255,0.6) !important; }
+
+html[data-view="learn"] .midi-pill { color: #FFFFFF !important; border-color: rgba(255,255,255,0.32) !important; background: rgba(255,255,255,0.08) !important; }
+html[data-view="learn"] .midi-pill__dot { background: rgba(255,255,255,0.55) !important; }
+html[data-view="learn"] .midi-pill.is-connected { color: #FFFFFF !important; border-color: var(--emerald) !important; }
+html[data-view="learn"] .midi-pill.is-connected .midi-pill__dot { background: var(--emerald) !important; }
+
+/* ---- BOTTOM RAIL (transport): same Wedgwood blue. Inverted buttons. ------ */
+.view[data-view="learn"] .mf__footer {
+  background: var(--royal) !important;
+  border-top: 1px solid rgba(255,255,255,0.18) !important;
+  box-shadow: 0 -2px 14px -10px rgba(21,33,58,0.45) !important;
+}
+/* secondary (Back / Listen / Repeat) — ghost-on-blue */
+.view[data-view="learn"] .mf__footer .mf__btn--ghost {
+  background: transparent !important; color: #FFFFFF !important;
+  border: 1px solid rgba(255,255,255,0.45) !important;
+}
+.view[data-view="learn"] .mf__footer .mf__btn--ghost:hover {
+  background: rgba(255,255,255,0.15) !important; border-color: rgba(255,255,255,0.7) !important;
+}
+/* primary (Continue) — WHITE button + blue text: clean action that pops on blue */
+.view[data-view="learn"] .mf__footer .mf__btn--primary {
+  background: #FFFFFF !important; color: var(--royal) !important; border: 1px solid #FFFFFF !important;
+}
+.view[data-view="learn"] .mf__footer .mf__btn--primary:hover { background: #EAF1FA !important; border-color: #EAF1FA !important; filter: none !important; }
+/* primary when correct/ready — bright green + white text (success) */
+.view[data-view="learn"] .mf__footer .mf__btn--primary.is-ready {
+  background: var(--emerald) !important; color: #FFFFFF !important; border-color: var(--emerald) !important;
+}
+/* pause — ghost-on-blue (a transport control, not an error) */
+.view[data-view="learn"] .mf__footer .mf__btn--pause {
+  background: transparent !important; color: #FFFFFF !important; border: 1px solid rgba(255,255,255,0.45) !important;
+}
+.view[data-view="learn"] .mf__footer .mf__btn--pause:hover { background: rgba(255,255,255,0.15) !important; border-color: rgba(255,255,255,0.7) !important; }
+
+/* ---- CENTRE: soft teaching surfaces, crisp white music paper ------------- */
+/* teaching default — porcelain / very pale cool grey (premium, not sterile) */
+.view[data-view="learn"] .mf__card { background: #F1F4F8 !important; }
+/* any card containing a staff = MUSIC → crisp white sheet-music space */
+.view[data-view="learn"] .mf__card:has(.km-staff) { background: #FFFFFF !important; }
+/* on a white music card, soften the staff panel so it reads as clean paper */
+.view[data-view="learn"] .mf__card:has(.km-staff) .km-staff {
+  box-shadow: 0 10px 26px -20px rgba(21,33,58,0.18) !important;
+  border-color: #E6E9EF !important;
 }
