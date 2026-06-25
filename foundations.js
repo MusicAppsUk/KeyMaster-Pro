@@ -383,7 +383,13 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   const PREMIUM_VOICE_READY = true;
   // Full code-matched voice pack (every spoken line ID -> local MP3), imported from
   // voicePackData.js — generated from the course script so IDs always match.
-  if (audio && PREMIUM_VOICE_READY) audio.setPack(VOICE_PACK, 'en-GB');
+  // Recorded voice pack DELIBERATELY NOT loaded: the voice/en-GB/*.mp3 files do not
+  // exist on disk yet. Mapping every line to a missing file makes urlFor() return a
+  // URL, so tutorAudio tries the (404) MP3 and falls to silentHold -- so Jack stayed
+  // mute even with TTS on, because the TTS fallback only fires when there is NO mapped
+  // URL. With no pack, every line goes straight to the TTS fallback and Jack speaks.
+  // Re-enable this line the moment the recordings ship (premium files then auto-play).
+  // if (audio && PREMIUM_VOICE_READY) audio.setPack(VOICE_PACK, 'en-GB');
   // Visual teaching cues (brackets / pointer / labels), measured from real key geometry.
   const overlay = learnMode ? createLearnOverlay(keyboard) : null;
   // Master Training uses its own curriculum; Foundations keeps the original cards.
@@ -446,21 +452,6 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   const demoVoices = [];     // teaching-audio Voice instances we own
   const demoSweepTimers = []; // visual highlight-sweep timers (animated guidance)
   let demoToken = 0;         // cancels a pending demo when the card changes
-  // Entry-audio handoff: how long the Course must hold its first NOTE-demo so it does
-  // not overlap the splash flourish (D4->A4) coming from the front door. The flourish
-  // (app.js) stamps window.__kmEntryAudio.flourishUntil when it fires; we wait out the
-  // remainder — capped so a stale value can never stall the lesson, and returning 0
-  // (normal behaviour) whenever no flourish is in flight. Only the demo waits; the
-  // spoken line is NOT deferred (it stays inside the user gesture so mobile autoplay
-  // always allows Jack to speak).
-  const entryAudioWaitMs = () => {
-    try {
-      const until = (typeof window !== 'undefined' && window.__kmEntryAudio) ? (window.__kmEntryAudio.flourishUntil || 0) : 0;
-      if (!until) return 0;
-      const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-      return Math.max(0, Math.min(until - now, 2600));
-    } catch (_) { return 0; }
-  };
   let demoTimer = null;
   let autoAdvTimer = null;   // learn: auto-advance after a simple completed task
   let seqTimer = null;       // learn: drives the speak -> pause -> demo -> pause chain
@@ -780,20 +771,12 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       const resuming = !!(progress && (((progress.get('learnLesson') || 0) > 0)
         || (Array.isArray(progress.get('learnCompleted')) && progress.get('learnCompleted').length > 0)));
       const c0 = steps[index];
-      // Hold Jack's welcome until the splash flourish has rung out, so the spoken
-      // line follows the flourish instead of overlapping it. Only the audio is
-      // deferred; state (pendingGreeting/greeted) settles now. SpeechSynthesis was
-      // primed in-gesture (app.js ensureAudio), so the deferred utterance is allowed
-      // to play on mobile. entryAudioWaitMs() returns 0 when no flourish is in flight.
-      const speakWelcome = () => {
-        if (!resuming && c0 && Array.isArray(c0.say) && c0.say.length) {
-          speakCard(c0, undefined, { source: 'greeting' });   // spoken Course introduction (existing MP3s)
-        } else {
-          audio.say((resuming ? 'greeting.back.' : 'greeting.') + tod, pendingGreeting, { source: 'greeting', once: true });
-        }
-      };
-      const _gw = entryAudioWaitMs();
-      if (_gw > 0) setTimeout(speakWelcome, _gw); else speakWelcome();
+      // Speak Jack's welcome now, inside the entry flow (no flourish to wait for).
+      if (!resuming && c0 && Array.isArray(c0.say) && c0.say.length) {
+        speakCard(c0, undefined, { source: 'greeting' });   // spoken Course introduction (TTS until recordings ship)
+      } else {
+        audio.say((resuming ? 'greeting.back.' : 'greeting.') + tod, pendingGreeting, { source: 'greeting', once: true });
+      }
       if (progress && c0) progress.addToSet('heardNarration', `narr:${c0.title}`);
       pendingGreeting = null;
       greeted = true;
@@ -897,18 +880,8 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       }
     };
     const afterSpeech = () => { if (alive()) seqTimer = setTimeout(doDemo, gapBeforeDemo(c)); };
-    // Hold the whole speak->demo sequence until the splash flourish has rung out, so
-    // neither Jack's line nor the demo overlaps it (covers a resumed card whose intro
-    // would otherwise speak over the flourish). Only the first card after entry waits
-    // — entryAudioWaitMs() returns 0 once the flourish is done. SpeechSynthesis was
-    // primed in-gesture (app.js) so the deferred spoken line still plays on mobile.
-    const startSeq = () => {
-      if (!alive()) return;
-      if (skipSpeech) afterSpeech();
-      else speakCard(c, afterSpeech, opts);
-    };
-    const _sw = entryAudioWaitMs();
-    if (_sw > 0) { seqTimer = setTimeout(startSeq, _sw); } else { startSeq(); }
+    if (skipSpeech) afterSpeech();
+    else speakCard(c, afterSpeech, opts);
   }
 
   // ---- Lesson-control state machine (learn only) ---------------------------
