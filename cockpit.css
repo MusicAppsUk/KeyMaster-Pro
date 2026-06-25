@@ -755,7 +755,7 @@ html[data-view="learn"][data-keyboard="hidden"] .app {
    (Trivially removable once the pipeline is confirmed.)
    ======================================================================== */
 html::after {
-  content: "rc2-172 " attr(data-view) "/" attr(data-keyboard);
+  content: "rc2-173 " attr(data-view) "/" attr(data-keyboard);
   position: fixed;
   right: 3px;
   bottom: 1px;
@@ -862,8 +862,8 @@ html[data-view="learn"] .brand-wrap { flex: 0 1 auto; min-width: 0; overflow: hi
 /* ---- TOP RAIL: classical Wedgwood blue, deep enough for legible white text
    (white on #285FA6 ~5:1). ------------------------------------------------ */
 html[data-view="learn"] .app__bar {
-  background: var(--royal) !important;
-  border-bottom: 1px solid rgba(255,255,255,0.18) !important;
+  background: var(--powder-deep) !important;   /* rc2-173: lighter Wedgwood (was --royal, too strong) */
+  border-bottom: 1px solid rgba(255,255,255,0.22) !important;
   box-shadow: 0 2px 14px -10px rgba(21,33,58,0.45) !important;
 }
 html[data-view="learn"] .app__bar::after { opacity: 0 !important; }
@@ -878,9 +878,9 @@ html[data-view="learn"] .cockpit-ctrl-toggle { color: #FFFFFF !important; border
 html[data-view="learn"] .cockpit-ctrl-toggle:hover,
 html[data-view="learn"] .cockpit-ctrl-toggle[aria-expanded="true"] { background: rgba(255,255,255,0.14) !important; border-color: rgba(255,255,255,0.5) !important; }
 
-html[data-view="learn"] .breadcrumb__crumb { color: rgba(255,255,255,0.92) !important; }
+html[data-view="learn"] .breadcrumb__crumb { color: #FFFFFF !important; }
 html[data-view="learn"] .breadcrumb__crumb.is-current { color: #FFFFFF !important; }
-html[data-view="learn"] .breadcrumb__sep { color: rgba(255,255,255,0.6) !important; }
+html[data-view="learn"] .breadcrumb__sep { color: rgba(255,255,255,0.72) !important; }
 
 html[data-view="learn"] .midi-pill { color: #FFFFFF !important; border-color: rgba(255,255,255,0.32) !important; background: rgba(255,255,255,0.08) !important; }
 html[data-view="learn"] .midi-pill__dot { background: rgba(255,255,255,0.55) !important; }
@@ -889,8 +889,8 @@ html[data-view="learn"] .midi-pill.is-connected .midi-pill__dot { background: va
 
 /* ---- BOTTOM RAIL (transport): same Wedgwood blue. Inverted buttons. ------ */
 .view[data-view="learn"] .mf__footer {
-  background: var(--royal) !important;
-  border-top: 1px solid rgba(255,255,255,0.18) !important;
+  background: var(--powder-deep) !important;   /* rc2-173: lighter Wedgwood (was --royal, too strong) */
+  border-top: 1px solid rgba(255,255,255,0.22) !important;
   box-shadow: 0 -2px 14px -10px rgba(21,33,58,0.45) !important;
 }
 /* secondary (Back / Listen / Repeat) — ghost-on-blue */
