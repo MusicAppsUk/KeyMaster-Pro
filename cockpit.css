@@ -581,8 +581,9 @@ html[data-view="learn"] { --bar-h: 46px; }
   /* black keys — was dark purple-grey; now crisp neutral near-black */
   --ebony-key:       linear-gradient(#222227 0%, #141419 55%, #0B0B0F 100%) !important;
   --ebony-key-press: linear-gradient(#16161B 0%, #09090D 100%) !important;
-  /* lower, more elegant keybed (was clamp(92px,26dvh,188px)) */
-  --key-h: clamp(64px, 16dvh, 132px) !important;
+  /* rc2-169: keybed raised per device feedback (was clamp(64px,16dvh,132px)) —
+     more vertical presence + longer keys, filling the unused space above the keys. */
+  --key-h: clamp(80px, 20dvh, 164px) !important;
 }
 /* front lip of a white key — was a cream edge; now a cool, crisp grey */
 .view[data-view="learn"] .key--white::before {
@@ -742,4 +743,28 @@ html[data-view="learn"][data-keyboard="hidden"] .app {
 .view[data-view="learn"] .mf__footer .mf__btn--pause:hover {
   background: var(--powder-edge) !important;
   color: var(--midnight) !important;
+}
+
+/* ========================================================================
+   rc2-169 — BUILD CANARY (diagnostic, intentionally visible).
+   If you can read "KeyMaster rc2-169" in the bottom-right corner, THIS exact
+   cockpit.css is live on the device — so the blue buttons / slim header /
+   grey-area fixes are also live. If the stamp is ABSENT, the new CSS is NOT
+   being served (stale cache or the upload didn't replace the file): that is the
+   real fault to chase, not the rules. Tell me which you see and we proceed.
+   (Trivially removable once the pipeline is confirmed.)
+   ======================================================================== */
+body::after {
+  content: "KeyMaster rc2-169";
+  position: fixed;
+  right: 3px;
+  bottom: 1px;
+  z-index: 2147483647;
+  font: 600 9px/1 ui-monospace, monospace;
+  letter-spacing: .02em;
+  color: #285FA6;
+  background: rgba(255,255,255,.80);
+  padding: 2px 5px;
+  border-radius: 3px;
+  pointer-events: none;
 }
