@@ -780,11 +780,20 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       const resuming = !!(progress && (((progress.get('learnLesson') || 0) > 0)
         || (Array.isArray(progress.get('learnCompleted')) && progress.get('learnCompleted').length > 0)));
       const c0 = steps[index];
-      if (!resuming && c0 && Array.isArray(c0.say) && c0.say.length) {
-        speakCard(c0, undefined, { source: 'greeting' });   // spoken Course introduction (existing MP3s)
-      } else {
-        audio.say((resuming ? 'greeting.back.' : 'greeting.') + tod, pendingGreeting, { source: 'greeting', once: true });
-      }
+      // Hold Jack's welcome until the splash flourish has rung out, so the spoken
+      // line follows the flourish instead of overlapping it. Only the audio is
+      // deferred; state (pendingGreeting/greeted) settles now. SpeechSynthesis was
+      // primed in-gesture (app.js ensureAudio), so the deferred utterance is allowed
+      // to play on mobile. entryAudioWaitMs() returns 0 when no flourish is in flight.
+      const speakWelcome = () => {
+        if (!resuming && c0 && Array.isArray(c0.say) && c0.say.length) {
+          speakCard(c0, undefined, { source: 'greeting' });   // spoken Course introduction (existing MP3s)
+        } else {
+          audio.say((resuming ? 'greeting.back.' : 'greeting.') + tod, pendingGreeting, { source: 'greeting', once: true });
+        }
+      };
+      const _gw = entryAudioWaitMs();
+      if (_gw > 0) setTimeout(speakWelcome, _gw); else speakWelcome();
       if (progress && c0) progress.addToSet('heardNarration', `narr:${c0.title}`);
       pendingGreeting = null;
       greeted = true;
@@ -887,9 +896,19 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
         afterDemo();
       }
     };
-    const afterSpeech = () => { if (alive()) seqTimer = setTimeout(doDemo, Math.max(gapBeforeDemo(c), entryAudioWaitMs())); };
-    if (skipSpeech) afterSpeech();
-    else speakCard(c, afterSpeech, opts);
+    const afterSpeech = () => { if (alive()) seqTimer = setTimeout(doDemo, gapBeforeDemo(c)); };
+    // Hold the whole speak->demo sequence until the splash flourish has rung out, so
+    // neither Jack's line nor the demo overlaps it (covers a resumed card whose intro
+    // would otherwise speak over the flourish). Only the first card after entry waits
+    // — entryAudioWaitMs() returns 0 once the flourish is done. SpeechSynthesis was
+    // primed in-gesture (app.js) so the deferred spoken line still plays on mobile.
+    const startSeq = () => {
+      if (!alive()) return;
+      if (skipSpeech) afterSpeech();
+      else speakCard(c, afterSpeech, opts);
+    };
+    const _sw = entryAudioWaitMs();
+    if (_sw > 0) { seqTimer = setTimeout(startSeq, _sw); } else { startSeq(); }
   }
 
   // ---- Lesson-control state machine (learn only) ---------------------------

@@ -127,8 +127,8 @@ const VIEW_REGISTRY = {
   },
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-184',
-    load: () => import('./foundations.js?v=rc2-184'),
+    src: './foundations.js?v=rc2-185',
+    load: () => import('./foundations.js?v=rc2-185'),
   },
   scales: {
     slot: 'scales',
@@ -148,8 +148,8 @@ const VIEW_REGISTRY = {
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-184',
-    load: () => import('./foundations.js?v=rc2-184'),
+    src: './foundations.js?v=rc2-185',
+    load: () => import('./foundations.js?v=rc2-185'),
   },
 };
 
@@ -552,7 +552,7 @@ class KeyMasterApp {
     if (!overlay || !body) return;
     overlay.hidden = false;
     body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Loading the journey\u2026</p>';
-    import('./foundations.js?v=rc2-184').then((F) => {
+    import('./foundations.js?v=rc2-185').then((F) => {
       const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
       const chapterAt = (typeof F.chapterAtIndex === 'function') ? F.chapterAtIndex : null;
       if (!steps.length || !chapterAt) { body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Course map unavailable right now.</p>'; return; }
@@ -700,6 +700,7 @@ class KeyMasterApp {
       const pianoFallback = new PianoSynth(ctx, { volume: 0.8 });
       const coursePiano = createCoursePiano({ basePath: 'assets/piano/salamander-lite', volume: 0.85 });
       this.coursePiano = coursePiano;   // kept so _wireSound can lazy-init after unlock
+      this.pianoFallback = pianoFallback;   // splash flourish plays through this directly (short 0.18s release)
       this.piano = {
         limiter: pianoFallback.limiter,                 // routed to the master bus below
         noteOn: (m, v, t) => {
@@ -804,6 +805,14 @@ class KeyMasterApp {
     const ensureAudio = () => {
       if (!unlocked) {
         unlockAudio(); unlocked = true; this._playFlourish();
+        // Prime the browser TTS inside this gesture too, so Jack's spoken welcome —
+        // which is held until AFTER the flourish (foundations.js) — is still allowed
+        // to play on mobile. A muted empty utterance unlocks SpeechSynthesis silently.
+        try {
+          if (typeof window !== 'undefined' && window.speechSynthesis && typeof SpeechSynthesisUtterance !== 'undefined') {
+            const _u = new SpeechSynthesisUtterance(' '); _u.volume = 0; window.speechSynthesis.speak(_u);
+          }
+        } catch (_) { /* no-op */ }
         // Lazy-load the Course sampled grand now that the context is unlocked.
         // Fire-and-forget: any failure (missing samples / decode error) simply
         // leaves the rc2-163 synth fallback in place. Routes into the shared bus.
@@ -840,6 +849,12 @@ class KeyMasterApp {
    */
   _playFlourish() {
     if (!this.piano || this._flourishPlayed || this._suppressFlourish) return;
+    // Diagnostic escape: localStorage km_flourish='off' silences the splash flourish
+    // entirely (to isolate any other entry sound). Marks it played so it can't re-arm,
+    // and reserves NO entry-audio window, so the Course proceeds normally.
+    try {
+      if (typeof localStorage !== 'undefined' && localStorage.getItem('km_flourish') === 'off') { this._flourishPlayed = true; return; }
+    } catch (_) { /* no-op */ }
     const ctx = getAudioContext();
     if (!ctx) return;
     // Entry-audio handoff: reserve a short window so the Course holds its first
@@ -850,7 +865,7 @@ class KeyMasterApp {
     // set, i.e. a real keypress — so a normal note never reserves the window.)
     try {
       const _nowMs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
-      if (typeof window !== 'undefined') window.__kmEntryAudio = { flourishUntil: _nowMs + 2000 };
+      if (typeof window !== 'undefined') window.__kmEntryAudio = { flourishUntil: _nowMs + 1200 };
     } catch (_) { /* no-op */ }
     if (ctx.state !== 'running') {
       // unlockAudio()'s resume() is async and is usually still pending when this
@@ -866,19 +881,22 @@ class KeyMasterApp {
       return;
     }
     this._flourishPlayed = true;
+    this._entryAudioInProgress = true;   // explicit: the splash flourish owns the entry channel
     try {
-      // Scheduled slightly ahead so each note's attack ramps cleanly from silence.
-      // Two notes only, kept very short: D4, then A4 a moment later — the lift.
-      const t = ctx.currentTime + 0.12;
-      this.piano.noteOn(62, 50, t);            // D4
-      this.piano.noteOff(62, t + 1.5);
-      this.piano.noteOn(69, 56, t + 0.26);     // A4 — the rising fifth
-      this.piano.noteOff(69, t + 1.8);
-      // Non-invasive verification hook (console only, no UI). The sampler is usually
-      // still loading on the first gesture, so the flourish rides the fallback voice;
-      // later Course notes use Salamander once it is ready.
-      console.info('[KeyMaster] flourish: D4->A4 played via',
-        (this.coursePiano && this.coursePiano.isReady && this.coursePiano.isReady()) ? 'Salamander' : 'fallback voice');
+      // Splash-specific voice + strictly-sequential timing. The flourish is played
+      // ONLY through the pianoVoice synth (this.pianoFallback), whose note release is
+      // a short 0.18s — NOT through the router, because the Salamander grand's 0.7s
+      // release would smear the two notes into a sustained chord (the blurred entry
+      // we are fixing). The rc2-166 Salamander baseline is untouched; this only
+      // chooses which voice the splash uses. D4 sounds and is FULLY released before
+      // A4 begins, so the two notes can never overlap.
+      const v = this.pianoFallback || this.piano;
+      const t = ctx.currentTime + 0.10;
+      v.noteOn(62, 50, t);                 // D4
+      v.noteOff(62, t + 0.30);             // ~0.18s release -> silent by ~t+0.51
+      v.noteOn(69, 56, t + 0.62);          // A4 — the rising fifth, only AFTER D4 has gone
+      v.noteOff(69, t + 0.82);             // ~0.18s release -> silent by ~t+1.03
+      console.info('[KeyMaster] flourish: clean sequential D4 -> A4 via pianoVoice (splash-specific)');
     } catch (e) { console.info('[KeyMaster] flourish skipped:', (e && e.message) ? e.message : e); }
   }
 
@@ -1278,7 +1296,7 @@ class KeyMasterApp {
       const cta = this.root.querySelector('#learn-cta');
       if (cta) cta.textContent = started ? 'Continue the Foundation Course' : 'Start the Foundation Course';
       set('#course-hero-title', started ? 'Continue the Foundation Course' : COURSE_NAME);
-      import('./foundations.js?v=rc2-184').then((F) => {
+      import('./foundations.js?v=rc2-185').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
         const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
