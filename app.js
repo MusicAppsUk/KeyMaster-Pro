@@ -20,7 +20,7 @@ import { createKeyboardCompass } from './keyboardCompass.js?v=rc2-139';
 import { MidiRouter } from './midiRouter.js';
 import { getAudioContext, unlockAudio, isAudioSupported } from './audioContext.js';
 import { routeToMasterBus, getMasterBus } from './audioBus.js';
-import { runWelcomeExperience, getDisplayName, flourishEnabled } from './welcomeExperience.js';
+import { runWelcomeExperience, getDisplayName } from './welcomeExperience.js';
 import { Synth } from './synth.js';
 import { PianoSynth } from './pianoVoice.js';
 import { createCoursePiano } from './coursePianoSampler.js';
@@ -336,9 +336,12 @@ class KeyMasterApp {
         this._requestImmersiveFullscreen();
       });
       enterEl?.addEventListener('click', () => {
-        // Fire the fullscreen request FIRST, synchronously inside the tap, before
-        // any transition/timer consumes the user activation. Never blocks entry.
-        this._requestImmersiveFullscreen();
+        // Ordering (Android/Chrome): audio unlocks on the pointerdown that precedes
+        // this click (the once-only ensureAudio), so the resume-aware flourish is
+        // already in flight. Fullscreen is best-effort and must not block entry; it
+        // is wrapped so any failure cannot stop the route, and leave() runs
+        // unconditionally to carry us into #/learn.
+        try { this._requestImmersiveFullscreen(); } catch { /* never blocks routing */ }
         leave('#/learn');
       });
       document.getElementById('fd-rooms')?.addEventListener('click', () => leave(null));
@@ -812,9 +815,21 @@ class KeyMasterApp {
    */
   _playFlourish() {
     if (!this.piano || this._flourishPlayed || this._suppressFlourish) return;
-    if (!flourishEnabled()) return;
     const ctx = getAudioContext();
-    if (!ctx || ctx.state !== 'running') return;     // not yet unlocked → a later gesture retries
+    if (!ctx) return;
+    if (ctx.state !== 'running') {
+      // unlockAudio()'s resume() is async and is usually still pending when this
+      // first runs (the unlock listener fires it without awaiting). Resume and
+      // retry ONCE when it lands — a one-shot guard prevents any loop. The old
+      // code returned here and never came back (the unlock listener is once-only),
+      // which is why the flourish was silent.
+      if (!this._flourishResumeTried) {
+        this._flourishResumeTried = true;
+        console.info('[KeyMaster] flourish: context suspended - resuming, will retry once');
+        ctx.resume().then(() => this._playFlourish()).catch(() => { /* gesture insufficient */ });
+      }
+      return;
+    }
     this._flourishPlayed = true;
     try {
       // Scheduled slightly ahead so each note's attack ramps cleanly from silence.
@@ -824,7 +839,12 @@ class KeyMasterApp {
       this.piano.noteOff(62, t + 1.5);
       this.piano.noteOn(69, 56, t + 0.26);     // A4 — the rising fifth
       this.piano.noteOff(69, t + 1.8);
-    } catch { /* audio not ready; ignore */ }
+      // Non-invasive verification hook (console only, no UI). The sampler is usually
+      // still loading on the first gesture, so the flourish rides the fallback voice;
+      // later Course notes use Salamander once it is ready.
+      console.info('[KeyMaster] flourish: D4->A4 played via',
+        (this.coursePiano && this.coursePiano.isReady && this.coursePiano.isReady()) ? 'Salamander' : 'fallback voice');
+    } catch (e) { console.info('[KeyMaster] flourish skipped:', (e && e.message) ? e.message : e); }
   }
 
   /** Toggle the browser Fullscreen API to hide tablet UI chrome. */

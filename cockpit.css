@@ -299,7 +299,7 @@ h1, h2, h3, h4 { color: var(--ivory); }
    8. FRONT PAGE — readable, white-blue, gold removed
    -------------------------------------------------------------------------- */
 /* ============================================================================
-   FRONT DOOR / SPLASH — calm Wedgwood-daylight doorway (rc2-181)
+   FRONT DOOR / SPLASH — calm Wedgwood-daylight doorway (rc2-182)
    Overrides the frozen theme.css concert-hall base. Scoped to .frontdoor/.fd-*.
    Shows ONLY: flourish · wordmark · tagline · Continue · Sign in. No gold, no
    dark, no technical controls. Engineered so Sign in is always on-screen.
@@ -313,6 +313,8 @@ h1, h2, h3, h4 { color: var(--ivory); }
   background: radial-gradient(120% 80% at 50% 6%, #FFFFFF 0%, #FBFCFE 46%, #EEF2F7 100%) !important;
   color: #2B2F36 !important; -webkit-font-smoothing: antialiased;
 }
+/* hidden must win over the display:flex above, or Continue can't dismiss the splash */
+.frontdoor[hidden] { display: none !important; }
 
 /* ---- soft-daylight stage (pure-CSS fallback; video optional) ---- */
 .fd-stage { position: absolute !important; inset: 0 !important; overflow: hidden !important; opacity: 1 !important; pointer-events: none; }
@@ -329,9 +331,10 @@ h1, h2, h3, h4 { color: var(--ivory); }
   animation: fd-drift2 34s ease-in-out infinite alternate;
 }
 .fd-keys {
-  position: absolute; left: 0; right: 0; bottom: 0; height: 20vh; min-height: 90px; opacity: 0.5;
-  -webkit-mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,0.25) 55%, transparent 100%);
-          mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,0.25) 55%, transparent 100%);
+  position: absolute; left: 0; right: 0; bottom: 0; height: 23vh; min-height: 104px; opacity: 0.86; z-index: 1;
+  filter: drop-shadow(0 -7px 16px rgba(40,95,166,0.13));
+  -webkit-mask-image: linear-gradient(to top, #000 0%, #000 44%, rgba(0,0,0,0.5) 74%, transparent 100%);
+          mask-image: linear-gradient(to top, #000 0%, #000 44%, rgba(0,0,0,0.5) 74%, transparent 100%);
 }
 .fd-keys svg { width: 100%; height: 100%; display: block; }
 .fd-motes span {
@@ -348,6 +351,42 @@ h1, h2, h3, h4 { color: var(--ivory); }
 @keyframes fd-drift { from{ transform: translateX(-52%) translateY(-2%) scale(1);} to{ transform: translateX(-48%) translateY(2%) scale(1.06);} }
 @keyframes fd-drift2 { from{ transform: translateY(0) scale(1);} to{ transform: translateY(-3%) scale(1.08);} }
 @keyframes fd-rise { 0%{opacity:0; transform:translateY(0);} 14%{opacity:0.85;} 86%{opacity:0.4;} 100%{opacity:0; transform:translateY(-58vh);} }
+
+/* ---- light rays + drifting notes (atmosphere, behind the z-index:2 content) ---- */
+.fd-rays {
+  position: absolute; left: -15%; right: -15%; top: -20%; height: 86%; pointer-events: none;
+  background:
+    linear-gradient(118deg, transparent 20%, rgba(255,255,255,0.42) 31%, transparent 41%),
+    linear-gradient(118deg, transparent 50%, rgba(206,224,244,0.34) 60%, transparent 69%),
+    linear-gradient(118deg, transparent 76%, rgba(255,255,255,0.30) 84%, transparent 92%);
+  filter: blur(7px);
+  -webkit-mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 86%);
+          mask-image: linear-gradient(to bottom, rgba(0,0,0,0.9) 0%, transparent 86%);
+  animation: fd-rays-drift 32s ease-in-out infinite alternate;
+}
+@keyframes fd-rays-drift {
+  from { transform: translateX(-2.5%) rotate(-0.6deg); opacity: 0.82; }
+  to   { transform: translateX(2.5%) rotate(0.6deg); opacity: 1; }
+}
+.fd-notes { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.fd-fly { position: absolute; height: auto; opacity: 0; will-change: transform, opacity; }
+.fd-fly ellipse { fill: #5E86B8; }
+.fd-fly line { stroke: #5E86B8; stroke-linecap: round; }
+.fd-fly--1 { left: 18%; bottom: 20%; width: clamp(20px, 2.7vw, 28px); animation: fd-float-a 20s ease-in-out 1.2s infinite; }
+.fd-fly--2 { left: 48%; bottom: 16%; width: clamp(15px, 2vw, 21px); animation: fd-float-b 25s ease-in-out 7s infinite; }
+.fd-fly--3 { left: 75%; bottom: 24%; width: clamp(17px, 2.3vw, 24px); animation: fd-float-a 22.5s ease-in-out 13s infinite; }
+@keyframes fd-float-a {
+  0%   { opacity: 0; transform: translateY(0) translateX(0) rotate(-5deg); }
+  16%  { opacity: 0.30; }
+  80%  { opacity: 0.16; }
+  100% { opacity: 0; transform: translateY(-34vh) translateX(10px) rotate(4deg); }
+}
+@keyframes fd-float-b {
+  0%   { opacity: 0; transform: translateY(0) translateX(0) rotate(4deg); }
+  20%  { opacity: 0.26; }
+  78%  { opacity: 0.14; }
+  100% { opacity: 0; transform: translateY(-31vh) translateX(-12px) rotate(-4deg); }
+}
 
 /* hide any leftover concert-hall stage / content from the frozen base */
 .fd-aurora, .fd-spot, .fd-piano, .fd-vignette,
@@ -372,6 +411,7 @@ h1, h2, h3, h4 { color: var(--ivory); }
 .fd-note--2 { opacity: 0; animation: fd-lift 0.7s cubic-bezier(.2,.7,.2,1) 0.9s forwards; }
 @keyframes fd-draw { to { stroke-dashoffset: 0; } }
 @keyframes fd-lift { from{ opacity:0; transform: translateY(7px);} to{ opacity:1; transform: translateY(0);} }
+.fd-staff line { stroke: #A6C0DD; stroke-width: 1; opacity: 0.6; }
 
 .frontdoor__wordmark {
   margin: 2.4rem 0 0 0 !important; font-family: var(--font-display) !important;
@@ -435,7 +475,7 @@ h1, h2, h3, h4 { color: var(--ivory); }
   .fd-keys { display: none !important; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fd-pool, .fd-wash, .fd-motes span, .fd-slur, .fd-note--2, .frontdoor__inner > * { animation: none !important; }
+  .fd-pool, .fd-wash, .fd-motes span, .fd-rays, .fd-fly, .fd-slur, .fd-note--2, .frontdoor__inner > * { animation: none !important; }
   .fd-slur { stroke-dashoffset: 0 !important; }
   .fd-note--2 { opacity: 1 !important; }
   .frontdoor__enter, .frontdoor__signin { transition: none !important; }
@@ -859,7 +899,7 @@ html[data-view="learn"][data-keyboard="hidden"] .app {
    (Trivially removable once the pipeline is confirmed.)
    ======================================================================== */
 html::after {
-  content: "rc2-181 " attr(data-view) "/" attr(data-keyboard);
+  content: "rc2-182 " attr(data-view) "/" attr(data-keyboard);
   position: fixed;
   right: 3px;
   bottom: 1px;
