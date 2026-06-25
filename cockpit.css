@@ -755,7 +755,7 @@ html[data-view="learn"][data-keyboard="hidden"] .app {
    (Trivially removable once the pipeline is confirmed.)
    ======================================================================== */
 html::after {
-  content: "rc2-170 " attr(data-view) "/" attr(data-keyboard);
+  content: "rc2-171 " attr(data-view) "/" attr(data-keyboard);
   position: fixed;
   right: 3px;
   bottom: 1px;
@@ -800,4 +800,51 @@ html[data-view="learn"] #learn-heading { display: none !important; }
 .view[data-view="learn"] .mf__title {
   font-size: clamp(1.1rem, 3vw, 1.35rem) !important;
   margin-bottom: .5rem !important;
+}
+
+/* ========================================================================
+   rc2-171 — RESPONSIVE GEOMETRY pass (palette untouched).
+   Goal: the cockpit holds across phones (portrait/landscape), squarer and wide
+   tablets, Chromebooks, laptops, browser and installed/fullscreen — using
+   flexible grid/flex, minmax(0,1fr) centre, clamp()/dvh keyboard, safe-area
+   insets, and NO large fixed reserved areas. No colour tokens are changed.
+   ======================================================================== */
+
+/* --- Splash / home: never clip the Sign-in seam in landscape ------------- */
+/* The home centres its content (place-items:center). When content is taller
+   than a short/landscape viewport, centring pushes the bottom seam out of
+   reach. "safe" centring falls back to start on overflow; the media query
+   guarantees the same on short screens for browsers that ignore "safe". */
+.view--launcher.is-active { align-content: safe center; align-items: safe center; }
+@media (max-height: 700px) {
+  .view--launcher.is-active { align-content: start; align-items: start; }
+}
+
+/* --- Top bar: never clip on narrow widths -------------------------------- */
+/* The breadcrumb already truncates (rc2-168); make sure its container can
+   actually shrink so the hamburger / MIDI / three-dot never get pushed off. */
+.app__bar { min-width: 0; }
+html[data-view="learn"] .brand-wrap { flex: 0 1 auto; min-width: 0; overflow: hidden; }
+
+/* --- Short viewports (landscape phones, short laptops): keep the WHOLE
+   cockpit on screen — slimmer bar, shorter keybed, tighter transport — so the
+   lesson keeps usable room and nothing is pushed off. The centre stays
+   minmax(0,1fr); only the fixed chrome shrinks. ---------------------------- */
+@media (max-height: 520px) {
+  html[data-view="learn"] { --bar-h: 40px; }
+  .piano { --key-h: clamp(54px, 17dvh, 90px) !important; }   /* keybed stays playable, not tall */
+  .view[data-view="learn"] .mf__title { font-size: clamp(1rem, 2.6vw, 1.2rem) !important; }
+  .view[data-view="learn"] .mf__footer {
+    padding-top: .25rem !important;
+    padding-bottom: max(.25rem, env(safe-area-inset-bottom)) !important;
+  }
+  .view[data-view="learn"] .mf__footer .mf__btn {
+    min-height: 32px !important; padding: .26rem .72rem !important; font-size: .86rem !important;
+  }
+}
+
+/* --- Very wide screens (laptops/Chromebooks): keep the lesson readable, not
+   stretched edge-to-edge. The card already caps at 60rem; just centre it. --- */
+@media (min-width: 1100px) {
+  .view[data-view="learn"] .mf__card { margin-left: auto !important; margin-right: auto !important; }
 }
