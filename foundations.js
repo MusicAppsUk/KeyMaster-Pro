@@ -23,7 +23,7 @@
 // ("Exactly — that is Middle C"), wrong notes are named and gently guided, and
 // only genuine free-exploration is acknowledged as exploration.
 
-import { createTutorVoice } from './tutorVoice.js?v=rc2-74';
+import { createTutorVoice } from './tutorVoice.js?v=rc2-189';
 import { createTutorAudio } from './tutorAudio.js?v=rc2-107';
 import { createVoiceControl } from './voiceControl.js?v=rc2-127';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-116';
@@ -353,18 +353,17 @@ export default function createView(ctx) {
   const learnMode = ctx.route === 'learn';
   const progress = (learnMode && ctx.progress) ? ctx.progress : null;
   const voice = learnMode
-    ? createTutorVoice({ rate: 0.9, pitch: 0.96, volume: 0.7, lang: 'en-GB', preferFemale: true })
+    ? createTutorVoice({ rate: 0.92, pitch: 0.92, volume: 0.85, lang: 'en-GB', preferFemale: false, preferMale: true })
     : null;
   // Premium-voice-first layer: plays a licensed audio file per stable line ID when one
-  // exists, else holds silently while the on-screen line shows. The browser TTS path
-  // is DISABLED (rc2-187): with no recorded pack, TTS selected a random en-GB voice —
-  // a female one on this device (tutorVoice prefers female) — and presented it AS Jack.
-  // Jack must have ONE approved identity, so a generic browser voice must never speak
-  // under his name. With this false, every line routes to silentHold: Jack is silent
-  // and his written line stays on screen. The moment the approved recorded voice ships
-  // (voice/en-GB/*.mp3 + re-enabling setPack above), audible Jack returns automatically
-  // (resolution order: premium recorded file -> [TTS stays off] -> on-screen captions).
-  const TTS_DEV_FALLBACK = false;
+  // exists, else uses a CONTROLLED temporary device voice. rc2-189: TTS is re-enabled as
+  // an explicitly TEMPORARY voice so Jack speaks now. It is controlled, not random — the
+  // resolver is set preferMale (Jack is male) and never knowingly selects a female voice;
+  // if no acceptable male/non-female voice exists it stays silent and the line shows as
+  // text. Status is reported as 'temporary' and logged "Jack voice: temporary device
+  // voice". The approved recorded voice (voice/en-GB/*.mp3 + re-enabling setPack above)
+  // takes over automatically the instant it ships (recorded file -> temporary TTS -> text).
+  const TTS_DEV_FALLBACK = true;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
   const KM_BUILD = 'rc2-127';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
@@ -751,30 +750,38 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   //                 deliberately blocked -> Jack is silent, his written line shows
   //   unavailable   the speech layer itself failed to construct
   function recordedPackActive() { return !!(audio && audio.isPremiumActive && audio.isPremiumActive()); }
-  function audibleJackAvailable() { return recordedPackActive(); }   // TTS is blocked, so only a recorded pack is audible
+  function ttsVoiceUsable() { return !!(TTS_DEV_FALLBACK && voice && voice.available && voice.available() && (!voice.hasUsableVoice || voice.hasUsableVoice())); }
+  function audibleJackAvailable() { return recordedPackActive() || ttsVoiceUsable(); }
   function jackVoiceStatus() {
     if (!audio) return 'unavailable';
     if (!voiceOn) return 'muted';
-    if (recordedPackActive()) return 'ready';
-    return 'missing-files';
+    if (recordedPackActive()) return 'ready';          // approved recorded Jack voice
+    if (ttsVoiceUsable()) return 'temporary';          // controlled temporary device voice (male-preferring)
+    return 'missing-files';                            // no recorded files + no acceptable voice -> text only
   }
   function reportJackVoice(lineId, text) {
     const status = jackVoiceStatus();
+    const audioPlayed = (status === 'ready' || status === 'temporary');   // both actually produce sound
+    const pick = (typeof window !== 'undefined' && window.__kmVoicePick) || null;
     const info = {
       status,
       line: lineId || null,
       text: text || null,
-      audioPlayed: status === 'ready',     // NEVER claim audio when none actually plays
+      audioPlayed,                          // honest: true only when sound actually plays
       recordedPackActive: recordedPackActive(),
-      ttsBlocked: !TTS_DEV_FALLBACK,        // true = browser TTS deliberately disabled (no random voice as Jack)
+      temporaryVoice: status === 'temporary',
+      voice: pick,                          // which device voice was selected (name / lang / gender)
+      ttsBlocked: !TTS_DEV_FALLBACK,
       at: Date.now(),
     };
     try {
       if (typeof window !== 'undefined') window.__kmJackVoice = info;
       if (typeof console !== 'undefined' && console.info) {
-        console.info('[KeyMaster] Jack voice:', status, '| line:', info.line,
-          '| audioPlayed:', info.audioPlayed, '| recordedPack:', info.recordedPackActive,
-          '| ttsBlocked:', info.ttsBlocked);
+        let label;
+        if (status === 'ready') label = 'Jack voice: approved Jack voice';
+        else if (status === 'temporary') label = 'Jack voice: temporary device voice' + (pick && pick.name ? ` (${pick.name})` : '');
+        else label = `Jack voice unavailable: ${status}`;
+        console.info('[KeyMaster] ' + label, '| line:', info.line, '| audioPlayed:', audioPlayed);
       }
     } catch (_) { /* no-op */ }
     return status;
@@ -792,11 +799,10 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       msg = 'Captions are on. The tutor begins speaking the moment you play or continue.';
       showStart = false;
     } else {
-      // Don't claim "voice on" when nothing can actually play. Be honest about the
-      // missing recorded pack so the learner (and dev log) know why it's silent.
-      msg = recordedPackActive()
-        ? 'Tutor voice on. Captions on.'
-        : 'Recorded tutor voice isn\u2019t in this build yet \u2014 the lesson shows on screen as text.';
+      // Honest status across all three audible states.
+      if (recordedPackActive()) msg = 'Tutor voice on. Captions on.';
+      else if (ttsVoiceUsable()) msg = 'Tutor voice on (temporary device voice). Captions on.';
+      else msg = 'Recorded tutor voice isn\u2019t in this build yet \u2014 the lesson shows on screen as text.';
     }
     statusEl.textContent = msg;
     if (startBtn) startBtn.style.display = showStart ? '' : 'none';
@@ -806,22 +812,16 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   function speakPending() {
     if (!pendingGreeting) { updateVoiceStatus(); return; }
     if (voice && voiceOn) {
-      // The named time-of-day greeting MP3s aren't part of the shipped pack yet.
-      // Rather than play a missing file and fall silent, speak the welcome card's
-      // own recorded beats — Jack reliably introduces the Course at the start
-      // using voice files that already exist. (Named greeting returns once those
-      // files are generated.)
-      const gh = new Date().getHours();
-      const tod = (gh >= 5 && gh < 12) ? 'morning' : (gh >= 12 && gh < 18) ? 'afternoon' : 'evening';
       const resuming = !!(progress && (((progress.get('learnLesson') || 0) > 0)
         || (Array.isArray(progress.get('learnCompleted')) && progress.get('learnCompleted').length > 0)));
       const c0 = steps[index];
-      // Speak Jack's welcome now, inside the entry flow (no flourish to wait for).
-      if (!resuming && c0 && Array.isArray(c0.say) && c0.say.length) {
-        speakCard(c0, undefined, { source: 'greeting' });   // spoken Course introduction (TTS until recordings ship)
-      } else {
-        audio.say((resuming ? 'greeting.back.' : 'greeting.') + tod, pendingGreeting, { source: 'greeting', once: true });
-      }
+      // rc2-189: speak Jack's exact entry line (pendingGreeting) via the audio layer —
+      // NOT the welcome card's own beats — so the tutor introduces himself consistently.
+      // Record the honest voice state, then mark the welcome narrated so the card's
+      // auto-narration doesn't re-speak it.
+      reportJackVoice(resuming ? 'greeting.back' : 'greeting.entry', pendingGreeting);
+      audio.say(resuming ? 'greeting.back' : 'greeting.entry', pendingGreeting, { source: 'greeting', once: true });
+      welcomeAutoPlayed = true;
       if (progress && c0) progress.addToSet('heardNarration', `narr:${c0.title}`);
       pendingGreeting = null;
       greeted = true;
@@ -1593,13 +1593,15 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
         // "Welcome to the course." and flows into Meet the keyboard. A genuine resume
         // gives a short "Welcome back, Tim." The Continue button is the resume CTA, so
         // the lesson page stays uncluttered (no "continue where you left off" line).
-        const greetText = started ? `Welcome back, ${LEARNER_NAME}.` : 'Welcome to the course.';
+        const greetText = started
+          ? `Welcome back, ${LEARNER_NAME}.`
+          : 'Welcome to the course. I\u2019m Jack. I\u2019ll guide you step by step.';
         if (greetingEl) greetingEl.textContent = greetText;
         if (!greeted) {
-          const c0 = steps[index];
-          const intro0 = (c0 && Array.isArray(c0.explain) && c0.explain[0]) ? c0.explain[0] : '';
-          const prompt0 = (c0 && c0.mode && c0.mode !== 'none' && c0.tryPrompt) ? c0.tryPrompt : '';
-          pendingGreeting = [greetText, intro0, prompt0].filter(Boolean).join(' ');
+          // rc2-189: Jack's exact entry line IS the greeting — shown above and spoken on
+          // the first gesture. The welcome card's own beats aren't spoken here; its written
+          // text still renders, and Foundation content (courseFoundation.js) is untouched.
+          pendingGreeting = greetText;
           suppressSpeakOnce = true;   // render won't auto-speak card 0; the greeting covers it
           // DETERMINISTIC OWNERSHIP: the welcome is spoken ONLY by an explicit user
           // gesture (Start / voice toggle / Continue / first key) via speakPending().

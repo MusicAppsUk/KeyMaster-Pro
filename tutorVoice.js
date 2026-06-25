@@ -30,6 +30,7 @@ export function createTutorVoice(opts = {}) {
     rate: 0.96, pitch: 1.0, volume: 1.0,   // original delivery (Chord-preserving defaults)
     lang: 'en-GB',                          // preferred language / accent tag
     preferFemale: false,                    // prefer a female voice within that language
+    preferMale: false,                      // prefer a MALE voice (Jack); never knowingly female
     ...opts,
   };
 
@@ -40,26 +41,55 @@ export function createTutorVoice(opts = {}) {
   // Heuristic female-voice match by name (the Web Speech API exposes no reliable gender
   // flag). Best-effort only — if a device ships no matching voice we fall back gracefully.
   const FEMALE_RE = /(female|samantha|serena|kate|fiona|karen|moira|tessa|stephanie|amelie|am\u00e9lie|anna|ava|allison|susan|victoria|zira|hazel|sonia|libby|catherine|martha|emma|joana|google uk english female)/i;
+  // Heuristic male-voice match. NOTE: "male" is a substring of "female", so a voice is
+  // treated as male ONLY if it is NOT female AND matches below. Best-effort by name.
+  const MALE_RE = /(\bmale\b|uk english male|us english male|daniel|arthur|george|oliver|james|thomas|harry|fred|albert|gordon|rishi|jamie|ryan|guy|aaron|liam|brian|nathan|reed)/i;
   function langMatch(v, tag) {
     try { return new RegExp(tag.replace('-', '[-_]'), 'i').test(v.lang || ''); }
     catch (_) { return false; }
   }
+  const isFemaleVoice = (v) => FEMALE_RE.test((v && v.name) || '');
+  const isMaleVoice = (v) => !isFemaleVoice(v) && MALE_RE.test((v && v.name) || '');
   function pickVoice() {
     try {
       const vs = window.speechSynthesis.getVoices() || [];
       if (!vs.length) return null;
-      const fem = (v) => !cfg.preferFemale || FEMALE_RE.test(v.name || '');
-      // Preference order: accent+female → accent → any English+female → any English → default.
-      const pools = [
-        vs.filter((v) => langMatch(v, cfg.lang) && fem(v)),
-        vs.filter((v) => langMatch(v, cfg.lang)),
-        vs.filter((v) => /^en/i.test(v.lang || '') && fem(v)),
-        vs.filter((v) => /^en/i.test(v.lang || '')),
-      ];
-      for (const pool of pools) if (pool.length) return pool[0];
-      return null;   // let the device pick its own default voice
+      let pools;
+      if (cfg.preferMale) {
+        // Jack is male. Prefer a male-named voice; NEVER knowingly pick a female one.
+        // If no non-female voice exists, return null so the caller shows text instead
+        // of presenting a wrong-gender Jack.
+        pools = [
+          vs.filter((v) => langMatch(v, cfg.lang) && isMaleVoice(v)),         // en-GB male (best)
+          vs.filter((v) => /^en/i.test(v.lang || '') && isMaleVoice(v)),      // any-English male
+          vs.filter((v) => langMatch(v, cfg.lang) && !isFemaleVoice(v)),      // en-GB, not female
+          vs.filter((v) => /^en/i.test(v.lang || '') && !isFemaleVoice(v)),   // any-English, not female
+        ];
+      } else {
+        const fem = (v) => !cfg.preferFemale || isFemaleVoice(v);
+        pools = [
+          vs.filter((v) => langMatch(v, cfg.lang) && fem(v)),
+          vs.filter((v) => langMatch(v, cfg.lang)),
+          vs.filter((v) => /^en/i.test(v.lang || '') && fem(v)),
+          vs.filter((v) => /^en/i.test(v.lang || '')),
+        ];
+      }
+      for (const pool of pools) {
+        if (pool.length) {
+          const picked = pool[0];
+          try {
+            if (typeof window !== 'undefined') {
+              window.__kmVoicePick = { name: picked.name, lang: picked.lang, male: isMaleVoice(picked), female: isFemaleVoice(picked) };
+            }
+          } catch (_) { /* no-op */ }
+          return picked;
+        }
+      }
+      try { if (typeof window !== 'undefined') window.__kmVoicePick = null; } catch (_) { /* no-op */ }
+      return null;   // preferMale: no acceptable (non-female) voice -> caller stays silent + shows text
     } catch (_) { return null; }
   }
+  function hasUsableVoice() { return !!pickVoice(); }
 
   // Spoken-music normaliser: browsers read "C#" as "C hash" and "Bb" oddly.
   // Convert note+accidental to learner-friendly spoken words. Visual notation is
@@ -83,6 +113,7 @@ export function createTutorVoice(opts = {}) {
       u.pitch = cfg.pitch;      // slight warmth
       u.volume = cfg.volume;    // softer, not in-your-face
       const v = pickVoice();
+      if (cfg.preferMale && !v) { if (fin) fin(); return; }   // no acceptable (non-female) voice for Jack -> stay silent; caller shows text
       if (v) u.voice = v;
       if (fin) {
         // Chain on completion; fire once whether it ends cleanly or errors, so a
@@ -121,6 +152,7 @@ export function createTutorVoice(opts = {}) {
 
   return {
     available: () => AVAILABLE,
+    hasUsableVoice,
     isEnabled: () => enabled,
     isUnlocked: () => unlocked,
     setEnabled(on) { enabled = !!on; if (!enabled) cancel(); },
