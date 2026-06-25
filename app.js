@@ -127,8 +127,8 @@ const VIEW_REGISTRY = {
   },
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-180',
-    load: () => import('./foundations.js?v=rc2-180'),
+    src: './foundations.js?v=rc2-183',
+    load: () => import('./foundations.js?v=rc2-183'),
   },
   scales: {
     slot: 'scales',
@@ -148,8 +148,8 @@ const VIEW_REGISTRY = {
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-180',
-    load: () => import('./foundations.js?v=rc2-180'),
+    src: './foundations.js?v=rc2-183',
+    load: () => import('./foundations.js?v=rc2-183'),
   },
 };
 
@@ -552,7 +552,7 @@ class KeyMasterApp {
     if (!overlay || !body) return;
     overlay.hidden = false;
     body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Loading the journey\u2026</p>';
-    import('./foundations.js?v=rc2-180').then((F) => {
+    import('./foundations.js?v=rc2-183').then((F) => {
       const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
       const chapterAt = (typeof F.chapterAtIndex === 'function') ? F.chapterAtIndex : null;
       if (!steps.length || !chapterAt) { body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Course map unavailable right now.</p>'; return; }
@@ -566,7 +566,13 @@ class KeyMasterApp {
       const curIdx = Number.isInteger(li) ? li : 0;
       const curChIdx = chapterAt(curIdx).chIdx;
       body.innerHTML = '';
-      let lastStage = null, lastCourse = null;
+      // Name maps for stage/level headers + the locked future Key Levels (single
+      // source = foundations.js); degrade gracefully if a map is absent.
+      const FND = Array.isArray(F.FOUNDATION_STAGES) ? F.FOUNDATION_STAGES : [];
+      const KML = Array.isArray(F.KEYMASTER_LEVELS) ? F.KEYMASTER_LEVELS : [];
+      const fndName = (n) => (FND.find((x) => x.stage === n) || {}).name || '';
+      const kmlName = (n) => (KML.find((x) => x.level === n) || {}).name || '';
+      let lastStage = null, lastCourse = null, sawKeymaster = false;
       chapters.forEach((ch) => {
         const course = ch.course || 'foundation';
         // A new top-level course (the KeyMaster Course) gets its own section header.
@@ -574,18 +580,20 @@ class KeyMasterApp {
         // map is unchanged; only the appended KeyMaster section is labelled differently.
         if (course !== lastCourse) {
           lastCourse = course; lastStage = null;
-          if (course === 'keymaster') {
-            const ch2 = document.createElement('p'); ch2.className = 'km-map__course-name';
-            ch2.textContent = 'KeyMaster Course';
-            ch2.setAttribute('style', 'margin:1.3rem 0 0.15rem;font-size:0.72rem;letter-spacing:0.22em;text-transform:uppercase;color:var(--brass-bright);opacity:0.92;');
-            body.appendChild(ch2);
-          }
+          if (course === 'keymaster') sawKeymaster = true;
+          const ch2 = document.createElement('p'); ch2.className = 'km-map__course-name';
+          ch2.textContent = (course === 'keymaster') ? 'KeyMaster Course' : 'Foundation Course';
+          body.appendChild(ch2);
         }
         if (ch.stage !== lastStage) {
           lastStage = ch.stage;
           const wrap = document.createElement('div'); wrap.className = 'km-map__stage';
           const sh = document.createElement('p'); sh.className = 'km-map__stage-name';
-          sh.textContent = (course === 'keymaster') ? `Key Level ${ch.stage}` : `Stage ${ch.stage}`;
+          if (course === 'keymaster') {
+            const nm = kmlName(ch.stage); sh.textContent = `Key Level ${ch.stage}` + (nm ? ` \u2014 ${nm}` : '');
+          } else {
+            const nm = fndName(ch.stage); sh.textContent = `Foundation Stage ${ch.stage}` + (nm ? ` \u2014 ${nm}` : '');
+          }
           wrap.appendChild(sh); body.appendChild(wrap);
         }
         const row = document.createElement('button');
@@ -602,6 +610,23 @@ class KeyMasterApp {
         });
         body.lastChild.appendChild(row);
       });
+      // Future Key Levels (2-8): locked "coming soon" bands under KeyMaster Course.
+      // Presentation only - not clickable, no progress interaction, no lessons.
+      const locked = KML.filter((l) => l.status !== 'available');
+      if (locked.length) {
+        if (!sawKeymaster) {
+          const ch2 = document.createElement('p'); ch2.className = 'km-map__course-name';
+          ch2.textContent = 'KeyMaster Course'; body.appendChild(ch2);
+        }
+        locked.forEach((l) => {
+          const wrap = document.createElement('div'); wrap.className = 'km-map__stage is-locked';
+          const sh = document.createElement('p'); sh.className = 'km-map__stage-name';
+          sh.textContent = `Key Level ${l.level} \u2014 ${l.name}`;
+          const soon = document.createElement('span'); soon.className = 'km-map__soon'; soon.textContent = 'Coming soon';
+          sh.appendChild(soon);
+          wrap.appendChild(sh); body.appendChild(wrap);
+        });
+      }
     }).catch((err) => {
       body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Course map unavailable right now.</p>';
       console.info('[KeyMaster] course map skipped:', err?.message ?? err);
@@ -1243,7 +1268,7 @@ class KeyMasterApp {
       const cta = this.root.querySelector('#learn-cta');
       if (cta) cta.textContent = started ? 'Continue the Foundation Course' : 'Start the Foundation Course';
       set('#course-hero-title', started ? 'Continue the Foundation Course' : COURSE_NAME);
-      import('./foundations.js?v=rc2-180').then((F) => {
+      import('./foundations.js?v=rc2-183').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
         const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];

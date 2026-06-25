@@ -517,6 +517,23 @@ h1, h2, h3, h4 { color: var(--ivory); }
 }
 .km-map__close:hover, .km-menu__close:hover, .km-signin__close:hover { background: var(--powder-soft) !important; }
 .km-provider { background: #FFFFFF !important; color: var(--ivory) !important; border: 1px solid var(--ebony-edge-2) !important; }
+/* rc2-183: two clearly separate course areas (Foundation Course / KeyMaster Course),
+   named stages + levels, and locked "coming soon" Key Levels. Presentation only. */
+.km-map__course-name {
+  margin: 1.5rem 0 0.55rem !important; font-family: var(--font-display) !important;
+  font-size: 1.05rem !important; font-weight: 600 !important; letter-spacing: 0.01em !important;
+  color: #285FA6 !important;
+}
+.km-map__course-name:first-child { margin-top: 0.25rem !important; }
+.km-map__soon {
+  font-size: 0.62rem !important; font-weight: 600 !important; letter-spacing: 0.06em !important;
+  text-transform: uppercase !important; color: #5C6573 !important;
+  background: rgba(40,95,166,0.10) !important; padding: 0.12rem 0.5rem !important;
+  border-radius: 999px !important; white-space: nowrap !important;
+}
+.km-map__stage.is-locked { opacity: 0.66 !important; }
+.km-map__stage.is-locked .km-map__stage-name { color: #5C6573 !important; }
+.km-map__stage.is-locked .km-map__stage-name::after { display: none !important; }
 
 /* ----------------------------------------------------------------------------
    11. KEYBOARD FEEDBACK — green correct / red wrong / royal target
@@ -899,7 +916,7 @@ html[data-view="learn"][data-keyboard="hidden"] .app {
    (Trivially removable once the pipeline is confirmed.)
    ======================================================================== */
 html::after {
-  content: "rc2-182 " attr(data-view) "/" attr(data-keyboard);
+  content: "rc2-183 " attr(data-view) "/" attr(data-keyboard);
   position: fixed;
   right: 3px;
   bottom: 1px;

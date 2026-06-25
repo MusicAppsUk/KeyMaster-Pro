@@ -136,6 +136,29 @@ export function chapterAtIndex(idx) {
   };
 }
 
+// ---- Course structure names (presentation only) ----------------------------
+// The two top-level course areas the Course Map + in-Course breadcrumb read from.
+// DATA-derived chapters carry course:'foundation'|'keymaster' + a stage number;
+// these maps give those numbers their public names. Listing a Key Level here with
+// status 'planned' makes it show in the map as a locked "coming soon" band WITHOUT
+// inventing any lesson content. Original KeyMaster naming.
+export const FOUNDATION_STAGES = [
+  { stage: 1, name: 'Orientation' },
+  { stage: 2, name: 'Making Music' },
+  { stage: 3, name: 'Reading and Playing' },
+  { stage: 4, name: 'Two Hands / Grand Staff' },
+];
+export const KEYMASTER_LEVELS = [
+  { level: 1, name: 'First Musicianship',    status: 'available' },
+  { level: 2, name: 'Confident Reading',     status: 'planned' },
+  { level: 3, name: 'Pattern Fluency',       status: 'planned' },
+  { level: 4, name: 'Musical Independence',  status: 'planned' },
+  { level: 5, name: 'Harmonic Fluency',      status: 'planned' },
+  { level: 6, name: 'Expressive Repertoire', status: 'planned' },
+  { level: 7, name: 'Advanced Musicianship', status: 'planned' },
+  { level: 8, name: 'Performance Mastery',   status: 'planned' },
+];
+
 /**
  * The foundation pathway. Each card is short by design:
  *   explain   one or two calm sentences (adult, precise, never childish)
@@ -1133,7 +1156,15 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       if (progress) progress.set('learnLesson', index);
       // Own the chrome Back too: it now steps back through the Course instead of
       // ejecting to the dashboard. (Exit/Home remain available via the chrome.)
-      try { ctx.nav?.set?.([{ label: 'Foundation Course', go: goBack }, { label: ch ? ch.name : `Lesson ${index + 1}` }]); } catch (_) { /* nav is non-critical */ }
+      try {
+        const isKM = ch && ch.course === 'keymaster';
+        const lvl = isKM ? KEYMASTER_LEVELS.find((l) => l.level === ch.stage) : null;
+        const root = isKM ? 'KeyMaster Course' : 'Foundation Course';
+        const here = isKM
+          ? (lvl ? `Key Level ${ch.stage}: ${lvl.name}` : `Key Level ${ch.stage}`)
+          : (ch ? ch.name : `Lesson ${index + 1}`);
+        ctx.nav?.set?.([{ label: root, go: goBack }, { label: here }]);
+      } catch (_) { /* nav is non-critical */ }
       // Teaching rhythm: tutor speaks, then (after a pause) the keyboard
       // demonstrates. Step 0's speech is owned by the greeting/speakPending path
       // (once per session), and an incidental re-render of the SAME card must not
