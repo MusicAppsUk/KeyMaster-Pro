@@ -40,7 +40,7 @@
   <link rel="stylesheet" href="theme.css?v=rc2-127" />
   <link rel="stylesheet" href="keyboard.css?v=rc2-127" />
   <link rel="stylesheet" href="notation.css?v=rc2-127" />
-  <link rel="stylesheet" href="cockpit.css?v=rc2-173" />
+  <link rel="stylesheet" href="cockpit.css?v=rc2-177" />
 
   <!-- The only inline style: hide the shell until the app flips data-boot,
        preventing an unstyled flash before the module graph resolves. -->
@@ -114,13 +114,22 @@
               <button type="button" class="hub-chip" id="hub-learnapp"><span aria-hidden="true">&#128075;</span> <span class="hub-chip__label">Learn the App</span></button>
               <button type="button" class="hub-chip" id="hub-map"><span aria-hidden="true">&#9776;</span> Course Map</button>
             </div>
+            <p class="hero-signin">
+              <span class="hero-signin__hint">Progress is saved on this device.</span>
+              <button type="button" class="hero-signin__btn" id="signin-open">Sign in to sync</button>
+            </p>
             <p class="course-hero__progress" id="hero-progress"></p>
             <div class="course-hero__bar" id="hero-bar" hidden aria-hidden="true"><span class="course-hero__bar-fill" id="hero-bar-fill"></span></div>
           </div>
 
-          <section class="practice-rooms" aria-labelledby="practice-rooms-heading">
-            <h2 class="practice-rooms__heading" id="practice-rooms-heading">Practice Rooms</h2>
-            <p class="practice-rooms__sub">Optional specialist rooms. The tutor guides you in at the right time — or step into one directly.</p>
+          <details class="practice-rooms practice-rooms--disclosure">
+            <summary class="practice-rooms__summary" id="practice-rooms-heading">
+              <span class="practice-rooms__summary-main">
+                <strong class="practice-rooms__heading">Practice Rooms</strong>
+                <small class="practice-rooms__sub">Optional specialist rooms &mdash; open when you want focused practice.</small>
+              </span>
+              <span class="practice-rooms__chev" aria-hidden="true">&#9662;</span>
+            </summary>
             <nav class="launcher" aria-label="Practice rooms">
             <a class="vector vector--scales" href="#/scales">
               <span class="vector__status vector__status--active">Active</span>
@@ -170,12 +179,7 @@
               <span class="vector__lock" aria-hidden="true">🔒</span>
             </div>
           </nav>
-          </section>
-
-          <div class="signin-seam">
-            <p class="signin-seam__text">Your progress is saved on this device. Sign in later to keep it across your devices.</p>
-            <button type="button" class="signin-seam__btn" id="signin-open">Sign in</button>
-          </div>
+          </details>
 
           <p class="build-tag" id="build-tag">KeyMaster PRO</p>
         </div>
@@ -315,6 +319,7 @@
       <div class="km-menu__divider" aria-hidden="true"></div>
       <button type="button" class="km-menu__item is-muted" data-menu="settings"><span class="km-menu__ico" aria-hidden="true">&#9881;</span><span><strong>Settings</strong><small>MIDI, sound, accessibility &mdash; soon</small></span></button>
       <button type="button" class="km-menu__item is-muted" data-menu="signin"><span class="km-menu__ico" aria-hidden="true">&#9737;</span><span><strong>Sign in</strong><small>Save progress across devices</small></span></button>
+      <button type="button" class="km-menu__item is-muted" data-menu="reset"><span class="km-menu__ico" aria-hidden="true">&#10227;</span><span><strong>Reset progress</strong><small>Clears saved lessons &mdash; development</small></span></button>
       <div class="km-menu__lesson" id="km-menu-lesson" hidden></div>
       <p class="km-menu__status" id="km-menu-piano-status"></p>
       <p class="km-menu__build" id="km-menu-build"></p>
@@ -369,7 +374,7 @@
 
   <!-- Single module entry point. Absolute path so it resolves regardless of
        the route in the hash. -->
-  <script type="module" src="app.js?v=rc2-169"></script>
+  <script type="module" src="app.js?v=rc2-177"></script>
   <script defer src="cockpitUI.js?v=rc2-155"></script>
 </body>
 </html>

@@ -755,7 +755,7 @@ html[data-view="learn"][data-keyboard="hidden"] .app {
    (Trivially removable once the pipeline is confirmed.)
    ======================================================================== */
 html::after {
-  content: "rc2-173 " attr(data-view) "/" attr(data-keyboard);
+  content: "rc2-177 " attr(data-view) "/" attr(data-keyboard);
   position: fixed;
   right: 3px;
   bottom: 1px;
@@ -926,3 +926,99 @@ html[data-view="learn"] .midi-pill.is-connected .midi-pill__dot { background: va
   box-shadow: 0 10px 26px -20px rgba(21,33,58,0.18) !important;
   border-color: #E6E9EF !important;
 }
+
+/* ========================================================================
+   rc2-174 — (1) Sign-in lifted into the front-door action area (DOM moved in
+   index.html); (2) intro teaching cards composed as CENTRED PANELS instead of
+   a full-height grey slab, floating on a white lesson space; music cards stay
+   crisp white paper. "intro cards are centred teaching panels; music pages are
+   crisp white paper." CSS-only here (+ the one DOM move). Geometry of the rails,
+   audio, keybed, staff LINES untouched.
+   ======================================================================== */
+
+/* (1) front-door Sign-in — small secondary utility under the main controls --- */
+.hero-signin {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .55rem;
+  margin: .9rem 0 0; font-size: .85rem; line-height: 1.4;
+}
+.hero-signin__hint { color: var(--ivory-dim); }
+.hero-signin__btn {
+  -webkit-appearance: none; appearance: none;
+  background: transparent; border: 0; padding: 0; cursor: pointer;
+  font: inherit; font-weight: 600; color: var(--royal);
+  text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--powder-edge);
+}
+.hero-signin__btn:hover { color: var(--royal-deep); text-decoration-color: var(--royal); }
+.hero-signin__btn:focus-visible { outline: 2px solid var(--royal); outline-offset: 3px; border-radius: 3px; }
+
+/* (2) lesson space = clean white so the card reads as a floating panel ------- */
+.view[data-view="learn"] .mf { background: #FFFFFF !important; }
+
+/* INTRO / teaching cards (NO staff) → centred composed panel, never a tall slab */
+.view[data-view="learn"] .mf__card:not(:has(.km-staff)) {
+  flex: 0 1 auto !important;                     /* stop filling the column height */
+  margin: auto !important;                       /* centre within the available space */
+  width: 100%;
+  max-width: 46rem !important;                   /* composed panel width */
+  max-height: 100% !important;                   /* never exceed; scroll inside if long */
+  overflow-y: auto;
+  background: #F1F4F8 !important;                /* porcelain teaching surface */
+  border: 1px solid #E2E7EF !important;
+  border-radius: 16px !important;
+  box-shadow: 0 18px 40px -28px rgba(21,33,58,0.22) !important;
+  padding: clamp(1.3rem, 3vw, 2.1rem) !important;  /* even padding (overrides the big scroll pad) */
+}
+
+/* MUSIC cards (staff present) → crisp white paper; keep room (base fill) ------ */
+.view[data-view="learn"] .mf__card:has(.km-staff) { background: #FFFFFF !important; }
+
+/* ========================================================================
+   rc2-175 — FIX: only the ACTIVE view renders. The learn view sets
+   `display:flex` unconditionally (for its cockpit flex column), which
+   overrides the base `.view{display:none}` and leaked the whole "Foundation
+   Course" learn section onto the home page (a duplicate, half-styled because
+   html[data-view] isn't "learn" there). This re-enforces that any view without
+   .is-active is hidden — the learn view still shows normally on /learn.
+   ======================================================================== */
+.view:not(.is-active) { display: none !important; }
+
+/* ========================================================================
+   rc2-176 — FRONT PAGE = calm doorway. (1) Hide keyboard/practice setup
+   controls on the home (no keyboard there) — keep hamburger, brand, Full
+   Screen, subtle MIDI. (2) The six specialist rooms consolidate behind a
+   single "Practice Rooms" disclosure so the home reads as a guided course,
+   not a tool catalogue. Routes/hamburger/audio/keybed untouched.
+   ======================================================================== */
+
+/* (1) Home top bar: essentials only. Hide everything in the keyboard-control
+   group except Full Screen + the MIDI status pill (kept, made subtle). ----- */
+html[data-view="home"] .app__controls > :not([data-action="fullscreen"]):not(.midi-pill) {
+  display: none !important;
+}
+html[data-view="home"] .register,
+html[data-view="home"] .octave-shift { display: none !important; }   /* belt-and-suspenders: range readout + 8va */
+html[data-view="home"] .midi-pill { opacity: .82; font-size: .76rem; padding: .28rem .6rem; }
+html[data-view="home"] .midi-pill__label { font-weight: 500; }
+
+/* (2) Practice Rooms behind one disclosure (course-led home) --------------- */
+details.practice-rooms--disclosure { margin: 1.8rem 0 0; padding-top: 0; border-top: 0; }
+details.practice-rooms--disclosure > summary {
+  list-style: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: .95rem 1.2rem; border-radius: 14px;
+  background: #F1F4F8; border: 1px solid #E2E7EF;
+  transition: background .15s, border-color .15s;
+}
+details.practice-rooms--disclosure > summary::-webkit-details-marker { display: none; }
+details.practice-rooms--disclosure > summary:hover { background: #E9EEF5; border-color: var(--powder-edge); }
+.practice-rooms__summary-main { display: flex; flex-direction: column; gap: .12rem; text-align: left; }
+details.practice-rooms--disclosure .practice-rooms__heading {
+  font-family: var(--font-display); font-size: 1.05rem; font-weight: 600;
+  letter-spacing: 0; text-transform: none; color: var(--ivory); margin: 0;
+}
+details.practice-rooms--disclosure .practice-rooms__sub {
+  font-size: .85rem; color: var(--ivory-dim); margin: 0; text-transform: none; letter-spacing: 0;
+}
+.practice-rooms__chev { color: var(--royal); font-size: 1rem; transition: transform .2s; flex: 0 0 auto; }
+details.practice-rooms--disclosure[open] .practice-rooms__chev { transform: rotate(180deg); }
+details.practice-rooms--disclosure > .launcher { margin-top: 1rem; }

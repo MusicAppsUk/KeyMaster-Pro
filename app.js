@@ -475,6 +475,16 @@ class KeyMasterApp {
         else if (action === 'rooms') { location.hash = '#/'; setTimeout(() => { this.root.querySelector('#practice-rooms-heading')?.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60); }
         else if (action === 'settings') { this._openSignin('Settings \u2014 MIDI, sound and accessibility options are coming in a future release.'); }
         else if (action === 'signin') { this._openSignin(); }
+        else if (action === 'reset') {
+          const ok = (typeof window !== 'undefined' && typeof window.confirm === 'function')
+            ? window.confirm('Reset your course progress on this device? This clears your saved lessons and restarts from the beginning.')
+            : true;
+          if (ok) {
+            try { window.localStorage.removeItem('keymaster.progress.v1'); const p = loadPrefs(); delete p.lastView; savePrefs(p); } catch { /* ignore */ }
+            try { location.hash = '#/'; } catch { /* ignore */ }
+            try { location.reload(); } catch { /* ignore */ }
+          }
+        }
       });
     });
 
