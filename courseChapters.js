@@ -93,4 +93,10 @@ export const COURSE_CHAPTERS = [
   // `course` field and default to 'foundation', so they are entirely unchanged.
   { course: 'keymaster', stage: 1, name: 'Reading Shapes into Music', ids: ['kl1-welcome', 'kl1-shapes-recap', 'kl1-first-phrase', 'kl1-phrase-echo'],
     intro: 'The KeyMaster Course begins. In Key Level 1 \u2014 First Musicianship \u2014 the shapes you learned in the Foundation become music: read, heard, and played, as reading, rhythm, and your hands grow together.' },
+  { course: 'keymaster', stage: 1, name: 'Pulse and Counting', ids: ['kl1-pulse-feel', 'kl1-pulse-play'],
+    intro: 'Music rests on a steady pulse. Feel the beat first \u2014 a calm, unhurried heartbeat \u2014 then place the notes onto it. Counting before rushing is how playing in time begins.' },
+  { course: 'keymaster', stage: 1, name: 'Notes in Time', ids: ['kl1-notes-values', 'kl1-notes-read'],
+    intro: 'A note\u2019s shape tells you how long to hold it \u2014 the semibreve, the minim, the crotchet. Read the lengths as well as the pitches, and rhythm begins to live on the page.' },
+  { course: 'keymaster', stage: 1, name: 'First Right-Hand Piece', ids: ['kl1-piece-listen', 'kl1-piece-play'],
+    intro: 'Your first real piece from manuscript \u2014 Morning Steps. Proper notation now: a time signature, barlines, and notes of different lengths. Listen first, read the shape, then play it through.' },
 ];

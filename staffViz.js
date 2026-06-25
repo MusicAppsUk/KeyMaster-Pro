@@ -323,6 +323,21 @@ export function buildStaff(opts = {}) {
       body += noteHead(it.midi, clef, topY, xs[i], it.state, it.finger, it.value, it.letter);
       const [t, b] = noteBounds(it.midi, clef, topY, it.value, Number.isFinite(it.finger), !!it.letter); mark(t); mark(b);
     });
+    // rc2-178: proper manuscript barlines. opts.bars is a list of 1-based note
+    // indices after which an internal barline falls; an end barline closes the
+    // line. Additive — only renders when a step requests bars, so existing
+    // diagram-style staffs are untouched. Reuses the endbar stroke.
+    const bars = Array.isArray(opts.bars) ? opts.bars : [];
+    if (bars.length) {
+      bars.forEach((b) => {
+        const k = Math.round(b) - 1;
+        if (k >= 0 && k < xs.length - 1) {
+          const bx = Math.round((xs[k] + xs[k + 1]) / 2);
+          body += `<line class="km-staff__endbar" x1="${bx}" y1="${topY}" x2="${bx}" y2="${topY + 4 * GAP}"/>`;
+        }
+      });
+      body += `<line class="km-staff__endbar" x1="${RIGHT}" y1="${topY}" x2="${RIGHT}" y2="${topY + 4 * GAP}"/>`;
+    }
   }
 
   const PAD = 8;

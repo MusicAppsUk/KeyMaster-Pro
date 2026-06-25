@@ -30,14 +30,14 @@ import { VOICE_PACK } from './voicePackData.js?v=rc2-116';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-108';
 import { buildHandSvg, setHandHighlight, FINGER_NAMES } from './handViz.js?v=rc2-81';
-import { buildStaff, flashPlayed } from './staffViz.js?v=rc2-117';
+import { buildStaff, flashPlayed } from './staffViz.js?v=rc2-178';
 import { createCourseVoice } from './courseVoice.js?v=rc2-105';
 import { FOUNDATION_STEPS } from './courseFoundation.js?v=rc2-136';
 import { STAGE1_MAKING_STEPS } from './courseStage1Making.js?v=rc2-136';
 import { STAGE2_READING_STEPS } from './courseStage2Reading.js?v=rc2-136';
 import { STAGE3_TWOHANDS_STEPS } from './courseStage3TwoHands.js?v=rc2-136';
-import { KEY_LEVEL1_STEPS } from './courseKeyLevel1.js?v=rc2-152';
-import { COURSE_CHAPTERS } from './courseChapters.js?v=rc2-136';
+import { KEY_LEVEL1_STEPS } from './courseKeyLevel1.js?v=rc2-178';
+import { COURSE_CHAPTERS } from './courseChapters.js?v=rc2-178';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
 const pcOf = (m) => ((m % 12) + 12) % 12;
@@ -1334,6 +1334,8 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       highlight: s.highlight || null,
       notes: Array.isArray(s.notes) ? s.notes : [],
       middleC: !!s.middleC,
+      timeSig: s.timeSig,
+      bars: Array.isArray(s.bars) ? s.bars : undefined,
     }));
     staffSlot.style.display = '';
   }
