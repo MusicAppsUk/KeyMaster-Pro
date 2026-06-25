@@ -356,10 +356,13 @@ export default function createView(ctx) {
     ? createTutorVoice({ rate: 0.9, pitch: 0.96, volume: 0.7, lang: 'en-GB', preferFemale: true })
     : null;
   // Premium-voice-first layer: plays a licensed audio file per stable line ID when one
-  // exists, else falls back to the browser TTS prototype above. No assets bundled yet.
-  // Browser SpeechSynthesis is an emergency/DEV fallback only — OFF by default so it
-  // can never speak under Jack. Flip to true only for development without a voice pack.
-  const TTS_DEV_FALLBACK = false;
+  // exists, else falls back to the browser TTS voice above. The recorded voice pack
+  // (voice/en-GB/*.mp3) is NOT present on disk yet — only the piano note samples are —
+  // so with this OFF Jack had no audio source at all and stayed completely silent.
+  // Enabled so Jack speaks now via controlled TTS: gated by the Voice on/off toggle
+  // (optional + controlled), and the recorded pack auto-takes-over the instant its
+  // files exist (resolution order stays premium file -> this TTS -> captions).
+  const TTS_DEV_FALLBACK = true;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
   const KM_BUILD = 'rc2-127';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
@@ -443,6 +446,21 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   const demoVoices = [];     // teaching-audio Voice instances we own
   const demoSweepTimers = []; // visual highlight-sweep timers (animated guidance)
   let demoToken = 0;         // cancels a pending demo when the card changes
+  // Entry-audio handoff: how long the Course must hold its first NOTE-demo so it does
+  // not overlap the splash flourish (D4->A4) coming from the front door. The flourish
+  // (app.js) stamps window.__kmEntryAudio.flourishUntil when it fires; we wait out the
+  // remainder — capped so a stale value can never stall the lesson, and returning 0
+  // (normal behaviour) whenever no flourish is in flight. Only the demo waits; the
+  // spoken line is NOT deferred (it stays inside the user gesture so mobile autoplay
+  // always allows Jack to speak).
+  const entryAudioWaitMs = () => {
+    try {
+      const until = (typeof window !== 'undefined' && window.__kmEntryAudio) ? (window.__kmEntryAudio.flourishUntil || 0) : 0;
+      if (!until) return 0;
+      const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      return Math.max(0, Math.min(until - now, 2600));
+    } catch (_) { return 0; }
+  };
   let demoTimer = null;
   let autoAdvTimer = null;   // learn: auto-advance after a simple completed task
   let seqTimer = null;       // learn: drives the speak -> pause -> demo -> pause chain
@@ -869,7 +887,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
         afterDemo();
       }
     };
-    const afterSpeech = () => { if (alive()) seqTimer = setTimeout(doDemo, gapBeforeDemo(c)); };
+    const afterSpeech = () => { if (alive()) seqTimer = setTimeout(doDemo, Math.max(gapBeforeDemo(c), entryAudioWaitMs())); };
     if (skipSpeech) afterSpeech();
     else speakCard(c, afterSpeech, opts);
   }

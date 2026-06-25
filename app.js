@@ -127,8 +127,8 @@ const VIEW_REGISTRY = {
   },
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-183',
-    load: () => import('./foundations.js?v=rc2-183'),
+    src: './foundations.js?v=rc2-184',
+    load: () => import('./foundations.js?v=rc2-184'),
   },
   scales: {
     slot: 'scales',
@@ -148,8 +148,8 @@ const VIEW_REGISTRY = {
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-183',
-    load: () => import('./foundations.js?v=rc2-183'),
+    src: './foundations.js?v=rc2-184',
+    load: () => import('./foundations.js?v=rc2-184'),
   },
 };
 
@@ -552,7 +552,7 @@ class KeyMasterApp {
     if (!overlay || !body) return;
     overlay.hidden = false;
     body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Loading the journey\u2026</p>';
-    import('./foundations.js?v=rc2-183').then((F) => {
+    import('./foundations.js?v=rc2-184').then((F) => {
       const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
       const chapterAt = (typeof F.chapterAtIndex === 'function') ? F.chapterAtIndex : null;
       if (!steps.length || !chapterAt) { body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Course map unavailable right now.</p>'; return; }
@@ -842,6 +842,16 @@ class KeyMasterApp {
     if (!this.piano || this._flourishPlayed || this._suppressFlourish) return;
     const ctx = getAudioContext();
     if (!ctx) return;
+    // Entry-audio handoff: reserve a short window so the Course holds its first
+    // note-demo until this flourish (D4->A4) has rung out — no two piano sources
+    // overlapping at entry. Set eagerly, BEFORE the async resume below, so the
+    // window is already in place even if the flourish itself is briefly delayed
+    // waiting for the context to resume. (Skipped above when _suppressFlourish is
+    // set, i.e. a real keypress — so a normal note never reserves the window.)
+    try {
+      const _nowMs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      if (typeof window !== 'undefined') window.__kmEntryAudio = { flourishUntil: _nowMs + 2000 };
+    } catch (_) { /* no-op */ }
     if (ctx.state !== 'running') {
       // unlockAudio()'s resume() is async and is usually still pending when this
       // first runs (the unlock listener fires it without awaiting). Resume and
@@ -1268,7 +1278,7 @@ class KeyMasterApp {
       const cta = this.root.querySelector('#learn-cta');
       if (cta) cta.textContent = started ? 'Continue the Foundation Course' : 'Start the Foundation Course';
       set('#course-hero-title', started ? 'Continue the Foundation Course' : COURSE_NAME);
-      import('./foundations.js?v=rc2-183').then((F) => {
+      import('./foundations.js?v=rc2-184').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
         const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
