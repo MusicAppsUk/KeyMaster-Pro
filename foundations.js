@@ -741,6 +741,45 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
     if (progress) progress.set('voiceOn', voiceOn);
     updateVoiceStatus();
   }
+  // ── Controlled Jack-voice state — single source of truth for diagnostics. ────
+  // The tutor must never fail silently OR pretend it spoke. jackVoiceStatus is the
+  // honest state; reportJackVoice records it on window.__kmJackVoice and logs it, so
+  // a dev can see exactly why Jack is or isn't audible — no learner-facing clutter.
+  //   ready         an approved recorded voice pack is loaded -> audio WILL play
+  //   muted         the learner turned the tutor voice off (text/captions only)
+  //   missing-files no recorded voice/en-GB/*.mp3 in this build; browser TTS is
+  //                 deliberately blocked -> Jack is silent, his written line shows
+  //   unavailable   the speech layer itself failed to construct
+  function recordedPackActive() { return !!(audio && audio.isPremiumActive && audio.isPremiumActive()); }
+  function audibleJackAvailable() { return recordedPackActive(); }   // TTS is blocked, so only a recorded pack is audible
+  function jackVoiceStatus() {
+    if (!audio) return 'unavailable';
+    if (!voiceOn) return 'muted';
+    if (recordedPackActive()) return 'ready';
+    return 'missing-files';
+  }
+  function reportJackVoice(lineId, text) {
+    const status = jackVoiceStatus();
+    const info = {
+      status,
+      line: lineId || null,
+      text: text || null,
+      audioPlayed: status === 'ready',     // NEVER claim audio when none actually plays
+      recordedPackActive: recordedPackActive(),
+      ttsBlocked: !TTS_DEV_FALLBACK,        // true = browser TTS deliberately disabled (no random voice as Jack)
+      at: Date.now(),
+    };
+    try {
+      if (typeof window !== 'undefined') window.__kmJackVoice = info;
+      if (typeof console !== 'undefined' && console.info) {
+        console.info('[KeyMaster] Jack voice:', status, '| line:', info.line,
+          '| audioPlayed:', info.audioPlayed, '| recordedPack:', info.recordedPackActive,
+          '| ttsBlocked:', info.ttsBlocked);
+      }
+    } catch (_) { /* no-op */ }
+    return status;
+  }
+  try { if (typeof window !== 'undefined') window.__kmJackVoiceStatus = jackVoiceStatus; } catch (_) { /* no-op */ }
   // Visible voice diagnostic — the tutor must never fail silently.
   function updateVoiceStatus() {
     if (!statusEl) return;
@@ -753,7 +792,11 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       msg = 'Captions are on. The tutor begins speaking the moment you play or continue.';
       showStart = false;
     } else {
-      msg = PREMIUM_VOICE_READY ? 'Tutor voice on. Captions on.' : 'Tutor voice ready \u2014 device prototype (premium voice coming).';
+      // Don't claim "voice on" when nothing can actually play. Be honest about the
+      // missing recorded pack so the learner (and dev log) know why it's silent.
+      msg = recordedPackActive()
+        ? 'Tutor voice on. Captions on.'
+        : 'Recorded tutor voice isn\u2019t in this build yet \u2014 the lesson shows on screen as text.';
     }
     statusEl.textContent = msg;
     if (startBtn) startBtn.style.display = showStart ? '' : 'none';
@@ -820,6 +863,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
     // Failsafe: never let a dropped end-event stall the lesson.
     const fs = setTimeout(done, speechBudgetMs(c));
     const wrapped = () => { clearTimeout(fs); done(); };
+    reportJackVoice(`${c.id}.say`, instructionText(c));   // record honest voice state; never pretend audio played
     if (Array.isArray(c.say) && c.say.length) {
       audio.sayBeats(`${c.id}.say`, c.say, { onDone: wrapped, source, explicit, once: isWelcome });   // guarded centrally
     } else {
@@ -846,7 +890,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
     // carries this, so we stay quiet.) Writes only to the aria-live status line,
     // so screen-reader users hear the hand-off too.
     const cue = (text) => {
-      if (!alive() || !interactive || (voice && voiceOn)) return;
+      if (!alive() || !interactive || (voice && voiceOn && audibleJackAvailable())) return;
       if (!tryState || tryState.done) return;
       tryStatus.textContent = text;
       tryStatus.classList.remove('is-wrong', 'is-done');
