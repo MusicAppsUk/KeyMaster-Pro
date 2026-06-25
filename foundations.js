@@ -36,8 +36,8 @@ import { FOUNDATION_STEPS } from './courseFoundation.js?v=rc2-136';
 import { STAGE1_MAKING_STEPS } from './courseStage1Making.js?v=rc2-136';
 import { STAGE2_READING_STEPS } from './courseStage2Reading.js?v=rc2-136';
 import { STAGE3_TWOHANDS_STEPS } from './courseStage3TwoHands.js?v=rc2-136';
-import { KEY_LEVEL1_STEPS } from './courseKeyLevel1.js?v=rc2-178';
-import { COURSE_CHAPTERS } from './courseChapters.js?v=rc2-178';
+import { KEY_LEVEL1_STEPS } from './courseKeyLevel1.js?v=rc2-179';
+import { COURSE_CHAPTERS } from './courseChapters.js?v=rc2-179';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
 const pcOf = (m) => ((m % 12) + 12) % 12;
