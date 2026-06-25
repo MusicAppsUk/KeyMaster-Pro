@@ -127,8 +127,8 @@ const VIEW_REGISTRY = {
   },
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-186',
-    load: () => import('./foundations.js?v=rc2-186'),
+    src: './foundations.js?v=rc2-187',
+    load: () => import('./foundations.js?v=rc2-187'),
   },
   scales: {
     slot: 'scales',
@@ -148,8 +148,8 @@ const VIEW_REGISTRY = {
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-186',
-    load: () => import('./foundations.js?v=rc2-186'),
+    src: './foundations.js?v=rc2-187',
+    load: () => import('./foundations.js?v=rc2-187'),
   },
 };
 
@@ -552,7 +552,7 @@ class KeyMasterApp {
     if (!overlay || !body) return;
     overlay.hidden = false;
     body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Loading the journey\u2026</p>';
-    import('./foundations.js?v=rc2-186').then((F) => {
+    import('./foundations.js?v=rc2-187').then((F) => {
       const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
       const chapterAt = (typeof F.chapterAtIndex === 'function') ? F.chapterAtIndex : null;
       if (!steps.length || !chapterAt) { body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Course map unavailable right now.</p>'; return; }
@@ -805,14 +805,8 @@ class KeyMasterApp {
     const ensureAudio = () => {
       if (!unlocked) {
         unlockAudio(); unlocked = true; this._playFlourish();
-        // Prime the browser TTS inside this gesture too, so Jack's spoken welcome —
-        // which is held until AFTER the flourish (foundations.js) — is still allowed
-        // to play on mobile. A muted empty utterance unlocks SpeechSynthesis silently.
-        try {
-          if (typeof window !== 'undefined' && window.speechSynthesis && typeof SpeechSynthesisUtterance !== 'undefined') {
-            const _u = new SpeechSynthesisUtterance(' '); _u.volume = 0; window.speechSynthesis.speak(_u);
-          }
-        } catch (_) { /* no-op */ }
+        // (rc2-187) No TTS prime here: the browser TTS path is disabled, so the speech
+        // engine is never touched on entry — no chance of a stray browser voice.
         // Lazy-load the Course sampled grand now that the context is unlocked.
         // Fire-and-forget: any failure (missing samples / decode error) simply
         // leaves the rc2-163 synth fallback in place. Routes into the shared bus.
@@ -1252,7 +1246,7 @@ class KeyMasterApp {
       const cta = this.root.querySelector('#learn-cta');
       if (cta) cta.textContent = started ? 'Continue the Foundation Course' : 'Start the Foundation Course';
       set('#course-hero-title', started ? 'Continue the Foundation Course' : COURSE_NAME);
-      import('./foundations.js?v=rc2-186').then((F) => {
+      import('./foundations.js?v=rc2-187').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
         const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];

@@ -356,13 +356,15 @@ export default function createView(ctx) {
     ? createTutorVoice({ rate: 0.9, pitch: 0.96, volume: 0.7, lang: 'en-GB', preferFemale: true })
     : null;
   // Premium-voice-first layer: plays a licensed audio file per stable line ID when one
-  // exists, else falls back to the browser TTS voice above. The recorded voice pack
-  // (voice/en-GB/*.mp3) is NOT present on disk yet — only the piano note samples are —
-  // so with this OFF Jack had no audio source at all and stayed completely silent.
-  // Enabled so Jack speaks now via controlled TTS: gated by the Voice on/off toggle
-  // (optional + controlled), and the recorded pack auto-takes-over the instant its
-  // files exist (resolution order stays premium file -> this TTS -> captions).
-  const TTS_DEV_FALLBACK = true;
+  // exists, else holds silently while the on-screen line shows. The browser TTS path
+  // is DISABLED (rc2-187): with no recorded pack, TTS selected a random en-GB voice —
+  // a female one on this device (tutorVoice prefers female) — and presented it AS Jack.
+  // Jack must have ONE approved identity, so a generic browser voice must never speak
+  // under his name. With this false, every line routes to silentHold: Jack is silent
+  // and his written line stays on screen. The moment the approved recorded voice ships
+  // (voice/en-GB/*.mp3 + re-enabling setPack above), audible Jack returns automatically
+  // (resolution order: premium recorded file -> [TTS stays off] -> on-screen captions).
+  const TTS_DEV_FALLBACK = false;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
   const KM_BUILD = 'rc2-127';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
