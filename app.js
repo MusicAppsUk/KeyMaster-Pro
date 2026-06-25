@@ -315,13 +315,11 @@ class KeyMasterApp {
       const buildEl = document.getElementById('fd-build');
       if (buildEl) buildEl.textContent = `KeyMaster PRO \u00B7 Flagship Front Door \u00B7 Stages 1\u20134 \u00B7 ${BUILD}`;
 
-      let returning = false;
-      try { returning = !!loadPrefs().lastView || this._hasCourseProgress(); } catch { /* ignore */ }
       const enterEl = document.getElementById('fd-enter');
-      // The action lives on the button; the calm welcome is the greeting, with a
-      // Shakespeare line above it (static markup) — no chapter name spliced in.
-      const arrow = '<span class="frontdoor__enter-arrow" aria-hidden="true">\u2192</span>';
-      if (enterEl) enterEl.innerHTML = (returning ? 'Continue the Course' : 'Enter the Course') + arrow;
+      // Primary action is always "Continue" — it routes into the Course via the
+      // existing resume logic (returning learners resume their last step, new
+      // learners start the Foundation Course). The markup already sets this label.
+      if (enterEl) enterEl.textContent = 'Continue';
 
       const leave = (toHash) => {
         const finish = () => {
@@ -662,7 +660,8 @@ class KeyMasterApp {
       const ctx = getAudioContext();
       this.synth = new Synth(ctx, { volume: 0.8 });
       // Free-play only: a richer piano voice for on-screen/MIDI key presses.
-      // The protected synth above still drives Scales, the scheduler, and the flourish.
+      // The protected synth above still drives Scales and the scheduler; the
+      // front-door flourish uses this.piano (Salamander-or-pianoVoice) instead.
       // Course voice: a real sampled grand (Salamander, CC-BY) once its samples
       // have loaded, with the rc2-163 synth voice (pianoVoice) as the always-ready
       // fallback. `this.piano` is a thin ROUTER over both; every call is guarded so
@@ -803,40 +802,28 @@ class KeyMasterApp {
   }
 
   /**
-   * The B-major startup flourish — B–D♯–F♯(–B), soft, lightly rolled, with a
-   * little natural velocity variation and a warm decay, like a pianist gently
-   * touching the keys before practice. Idempotent and self-gating: it only sounds
-   * once, only when the AudioContext is actually running (browser autoplay keeps
-   * it suspended until a gesture, so a cold-load attempt simply waits for the
-   * first interaction to retry), and only when the flourish setting is enabled.
+   * The front-door flourish — D4 → A4, a soft rising fifth, like a pianist gently
+   * touching two keys before practice. Played through this.piano: the rc2-166
+   * sampled Salamander grand when its samples are ready, and the safe pianoVoice
+   * synth otherwise — never a bespoke beep. Idempotent and self-gating: it sounds
+   * once, only when the AudioContext is actually running (browser autoplay keeps it
+   * suspended until a gesture, so a cold-load attempt simply waits for the first
+   * interaction to retry), and only when the flourish setting is enabled.
    */
   _playFlourish() {
-    if (!this.synth || this._flourishPlayed || this._suppressFlourish) return;
+    if (!this.piano || this._flourishPlayed || this._suppressFlourish) return;
     if (!flourishEnabled()) return;
-    const ctx = this.synth.ctx;
+    const ctx = getAudioContext();
     if (!ctx || ctx.state !== 'running') return;     // not yet unlocked → a later gesture retries
     this._flourishPlayed = true;
     try {
-      // Schedule well in the future so each voice's envelope ramps up from silence
-      // cleanly (a near-"now" start collapses the attack ramp into an onset click).
+      // Scheduled slightly ahead so each note's attack ramps cleanly from silence.
+      // Two notes only, kept very short: D4, then A4 a moment later — the lift.
       const t = ctx.currentTime + 0.12;
-      // [midi, velocity, offAtSec]. B3, D#4, F#4, B4 — soft, gently rolled, with
-      // STAGGERED releases (no coincident stops). The shared release decays a voice
-      // to ~1% before its oscillator stops, and the LAST voice to stop is unmasked,
-      // so its tiny residual is what ticks. We therefore make the last voice to stop
-      // the SOFTEST (the root, lingering quietly) and keep every velocity low, which
-      // pushes that final stop step down to the synth's floor (~-65 dB). Onsets roll
-      // low→high; the soft top B lifts first, the quiet root rings out last and fades.
-      const NOTES = [
-        [59, 14, 1.34],   // B3  (root) — softest, rings out LAST → quietest final stop
-        [63, 28, 1.06],   // D#4        — body
-        [66, 32, 1.20],   // F#4        — body
-        [71, 18, 0.92],   // B4  (top)  — soft shimmer, lifts first
-      ];
-      NOTES.forEach(([m, v, off], i) => {
-        this.synth.noteOn(m, v, t + i * 0.085);       // ~85ms roll between onsets
-        this.synth.noteOff(m, t + off);               // staggered release → no end click
-      });
+      this.piano.noteOn(62, 50, t);            // D4
+      this.piano.noteOff(62, t + 1.5);
+      this.piano.noteOn(69, 56, t + 0.26);     // A4 — the rising fifth
+      this.piano.noteOff(69, t + 1.8);
     } catch { /* audio not ready; ignore */ }
   }
 

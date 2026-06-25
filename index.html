@@ -40,7 +40,7 @@
   <link rel="stylesheet" href="theme.css?v=rc2-127" />
   <link rel="stylesheet" href="keyboard.css?v=rc2-127" />
   <link rel="stylesheet" href="notation.css?v=rc2-127" />
-  <link rel="stylesheet" href="cockpit.css?v=rc2-180" />
+  <link rel="stylesheet" href="cockpit.css?v=rc2-181" />
 
   <!-- The only inline style: hide the shell until the app flips data-boot,
        preventing an unstyled flash before the module graph resolves. -->
@@ -270,35 +270,52 @@
        The stage layers (aurora, spotlight, an original CSS grand-piano keybed,
        drifting light motes, vignette) are all drawn in CSS — no images.
        app.js (_mountFrontDoor) fills the greeting and wires the actions. -->
+  <!-- Front door / splash. A calm full-screen doorway: a soft-daylight music-room
+       stage drawn entirely in CSS/SVG (no assets), the two-note D4->A4 flourish as
+       the mark, the wordmark, the tagline, Continue, and an always-visible Sign in.
+       app.js (_mountFrontDoor) shows it and wires Continue + Sign in; the flourish
+       sounds on first interaction via the existing Salamander-or-piano path.
+       An optional licensed clip can be dropped into .fd-video; with none it stays on
+       the CSS daylight fallback. -->
   <div id="frontdoor" class="frontdoor" hidden>
     <div class="fd-stage" aria-hidden="true">
-      <div class="fd-aurora"></div>
-      <div class="fd-spot"></div>
-      <div class="fd-motes"><span></span><span></span><span></span><span></span><span></span><span></span></div>
-      <div class="fd-piano"><svg class="fd-piano__svg" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs><linearGradient id="lf" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e8c57e" stop-opacity="0"/><stop offset="0.22" stop-color="#e8c57e" stop-opacity="0.8"/><stop offset="0.5" stop-color="#fff6e4" stop-opacity="1"/><stop offset="0.78" stop-color="#e8c57e" stop-opacity="0.8"/><stop offset="1" stop-color="#e8c57e" stop-opacity="0"/></linearGradient><radialGradient id="pool" cx="0.5" cy="0.42" r="0.6"><stop offset="0" stop-color="#fff3d8" stop-opacity="0.34"/><stop offset="0.45" stop-color="#e8c57e" stop-opacity="0.12"/><stop offset="1" stop-color="#e8c57e" stop-opacity="0"/></radialGradient><linearGradient id="horizon" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e8c57e" stop-opacity="0"/><stop offset="0.5" stop-color="#f4e4c0" stop-opacity="0.5"/><stop offset="1" stop-color="#e8c57e" stop-opacity="0"/></linearGradient><filter id="wide" x="-30%" y="-80%" width="160%" height="320%"><feGaussianBlur stdDeviation="17"/></filter><filter id="soft" x="-20%" y="-60%" width="140%" height="260%"><feGaussianBlur stdDeviation="5"/></filter><filter id="refl" x="-20%" y="-40%" width="140%" height="220%"><feGaussianBlur stdDeviation="8"/></filter></defs><ellipse cx="600" cy="232" rx="520" ry="150" fill="url(#pool)"/><rect x="120" y="248" width="960" height="2.4" fill="url(#horizon)" filter="url(#soft)" opacity="0.7"/><path d="M150,266 Q600,206 1050,266" fill="none" stroke="url(#lf)" stroke-width="6" opacity="0.26" filter="url(#refl)"/><path d="M120,236 Q600,132 1080,236" fill="none" stroke="url(#lf)" stroke-width="12" opacity="0.4" filter="url(#wide)"/><path d="M120,236 Q600,132 1080,236" fill="none" stroke="url(#lf)" stroke-width="5" opacity="0.78" filter="url(#soft)"/><path d="M120,236 Q600,132 1080,236" fill="none" stroke="url(#lf)" stroke-width="1.8" opacity="0.95"/></svg><span class="fd-piano__sheen"></span></div>
-      <div class="fd-vignette"></div>
+      <video class="fd-video" id="fd-video" muted loop playsinline preload="none" poster=""></video>
+      <div class="fd-pool"></div>
+      <div class="fd-wash"></div>
+      <div class="fd-motes"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="fd-keys">
+        <svg viewBox="0 0 1200 120" preserveAspectRatio="xMidYMax slice" xmlns="http://www.w3.org/2000/svg">
+          <g fill="#FFFFFF" stroke="#DBE3EE" stroke-width="1">
+            <rect x="0" y="20" width="50" height="120" rx="2"/><rect x="50" y="20" width="50" height="120" rx="2"/><rect x="100" y="20" width="50" height="120" rx="2"/><rect x="150" y="20" width="50" height="120" rx="2"/><rect x="200" y="20" width="50" height="120" rx="2"/><rect x="250" y="20" width="50" height="120" rx="2"/><rect x="300" y="20" width="50" height="120" rx="2"/><rect x="350" y="20" width="50" height="120" rx="2"/><rect x="400" y="20" width="50" height="120" rx="2"/><rect x="450" y="20" width="50" height="120" rx="2"/><rect x="500" y="20" width="50" height="120" rx="2"/><rect x="550" y="20" width="50" height="120" rx="2"/><rect x="600" y="20" width="50" height="120" rx="2"/><rect x="650" y="20" width="50" height="120" rx="2"/><rect x="700" y="20" width="50" height="120" rx="2"/><rect x="750" y="20" width="50" height="120" rx="2"/><rect x="800" y="20" width="50" height="120" rx="2"/><rect x="850" y="20" width="50" height="120" rx="2"/><rect x="900" y="20" width="50" height="120" rx="2"/><rect x="950" y="20" width="50" height="120" rx="2"/><rect x="1000" y="20" width="50" height="120" rx="2"/><rect x="1050" y="20" width="50" height="120" rx="2"/><rect x="1100" y="20" width="50" height="120" rx="2"/><rect x="1150" y="20" width="50" height="120" rx="2"/>
+          </g>
+          <g fill="#C3CFDD">
+            <rect x="34" y="20" width="32" height="74" rx="2"/><rect x="84" y="20" width="32" height="74" rx="2"/><rect x="184" y="20" width="32" height="74" rx="2"/><rect x="234" y="20" width="32" height="74" rx="2"/><rect x="284" y="20" width="32" height="74" rx="2"/><rect x="384" y="20" width="32" height="74" rx="2"/><rect x="434" y="20" width="32" height="74" rx="2"/><rect x="534" y="20" width="32" height="74" rx="2"/><rect x="584" y="20" width="32" height="74" rx="2"/><rect x="634" y="20" width="32" height="74" rx="2"/><rect x="734" y="20" width="32" height="74" rx="2"/><rect x="784" y="20" width="32" height="74" rx="2"/><rect x="884" y="20" width="32" height="74" rx="2"/><rect x="934" y="20" width="32" height="74" rx="2"/><rect x="984" y="20" width="32" height="74" rx="2"/><rect x="1084" y="20" width="32" height="74" rx="2"/><rect x="1134" y="20" width="32" height="74" rx="2"/>
+          </g>
+        </svg>
+      </div>
+      <div class="fd-veil"></div>
     </div>
     <div class="frontdoor__inner" role="dialog" aria-labelledby="fd-title" aria-modal="false">
-      <span class="fd-mark" aria-hidden="true"><span class="fd-mark__k">K</span></span>
-      <p class="frontdoor__eyebrow">Cognitive piano training</p>
-      <h1 class="frontdoor__wordmark" id="fd-title">KeyMaster<span>Pro</span></h1>
-      <p class="fd-tagline">Learn properly. Progress intelligently.</p>
-      <blockquote class="fd-verse" aria-label="A line on music by Shakespeare">
-        <span class="fd-verse__line">The man that hath no music in himself,</span>
-        <span class="fd-verse__line">Nor is not moved with concord of sweet sounds&hellip;</span>
-        <cite class="fd-verse__cite">&#8212;&nbsp;William Shakespeare &middot; The Merchant of Venice</cite>
-      </blockquote>
-      <p class="frontdoor__greeting" id="fd-greeting">Good afternoon.</p>
-      <div class="fd-actions">
-        <button type="button" class="frontdoor__enter" id="fd-enter">Enter the Course<span class="frontdoor__enter-arrow" aria-hidden="true">&#8594;</span></button>
-        <button type="button" class="frontdoor__secondary" id="fd-rooms">Browse practice rooms</button>
+      <div class="fd-flourish" aria-hidden="true">
+        <svg viewBox="0 0 120 56" xmlns="http://www.w3.org/2000/svg">
+          <path class="fd-slur" d="M26,32 Q62,8 96,22"/>
+          <g class="fd-note" transform="translate(24,36)">
+            <line class="fd-stem" x1="8" y1="-1" x2="8" y2="-26"/>
+            <ellipse class="fd-nh" cx="0" cy="0" rx="8" ry="6" transform="rotate(-22)"/>
+          </g>
+          <g class="fd-note fd-note--2" transform="translate(96,22)">
+            <line class="fd-stem" x1="8" y1="-1" x2="8" y2="-26"/>
+            <ellipse class="fd-nh" cx="0" cy="0" rx="8" ry="6" transform="rotate(-22)"/>
+          </g>
+        </svg>
       </div>
-      <button type="button" class="frontdoor__signin" id="fd-signin">Sign in to save your progress</button>
-      <button type="button" class="frontdoor__install" id="fd-install" hidden>Install KeyMaster Pro for the full-screen experience</button>
-      <p class="frontdoor__ioshint" id="fd-ioshint" hidden>For the full-screen app experience, tap <b>Share</b>, then <b>Add to Home Screen</b>.</p>
-      <button type="button" class="frontdoor__fs" id="fd-fullscreen"><span aria-hidden="true">&#9974;</span> Open full-screen for the best experience</button>
+      <h1 class="frontdoor__wordmark" id="fd-title">KeyMaster<span>&nbsp;Pro</span></h1>
+      <p class="fd-tagline">Learn properly. Progress intelligently.</p>
+      <div class="fd-actions">
+        <button type="button" class="frontdoor__enter" id="fd-enter">Continue</button>
+        <button type="button" class="frontdoor__signin" id="fd-signin">Sign in to continue</button>
+      </div>
     </div>
-    <p class="frontdoor__build" id="fd-build"></p>
   </div>
 
   <!-- Side menu / course hub drawer. Slides in from the left; app.js wires the
@@ -374,7 +391,7 @@
 
   <!-- Single module entry point. Absolute path so it resolves regardless of
        the route in the hash. -->
-  <script type="module" src="app.js?v=rc2-180"></script>
+  <script type="module" src="app.js?v=rc2-181"></script>
   <script defer src="cockpitUI.js?v=rc2-155"></script>
 </body>
 </html>

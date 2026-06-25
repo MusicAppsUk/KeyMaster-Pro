@@ -298,44 +298,148 @@ h1, h2, h3, h4 { color: var(--ivory); }
 /* ----------------------------------------------------------------------------
    8. FRONT PAGE — readable, white-blue, gold removed
    -------------------------------------------------------------------------- */
+/* ============================================================================
+   FRONT DOOR / SPLASH — calm Wedgwood-daylight doorway (rc2-181)
+   Overrides the frozen theme.css concert-hall base. Scoped to .frontdoor/.fd-*.
+   Shows ONLY: flourish · wordmark · tagline · Continue · Sign in. No gold, no
+   dark, no technical controls. Engineered so Sign in is always on-screen.
+   ========================================================================== */
+
+/* full-screen, opaque daylight base; overflow-safe centring; safe-area aware */
 .frontdoor {
-  background: linear-gradient(180deg, #FFFFFF 0%, #EAF1FA 100%) !important;
-  color: var(--ivory) !important;
+  position: fixed !important; inset: 0 !important;
+  width: 100vw !important; height: 100vh !important; height: 100dvh !important;
+  display: flex !important; overflow-y: auto !important;
+  background: radial-gradient(120% 80% at 50% 6%, #FFFFFF 0%, #FBFCFE 46%, #EEF2F7 100%) !important;
+  color: #2B2F36 !important; -webkit-font-smoothing: antialiased;
 }
-/* tone the dark "aurora" stage down to faint daylight blue */
-.fd-stage { opacity: 1; }
-.fd-aurora {
-  background: radial-gradient(58% 48% at 50% 12%, rgba(110,155,201,0.20) 0%, transparent 72%) !important;
-  filter: blur(10px) !important; opacity: 0.8 !important;
+
+/* ---- soft-daylight stage (pure-CSS fallback; video optional) ---- */
+.fd-stage { position: absolute !important; inset: 0 !important; overflow: hidden !important; opacity: 1 !important; pointer-events: none; }
+.fd-video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.4s ease; mix-blend-mode: luminosity; }
+.fd-video.is-live { opacity: 0.5; }
+.fd-pool {
+  position: absolute; left: 50%; top: -12%; width: 130vmax; height: 90vmax; transform: translateX(-50%);
+  background: radial-gradient(50% 50% at 50% 50%, rgba(234,241,250,0.95) 0%, rgba(110,155,201,0.16) 38%, rgba(40,95,166,0.05) 62%, rgba(255,255,255,0) 78%);
+  animation: fd-drift 26s ease-in-out infinite alternate;
 }
-.fd-spot { background: radial-gradient(45% 38% at 50% 0%, rgba(110,155,201,0.12) 0%, transparent 74%) !important; opacity: 0.7 !important; }
-.fd-vignette { background: radial-gradient(120% 100% at 50% 50%, transparent 62%, rgba(21,33,58,0.05) 100%) !important; }
-.fd-motes span { background: var(--powder) !important; opacity: 0.25 !important; box-shadow: none !important; }
+.fd-wash {
+  position: absolute; right: -10%; bottom: -6%; width: 90vmax; height: 70vmax;
+  background: radial-gradient(50% 50% at 50% 50%, rgba(225,234,243,0.7) 0%, rgba(255,255,255,0) 70%);
+  animation: fd-drift2 34s ease-in-out infinite alternate;
+}
+.fd-keys {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 20vh; min-height: 90px; opacity: 0.5;
+  -webkit-mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,0.25) 55%, transparent 100%);
+          mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,0.25) 55%, transparent 100%);
+}
+.fd-keys svg { width: 100%; height: 100%; display: block; }
+.fd-motes span {
+  position: absolute; bottom: 8%; width: 4px; height: 4px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,255,255,0.9), rgba(110,155,201,0.5) 60%, transparent 70%) !important;
+  box-shadow: none !important; opacity: 0; animation: fd-rise 17s linear infinite;
+}
+.fd-motes span:nth-child(1){ left:18%; animation-delay:0s; }
+.fd-motes span:nth-child(2){ left:34%; animation-delay:5s; width:3px; height:3px; }
+.fd-motes span:nth-child(3){ left:52%; animation-delay:9s; }
+.fd-motes span:nth-child(4){ left:67%; animation-delay:3s; width:3px; height:3px; }
+.fd-motes span:nth-child(5){ left:81%; animation-delay:12s; }
+.fd-veil { position: absolute; inset: 0; background: radial-gradient(125% 90% at 50% 44%, transparent 52%, rgba(255,255,255,0.55) 82%, #fff 100%); }
+@keyframes fd-drift { from{ transform: translateX(-52%) translateY(-2%) scale(1);} to{ transform: translateX(-48%) translateY(2%) scale(1.06);} }
+@keyframes fd-drift2 { from{ transform: translateY(0) scale(1);} to{ transform: translateY(-3%) scale(1.08);} }
+@keyframes fd-rise { 0%{opacity:0; transform:translateY(0);} 14%{opacity:0.85;} 86%{opacity:0.4;} 100%{opacity:0; transform:translateY(-58vh);} }
 
-/* readable wordmark + tagline (no gold) */
-.frontdoor__eyebrow  { color: var(--royal) !important; }
-.frontdoor__wordmark { color: var(--ivory) !important; }
-.frontdoor__wordmark span { color: var(--royal) !important; -webkit-text-fill-color: var(--royal) !important; }
-.frontdoor__greeting { color: var(--ivory-dim) !important; }
-.fd-tagline, .frontdoor__tagline { color: var(--ivory-dim) !important; }
-.frontdoor__build { color: var(--ivory-faint) !important; }
+/* hide any leftover concert-hall stage / content from the frozen base */
+.fd-aurora, .fd-spot, .fd-piano, .fd-vignette,
+.frontdoor__eyebrow, .fd-verse, .frontdoor__greeting,
+.frontdoor__secondary, .frontdoor__install, .frontdoor__ioshint, .frontdoor__fs,
+.frontdoor__build, .fd-mark { display: none !important; }
 
-/* front-page buttons: royal primary, white secondary */
+/* ---- doorway content ---- */
+.frontdoor__inner {
+  position: relative !important; z-index: 2 !important; margin: auto !important;
+  width: min(560px, 86vw) !important;
+  display: flex !important; flex-direction: column !important; align-items: center !important; text-align: center !important;
+  padding: 6vh 0 calc(6vh + env(safe-area-inset-bottom)) !important;
+  background: none !important; border: 0 !important; box-shadow: none !important;
+}
+/* signature: the two-note rising fifth */
+.fd-flourish { width: clamp(78px, 16vw, 108px); margin: 0 auto; }
+.fd-flourish svg { width: 100%; height: auto; display: block; overflow: visible; }
+.fd-nh { fill: #285FA6; }
+.fd-stem { stroke: #285FA6; stroke-width: 1.6; stroke-linecap: round; }
+.fd-slur { fill: none; stroke: #6E9BC9; stroke-width: 2; stroke-linecap: round; stroke-dasharray: 120; stroke-dashoffset: 120; animation: fd-draw 1s ease 0.35s forwards; }
+.fd-note--2 { opacity: 0; animation: fd-lift 0.7s cubic-bezier(.2,.7,.2,1) 0.9s forwards; }
+@keyframes fd-draw { to { stroke-dashoffset: 0; } }
+@keyframes fd-lift { from{ opacity:0; transform: translateY(7px);} to{ opacity:1; transform: translateY(0);} }
+
+.frontdoor__wordmark {
+  margin: 2.4rem 0 0 0 !important; font-family: var(--font-display) !important;
+  font-weight: 560 !important; font-optical-sizing: auto;
+  font-size: clamp(2.6rem, 8.6vw, 4.4rem) !important; line-height: 1 !important; letter-spacing: -0.012em !important;
+  color: #2B2F36 !important;
+}
+.frontdoor__wordmark span { color: #285FA6 !important; -webkit-text-fill-color: #285FA6 !important; background: none !important; font-weight: 420 !important; font-style: italic !important; }
+.fd-tagline {
+  margin: 1.15rem auto 0 auto !important; font-family: var(--font-ui) !important;
+  font-size: clamp(1rem, 2.7vw, 1.22rem) !important; font-weight: 450 !important; line-height: 1.5 !important; letter-spacing: 0.004em !important;
+  color: #5C6573 !important; max-width: 30ch !important;
+}
+.fd-actions { margin-top: 2.9rem !important; display: flex !important; flex-direction: column !important; align-items: center !important; gap: 1.05rem !important; width: 100%; }
 .frontdoor__enter {
-  background: linear-gradient(135deg, var(--royal-bright) 0%, var(--royal) 78%) !important;
-  color: #FFFFFF !important; border: 1px solid var(--royal-deep) !important;
-  box-shadow: 0 12px 30px -14px rgba(40,95,166,0.55) !important;
+  appearance: none; cursor: pointer; border: 0 !important;
+  font-family: var(--font-ui) !important; font-size: 1.06rem !important; font-weight: 540 !important; letter-spacing: 0.01em !important;
+  color: #fff !important; background: linear-gradient(180deg, #356FBC 0%, #285FA6 100%) !important;
+  padding: 1.02rem 3.4rem !important; border-radius: 13px !important; min-width: clamp(220px, 52vw, 300px);
+  box-shadow: 0 1px 0 rgba(255,255,255,0.35) inset, 0 10px 26px -12px rgba(40,95,166,0.6), 0 2px 6px -2px rgba(40,95,166,0.4) !important;
+  transition: transform 0.18s ease, box-shadow 0.25s ease, filter 0.2s ease;
 }
-.frontdoor__enter:hover { filter: brightness(1.05); }
-.frontdoor__secondary, .frontdoor__signin, .frontdoor__install, .frontdoor__fs {
-  background: #FFFFFF !important; color: var(--ivory) !important;
-  border: 1px solid var(--ebony-edge-2) !important;
+.frontdoor__enter:hover { transform: translateY(-2px); box-shadow: 0 1px 0 rgba(255,255,255,0.4) inset, 0 16px 34px -12px rgba(40,95,166,0.62), 0 3px 8px -2px rgba(40,95,166,0.42) !important; }
+.frontdoor__enter:active { transform: translateY(0); filter: brightness(0.97); }
+.frontdoor__signin {
+  appearance: none; cursor: pointer; border: 0 !important; background: none !important;
+  font-family: var(--font-ui) !important; font-size: 0.95rem !important; font-weight: 500 !important; letter-spacing: 0.012em !important;
+  color: #5C6573 !important; padding: 0.5rem 0.9rem !important; border-radius: 8px !important;
 }
-.frontdoor__secondary:hover, .frontdoor__signin:hover,
-.frontdoor__install:hover, .frontdoor__fs:hover {
-  background: var(--powder-soft) !important; border-color: var(--powder) !important;
+.frontdoor__signin:hover { color: #2B2F36 !important; background: none !important; text-decoration: underline; text-underline-offset: 4px; }
+
+/* visible keyboard focus */
+.fd-flourish:focus-visible, .frontdoor__enter:focus-visible, .frontdoor__signin:focus-visible {
+  outline: 2.5px solid #285FA6 !important; outline-offset: 4px !important; border-radius: 13px;
 }
-.frontdoor__ioshint { color: var(--ivory-dim) !important; }
+
+/* entrance choreography (plays when the door is shown; off for reduced motion) */
+.frontdoor__inner > * { animation: fd-fade 0.9s ease both; }
+.frontdoor__inner > .fd-flourish { animation-delay: 0.15s; }
+.frontdoor__inner > .frontdoor__wordmark { animation-delay: 0.45s; }
+.frontdoor__inner > .fd-tagline { animation-delay: 0.68s; }
+.frontdoor__inner > .fd-actions { animation-delay: 0.9s; }
+@keyframes fd-fade { from{ opacity:0; transform: translateY(10px);} to{ opacity:1; transform: translateY(0);} }
+
+/* Sign in ALWAYS visible: compress for short viewports (phone landscape / chrome) */
+@media (max-height: 600px) {
+  .frontdoor__inner { padding-top: 3.5vh !important; padding-bottom: calc(3.5vh + env(safe-area-inset-bottom)) !important; }
+  .frontdoor__wordmark { margin-top: 1.4rem !important; font-size: clamp(2rem, 7vh, 3rem) !important; }
+  .fd-tagline { margin-top: 0.7rem !important; }
+  .fd-actions { margin-top: 1.6rem !important; gap: 0.7rem !important; }
+  .frontdoor__enter { padding: 0.8rem 2.8rem !important; }
+  .fd-flourish { width: clamp(60px, 9vh, 84px); }
+}
+@media (max-height: 430px) {
+  .frontdoor__inner { padding-top: 2vh !important; padding-bottom: calc(2vh + env(safe-area-inset-bottom)) !important; }
+  .fd-flourish { width: 54px; }
+  .frontdoor__wordmark { margin-top: 0.8rem !important; font-size: clamp(1.7rem, 9vh, 2.3rem) !important; }
+  .fd-tagline { margin-top: 0.5rem !important; font-size: 0.95rem !important; }
+  .fd-actions { margin-top: 1.1rem !important; }
+  .frontdoor__enter { padding: 0.7rem 2.4rem !important; }
+  .fd-keys { display: none !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fd-pool, .fd-wash, .fd-motes span, .fd-slur, .fd-note--2, .frontdoor__inner > * { animation: none !important; }
+  .fd-slur { stroke-dashoffset: 0 !important; }
+  .fd-note--2 { opacity: 1 !important; }
+  .frontdoor__enter, .frontdoor__signin { transition: none !important; }
+}
 
 /* ----------------------------------------------------------------------------
    9. COURSE HUB (hero) — navy text, royal CTA, powder progress
@@ -755,7 +859,7 @@ html[data-view="learn"][data-keyboard="hidden"] .app {
    (Trivially removable once the pipeline is confirmed.)
    ======================================================================== */
 html::after {
-  content: "rc2-180 " attr(data-view) "/" attr(data-keyboard);
+  content: "rc2-181 " attr(data-view) "/" attr(data-keyboard);
   position: fixed;
   right: 3px;
   bottom: 1px;
