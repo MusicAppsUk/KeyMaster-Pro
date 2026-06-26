@@ -373,7 +373,7 @@ export default function createView(ctx) {
   // takes over automatically the instant it ships (recorded file -> temporary TTS -> text).
   const TTS_DEV_FALLBACK = true;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-197';
+  const KM_BUILD = 'rc2-198';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate
@@ -716,14 +716,10 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   contBtn.addEventListener('click', () => {
     voice?.unlock?.();
     if (paused) return;                           // frozen while the pause overlay is up
-    // rc2-197: on the Welcome card the FIRST Continue tap plays Jack's recorded welcome and
-    // HOLDS on the card. Advancing on the same tap renders the next card, whose narration runs
-    // stop-before-start and hardStops the welcome line the instant it begins — that was the
-    // silence. The learner advances with a second Continue (or after listening). Welcome card
-    // only (index 0, greeting still pending); every other card behaves exactly as before.
-    const holdForWelcome = (pendingGreeting != null && index === 0);
-    speakPending();                               // tutor arrives on the first primary tap
-    if (holdForWelcome) { updateVoiceStatus(); return; }   // don't navigate away from the welcome on this tap
+    // rc2-198: the Welcome card narrates itself on first render now, so Continue simply
+    // advances. speakPending() remains for the RETURNING learner's welcome-back (spoken on
+    // their first gesture); for a new learner pendingGreeting is null so it is a no-op here.
+    speakPending();                               // returning learner: welcome-back on first tap
     if (learnMode && contBtn.disabled) return;   // proficiency gate (learn only)
     clearAutoCount();                             // if mid-countdown, continue now
     advanceStep();
@@ -846,7 +842,22 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   // Speak the queued greeting+intro — MUST be triggered from inside a user gesture
   // (button tap / key press) so mobile autoplay rules allow the first utterance.
   function speakPending() {
-    if (!pendingGreeting) { updateVoiceStatus(); return; }
+    if (!pendingGreeting) {
+      // rc2-198: a NEW learner has no pending greeting — the welcome card narrates itself on
+      // render (see __kmWelcomeRender). Record that truthfully so the panel doesn't read
+      // "speakPending has not run yet" after the learner has in fact tapped Continue.
+      try {
+        if (typeof window !== 'undefined') window.__kmSpeakPending = {
+          build: KM_BUILD, called: true, branch: 'none', lineId: null,
+          resuming: null, welcomeAutoPlayedBefore: welcomeAutoPlayed,
+          learnLesson: (progress && progress.get('learnLesson')) || 0,
+          learnCompletedLen: (progress && Array.isArray(progress.get('learnCompleted'))) ? progress.get('learnCompleted').length : 0,
+          cardIndex: index, cardId: (steps[index] && steps[index].id) || null,
+          note: 'no pending greeting \\u2014 welcome owned by render (new learner)', at: Date.now(),
+        };
+      } catch (_) { /* no-op */ }
+      updateVoiceStatus(); return;
+    }
     if (voice && voiceOn) {
       const resuming = !!(progress && (((progress.get('learnLesson') || 0) > 0)
         || (Array.isArray(progress.get('learnCompleted')) && progress.get('learnCompleted').length > 0)));
@@ -1302,6 +1313,15 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       const skipSpeech = suppressSpeakOnce || greetingOwnsCard0 || sameCardReRender;
       if (suppressSpeakOnce) suppressSpeakOnce = false;
       if (!skipSpeech) lastAutoSpokenIndex = index;
+      // rc2-198 PROOF: when the Welcome card (index 0) narrates itself on first render, record
+      // it persistently so it can be checked after Continue. (The audio probe is overwritten by
+      // the next card; this is not.) Reads true only the first time card 0 actually narrates.
+      if (index === 0 && !skipSpeech && typeof window !== 'undefined') {
+        window.__kmWelcomeRender = {
+          build: KM_BUILD, narrated: true, cardId: c && c.id, lineId: 'welcome.say.0',
+          hasMp3: !!(VOICE_PACK && VOICE_PACK['welcome.say.0']), at: Date.now(),
+        };
+      }
       runLearnSequence(c, skipSpeech, { source: 'render' });
       // Gently bring the active teaching area into view (device-tuned; never jumps if visible).
       try { card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) { /* no-op */ }
@@ -1668,16 +1688,24 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
           : 'Welcome to the course. I\u2019m Jack. I\u2019ll guide you step by step.';
         if (greetingEl) greetingEl.textContent = greetText;
         if (!greeted) {
-          // rc2-189: Jack's exact entry line IS the greeting — shown above and spoken on
-          // the first gesture. The welcome card's own beats aren't spoken here; its written
-          // text still renders, and Foundation content (courseFoundation.js) is untouched.
-          pendingGreeting = greetText;
-          suppressSpeakOnce = true;   // render won't auto-speak card 0; the greeting covers it
-          // DETERMINISTIC OWNERSHIP: the welcome is spoken ONLY by an explicit user
-          // gesture (Start / voice toggle / Continue / first key) via speakPending().
-          // Route init / progress restore no longer auto-speak it — that removed the
-          // last non-gesture trigger that could overlap the gesture-driven one.
-          // (pendingGreeting waits here until the first gesture fires speakPending.)
+          if (started) {
+            // RETURNING learner: there is no welcome card on screen (they resume mid-course),
+            // so Jack's welcome-back is spoken on the first gesture via speakPending(); the
+            // resumed lesson card then narrates itself on render as usual.
+            pendingGreeting = greetText;
+            suppressSpeakOnce = true;   // render won't auto-speak the resumed card's slot-0 greeting
+          }
+          // rc2-198 — NEW learner: the Welcome card narrates its OWN recorded beats
+          // (welcome.say.0-3) on first render, exactly like every other card (e.g. Meet the
+          // keyboard). For a new learner we deliberately leave pendingGreeting null and
+          // suppressSpeakOnce false, so greetingOwnsCard0 is false and the render's
+          // runLearnSequence(card0, skipSpeech=false) calls speakCard → the recorded welcome
+          // plays automatically. The 'Continue Foundation Course' tap that brought the learner
+          // here is the audio unlock. The Welcome card HOLDS (render never auto-advances on a
+          // mode:'none' card); Continue moves on to How this Course works. No tap is needed
+          // just to hear Jack, and nothing hardStops the line because no next card is rendered.
+          // Foundation content (courseFoundation.js) is untouched — this only changes WHICH
+          // path narrates the card (render vs first-gesture), not the card's text or order.
         }
         // rc2-167: show Voice + Reset inside the ⋯ drawer while a lesson is active.
         try {

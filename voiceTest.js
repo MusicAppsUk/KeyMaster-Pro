@@ -20,7 +20,7 @@ import { createTutorAudio } from './tutorAudio.js?v=rc2-195';
 import { createVoiceControl } from './voiceControl.js?v=rc2-191';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 
-const BUILD = 'rc2-197';
+const BUILD = 'rc2-198';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
@@ -80,6 +80,19 @@ function refresh(extra) {
   const jackColor = /playing/.test(jackLine) ? '#7fd68a' : (/error/.test(jackLine) ? '#e2675f' : '#e6a96b');
   // rc2-196 PROOF: exactly what the entry greeting did on this device.
   const sp = (typeof window !== 'undefined') ? window.__kmSpeakPending : null;
+  // rc2-198 PROOF: did the Welcome card narrate ITSELF on first render (the new flow)? This is
+  // the primary indicator now; the audio probe below confirms the play() actually sounded.
+  const wr = (typeof window !== 'undefined') ? window.__kmWelcomeRender : null;
+  const wrBlock = wr ? (
+    `<div style="margin-top:10px;padding:9px 10px;border:1px solid ${wr.narrated ? '#3a4a32' : '#4a3a24'};border-radius:8px;background:${wr.narrated ? '#192014' : '#201a10'}">` +
+    `<div style="color:#cfc9bd;font-size:12px;margin-bottom:5px;letter-spacing:.3px">WELCOME ON RENDER \\u2014 did the welcome card narrate itself (window.__kmWelcomeRender)</div>` +
+    row('&nbsp;&nbsp;· code build that ran', `<span style="color:${wr.build===BUILD?'#7fd68a':'#e2675f'}">${wr.build}${wr.build===BUILD?'':' (STALE \\u2014 deploy not live)'}</span>`) +
+    row('&nbsp;&nbsp;· welcome narrated on render', `<span style="color:${wr.narrated?'#7fd68a':'#e6a96b'};font-weight:700">${wr.narrated?'YES':'no'}</span>`) +
+    row('&nbsp;&nbsp;· line ID', wr.lineId || '\\u2014') +
+    row('&nbsp;&nbsp;· recorded MP3 in pack', wr.hasMp3?'yes':'no') +
+    `<div style="color:#9a9488;font-size:11px;margin-top:5px">If this says YES but the audio probe below shows play() rejected / playing:no, autoplay blocked the line \\u2014 that is the only remaining gap.</div>` +
+    `</div>`
+  ) : `<div style="margin-top:10px;padding:9px 10px;border:1px solid #4a3a24;border-radius:8px;background:#201a10;color:#e6a96b">WELCOME ON RENDER: not captured yet \\u2014 Reset, then press Continue Foundation Course. The welcome card narrating itself sets this.</div>`;
   const spRows = sp ? (
     `<div style="margin-top:10px;padding:9px 10px;border:1px solid #3a4250;border-radius:8px;background:#1d2530">` +
     `<div style="color:#cfc9bd;font-size:12px;margin-bottom:5px;letter-spacing:.3px">ENTRY GREETING — what speakPending did (window.__kmSpeakPending)</div>` +
@@ -110,6 +123,21 @@ function refresh(extra) {
   const seqId = te ? (te.seqActive ? (te.lastId || 'active') : 'none') : '—';
   const teRecent = (te && te.recent && te.recent.length) ? te.recent : null;
   const lastEv = teRecent ? teRecent[teRecent.length - 1] : null;
+  // rc2-198: "How this Course works" (course-opening) narration — does the voice pack have
+  // recorded Jack MP3s for it yet? If not, the card is correctly text-only and we say so plainly.
+  const CO_ID0 = 'course-opening.say.0';
+  const CO_ID1 = 'course-opening.say.1';
+  const coHas0 = !!(VOICE_PACK && VOICE_PACK[CO_ID0]);
+  const coHas1 = !!(VOICE_PACK && VOICE_PACK[CO_ID1]);
+  const coOk = coHas0 && coHas1;
+  const coBlock =
+    `<div style="margin-top:10px;padding:9px 10px;border:1px solid ${coOk ? '#3a4a32' : '#4a3a24'};border-radius:8px;background:${coOk ? '#192014' : '#201a10'}">` +
+    `<div style="color:#cfc9bd;font-size:12px;margin-bottom:5px;letter-spacing:.3px">HOW THIS COURSE WORKS \\u2014 recorded narration</div>` +
+    (coOk
+      ? `<div style="color:#7fd68a;font-weight:600;font-size:13px">Recorded Jack audio present for ${CO_ID0} / ${CO_ID1}.</div>`
+      : `<div style="color:#e6a96b;font-weight:700;font-size:13px;line-height:1.4">How this Course works: recorded Jack audio missing for ${CO_ID0} / ${CO_ID1}<br>` +
+        `<span style="color:#9a9488;font-weight:400;font-size:12px">\\u2014 this card narrates as text-only (no female / random device TTS) until the two MP3s are recorded and added to the voice pack.</span></div>`) +
+    `</div>`;
   body.innerHTML =
     row('App build (live \u2014 from service worker)', `<b style="color:${cacheReady ? '#7fd68a' : '#e6a96b'}">${appBuild}</b>`) +
     row('Audio engine loaded', engineLoaded ? '<span style="color:#7fd68a">yes (shared singleton)</span>' : '<span style="color:#e6a96b">no \u2014 open the Course once</span>') +
@@ -119,6 +147,7 @@ function refresh(extra) {
       `<div style="color:${jackColor};font-weight:700;font-size:14px;line-height:1.35">${jackLine}</div>` +
       `<div style="color:#9a9488;font-size:12px;margin-top:6px;word-break:break-word">Selected device voice (window.__kmVoicePick): <span style="color:#cfc9bd">${pickStr}</span></div>` +
     `</div>` +
+    wrBlock +
     spRows +
     apRows +
     `<div style="margin-top:8px;color:#9a9488">Live audio engine — what Jack actually uses</div>` +
@@ -132,6 +161,7 @@ function refresh(extra) {
     row('Line ID', WELCOME_ID) +
     row('Resolved MP3', res.file || '—') +
     row('Resolved URL', res.url || '—') +
+    coBlock +
     row('MP3 fetch (200/404)', extra && extra.fetch != null ? extra.fetch : '— (tap “Check Stage 1 file”)') +
     `<div style="margin-top:8px;color:#9a9488">Last self-test action</div>` +
     row('Playback started', extra && extra.started != null ? String(extra.started) : '—') +
