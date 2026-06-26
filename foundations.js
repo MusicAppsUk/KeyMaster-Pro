@@ -373,7 +373,7 @@ export default function createView(ctx) {
   // takes over automatically the instant it ships (recorded file -> temporary TTS -> text).
   const TTS_DEV_FALLBACK = true;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-196';
+  const KM_BUILD = 'rc2-197';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate
@@ -716,7 +716,14 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   contBtn.addEventListener('click', () => {
     voice?.unlock?.();
     if (paused) return;                           // frozen while the pause overlay is up
+    // rc2-197: on the Welcome card the FIRST Continue tap plays Jack's recorded welcome and
+    // HOLDS on the card. Advancing on the same tap renders the next card, whose narration runs
+    // stop-before-start and hardStops the welcome line the instant it begins — that was the
+    // silence. The learner advances with a second Continue (or after listening). Welcome card
+    // only (index 0, greeting still pending); every other card behaves exactly as before.
+    const holdForWelcome = (pendingGreeting != null && index === 0);
     speakPending();                               // tutor arrives on the first primary tap
+    if (holdForWelcome) { updateVoiceStatus(); return; }   // don't navigate away from the welcome on this tap
     if (learnMode && contBtn.disabled) return;   // proficiency gate (learn only)
     clearAutoCount();                             // if mid-countdown, continue now
     advanceStep();

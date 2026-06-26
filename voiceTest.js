@@ -20,7 +20,7 @@ import { createTutorAudio } from './tutorAudio.js?v=rc2-195';
 import { createVoiceControl } from './voiceControl.js?v=rc2-191';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 
-const BUILD = 'rc2-196';
+const BUILD = 'rc2-197';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
@@ -83,7 +83,7 @@ function refresh(extra) {
   const spRows = sp ? (
     `<div style="margin-top:10px;padding:9px 10px;border:1px solid #3a4250;border-radius:8px;background:#1d2530">` +
     `<div style="color:#cfc9bd;font-size:12px;margin-bottom:5px;letter-spacing:.3px">ENTRY GREETING — what speakPending did (window.__kmSpeakPending)</div>` +
-    row('&nbsp;&nbsp;· code build that ran', `<span style="color:${sp.build==='rc2-196'?'#7fd68a':'#e2675f'}">${sp.build}${sp.build==='rc2-196'?'':' (STALE — deploy not live)'}</span>`) +
+    row('&nbsp;&nbsp;· code build that ran', `<span style="color:${sp.build===BUILD?'#7fd68a':'#e2675f'}">${sp.build}${sp.build===BUILD?'':' (STALE — deploy not live)'}</span>`) +
     row('&nbsp;&nbsp;· speakPending called', sp.called ? 'yes' : 'no') +
     row('&nbsp;&nbsp;· branch taken', `<span style="color:${sp.branch==='welcome-card'?'#7fd68a':'#e6a96b'}">${sp.branch}</span>`) +
     row('&nbsp;&nbsp;· line ID attempted', sp.lineId || '\u2014') +
