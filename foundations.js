@@ -373,7 +373,7 @@ export default function createView(ctx) {
   // takes over automatically the instant it ships (recorded file -> temporary TTS -> text).
   const TTS_DEV_FALLBACK = true;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-200';
+  const KM_BUILD = 'rc2-202';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate
@@ -543,11 +543,24 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
     const gap = c.demoGap ?? 0.4;
     const isChord = gap <= 0.12;
     const vel = isChord ? 50 : 58;
-    // Sequence notes must clear before the next starts (no overlap-summing);
-    // chords are meant to ring together.
     const dur = isChord ? 1.10 : Math.min(0.55, Math.max(0.20, gap * 0.9));
     const t0 = synth.ctx.currentTime + 0.02;
-    c.demo.forEach((m, i) => playDemoVoice(m, vel, dur, t0 + i * gap));
+    if (isChord) {
+      // Chord: notes ring together (unchanged) -- a quick roll at <=0.12s stagger.
+      c.demo.forEach((m, i) => playDemoVoice(m, vel, dur, t0 + i * gap));
+    } else {
+      // The course piano has a 0.7s release tail, so at melody tempo three notes
+      // can still be ringing at once: the dissonant overlap-cluster heard as "two
+      // notes at once". Play each note in real time and hard-stop the previous one
+      // (30 ms pop-safe fade) the instant the next begins, so every note reads as
+      // one distinct pitch. The final note has no successor, so it rings out.
+      c.demo.forEach((m, i) => {
+        demoSweepTimers.push(setTimeout(() => {
+          try { piano.allNotesOff(); } catch (_) { /* no-op */ }
+          playDemoVoice(m, vel, dur);
+        }, Math.round(i * gap * 1000)));
+      });
+    }
     sweepDemoVisual(c.demo, gap, isChord, dur);   // light each key as the tutor plays it
   }
 
@@ -1413,6 +1426,10 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
         keyboard?.highlight?.(okKeys, 'success');
         setTimeout(() => { try { keyboard?.clearHighlight?.('success'); } catch (_) { /* no-op */ } }, 950);
       }
+      // Clear the 'target' guide dots once the phrase is played correctly: the
+      // support hint is no longer needed and must not linger on the keyboard
+      // (otherwise it reads as extra pressed keys when the demo is replayed).
+      try { keyboard?.clearHighlight?.('target'); } catch (_) { /* no-op */ }
       flashStaff('correct');
     } catch (_) { /* success glow is a flourish, never required */ }
     let shown = msg || 'Correct.';

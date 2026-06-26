@@ -20,7 +20,7 @@ import { createTutorAudio } from './tutorAudio.js?v=rc2-195';
 import { createVoiceControl } from './voiceControl.js?v=rc2-191';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 
-const BUILD = 'rc2-200';
+const BUILD = 'rc2-202';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
@@ -208,12 +208,12 @@ function refresh(extra) {
       const kl1InPack = !!(VOICE_PACK && VOICE_PACK[kl1Id]);
       const pickNow = (typeof window !== 'undefined') ? window.__kmVoicePick : null;
       const jackStatic = kl1InPack ? ('MP3 mapped (' + VOICE_PACK[kl1Id] + ')') : (pickNow ? ('no MP3; would speak via male TTS voice ' + pickNow.name) : 'no recorded MP3 mapped for this line; no recognised male device voice; TEXT-ONLY');
-      const jackLive = (extra && extra.kl1jack) ? ('<div style="color:#cfc9bd;font-size:11px;margin-top:3px">&nbsp;&nbsp;last test: ' + extra.kl1jack + '</div>') : '';
+      const jackLive = (extra && extra.kl1jack) ? ('<div style="color:#ffd9a0;font-size:15px;margin-top:6px;font-weight:600">&nbsp;&nbsp;last test: ' + extra.kl1jack + '</div>') : '';
       return '<div style="margin-top:10px;padding:10px;border:1px solid #4a4030;border-radius:8px;background:#1b1810">'
-        + '<div style="color:#f3efe6;font-size:13px;font-weight:700;margin-bottom:7px;letter-spacing:.3px">KEY LEVEL 1 AUDIO VERDICT</div>'
-        + '<div style="font-size:12px;margin-bottom:4px">1 &mdash; Piano engine: <span style="color:' + engColor + '">' + engLine + '</span></div>'
-        + '<div style="font-size:12px;margin-bottom:4px">2 &mdash; Double-trigger: <span style="color:' + dupColor + ';font-weight:600">' + dupLine + '</span></div>'
-        + '<div style="font-size:12px;margin-bottom:4px">3 &mdash; KL1 Jack voice: <span style="color:#e6a96b">' + jackStatic + '</span></div>'
+        + '<div style="color:#f3efe6;font-size:16px;font-weight:700;margin-bottom:9px;letter-spacing:.3px">KEY LEVEL 1 AUDIO VERDICT</div>'
+        + '<div style="font-size:15px;margin-bottom:7px">1 &mdash; Piano engine: <span style="color:' + engColor + '">' + engLine + '</span></div>'
+        + '<div style="font-size:15px;margin-bottom:7px">2 &mdash; Double-trigger: <span style="color:' + dupColor + ';font-weight:600">' + dupLine + '</span></div>'
+        + '<div style="font-size:15px;margin-bottom:7px">3 &mdash; KL1 Jack voice: <span style="color:#e6a96b">' + jackStatic + '</span></div>'
         + jackLive
         + (traceTxt ? ('<pre style="margin:6px 0 0;white-space:pre-wrap;color:#9a9488;font-size:10px;line-height:1.5">' + traceTxt + '</pre>') : '')
       + '</div>';
@@ -234,7 +234,7 @@ function build() {
   panel = document.createElement('div');
   panel.id = 'km-voice-test';
   panel.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#16130d;color:#f3efe6;'
-    + 'font:14px/1.4 system-ui,sans-serif;overflow:auto;padding:18px;max-width:520px;margin:0 auto;';
+    + 'font:15px/1.45 system-ui,sans-serif;overflow:auto;padding:18px;max-width:560px;margin:0 auto;';
   panel.innerHTML =
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
     + '<strong style="font-size:16px">Jack Voice Self-Test</strong>'
@@ -326,9 +326,10 @@ function badge() {
   b.id = 'km-build-badge';
   b.textContent = BUILD;
   b.title = 'KeyMaster build — tap for Voice Self-Test';
-  b.style.cssText = 'position:fixed;right:6px;bottom:6px;z-index:2147483646;'
-    + 'font:11px/1 system-ui,sans-serif;color:#9a9488;background:rgba(22,19,13,.55);'
-    + 'border:1px solid rgba(154,148,136,.3);border-radius:6px;padding:3px 6px;opacity:.6;';
+  b.style.cssText = 'position:fixed;right:10px;bottom:16px;z-index:2147483646;'
+    + 'font:700 15px/1 system-ui,sans-serif;color:#fff;background:#285FA6;'
+    + 'border:2px solid #fff;border-radius:12px;padding:13px 18px;opacity:.97;'
+    + 'box-shadow:0 2px 10px rgba(0,0,0,.35);min-width:64px;text-align:center;';
   b.addEventListener('click', () => { try { location.hash = '#voice-test'; } catch (_) {} });
   document.body.appendChild(b);
 }

@@ -916,17 +916,17 @@ html[data-view="learn"][data-keyboard="hidden"] .app {
    (Trivially removable once the pipeline is confirmed.)
    ======================================================================== */
 html::after {
-  content: "rc2-200 " attr(data-view) "/" attr(data-keyboard);
+  content: "rc2-202 " attr(data-view) "/" attr(data-keyboard);
   position: fixed;
   right: 3px;
   bottom: 1px;
   z-index: 2147483647;
-  font: 600 9px/1 ui-monospace, monospace;
+  font: 700 13px/1 ui-monospace, monospace;
   letter-spacing: .02em;
   color: #285FA6;
-  background: rgba(255,255,255,.82);
-  padding: 2px 5px;
-  border-radius: 3px;
+  background: rgba(255,255,255,.92);
+  padding: 4px 8px;
+  border-radius: 5px;
   pointer-events: none;
 }
 
