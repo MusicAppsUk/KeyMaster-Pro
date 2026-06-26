@@ -916,7 +916,7 @@ html[data-view="learn"][data-keyboard="hidden"] .app {
    (Trivially removable once the pipeline is confirmed.)
    ======================================================================== */
 html::after {
-  content: "rc2-189 " attr(data-view) "/" attr(data-keyboard);
+  content: "rc2-190 " attr(data-view) "/" attr(data-keyboard);
   position: fixed;
   right: 3px;
   bottom: 1px;

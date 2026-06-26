@@ -127,8 +127,8 @@ const VIEW_REGISTRY = {
   },
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-189',
-    load: () => import('./foundations.js?v=rc2-189'),
+    src: './foundations.js?v=rc2-190',
+    load: () => import('./foundations.js?v=rc2-190'),
   },
   scales: {
     slot: 'scales',
@@ -148,8 +148,8 @@ const VIEW_REGISTRY = {
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-189',
-    load: () => import('./foundations.js?v=rc2-189'),
+    src: './foundations.js?v=rc2-190',
+    load: () => import('./foundations.js?v=rc2-190'),
   },
 };
 
@@ -336,13 +336,15 @@ class KeyMasterApp {
         this._requestImmersiveFullscreen();
       });
       enterEl?.addEventListener('click', () => {
-        // Ordering (Android/Chrome): audio unlocks on the pointerdown that precedes
-        // this click (the once-only ensureAudio), so the resume-aware flourish is
-        // already in flight. Fullscreen is best-effort and must not block entry; it
-        // is wrapped so any failure cannot stop the route, and leave() runs
-        // unconditionally to carry us into #/learn.
-        try { this._requestImmersiveFullscreen(); } catch { /* never blocks routing */ }
-        leave('#/learn');
+        // rc2-190: Continue reveals the flagship HOME MENU and STAYS there. It no longer
+        // auto-jumps into the Course — that produced splash -> black -> home-flash ->
+        // black -> course, because leave('#/learn') navigated past the home hub while it
+        // was only briefly visible underneath the fading front door. leave(null) dismisses
+        // the front door WITHOUT navigating, so the already-mounted home hub is revealed
+        // and usable. The Course is entered only by a deliberate choice in the menu
+        // (Continue/Start the Foundation Course, Course Map, Review). Fullscreen is left to
+        // the dedicated front-door control so Continue causes no fullscreen-entry black.
+        leave(null);
       });
       document.getElementById('fd-rooms')?.addEventListener('click', () => leave(null));
 
@@ -552,7 +554,7 @@ class KeyMasterApp {
     if (!overlay || !body) return;
     overlay.hidden = false;
     body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Loading the journey\u2026</p>';
-    import('./foundations.js?v=rc2-189').then((F) => {
+    import('./foundations.js?v=rc2-190').then((F) => {
       const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
       const chapterAt = (typeof F.chapterAtIndex === 'function') ? F.chapterAtIndex : null;
       if (!steps.length || !chapterAt) { body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Course map unavailable right now.</p>'; return; }
@@ -805,8 +807,16 @@ class KeyMasterApp {
     const ensureAudio = () => {
       if (!unlocked) {
         unlockAudio(); unlocked = true; this._playFlourish();
-        // (rc2-187) No TTS prime here: the browser TTS path is disabled, so the speech
-        // engine is never touched on entry — no chance of a stray browser voice.
+        // rc2-190: prime the speech engine inside this first gesture so Jack's controlled
+        // (temporary, male-preferring) voice can speak when the Course is later entered
+        // from the home menu. Without this, the deferred course-entry line is blocked by
+        // mobile autoplay rules. An EMPTY utterance unlocks the engine; it selects no
+        // voice and makes no sound, so there is NO stray/female browser voice here.
+        try {
+          if (typeof window !== 'undefined' && window.speechSynthesis && typeof window.SpeechSynthesisUtterance !== 'undefined') {
+            window.speechSynthesis.speak(new window.SpeechSynthesisUtterance(''));
+          }
+        } catch (_) { /* speech is optional; never block entry */ }
         // Lazy-load the Course sampled grand now that the context is unlocked.
         // Fire-and-forget: any failure (missing samples / decode error) simply
         // leaves the rc2-163 synth fallback in place. Routes into the shared bus.
@@ -1246,7 +1256,7 @@ class KeyMasterApp {
       const cta = this.root.querySelector('#learn-cta');
       if (cta) cta.textContent = started ? 'Continue the Foundation Course' : 'Start the Foundation Course';
       set('#course-hero-title', started ? 'Continue the Foundation Course' : COURSE_NAME);
-      import('./foundations.js?v=rc2-189').then((F) => {
+      import('./foundations.js?v=rc2-190').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
         const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
