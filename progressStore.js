@@ -31,6 +31,8 @@ function freshState() {
     foundationsCompleted: [],     // ids of completed Foundations cards
     heardNarration: [],           // narration ids already spoken (no repeats)
     voiceOn: true,                // tutor voice preference
+    voicePrefMigrated: false,     // one-time: legacy 'voice off' migrated to Jack-on default
+    preambleStepMigrated: false,  // one-time: resume index shifted for the rc2-162 preamble step
     keyboardVisible: true,        // keyboard-visible preference
     fingeringVisible: true,       // fingering-visible preference
     scales: null,                 // opaque Scales settings (set by that module later)

@@ -16,11 +16,11 @@
 // no UI unless #voice-test is open, so it is safe to leave in and easy to remove.
 // =============================================================================
 
-import { createTutorAudio } from './tutorAudio.js?v=rc2-107';
-import { createVoiceControl } from './voiceControl.js?v=rc2-127';
-import { VOICE_PACK } from './voicePackData.js?v=rc2-116';
+import { createTutorAudio } from './tutorAudio.js?v=rc2-191';
+import { createVoiceControl } from './voiceControl.js?v=rc2-191';
+import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 
-const BUILD = 'rc2-127';
+const BUILD = 'rc2-192';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
@@ -55,40 +55,37 @@ function refresh(extra) {
   const st = c && c.diag ? c.diag.state() : null;
   const res = c && c.diag ? c.diag.resolved(WELCOME_ID) : { file: WELCOME_FILE, url: WELCOME_URL };
   const body = panel.querySelector('[data-body]');
-  const expected = BUILD;
   const ver = (window.__kmVer || {});
-  const vcCode = (st && st.code) || ver.voiceControl || null;
-  const files = [
-    ['foundations.js', ver.foundations || '(open Course once)'],
-    ['voiceControl.js', vcCode || '** STALE: pre-rc2-127 — re-upload **'],
-    ['voiceTest.js',    ver.voiceTest || expected],
-    ['pwaUpdate.js',    ver.pwaUpdate || '(not reporting)'],
-  ];
-  const isV = (v) => /^rc2-/.test(String(v));
-  const stale = files.filter((f) => isV(f[1]) && f[1] !== expected).map((f) => f[0]);
-  const absent = files.filter((f) => !isV(f[1])).map((f) => f[0]);
-  const known = files.filter((f) => isV(f[1]));
-  const allCurrent = known.length > 0 && stale.length === 0 && absent.length === 0;
-  const verdict = allCurrent
-    ? `<span style="color:#7fd68a">ALL FILES CURRENT (${expected})</span>`
-    : `<span style="color:#e6a96b">RE-UPLOAD: ${[...new Set(stale.concat(absent))].join(', ') || 'mixed build'}</span>`;
-  const vColor = (v) => (v === expected ? '#7fd68a' : (isV(v) ? '#e6a96b' : '#e6a96b'));
-  const engines = st ? (st.engines != null ? String(st.engines) : '(field absent — voiceControl is stale)') : '—';
-  const last = (st && st.recent && st.recent.length) ? st.recent[st.recent.length - 1] : null;
+  const te = (typeof window !== 'undefined') ? (window.__kmTutorEngine || null) : null;
+  const taVer = ver.tutorAudio || (te && te.version) || null;
+  const cacheStr = (extra && extra.cache != null) ? String(extra.cache) : '';
+  // The live service-worker cache name is the single source of truth for the build that
+  // is ACTUALLY deployed on this device (e.g. "keymaster-rc2-191" -> "rc2-191"). The
+  // per-module versions further down are when each FILE last changed — they are not, and
+  // are not meant to match, the app build.
+  const appBuildM = cacheStr.match(/rc2-\d+/);
+  const appBuild = appBuildM ? appBuildM[0]
+    : ((typeof window !== 'undefined' && window.__kmBuild) ? String(window.__kmBuild) : '(waiting for service worker\u2026)');
+  const cacheReady = !!appBuildM;
+  const engineLoaded = !!te;
+  const instances = te ? String(te.instances) : '—';
+  const enginesLive = te ? '1 (shared singleton)' : '— (open Course once)';
+  const curLine = te ? (te.lastId || '(idle)') : '—';
+  const curUrl = (te && te.lastId && te.pack && te.pack[te.lastId]) ? `voice/${te.lang}/${te.pack[te.lastId]}` : '—';
+  const seqId = te ? (te.seqActive ? (te.lastId || 'active') : 'none') : '—';
+  const teRecent = (te && te.recent && te.recent.length) ? te.recent : null;
+  const lastEv = teRecent ? teRecent[teRecent.length - 1] : null;
   body.innerHTML =
-    row('Expected build', `<b>${expected}</b>`) +
-    row('Verdict', verdict) +
-    files.map((f) => row('&nbsp;&nbsp;· ' + f[0], `<span style="color:${vColor(f[1])}">${f[1]}</span>`)).join('') +
-    row('Service-worker cache', extra && extra.cache != null ? extra.cache : '… (loading)') +
-    `<div style="margin-top:8px;color:#9a9488">Voice arbitration</div>` +
-    row('Audio engine', st ? String(st.engine || '—') : 'n/a (open Course once)') +
-    row('Registered engines', engines) +
-    row('Active narrations', st ? String(st.activeCount) : '—') +
-    row('Controllers (instances)', st ? String(st.controllers) : '—') +
-    row('Prev audio stopped (count)', st ? String(st.stops) : '—') +
-    row('Speak requests (total)', st ? String(st.requests) : '—') +
-    row('Duplicates blocked (total)', st ? String(st.blocked) : '—') +
-    row('Voice enabled', st ? String(st.voiceEnabled) : '—') +
+    row('App build (live \u2014 from service worker)', `<b style="color:${cacheReady ? '#7fd68a' : '#e6a96b'}">${appBuild}</b>`) +
+    row('Audio engine loaded', engineLoaded ? '<span style="color:#7fd68a">yes (shared singleton)</span>' : '<span style="color:#e6a96b">no \u2014 open the Course once</span>') +
+    row('&nbsp;&nbsp;· service-worker cache name', `<span style="color:${cacheReady ? '#7fd68a' : '#e6a96b'}">${cacheStr || '\u2026 (loading)'}</span>`) +
+    `<div style="margin-top:8px;color:#9a9488">Live audio engine — what Jack actually uses</div>` +
+    row('Voice engines active', enginesLive) +
+    row('tutorAudio instances', instances + (te ? '  (all share 1 engine)' : '')) +
+    row('Current voice line', curLine) +
+    row('Current resolved URL', curUrl) +
+    row('Active sequence ID', seqId) +
+    row('Last engine event', lastEv ? `${lastEv.fn} ${lastEv.id == null ? '' : lastEv.id} → ${lastEv.action}` : '—') +
     `<div style="margin-top:8px;color:#9a9488">Welcome line</div>` +
     row('Line ID', WELCOME_ID) +
     row('Resolved MP3', res.file || '—') +
@@ -98,12 +95,17 @@ function refresh(extra) {
     row('Playback started', extra && extra.started != null ? String(extra.started) : '—') +
     row('Duplicate suppressed', extra && extra.blocked != null ? String(extra.blocked) : '—') +
     row('Previous cancelled', extra && extra.stopped != null ? String(extra.stopped) : '—') +
-    row('Last request', last ? `${last.fn} ${last.id} &lt;${last.src}&gt; → ${last.result}${last.reason ? ' (' + last.reason + ')' : ''}${last.stoppedPrev ? ' +stoppedPrev' : ''}` : '—') +
-    `<div style="margin-top:8px;color:#9a9488">Last 5 requests</div>` +
+    `<div style="margin-top:8px;color:#9a9488">Module code versions \u2014 when each file last changed (informational; these are NOT the app build above)</div>` +
+    row('&nbsp;&nbsp;· tutorAudio.js', ver.tutorAudio || '(loads with Course)') +
+    row('&nbsp;&nbsp;· voiceControl.js', ver.voiceControl || '(loads with Course)') +
+    row('&nbsp;&nbsp;· voiceTest.js', ver.voiceTest || BUILD) +
+    row('&nbsp;&nbsp;· pwaUpdate.js', ver.pwaUpdate || '(not reporting)') +
+    row('&nbsp;&nbsp;· foundations.js', ver.foundations || '(loads when Course opens)') +
+    `<div style="margin-top:8px;color:#9a9488">Last 5 voice requests (live engine)</div>` +
     `<pre style="margin:4px 0 0;white-space:pre-wrap;color:#cfc9bd;font-size:12px">${
-      (st && st.recent && st.recent.length)
-        ? st.recent.map((r) => `${new Date(r.t).toLocaleTimeString()}  ${r.fn} ${r.id}  <${r.src}>  ${r.result}${r.reason ? ' (' + r.reason + ')' : ''}${r.stoppedPrev ? ' +stoppedPrev' : ''}`).join('\n')
-        : '—'
+      teRecent
+        ? teRecent.slice(-5).map((r) => `${new Date(r.t).toLocaleTimeString()}  ${r.fn} ${r.id == null ? '' : r.id}  ${r.action}`).join('\n')
+        : '— (open the Course or tap a button below)'
     }</pre>`;
   if (lastExtra.cache == null) {
     try {

@@ -834,12 +834,22 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       : true;
     if (!okToReset) return;
     audio?.cancel?.();
-    if (progress) progress.reset();
+    if (progress) {
+      progress.reset();
+      // rc2-192: a reset is a TRUE fresh start. Mark the one-time migrations as already
+      // applied (a fresh learner has no legacy state to shift) and put Jack back ON, so
+      // the learner lands on lesson 1 with a fresh greeting and an audible tutor — never
+      // a stale resume point and never a silently-muted Jack.
+      progress.set('voicePrefMigrated', true);
+      progress.set('preambleStepMigrated', true);
+      progress.set('voiceOn', PREMIUM_VOICE_READY);
+    }
     index = 0;
     greeted = false;
     lastAutoSpokenIndex = -1;
     welcomeAutoPlayed = false; lastAutoNarrId = null; lastAutoNarrAt = 0;
-    setVoice(voiceOn);   // rc2-159: keep the voice preference — Reset must not silently mute Jack
+    voiceOn = PREMIUM_VOICE_READY;   // re-enable Jack on reset (Reset must not leave the tutor muted)
+    setVoice(voiceOn);
     render();
   }
   function speakCard(c, onDone, opts = {}) {
