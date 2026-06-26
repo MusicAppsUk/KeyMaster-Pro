@@ -20,7 +20,7 @@ import { createTutorAudio } from './tutorAudio.js?v=rc2-195';
 import { createVoiceControl } from './voiceControl.js?v=rc2-191';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 
-const BUILD = 'rc2-199';
+const BUILD = 'rc2-200';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
@@ -179,29 +179,43 @@ function refresh(extra) {
         ? teRecent.slice(-5).map((r) => `${new Date(r.t).toLocaleTimeString()}  ${r.fn} ${r.id == null ? '' : r.id}  ${r.action}`).join('\n')
         : '— (open the Course or tap a button below)'
     }</pre>`
-    // rc2-199 TEMP DIAGNOSTIC: KL1 audio trace -- the last Course note requests, which engine
-    // actually sounded each, repitch from nearest sample, gap from the previous note, and any
-    // <50ms same-note doubles (the clinky-plink signature). Reads window.__kmAudioTrace.
+    // rc2-200 TEMP DIAGNOSTIC: KL1 AUDIO VERDICT -- self-interpreting. Three plain answers:
+    // (1) is the real Salamander grand loaded, or did we fall back to the thin synth? (2) did any
+    // note double-trigger within 50ms? (3) why is KL1 Jack silent? Reads __kmCoursePianoStatus,
+    // __kmAudioTrace, the voice pack, and __kmVoicePick.
     + (() => {
+      const cps = (typeof window !== 'undefined' && typeof window.__kmCoursePianoStatus === 'function') ? window.__kmCoursePianoStatus() : null;
       const tr = (typeof window !== 'undefined' && Array.isArray(window.__kmAudioTrace)) ? window.__kmAudioTrace : null;
-      if (!tr || !tr.length) {
-        return '<div style="margin-top:10px;padding:9px 10px;border:1px solid #3a4250;border-radius:8px;background:#1d2530;color:#e6a96b">KL1 AUDIO TRACE: no notes captured yet -- open Key Level 1, let a demo play (or play a note), then reopen this panel.</div>';
+      // (1) PIANO ENGINE -- is the real grand loaded?
+      let engLine, engColor;
+      if (!cps) { engLine = 'unknown -- open Key Level 1 and play a note first, then reopen this panel'; engColor = '#e6a96b'; }
+      else if (cps.ready) { engLine = 'Salamander grand LOADED (' + (cps.status ? cps.status.loaded : '?') + ' samples) -- the real piano is active'; engColor = '#7fd68a'; }
+      else { const st = cps.status || {}; engLine = 'Salamander NOT loaded (' + (st.code || 'unknown') + (st.manifest ? '' : ', manifest missing') + ') -- you are hearing the BACKUP SYNTH, which sounds thin/plinky'; engColor = '#e2675f'; }
+      // (2) DOUBLE-TRIGGER -- did any note fire twice within 50ms?
+      let dupLine, dupColor, traceTxt = '';
+      if (!tr || !tr.length) { dupLine = 'no notes captured yet -- play a phrase in Key Level 1, then reopen this panel'; dupColor = '#e6a96b'; }
+      else {
+        const dupCount = tr.filter((e) => e.dup50).length;
+        const engines = Array.from(new Set(tr.map((e) => e.engine)));
+        dupLine = dupCount ? ('DOUBLE-TRIGGER -- ' + dupCount + ' note(s) fired twice within 50ms (a real duplicate path)') : 'NONE -- every note fired exactly once (so the clinky is sound QUALITY, not a duplicate)';
+        dupColor = dupCount ? '#e2675f' : '#7fd68a';
+        traceTxt = 'last notes [' + engines.join(' + ') + ']:\n' + tr.slice(-10).map((e) =>
+          (e.name + '    ').slice(0, 4) + ' src=' + ((e.src || '?') + '        ').slice(0, 8) + ' ' + (e.engine === 'salamander' ? 'SALAMANDER' : 'pianoVoice') + ' rp=' + (e.repitch == null ? '-' : (e.repitch > 0 ? '+' : '') + e.repitch) + ' gap=' + (e.gapMs == null ? '-' : e.gapMs + 'ms') + (e.dup50 ? '  >>> DUP' : '')
+        ).join('\n');
       }
-      const dupCount = tr.filter((e) => e.dup50).length;
-      const engines = Array.from(new Set(tr.map((e) => e.engine)));
-      const last = tr.slice(-12).map((e) =>
-        (e.name + '    ').slice(0, 4) + ' src=' + ((e.src || '?') + '         ').slice(0, 9)
-        + ' ' + (e.engine === 'salamander' ? 'SALAMANDER' : 'pianoVoice')
-        + ' rp=' + (e.repitch == null ? '-' : (e.repitch > 0 ? '+' : '') + e.repitch)
-        + ' gap=' + (e.gapMs == null ? '-' : e.gapMs + 'ms')
-        + (e.dup50 ? '  >>> DUP<50ms' : '')
-      ).join('\n');
-      return '<div style="margin-top:10px;padding:9px 10px;border:1px solid ' + (dupCount ? '#5a2a2a' : '#3a4a32') + ';border-radius:8px;background:' + (dupCount ? '#241414' : '#192014') + '">'
-        + '<div style="color:#cfc9bd;font-size:12px;margin-bottom:5px;letter-spacing:.3px">KL1 AUDIO TRACE -- every Course note request (window.__kmAudioTrace)</div>'
-        + row('&nbsp;&nbsp;* engine(s) used', '<span style="color:' + (engines.length > 1 ? '#e6a96b' : (engines[0] === 'salamander' ? '#7fd68a' : '#e6a96b')) + '">' + engines.join(' + ') + '</span>')
-        + row('&nbsp;&nbsp;* double-triggers (<50ms)', '<span style="color:' + (dupCount ? '#e2675f' : '#7fd68a') + ';font-weight:700">' + dupCount + (dupCount ? '  <-- same note fired twice almost together = the clinky-plink' : '') + '</span>')
-        + '<pre style="margin:6px 0 0;white-space:pre-wrap;color:#cfc9bd;font-size:11px;line-height:1.5">' + last + '</pre>'
-        + '<div style="color:#9a9488;font-size:11px;margin-top:5px">A note appearing twice within ~50ms (DUP) means the same note is being triggered twice. If engine reads pianoVoice, the Salamander sampler did not load on this device.</div>'
+      // (3) KL1 JACK CHAIN -- why silent?
+      const kl1Id = 'kl1-first-phrase.say.0';
+      const kl1InPack = !!(VOICE_PACK && VOICE_PACK[kl1Id]);
+      const pickNow = (typeof window !== 'undefined') ? window.__kmVoicePick : null;
+      const jackStatic = kl1InPack ? ('MP3 mapped (' + VOICE_PACK[kl1Id] + ')') : (pickNow ? ('no MP3; would speak via male TTS voice ' + pickNow.name) : 'no recorded MP3 mapped for this line; no recognised male device voice; TEXT-ONLY');
+      const jackLive = (extra && extra.kl1jack) ? ('<div style="color:#cfc9bd;font-size:11px;margin-top:3px">&nbsp;&nbsp;last test: ' + extra.kl1jack + '</div>') : '';
+      return '<div style="margin-top:10px;padding:10px;border:1px solid #4a4030;border-radius:8px;background:#1b1810">'
+        + '<div style="color:#f3efe6;font-size:13px;font-weight:700;margin-bottom:7px;letter-spacing:.3px">KEY LEVEL 1 AUDIO VERDICT</div>'
+        + '<div style="font-size:12px;margin-bottom:4px">1 &mdash; Piano engine: <span style="color:' + engColor + '">' + engLine + '</span></div>'
+        + '<div style="font-size:12px;margin-bottom:4px">2 &mdash; Double-trigger: <span style="color:' + dupColor + ';font-weight:600">' + dupLine + '</span></div>'
+        + '<div style="font-size:12px;margin-bottom:4px">3 &mdash; KL1 Jack voice: <span style="color:#e6a96b">' + jackStatic + '</span></div>'
+        + jackLive
+        + (traceTxt ? ('<pre style="margin:6px 0 0;white-space:pre-wrap;color:#9a9488;font-size:10px;line-height:1.5">' + traceTxt + '</pre>') : '')
       + '</div>';
     })();
   if (lastExtra.cache == null) {
@@ -231,6 +245,7 @@ function build() {
     + '<button data-act="twice" style="padding:12px;border:0;border-radius:10px;background:#6b5a3b;color:#fff;font-weight:600">Play welcome twice quickly</button>'
     + '<button data-act="stop"  style="padding:12px;border:0;border-radius:10px;background:#6b3b3b;color:#fff;font-weight:600">Stop Jack</button>'
     + '<button data-act="check" style="padding:12px;border:0;border-radius:10px;background:#3b556b;color:#fff;font-weight:600">Check Stage 1 voice file</button>'
+    + '<button data-act="kl1jack" style="grid-column:1 / -1;padding:12px;border:0;border-radius:10px;background:#4a3b6b;color:#fff;font-weight:600">Test KL1 Jack voice</button>'
     + '<button data-act="reset" style="grid-column:1 / -1;padding:12px;border:0;border-radius:10px;background:#2a2620;color:#f3efe6;font-weight:600">Reset cache / reload latest build</button>'
     + '</div>'
     + '<p style="color:#9a9488;margin-top:12px">“Play welcome twice quickly” should report one playback and one <b>duplicate blocked</b>.</p>';
@@ -265,6 +280,22 @@ function build() {
       } catch (err) {
         refresh({ fetch: 'network error' });
       }
+    } else if (act === 'kl1jack') {
+      // KL1 Jack chain, reported live so the button never just does nothing.
+      const kl1Id = 'kl1-first-phrase.say.0';
+      const kl1Text = 'This is the first phrase. Read the shape, then play it back.';
+      const inPack = !!(VOICE_PACK && VOICE_PACK[kl1Id]);
+      const pickNow = (typeof window !== 'undefined') ? window.__kmVoicePick : null;
+      const before = (window.__kmVoiceTrace || []).length;
+      try { c && c.say(kl1Id, kl1Text, { source: 'selftest-kl1' }); } catch (_) { /* no-op */ }
+      const after = (window.__kmVoiceTrace || []).slice(before);
+      const played = after.some((r) => r.result === 'play');
+      const results = after.map((r) => r.result).filter(Boolean).join(',') || 'no engine response';
+      let verdict;
+      if (inPack) verdict = played ? ('MP3 played (' + VOICE_PACK[kl1Id] + ')') : ('MP3 mapped but did NOT play -- engine said: ' + results);
+      else if (pickNow) verdict = played ? ('no MP3; spoke via male TTS voice ' + pickNow.name) : ('no MP3; tried male TTS ' + pickNow.name + ' -- engine said: ' + results);
+      else verdict = 'no recorded MP3 mapped; no recognised male device voice; TEXT-ONLY (nothing audible -- expected until KL1 voice is recorded)';
+      refresh({ kl1jack: verdict });
     } else if (act === 'reset') {
       try {
         if ('serviceWorker' in navigator) { const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map((r) => r.unregister())); }

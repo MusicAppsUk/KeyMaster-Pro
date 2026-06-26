@@ -11,7 +11,7 @@
 // on window load and adds no UI unless an update is actually available.
 // =============================================================================
 
-const BUILD = 'rc2-199';
+const BUILD = 'rc2-200';
 let userInitiated = false;
 
 function showBanner(reg) {

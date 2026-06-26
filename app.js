@@ -26,8 +26,8 @@ import { PianoSynth } from './pianoVoice.js';
 import { createCoursePiano } from './coursePianoSampler.js';
 import { Scheduler } from './scheduler.js';
 import { Metronome } from './metronome.js';
-import './voiceTest.js?v=rc2-199';  // visible Voice Self-Test at #voice-test (no console needed)
-import './pwaUpdate.js?v=rc2-199';  // installable-PWA "Update available" flow
+import './voiceTest.js?v=rc2-200';  // visible Voice Self-Test at #voice-test (no console needed)
+import './pwaUpdate.js?v=rc2-200';  // installable-PWA "Update available" flow
 import { NoteInput } from './noteInput.js';
 import { createMidiEvaluator } from './midiEvaluator.js';
 import { createDevReadout, isDevMode } from './devReadout.js';
@@ -127,8 +127,8 @@ const VIEW_REGISTRY = {
   },
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-199',
-    load: () => import('./foundations.js?v=rc2-199'),
+    src: './foundations.js?v=rc2-200',
+    load: () => import('./foundations.js?v=rc2-200'),
   },
   scales: {
     slot: 'scales',
@@ -148,8 +148,8 @@ const VIEW_REGISTRY = {
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-199',
-    load: () => import('./foundations.js?v=rc2-199'),
+    src: './foundations.js?v=rc2-200',
+    load: () => import('./foundations.js?v=rc2-200'),
   },
 };
 
@@ -554,7 +554,7 @@ class KeyMasterApp {
     if (!overlay || !body) return;
     overlay.hidden = false;
     body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Loading the journey\u2026</p>';
-    import('./foundations.js?v=rc2-199').then((F) => {
+    import('./foundations.js?v=rc2-200').then((F) => {
       const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
       const chapterAt = (typeof F.chapterAtIndex === 'function') ? F.chapterAtIndex : null;
       if (!steps.length || !chapterAt) { body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Course map unavailable right now.</p>'; return; }
@@ -702,6 +702,11 @@ class KeyMasterApp {
       const pianoFallback = new PianoSynth(ctx, { volume: 0.8 });
       const coursePiano = createCoursePiano({ basePath: 'assets/piano/salamander-lite', volume: 0.85 });
       this.coursePiano = coursePiano;   // kept so _wireSound can lazy-init after unlock
+      // rc2-200 TEMP DIAGNOSTIC: expose the sampler's true load state so the self-test can say
+      // plainly whether the real Salamander grand loaded or the app fell back to the synth.
+      if (typeof window !== 'undefined') {
+        window.__kmCoursePianoStatus = () => { try { return { ready: coursePiano.isReady(), status: coursePiano.getStatus() }; } catch (_) { return null; } };
+      }
       this.pianoFallback = pianoFallback;   // splash flourish plays through this directly (short 0.18s release)
       // rc2-199 TEMP DIAGNOSTIC (KL1 clinky-plink double-trigger hunt): trace every Course note
       // request — note, source, engine actually used, nearest sample + repitch, and whether the
@@ -1282,7 +1287,7 @@ class KeyMasterApp {
       const cta = this.root.querySelector('#learn-cta');
       if (cta) cta.textContent = started ? 'Continue the Foundation Course' : 'Start the Foundation Course';
       set('#course-hero-title', started ? 'Continue the Foundation Course' : COURSE_NAME);
-      import('./foundations.js?v=rc2-199').then((F) => {
+      import('./foundations.js?v=rc2-200').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
         const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
