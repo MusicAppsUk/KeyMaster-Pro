@@ -24,7 +24,7 @@
 // only genuine free-exploration is acknowledged as exploration.
 
 import { createTutorVoice } from './tutorVoice.js?v=rc2-193';
-import { createTutorAudio } from './tutorAudio.js?v=rc2-193';
+import { createTutorAudio } from './tutorAudio.js?v=rc2-194';
 import { createVoiceControl } from './voiceControl.js?v=rc2-191';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 import { STAGES } from './courseMap.js?v=rc2-55';
@@ -365,7 +365,7 @@ export default function createView(ctx) {
   // takes over automatically the instant it ships (recorded file -> temporary TTS -> text).
   const TTS_DEV_FALLBACK = true;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-193';
+  const KM_BUILD = 'rc2-194';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate
@@ -390,7 +390,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   // mute even with TTS on, because the TTS fallback only fires when there is NO mapped
   // URL. With no pack, every line goes straight to the TTS fallback and Jack speaks.
   // Re-enable this line the moment the recordings ship (premium files then auto-play).
-  // if (audio && PREMIUM_VOICE_READY) audio.setPack(VOICE_PACK, 'en-GB');
+  if (audio && PREMIUM_VOICE_READY) audio.setPack(VOICE_PACK, 'en-GB');   // rc2-194: approved recorded Jack pack enabled (Course tries MP3 first; missing line -> strict male TTS -> text)
   // Visual teaching cues (brackets / pointer / labels), measured from real key geometry.
   const overlay = learnMode ? createLearnOverlay(keyboard) : null;
   // Master Training uses its own curriculum; Foundations keeps the original cards.

@@ -144,6 +144,7 @@ export function createTutorAudio(options = {}) {
   // a late error/ended that revives a stale timeline or nulls the newer current.
   function detachAndStop(a) {
     if (!a) return;
+    try { if (a._kmProbe) { a._kmProbe.cancelledByEngine = true; if (typeof a._kmPub === 'function') a._kmPub(); } } catch (_) { /* no-op */ }
     try { if (a._onended) a.removeEventListener('ended', a._onended); } catch (_) { /* no-op */ }
     try { if (a._onerror) a.removeEventListener('error', a._onerror); } catch (_) { /* no-op */ }
     try { a._onended = null; a._onerror = null; } catch (_) { /* no-op */ }
@@ -206,20 +207,44 @@ export function createTutorAudio(options = {}) {
         const a = new window.Audio(url);
         a.volume = (opts.volume != null) ? opts.volume : 0.9;
         S.current = a;
-        const onended = () => { if (S.epoch !== myEpoch) return; if (S.current === a) S.current = null; if (done) done(); };
+        // rc2-194 audio probe: capture the element's REAL state on the device so a silent
+        // playback is never ambiguous — autoplay-block vs cancelled vs decoded-but-muted vs
+        // error vs detached-element webview quirk. Updated live by the element's own events.
+        const probe = {
+          lineId: lineId || null, url: a.src || url, requestedAt: Date.now(),
+          muted: a.muted, volume: a.volume, readyState: a.readyState, networkState: a.networkState,
+          duration: null, paused: a.paused, playing: false, timeupdates: 0, lastCurrentTime: 0,
+          ended: false, error: null, playPromise: 'pending', cancelledByEngine: false, epoch: myEpoch,
+        };
+        const pub = () => { try { if (typeof window !== 'undefined') window.__kmJackAudioProbe = { ...probe, at: Date.now() }; } catch (_) { /* no-op */ } };
+        a._kmProbe = probe; a._kmPub = pub; pub();
+        const onended = () => { if (S.epoch !== myEpoch) return; probe.ended = true; probe.paused = a.paused; pub(); if (S.current === a) S.current = null; if (done) done(); };
         const onerror = () => {
           if (S.epoch !== myEpoch) return;
+          probe.error = (a.error && (a.error.message || ('media error code ' + a.error.code))) || 'playback failed'; pub();
           // rc2-193 truth-status: a real recorded file was requested but playback failed.
-          try { window.__kmJackVoiceLive = { kind: 'mp3-error', file: S.pack[lineId] || url, reason: (a.error && (a.error.message || ('media error code ' + a.error.code))) || 'playback failed', at: Date.now() }; } catch (_) { /* no-op */ }
+          try { window.__kmJackVoiceLive = { kind: 'mp3-error', file: S.pack[lineId] || url, reason: probe.error, at: Date.now() }; } catch (_) { /* no-op */ }
           if (S.current === a) S.current = null; silentHold(text, done, myEpoch);
         };
+        a.addEventListener('loadedmetadata', () => { probe.duration = a.duration; probe.readyState = a.readyState; pub(); }, { once: true });
         // rc2-193 truth-status: 'playing' means the recorded MP3 actually began sounding.
-        a.addEventListener('playing', () => { if (S.epoch !== myEpoch) return; try { window.__kmJackVoiceLive = { kind: 'mp3-playing', file: S.pack[lineId] || url, at: Date.now() }; } catch (_) { /* no-op */ } }, { once: true });
+        a.addEventListener('playing', () => { if (S.epoch !== myEpoch) return; probe.playing = true; probe.paused = a.paused; probe.muted = a.muted; probe.volume = a.volume; probe.readyState = a.readyState; pub(); try { window.__kmJackVoiceLive = { kind: 'mp3-playing', file: S.pack[lineId] || url, at: Date.now() }; } catch (_) { /* no-op */ } }, { once: true });
+        a.addEventListener('timeupdate', () => { probe.timeupdates += 1; probe.lastCurrentTime = a.currentTime; if (probe.timeupdates <= 6) pub(); });
         a._onended = onended; a._onerror = onerror;
         a.addEventListener('ended', onended, { once: true });
         a.addEventListener('error', onerror, { once: true });
         const p = a.play?.();
-        if (p && typeof p.catch === 'function') p.catch(() => { if (S.epoch !== myEpoch) return; onerror(); });
+        if (p && typeof p.then === 'function') {
+          p.then(() => { probe.playPromise = 'resolved'; probe.paused = a.paused; pub(); })
+           .catch((err) => {
+             // The decisive autoplay signal: a NotAllowedError here means the browser refused
+             // playback for lack of a user gesture (the element is fine, the call site isn't).
+             probe.playPromise = 'rejected: ' + ((err && err.name) || 'error'); pub();
+             if (S.epoch !== myEpoch) return;
+             try { window.__kmJackVoiceLive = { kind: 'mp3-error', file: S.pack[lineId] || url, reason: probe.playPromise, at: Date.now() }; } catch (_) { /* no-op */ }
+             onerror();
+           });
+        }
         return;
       } catch (_) { if (S.current) S.current = null; }   // fall through to captions
     }

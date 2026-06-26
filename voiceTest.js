@@ -16,11 +16,11 @@
 // no UI unless #voice-test is open, so it is safe to leave in and easy to remove.
 // =============================================================================
 
-import { createTutorAudio } from './tutorAudio.js?v=rc2-193';
+import { createTutorAudio } from './tutorAudio.js?v=rc2-194';
 import { createVoiceControl } from './voiceControl.js?v=rc2-191';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 
-const BUILD = 'rc2-193';
+const BUILD = 'rc2-194';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
@@ -78,6 +78,19 @@ function refresh(extra) {
     ? `${pick.name} [${pick.lang}]  male=${pick.male}  female=${pick.female}`
     : 'null \u2014 no positively-male device voice selected (text only)';
   const jackColor = /playing/.test(jackLine) ? '#7fd68a' : (/error/.test(jackLine) ? '#e2675f' : '#e6a96b');
+  // rc2-194: the actual audio element state from the last MP3 attempt on this device.
+  const ap = (typeof window !== 'undefined') ? window.__kmJackAudioProbe : null;
+  const apRows = ap ? (
+    `<div style="margin-top:8px;color:#9a9488">Last audio element (window.__kmJackAudioProbe)</div>` +
+    row('&nbsp;&nbsp;· resolved URL', ap.url || '\u2014') +
+    row('&nbsp;&nbsp;· play() promise', `<span style="color:${ap.playPromise==='resolved'?'#7fd68a':(/rejected/.test(ap.playPromise||'')?'#e2675f':'#e6a96b')}">${ap.playPromise || '\u2014'}</span>`) +
+    row('&nbsp;&nbsp;· playing event', `<span style="color:${ap.playing?'#7fd68a':'#e6a96b'}">${ap.playing ? 'yes' : 'no'}</span>`) +
+    row('&nbsp;&nbsp;· currentTime', `${ap.timeupdates} updates, t=${(ap.lastCurrentTime||0).toFixed(2)}s ${ap.timeupdates>0?'(advancing)':'(not advancing)'}`) +
+    row('&nbsp;&nbsp;· readyState / duration', `${ap.readyState} / ${ap.duration!=null ? ap.duration.toFixed(2)+'s' : '\u2014'}`) +
+    row('&nbsp;&nbsp;· muted / volume / paused', `${ap.muted} / ${ap.volume} / ${ap.paused}`) +
+    row('&nbsp;&nbsp;· ended / error', `${ap.ended?'yes':'no'} / ${ap.error||'none'}`) +
+    row('&nbsp;&nbsp;· cancelled by engine', `<span style="color:${ap.cancelledByEngine?'#e2675f':'#9a9488'}">${ap.cancelledByEngine ? 'YES \u2014 element torn down' : 'no'}</span>`)
+  ) : `<div style="margin-top:8px;color:#9a9488">Last audio element: none yet \u2014 tap a play button (or open the Course) to capture it</div>`;
   const instances = te ? String(te.instances) : '—';
   const enginesLive = te ? '1 (shared singleton)' : '— (open Course once)';
   const curLine = te ? (te.lastId || '(idle)') : '—';
@@ -94,6 +107,7 @@ function refresh(extra) {
       `<div style="color:${jackColor};font-weight:700;font-size:14px;line-height:1.35">${jackLine}</div>` +
       `<div style="color:#9a9488;font-size:12px;margin-top:6px;word-break:break-word">Selected device voice (window.__kmVoicePick): <span style="color:#cfc9bd">${pickStr}</span></div>` +
     `</div>` +
+    apRows +
     `<div style="margin-top:8px;color:#9a9488">Live audio engine — what Jack actually uses</div>` +
     row('Voice engines active', enginesLive) +
     row('tutorAudio instances', instances + (te ? '  (all share 1 engine)' : '')) +
