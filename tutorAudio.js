@@ -207,7 +207,14 @@ export function createTutorAudio(options = {}) {
         a.volume = (opts.volume != null) ? opts.volume : 0.9;
         S.current = a;
         const onended = () => { if (S.epoch !== myEpoch) return; if (S.current === a) S.current = null; if (done) done(); };
-        const onerror = () => { if (S.epoch !== myEpoch) return; if (S.current === a) S.current = null; silentHold(text, done, myEpoch); };
+        const onerror = () => {
+          if (S.epoch !== myEpoch) return;
+          // rc2-193 truth-status: a real recorded file was requested but playback failed.
+          try { window.__kmJackVoiceLive = { kind: 'mp3-error', file: S.pack[lineId] || url, reason: (a.error && (a.error.message || ('media error code ' + a.error.code))) || 'playback failed', at: Date.now() }; } catch (_) { /* no-op */ }
+          if (S.current === a) S.current = null; silentHold(text, done, myEpoch);
+        };
+        // rc2-193 truth-status: 'playing' means the recorded MP3 actually began sounding.
+        a.addEventListener('playing', () => { if (S.epoch !== myEpoch) return; try { window.__kmJackVoiceLive = { kind: 'mp3-playing', file: S.pack[lineId] || url, at: Date.now() }; } catch (_) { /* no-op */ } }, { once: true });
         a._onended = onended; a._onerror = onerror;
         a.addEventListener('ended', onended, { once: true });
         a.addEventListener('error', onerror, { once: true });
@@ -217,7 +224,11 @@ export function createTutorAudio(options = {}) {
       } catch (_) { if (S.current) S.current = null; }   // fall through to captions
     }
     if (ttsFallback && voice) voice.speak(text, lineId, done);   // DEV fallback only — never under Jack
-    else silentHold(text, done, myEpoch);                        // captions remain; no robot voice
+    else {
+      // rc2-193 truth-status: no recorded pack loaded and no TTS fallback -> captions only.
+      try { window.__kmJackVoiceLive = { kind: 'silent-no-pack', at: Date.now() }; } catch (_) { /* no-op */ }
+      silentHold(text, done, myEpoch);                          // captions remain; no robot voice
+    }
   }
 
   function sayBeats(baseId, beats, opts = {}) {

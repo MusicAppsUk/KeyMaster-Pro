@@ -23,8 +23,8 @@
 // ("Exactly — that is Middle C"), wrong notes are named and gently guided, and
 // only genuine free-exploration is acknowledged as exploration.
 
-import { createTutorVoice } from './tutorVoice.js?v=rc2-191';
-import { createTutorAudio } from './tutorAudio.js?v=rc2-191';
+import { createTutorVoice } from './tutorVoice.js?v=rc2-193';
+import { createTutorAudio } from './tutorAudio.js?v=rc2-193';
 import { createVoiceControl } from './voiceControl.js?v=rc2-191';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 import { STAGES } from './courseMap.js?v=rc2-55';
@@ -365,7 +365,7 @@ export default function createView(ctx) {
   // takes over automatically the instant it ships (recorded file -> temporary TTS -> text).
   const TTS_DEV_FALLBACK = true;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-127';
+  const KM_BUILD = 'rc2-193';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate
@@ -786,6 +786,27 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
     } catch (_) { /* no-op */ }
     return status;
   }
+  // rc2-193 truth-status: the SINGLE honest, human-readable Jack-voice line. It prefers the
+  // ACTUAL last outcome recorded by the engine (window.__kmJackVoiceLive) over any prediction,
+  // so the screen states exactly which of the five cases is true right now.
+  function jackVoiceLine() {
+    if (!voiceOn) return 'Jack voice disabled by user';
+    const live = (typeof window !== 'undefined' && window.__kmJackVoiceLive) ? window.__kmJackVoiceLive : null;
+    if (live) {
+      if (live.kind === 'mp3-playing') return 'Jack voice: recorded MP3 playing' + (live.file ? ` (${live.file})` : '');
+      if (live.kind === 'mp3-error') return 'Jack voice error \u2014 MP3 found but playback failed: ' + (live.reason || 'unknown');
+      if (live.kind === 'tts-started') return 'Jack voice: temporary male device voice playing: ' + (live.voice || '(device voice)');
+      if (live.kind === 'tts-error') return 'Jack voice error \u2014 device voice failed: ' + (live.reason || 'unknown');
+      if (live.kind === 'tts-silent-no-male') return 'Jack voice: text only \u2014 no recognised male device voice and no recorded MP3 available';
+      if (live.kind === 'silent-no-pack') return 'Jack voice: text only \u2014 recorded pack not enabled and no device voice used';
+    }
+    // No line has been spoken yet this session — describe the configured path honestly.
+    if (recordedPackActive()) return 'Jack voice: recorded pack active (no line spoken yet)';
+    const maleName = (voice && voice.pickedVoiceName) ? voice.pickedVoiceName() : null;
+    if (TTS_DEV_FALLBACK && maleName) return 'Jack voice: temporary male device voice ready: ' + maleName + ' (no line spoken yet)';
+    return 'Jack voice: text only \u2014 no recognised male device voice and no recorded MP3 available';
+  }
+  try { if (typeof window !== 'undefined') window.__kmJackVoiceLine = jackVoiceLine; } catch (_) { /* no-op */ }
   try { if (typeof window !== 'undefined') window.__kmJackVoiceStatus = jackVoiceStatus; } catch (_) { /* no-op */ }
   // Visible voice diagnostic — the tutor must never fail silently.
   function updateVoiceStatus() {

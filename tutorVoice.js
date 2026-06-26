@@ -114,8 +114,19 @@ export function createTutorVoice(opts = {}) {
       u.pitch = cfg.pitch;      // slight warmth
       u.volume = cfg.volume;    // softer, not in-your-face
       const v = pickVoice();
-      if (cfg.preferMale && !v) { if (fin) fin(); return; }   // no POSITIVELY-male voice for Jack -> stay silent; caller shows text
+      if (cfg.preferMale && !v) {
+        // rc2-193 truth-status: no positively-male voice exists, so Jack stays TEXT-ONLY.
+        try { if (typeof window !== 'undefined') window.__kmJackVoiceLive = { kind: 'tts-silent-no-male', at: Date.now() }; } catch (_) { /* no-op */ }
+        if (fin) fin(); return;   // never the browser default / unknown-gender voice; caller shows text
+      }
       if (v) u.voice = v;
+      // rc2-193 truth-status: report what the device voice ACTUALLY does — 'start' means
+      // audible speech began; 'error' means it failed — so the diagnostic can tell a real
+      // male voice playing apart from one that was selected but never produced sound.
+      try {
+        u.addEventListener?.('start', () => { try { window.__kmJackVoiceLive = { kind: 'tts-started', voice: v ? v.name : null, at: Date.now() }; } catch (_) { /* no-op */ } });
+        u.addEventListener?.('error', (ev) => { try { window.__kmJackVoiceLive = { kind: 'tts-error', voice: v ? v.name : null, reason: (ev && ev.error) || 'speech-synthesis error', at: Date.now() }; } catch (_) { /* no-op */ } });
+      } catch (_) { /* no-op */ }
       if (fin) {
         // Chain on completion; fire once whether it ends cleanly or errors, so a
         // beat sequence never stalls if the engine drops the 'end' event.
@@ -154,6 +165,7 @@ export function createTutorVoice(opts = {}) {
   return {
     available: () => AVAILABLE,
     hasUsableVoice,
+    pickedVoiceName: () => { const v = pickVoice(); return v ? v.name : null; },
     isEnabled: () => enabled,
     isUnlocked: () => unlocked,
     setEnabled(on) { enabled = !!on; if (!enabled) cancel(); },

@@ -16,11 +16,11 @@
 // no UI unless #voice-test is open, so it is safe to leave in and easy to remove.
 // =============================================================================
 
-import { createTutorAudio } from './tutorAudio.js?v=rc2-191';
+import { createTutorAudio } from './tutorAudio.js?v=rc2-193';
 import { createVoiceControl } from './voiceControl.js?v=rc2-191';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 
-const BUILD = 'rc2-192';
+const BUILD = 'rc2-193';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
@@ -68,6 +68,16 @@ function refresh(extra) {
     : ((typeof window !== 'undefined' && window.__kmBuild) ? String(window.__kmBuild) : '(waiting for service worker\u2026)');
   const cacheReady = !!appBuildM;
   const engineLoaded = !!te;
+  // rc2-193 truth-status: the single honest Jack-voice line, computed by foundations from the
+  // ACTUAL last engine outcome. Plus the raw device-voice pick so silence is never ambiguous.
+  const jackLine = (typeof window !== 'undefined' && typeof window.__kmJackVoiceLine === 'function')
+    ? window.__kmJackVoiceLine()
+    : 'Jack voice: (open the Course once so the tutor engine loads)';
+  const pick = (typeof window !== 'undefined') ? window.__kmVoicePick : null;
+  const pickStr = pick
+    ? `${pick.name} [${pick.lang}]  male=${pick.male}  female=${pick.female}`
+    : 'null \u2014 no positively-male device voice selected (text only)';
+  const jackColor = /playing/.test(jackLine) ? '#7fd68a' : (/error/.test(jackLine) ? '#e2675f' : '#e6a96b');
   const instances = te ? String(te.instances) : '—';
   const enginesLive = te ? '1 (shared singleton)' : '— (open Course once)';
   const curLine = te ? (te.lastId || '(idle)') : '—';
@@ -79,6 +89,11 @@ function refresh(extra) {
     row('App build (live \u2014 from service worker)', `<b style="color:${cacheReady ? '#7fd68a' : '#e6a96b'}">${appBuild}</b>`) +
     row('Audio engine loaded', engineLoaded ? '<span style="color:#7fd68a">yes (shared singleton)</span>' : '<span style="color:#e6a96b">no \u2014 open the Course once</span>') +
     row('&nbsp;&nbsp;· service-worker cache name', `<span style="color:${cacheReady ? '#7fd68a' : '#e6a96b'}">${cacheStr || '\u2026 (loading)'}</span>`) +
+    `<div style="margin-top:10px;padding:9px 10px;border:1px solid #3a3424;border-radius:7px;background:#1c1810">` +
+      `<div style="color:#cfc9bd;font-size:12px;margin-bottom:5px;letter-spacing:.3px">JACK VOICE \u2014 what is actually happening</div>` +
+      `<div style="color:${jackColor};font-weight:700;font-size:14px;line-height:1.35">${jackLine}</div>` +
+      `<div style="color:#9a9488;font-size:12px;margin-top:6px;word-break:break-word">Selected device voice (window.__kmVoicePick): <span style="color:#cfc9bd">${pickStr}</span></div>` +
+    `</div>` +
     `<div style="margin-top:8px;color:#9a9488">Live audio engine — what Jack actually uses</div>` +
     row('Voice engines active', enginesLive) +
     row('tutorAudio instances', instances + (te ? '  (all share 1 engine)' : '')) +
