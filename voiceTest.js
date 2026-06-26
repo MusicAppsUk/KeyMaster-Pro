@@ -16,11 +16,11 @@
 // no UI unless #voice-test is open, so it is safe to leave in and easy to remove.
 // =============================================================================
 
-import { createTutorAudio } from './tutorAudio.js?v=rc2-194';
+import { createTutorAudio } from './tutorAudio.js?v=rc2-195';
 import { createVoiceControl } from './voiceControl.js?v=rc2-191';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 
-const BUILD = 'rc2-194';
+const BUILD = 'rc2-195';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
@@ -82,6 +82,7 @@ function refresh(extra) {
   const ap = (typeof window !== 'undefined') ? window.__kmJackAudioProbe : null;
   const apRows = ap ? (
     `<div style="margin-top:8px;color:#9a9488">Last audio element (window.__kmJackAudioProbe)</div>` +
+    row('&nbsp;&nbsp;· line ID', ap.lineId || '\u2014') +
     row('&nbsp;&nbsp;· resolved URL', ap.url || '\u2014') +
     row('&nbsp;&nbsp;· play() promise', `<span style="color:${ap.playPromise==='resolved'?'#7fd68a':(/rejected/.test(ap.playPromise||'')?'#e2675f':'#e6a96b')}">${ap.playPromise || '\u2014'}</span>`) +
     row('&nbsp;&nbsp;· playing event', `<span style="color:${ap.playing?'#7fd68a':'#e6a96b'}">${ap.playing ? 'yes' : 'no'}</span>`) +

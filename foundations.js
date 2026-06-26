@@ -24,7 +24,7 @@
 // only genuine free-exploration is acknowledged as exploration.
 
 import { createTutorVoice } from './tutorVoice.js?v=rc2-193';
-import { createTutorAudio } from './tutorAudio.js?v=rc2-194';
+import { createTutorAudio } from './tutorAudio.js?v=rc2-195';
 import { createVoiceControl } from './voiceControl.js?v=rc2-191';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 import { STAGES } from './courseMap.js?v=rc2-55';
@@ -72,6 +72,14 @@ export function greetingFor(date, name) {
   else if (h >= 12 && h < 18) part = 'Good afternoon';
   else part = 'Good evening';                       // 18:00–04:59
   return name ? `${part}, ${name}.` : `${part}.`;
+}
+
+// Part-of-day key for choosing the matching recorded greeting MP3 (morning/afternoon/evening).
+export function partOfDayKey(date) {
+  const h = (date && typeof date.getHours === 'function') ? date.getHours() : (new Date()).getHours();
+  if (h >= 5 && h < 12) return 'morning';
+  if (h >= 12 && h < 18) return 'afternoon';
+  return 'evening';                                 // 18:00–04:59
 }
 
 // Master Training curriculum — the learner-facing guided course. Used ONLY in
@@ -365,7 +373,7 @@ export default function createView(ctx) {
   // takes over automatically the instant it ships (recorded file -> temporary TTS -> text).
   const TTS_DEV_FALLBACK = true;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-194';
+  const KM_BUILD = 'rc2-195';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate
@@ -836,13 +844,22 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       const resuming = !!(progress && (((progress.get('learnLesson') || 0) > 0)
         || (Array.isArray(progress.get('learnCompleted')) && progress.get('learnCompleted').length > 0)));
       const c0 = steps[index];
-      // rc2-189: speak Jack's exact entry line (pendingGreeting) via the audio layer —
-      // NOT the welcome card's own beats — so the tutor introduces himself consistently.
-      // Record the honest voice state, then mark the welcome narrated so the card's
-      // auto-narration doesn't re-speak it.
-      reportJackVoice(resuming ? 'greeting.back' : 'greeting.entry', pendingGreeting);
-      audio.say(resuming ? 'greeting.back' : 'greeting.entry', pendingGreeting, { source: 'greeting', once: true });
-      welcomeAutoPlayed = true;
+      // rc2-195: speak Jack in his RECORDED voice on entry. greeting.entry/greeting.back
+      // have no MP3, so they fell to (silent) TTS — that was the silent welcome page. Now a
+      // NEW learner hears the welcome card's OWN recorded beats (welcome.say.0-3 =
+      // "Welcome to the KeyMaster PRO Course. I'm your tutor. We'll go step by step…"); a
+      // RETURNING learner hears the recorded time-of-day "welcome back" line, then their
+      // resumed lesson narrates as normal. (Meet the Keyboard's audio is untouched.)
+      if (resuming) {
+        const backId = 'greeting.back.' + partOfDayKey();
+        reportJackVoice(backId, pendingGreeting);
+        audio.say(backId, pendingGreeting, { source: 'greeting', once: true });
+        welcomeAutoPlayed = true;
+      } else if (c0 && Array.isArray(c0.say) && c0.say.length) {
+        speakCard(c0, null, { source: 'greeting' });   // plays welcome.say.* (recorded); sets welcomeAutoPlayed + reports
+      } else {
+        welcomeAutoPlayed = true;
+      }
       if (progress && c0) progress.addToSet('heardNarration', `narr:${c0.title}`);
       pendingGreeting = null;
       greeted = true;

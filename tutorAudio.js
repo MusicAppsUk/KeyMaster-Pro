@@ -248,7 +248,7 @@ export function createTutorAudio(options = {}) {
         return;
       } catch (_) { if (S.current) S.current = null; }   // fall through to captions
     }
-    if (ttsFallback && voice) voice.speak(text, lineId, done);   // DEV fallback only — never under Jack
+    if (ttsFallback && voice && !isPremiumActive()) voice.speak(text, lineId, done);   // DEV fallback only — never under Jack
     else {
       // rc2-193 truth-status: no recorded pack loaded and no TTS fallback -> captions only.
       try { window.__kmJackVoiceLive = { kind: 'silent-no-pack', at: Date.now() }; } catch (_) { /* no-op */ }
@@ -287,7 +287,7 @@ export function createTutorAudio(options = {}) {
       const next = () => { if (S.epoch === myEpoch && S.seqActive) S.seqTimer = setTimeout(run, after); };
       const url = HAS_AUDIO ? urlFor(bid) : null;
       if (url) playFile(url, beat.text, bid, next, myEpoch);
-      else if (ttsFallback && voice) voice.speak(beat.text, bid, next);   // DEV fallback only
+      else if (ttsFallback && voice && !isPremiumActive()) voice.speak(beat.text, bid, next);   // DEV fallback only
       else { S.seqTimer = setTimeout(() => { if (S.epoch === myEpoch) next(); }, readTimeMs(beat.text)); } // captions-only
     };
     run();
@@ -297,7 +297,7 @@ export function createTutorAudio(options = {}) {
     const fb = () => {
       if (S.epoch !== myEpoch) return;
       if (S.current && S.current._bid === bid) S.current = null;
-      if (ttsFallback && voice) voice.speak(fallbackText, bid, onDone);
+      if (ttsFallback && voice && !isPremiumActive()) voice.speak(fallbackText, bid, onDone);
       else { S.seqTimer = setTimeout(() => { if (S.epoch === myEpoch) onDone(); }, readTimeMs(fallbackText)); }
     };
     try {
