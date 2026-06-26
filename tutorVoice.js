@@ -56,14 +56,15 @@ export function createTutorVoice(opts = {}) {
       if (!vs.length) return null;
       let pools;
       if (cfg.preferMale) {
-        // Jack is male. Prefer a male-named voice; NEVER knowingly pick a female one.
-        // If no non-female voice exists, return null so the caller shows text instead
-        // of presenting a wrong-gender Jack.
+        // Jack is male. STRICT: only a POSITIVELY-identified male voice is acceptable.
+        // rc2-191: the "merely not-recognised-female" fallbacks are removed. On
+        // Android/Samsung a female voice whose name misses FEMALE_RE was slipping
+        // through as "not female". Now, if no voice is positively male, pickVoice
+        // returns null and the caller keeps Jack TEXT-ONLY — never a guess, never the
+        // browser default voice, never an unknown-gender voice.
         pools = [
           vs.filter((v) => langMatch(v, cfg.lang) && isMaleVoice(v)),         // en-GB male (best)
           vs.filter((v) => /^en/i.test(v.lang || '') && isMaleVoice(v)),      // any-English male
-          vs.filter((v) => langMatch(v, cfg.lang) && !isFemaleVoice(v)),      // en-GB, not female
-          vs.filter((v) => /^en/i.test(v.lang || '') && !isFemaleVoice(v)),   // any-English, not female
         ];
       } else {
         const fem = (v) => !cfg.preferFemale || isFemaleVoice(v);
@@ -113,7 +114,7 @@ export function createTutorVoice(opts = {}) {
       u.pitch = cfg.pitch;      // slight warmth
       u.volume = cfg.volume;    // softer, not in-your-face
       const v = pickVoice();
-      if (cfg.preferMale && !v) { if (fin) fin(); return; }   // no acceptable (non-female) voice for Jack -> stay silent; caller shows text
+      if (cfg.preferMale && !v) { if (fin) fin(); return; }   // no POSITIVELY-male voice for Jack -> stay silent; caller shows text
       if (v) u.voice = v;
       if (fin) {
         // Chain on completion; fire once whether it ends cleanly or errors, so a

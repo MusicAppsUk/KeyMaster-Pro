@@ -23,10 +23,10 @@
 // ("Exactly — that is Middle C"), wrong notes are named and gently guided, and
 // only genuine free-exploration is acknowledged as exploration.
 
-import { createTutorVoice } from './tutorVoice.js?v=rc2-190';
-import { createTutorAudio } from './tutorAudio.js?v=rc2-190';
-import { createVoiceControl } from './voiceControl.js?v=rc2-190';
-import { VOICE_PACK } from './voicePackData.js?v=rc2-190';
+import { createTutorVoice } from './tutorVoice.js?v=rc2-191';
+import { createTutorAudio } from './tutorAudio.js?v=rc2-191';
+import { createVoiceControl } from './voiceControl.js?v=rc2-191';
+import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 import { STAGES } from './courseMap.js?v=rc2-55';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-108';
 import { buildHandSvg, setHandHighlight, FINGER_NAMES } from './handViz.js?v=rc2-81';
