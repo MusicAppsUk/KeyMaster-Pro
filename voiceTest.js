@@ -20,7 +20,7 @@ import { createTutorAudio } from './tutorAudio.js?v=rc2-195';
 import { createVoiceControl } from './voiceControl.js?v=rc2-191';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 
-const BUILD = 'rc2-195';
+const BUILD = 'rc2-196';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
@@ -78,8 +78,19 @@ function refresh(extra) {
     ? `${pick.name} [${pick.lang}]  male=${pick.male}  female=${pick.female}`
     : 'null \u2014 no positively-male device voice selected (text only)';
   const jackColor = /playing/.test(jackLine) ? '#7fd68a' : (/error/.test(jackLine) ? '#e2675f' : '#e6a96b');
-  // rc2-194: the actual audio element state from the last MP3 attempt on this device.
-  const ap = (typeof window !== 'undefined') ? window.__kmJackAudioProbe : null;
+  // rc2-196 PROOF: exactly what the entry greeting did on this device.
+  const sp = (typeof window !== 'undefined') ? window.__kmSpeakPending : null;
+  const spRows = sp ? (
+    `<div style="margin-top:10px;padding:9px 10px;border:1px solid #3a4250;border-radius:8px;background:#1d2530">` +
+    `<div style="color:#cfc9bd;font-size:12px;margin-bottom:5px;letter-spacing:.3px">ENTRY GREETING — what speakPending did (window.__kmSpeakPending)</div>` +
+    row('&nbsp;&nbsp;· code build that ran', `<span style="color:${sp.build==='rc2-196'?'#7fd68a':'#e2675f'}">${sp.build}${sp.build==='rc2-196'?'':' (STALE — deploy not live)'}</span>`) +
+    row('&nbsp;&nbsp;· speakPending called', sp.called ? 'yes' : 'no') +
+    row('&nbsp;&nbsp;· branch taken', `<span style="color:${sp.branch==='welcome-card'?'#7fd68a':'#e6a96b'}">${sp.branch}</span>`) +
+    row('&nbsp;&nbsp;· line ID attempted', sp.lineId || '\u2014') +
+    row('&nbsp;&nbsp;· resuming', `${sp.resuming}  (learnLesson=${sp.learnLesson}, completed=${sp.learnCompletedLen})`) +
+    row('&nbsp;&nbsp;· card on entry', `#${sp.cardIndex} ${sp.cardId || ''}`) +
+    `</div>`
+  ) : `<div style="margin-top:10px;padding:9px 10px;border:1px solid #3a4250;border-radius:8px;background:#1d2530;color:#e6a96b">ENTRY GREETING: speakPending has NOT run yet \u2014 Reset, press Continue, then tap once inside the course, then reopen this panel.</div>`;
   const apRows = ap ? (
     `<div style="margin-top:8px;color:#9a9488">Last audio element (window.__kmJackAudioProbe)</div>` +
     row('&nbsp;&nbsp;· line ID', ap.lineId || '\u2014') +
@@ -108,6 +119,7 @@ function refresh(extra) {
       `<div style="color:${jackColor};font-weight:700;font-size:14px;line-height:1.35">${jackLine}</div>` +
       `<div style="color:#9a9488;font-size:12px;margin-top:6px;word-break:break-word">Selected device voice (window.__kmVoicePick): <span style="color:#cfc9bd">${pickStr}</span></div>` +
     `</div>` +
+    spRows +
     apRows +
     `<div style="margin-top:8px;color:#9a9488">Live audio engine — what Jack actually uses</div>` +
     row('Voice engines active', enginesLive) +

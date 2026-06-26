@@ -373,7 +373,7 @@ export default function createView(ctx) {
   // takes over automatically the instant it ships (recorded file -> temporary TTS -> text).
   const TTS_DEV_FALLBACK = true;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-195';
+  const KM_BUILD = 'rc2-196';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate
@@ -850,16 +850,31 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       // "Welcome to the KeyMaster PRO Course. I'm your tutor. We'll go step by step…"); a
       // RETURNING learner hears the recorded time-of-day "welcome back" line, then their
       // resumed lesson narrates as normal. (Meet the Keyboard's audio is untouched.)
+      let spBranch = 'none', spLine = null; const spWaBefore = welcomeAutoPlayed;
       if (resuming) {
-        const backId = 'greeting.back.' + partOfDayKey();
-        reportJackVoice(backId, pendingGreeting);
-        audio.say(backId, pendingGreeting, { source: 'greeting', once: true });
+        spBranch = 'welcome-back'; spLine = 'greeting.back.' + partOfDayKey();
+        reportJackVoice(spLine, pendingGreeting);
+        audio.say(spLine, pendingGreeting, { source: 'greeting', once: true });
         welcomeAutoPlayed = true;
       } else if (c0 && Array.isArray(c0.say) && c0.say.length) {
+        spBranch = 'welcome-card'; spLine = `${c0.id}.say.0`;
         speakCard(c0, null, { source: 'greeting' });   // plays welcome.say.* (recorded); sets welcomeAutoPlayed + reports
       } else {
-        welcomeAutoPlayed = true;
+        spBranch = 'none'; welcomeAutoPlayed = true;
       }
+      // rc2-196 PROOF (instrumentation only — no behaviour change). Record exactly what the
+      // entry greeting did so a silent welcome page is attributable: stale code (wrong build)
+      // vs wrong branch (resuming true) vs not-called (object absent) vs playback (audio probe).
+      try {
+        if (typeof window !== 'undefined') window.__kmSpeakPending = {
+          build: KM_BUILD, called: true, branch: spBranch, lineId: spLine,
+          resuming, welcomeAutoPlayedBefore: spWaBefore,
+          learnLesson: (progress && progress.get('learnLesson')) || 0,
+          learnCompletedLen: (progress && Array.isArray(progress.get('learnCompleted'))) ? progress.get('learnCompleted').length : 0,
+          cardIndex: index, cardId: (c0 && c0.id) || null, at: Date.now(),
+        };
+        if (typeof console !== 'undefined' && console.log) console.log('[KM ' + KM_BUILD + '] speakPending branch=' + spBranch + ' line=' + spLine + ' resuming=' + resuming);
+      } catch (_) { /* no-op */ }
       if (progress && c0) progress.addToSet('heardNarration', `narr:${c0.title}`);
       pendingGreeting = null;
       greeted = true;
