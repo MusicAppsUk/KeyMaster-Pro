@@ -373,7 +373,7 @@ export default function createView(ctx) {
   // takes over automatically the instant it ships (recorded file -> temporary TTS -> text).
   const TTS_DEV_FALLBACK = true;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-198';
+  const KM_BUILD = 'rc2-199';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate
@@ -519,6 +519,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
     if (midi > 72) { const over = midi - 72; v = Math.max(26, vel - over * 2.2); d = Math.max(0.18, durSec * 0.85); }
     if (piano && typeof piano.noteOn === 'function') {
       try {
+        if (typeof window !== 'undefined') window.__kmNoteSrc = 'demo';   // rc2-199 TEMP diagnostic source tag
         piano.noteOn(midi, v, t);
         piano.noteOff(midi, t + d);
         demoVoices.push({ release: (rt) => { try { piano.noteOff(midi, Math.max(rt ?? synth.ctx.currentTime, synth.ctx.currentTime)); } catch (_) { /* no-op */ } } });
@@ -1136,6 +1137,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   }
   function render() {
     const c = steps[index];
+    if (typeof window !== 'undefined') window.__kmCardId = c && c.id;   // rc2-199 TEMP diagnostic: which card is on screen
     // ---- Course Focus Mode (learn route only) ----------------------------
     // Collapse the on-screen keyboard on passive teaching steps (hand-shape /
     // staff / pulse-explanation / video / image / text), and show it whenever the

@@ -20,7 +20,7 @@ import { createTutorAudio } from './tutorAudio.js?v=rc2-195';
 import { createVoiceControl } from './voiceControl.js?v=rc2-191';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 
-const BUILD = 'rc2-198';
+const BUILD = 'rc2-199';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
@@ -178,7 +178,32 @@ function refresh(extra) {
       teRecent
         ? teRecent.slice(-5).map((r) => `${new Date(r.t).toLocaleTimeString()}  ${r.fn} ${r.id == null ? '' : r.id}  ${r.action}`).join('\n')
         : '— (open the Course or tap a button below)'
-    }</pre>`;
+    }</pre>`
+    // rc2-199 TEMP DIAGNOSTIC: KL1 audio trace -- the last Course note requests, which engine
+    // actually sounded each, repitch from nearest sample, gap from the previous note, and any
+    // <50ms same-note doubles (the clinky-plink signature). Reads window.__kmAudioTrace.
+    + (() => {
+      const tr = (typeof window !== 'undefined' && Array.isArray(window.__kmAudioTrace)) ? window.__kmAudioTrace : null;
+      if (!tr || !tr.length) {
+        return '<div style="margin-top:10px;padding:9px 10px;border:1px solid #3a4250;border-radius:8px;background:#1d2530;color:#e6a96b">KL1 AUDIO TRACE: no notes captured yet -- open Key Level 1, let a demo play (or play a note), then reopen this panel.</div>';
+      }
+      const dupCount = tr.filter((e) => e.dup50).length;
+      const engines = Array.from(new Set(tr.map((e) => e.engine)));
+      const last = tr.slice(-12).map((e) =>
+        (e.name + '    ').slice(0, 4) + ' src=' + ((e.src || '?') + '         ').slice(0, 9)
+        + ' ' + (e.engine === 'salamander' ? 'SALAMANDER' : 'pianoVoice')
+        + ' rp=' + (e.repitch == null ? '-' : (e.repitch > 0 ? '+' : '') + e.repitch)
+        + ' gap=' + (e.gapMs == null ? '-' : e.gapMs + 'ms')
+        + (e.dup50 ? '  >>> DUP<50ms' : '')
+      ).join('\n');
+      return '<div style="margin-top:10px;padding:9px 10px;border:1px solid ' + (dupCount ? '#5a2a2a' : '#3a4a32') + ';border-radius:8px;background:' + (dupCount ? '#241414' : '#192014') + '">'
+        + '<div style="color:#cfc9bd;font-size:12px;margin-bottom:5px;letter-spacing:.3px">KL1 AUDIO TRACE -- every Course note request (window.__kmAudioTrace)</div>'
+        + row('&nbsp;&nbsp;* engine(s) used', '<span style="color:' + (engines.length > 1 ? '#e6a96b' : (engines[0] === 'salamander' ? '#7fd68a' : '#e6a96b')) + '">' + engines.join(' + ') + '</span>')
+        + row('&nbsp;&nbsp;* double-triggers (<50ms)', '<span style="color:' + (dupCount ? '#e2675f' : '#7fd68a') + ';font-weight:700">' + dupCount + (dupCount ? '  <-- same note fired twice almost together = the clinky-plink' : '') + '</span>')
+        + '<pre style="margin:6px 0 0;white-space:pre-wrap;color:#cfc9bd;font-size:11px;line-height:1.5">' + last + '</pre>'
+        + '<div style="color:#9a9488;font-size:11px;margin-top:5px">A note appearing twice within ~50ms (DUP) means the same note is being triggered twice. If engine reads pianoVoice, the Salamander sampler did not load on this device.</div>'
+      + '</div>';
+    })();
   if (lastExtra.cache == null) {
     try {
       if (window.caches && caches.keys) caches.keys().then((ks) => {

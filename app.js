@@ -26,8 +26,8 @@ import { PianoSynth } from './pianoVoice.js';
 import { createCoursePiano } from './coursePianoSampler.js';
 import { Scheduler } from './scheduler.js';
 import { Metronome } from './metronome.js';
-import './voiceTest.js?v=rc2-198';  // visible Voice Self-Test at #voice-test (no console needed)
-import './pwaUpdate.js?v=rc2-198';  // installable-PWA "Update available" flow
+import './voiceTest.js?v=rc2-199';  // visible Voice Self-Test at #voice-test (no console needed)
+import './pwaUpdate.js?v=rc2-199';  // installable-PWA "Update available" flow
 import { NoteInput } from './noteInput.js';
 import { createMidiEvaluator } from './midiEvaluator.js';
 import { createDevReadout, isDevMode } from './devReadout.js';
@@ -127,8 +127,8 @@ const VIEW_REGISTRY = {
   },
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-198',
-    load: () => import('./foundations.js?v=rc2-198'),
+    src: './foundations.js?v=rc2-199',
+    load: () => import('./foundations.js?v=rc2-199'),
   },
   scales: {
     slot: 'scales',
@@ -148,8 +148,8 @@ const VIEW_REGISTRY = {
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-198',
-    load: () => import('./foundations.js?v=rc2-198'),
+    src: './foundations.js?v=rc2-199',
+    load: () => import('./foundations.js?v=rc2-199'),
   },
 };
 
@@ -554,7 +554,7 @@ class KeyMasterApp {
     if (!overlay || !body) return;
     overlay.hidden = false;
     body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Loading the journey\u2026</p>';
-    import('./foundations.js?v=rc2-198').then((F) => {
+    import('./foundations.js?v=rc2-199').then((F) => {
       const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
       const chapterAt = (typeof F.chapterAtIndex === 'function') ? F.chapterAtIndex : null;
       if (!steps.length || !chapterAt) { body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Course map unavailable right now.</p>'; return; }
@@ -703,11 +703,36 @@ class KeyMasterApp {
       const coursePiano = createCoursePiano({ basePath: 'assets/piano/salamander-lite', volume: 0.85 });
       this.coursePiano = coursePiano;   // kept so _wireSound can lazy-init after unlock
       this.pianoFallback = pianoFallback;   // splash flourish plays through this directly (short 0.18s release)
+      // rc2-199 TEMP DIAGNOSTIC (KL1 clinky-plink double-trigger hunt): trace every Course note
+      // request — note, source, engine actually used, nearest sample + repitch, and whether the
+      // SAME note fired <50ms earlier (the double-trigger signature). Logging ONLY: the noteOn
+      // routing below is byte-for-byte unchanged (Salamander first, else pianoVoice). Removed once
+      // the KL1 audio is diagnosed and fixed.
+      if (typeof window !== 'undefined' && !window.__kmTraceNote) {
+        window.__kmTraceNote = (m, engine, cp) => {
+          try {
+            const NM = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+            const name = NM[((m % 12) + 12) % 12] + (Math.floor(m / 12) - 1);
+            let nearest = null, repitch = null;
+            try { if (cp && cp._nearest) { nearest = cp._nearest(m); if (nearest != null) repitch = m - nearest; } } catch (_) { /* no-op */ }
+            const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+            const log = window.__kmAudioTrace || (window.__kmAudioTrace = []);
+            const prev = log.length ? log[log.length - 1] : null;
+            const gapMs = prev ? Math.round(now - prev.t) : null;
+            const dup50 = !!(prev && prev.note === m && gapMs != null && gapMs < 50);
+            const entry = { note: m, name, src: window.__kmNoteSrc || 'unknown', engine, nearest, repitch, gapMs, dup50, card: window.__kmCardId || '', t: now };
+            log.push(entry); if (log.length > 60) log.shift();
+            if (typeof console !== 'undefined' && console.log) console.log('KL1_NOTE_PLAY_REQUEST', name, 'src=' + entry.src, 'engine=' + engine, 'repitch=' + repitch, 'gapMs=' + gapMs, dup50 ? 'DUP<50ms!' : '');
+          } catch (_) { /* a diagnostic must never break audio */ }
+        };
+      }
       this.piano = {
         limiter: pianoFallback.limiter,                 // routed to the master bus below
         noteOn: (m, v, t) => {
-          try { if (coursePiano.isReady() && coursePiano.noteOn(m, v, t)) return; } catch (_) { /* fall through */ }
+          let __eng = 'pianoVoice';
+          try { if (coursePiano.isReady() && coursePiano.noteOn(m, v, t)) { __eng = 'salamander'; try { window.__kmTraceNote && window.__kmTraceNote(m, __eng, coursePiano); } catch (_) { /* no-op */ } return; } } catch (_) { /* fall through */ }
           pianoFallback.noteOn(m, v, t);
+          try { window.__kmTraceNote && window.__kmTraceNote(m, __eng, coursePiano); } catch (_) { /* no-op */ }
         },
         noteOff: (m, t) => {
           try { coursePiano.noteOff(m, t); } catch (_) { /* no-op */ }
@@ -834,6 +859,7 @@ class KeyMasterApp {
       this.keyboard.on('press', (midi, detail) => {
         this._suppressFlourish = true;   // a real keypress — don't also sound the flourish
         ensureAudio();
+        if (typeof window !== 'undefined') window.__kmNoteSrc = 'keyboard';   // rc2-199 TEMP diagnostic source tag
         this.piano?.noteOn(midi, detail.velocity ?? 100);
       }),
       this.keyboard.on('release', (midi) => {
@@ -1256,7 +1282,7 @@ class KeyMasterApp {
       const cta = this.root.querySelector('#learn-cta');
       if (cta) cta.textContent = started ? 'Continue the Foundation Course' : 'Start the Foundation Course';
       set('#course-hero-title', started ? 'Continue the Foundation Course' : COURSE_NAME);
-      import('./foundations.js?v=rc2-198').then((F) => {
+      import('./foundations.js?v=rc2-199').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
         const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
