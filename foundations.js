@@ -373,7 +373,7 @@ export default function createView(ctx) {
   // takes over automatically the instant it ships (recorded file -> temporary TTS -> text).
   const TTS_DEV_FALLBACK = true;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-203';
+  const KM_BUILD = 'rc2-204';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate
@@ -464,7 +464,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   let demoTimer = null;
   let autoAdvTimer = null;   // learn: auto-advance after a simple completed task
   let seqTimer = null;       // learn: drives the speak -> pause -> demo -> pause chain
-  // rc2-203: demo double-trigger guards (foundations demo path only; engine untouched).
+  // rc2-204: demo double-trigger guards (foundations demo path only; engine untouched).
   // A genuine ~120ms double was PROVEN from a device recording, yet on paper each note
   // schedules exactly once -- so something invokes the demo twice at runtime. Two guards
   // make a re-strike impossible from the demo path, each with its OWN counter so the
@@ -525,7 +525,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   function playDemoVoice(midi, vel, durSec, atSec) {
     if (!audioReady()) return;
     const t = atSec ?? synth.ctx.currentTime;
-    // rc2-203: per-pitch de-dupe. If this exact pitch was already scheduled within
+    // rc2-204: per-pitch de-dupe. If this exact pitch was already scheduled within
     // DEMO_PITCH_DUP_MS (220ms -- matched to the detector so a ~120ms duplicate cannot
     // slip through), this is a re-strike from a duplicate invocation -- skip it and COUNT
     // it on the PITCH counter, so the panel can name the cause. Prune entries whose
@@ -569,7 +569,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   // Sound the current card's example: single notes ring; a tight gap rolls a chord.
   function demoCard(c) {
     if (!c || !Array.isArray(c.demo) || !c.demo.length || !audioReady()) return;
-    // rc2-203: same-card re-fire guard. On paper each note schedules once, yet a ~120ms
+    // rc2-204: same-card re-fire guard. On paper each note schedules once, yet a ~120ms
     // double was PROVEN on-device -- so something invokes demoCard twice for the same card.
     // Ignore a repeat of the SAME card within 320ms and COUNT it on the RE-ENTRY counter;
     // distinct cards and deliberate replays (always seconds apart) are unaffected.
@@ -585,7 +585,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
     const vel = isChord ? 50 : 58;
     const dur = isChord ? 1.10 : Math.min(0.55, Math.max(0.20, gap * 0.9));
     const t0 = synth.ctx.currentTime + 0.02;
-    // rc2-203: revert to one clean Web-Audio-scheduled line for BOTH chord and melody.
+    // rc2-204: revert to one clean Web-Audio-scheduled line for BOTH chord and melody.
     // The earlier per-note hard-stop (rc2-202) did NOT remove the double, made the
     // phrase choppy, and added fragility; the proven double predates it and is now
     // handled by the guards above. Natural sustain serves the "sounded like music"

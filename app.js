@@ -26,8 +26,8 @@ import { PianoSynth } from './pianoVoice.js';
 import { createCoursePiano } from './coursePianoSampler.js';
 import { Scheduler } from './scheduler.js';
 import { Metronome } from './metronome.js';
-import './voiceTest.js?v=rc2-203';  // visible Voice Self-Test at #voice-test (no console needed)
-import './pwaUpdate.js?v=rc2-203';  // installable-PWA "Update available" flow
+import './voiceTest.js?v=rc2-204';  // visible Voice Self-Test at #voice-test (no console needed)
+import './pwaUpdate.js?v=rc2-204';  // installable-PWA "Update available" flow
 import { NoteInput } from './noteInput.js';
 import { createMidiEvaluator } from './midiEvaluator.js';
 import { createDevReadout, isDevMode } from './devReadout.js';
@@ -127,8 +127,8 @@ const VIEW_REGISTRY = {
   },
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-203',
-    load: () => import('./foundations.js?v=rc2-203'),
+    src: './foundations.js?v=rc2-204',
+    load: () => import('./foundations.js?v=rc2-204'),
   },
   scales: {
     slot: 'scales',
@@ -148,8 +148,8 @@ const VIEW_REGISTRY = {
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-203',
-    load: () => import('./foundations.js?v=rc2-203'),
+    src: './foundations.js?v=rc2-204',
+    load: () => import('./foundations.js?v=rc2-204'),
   },
 };
 
@@ -427,10 +427,7 @@ class KeyMasterApp {
       const li = this.progress?.get?.('learnLesson');
       return Number.isInteger(li) && li > 0 ? li : 0;
     };
-    const resumeAt = (idx) => {
-      try { if (Number.isInteger(idx)) this.progress?.set?.('learnLesson', Math.max(0, idx)); } catch { /* ignore */ }
-      location.hash = '#/learn';
-    };
+    const resumeAt = (idx) => { this._goToLearnLesson(idx); };
 
     // ---- Side menu ----------------------------------------------------------
     const menu = $('km-menu');
@@ -471,7 +468,7 @@ class KeyMasterApp {
       btn.addEventListener('click', () => {
         const action = btn.getAttribute('data-menu');
         closeMenu();
-        if (action === 'continue') { location.hash = '#/learn'; }
+        if (action === 'continue') { this._goToLearnLesson(); }
         else if (action === 'learn-app') { location.hash = '#/learn-app'; }
         else if (action === 'map') { this._openCourseMap(); }
         else if (action === 'review') { resumeAt(Math.max(0, resumeIndex() - 1)); }
@@ -508,7 +505,7 @@ class KeyMasterApp {
     // ---- Course Map overlay -------------------------------------------------
     $('km-map-close')?.addEventListener('click', () => this._closeCourseMap());
     $('km-map-backdrop')?.addEventListener('click', () => this._closeCourseMap());
-    $('km-map-continue')?.addEventListener('click', () => { this._closeCourseMap(); location.hash = '#/learn'; });
+    $('km-map-continue')?.addEventListener('click', () => { this._closeCourseMap(); this._goToLearnLesson(); });
 
     // ---- Deferred sign-in seam ---------------------------------------------
     $('signin-open')?.addEventListener('click', () => this._openSignin());
@@ -547,6 +544,27 @@ class KeyMasterApp {
   _closeSignin() { const m = document.getElementById('km-signin'); if (m) m.hidden = true; }
   _closeCourseMap() { const m = document.getElementById('km-coursemap'); if (m) m.hidden = true; }
 
+  /**
+   * rc2-204: reliable jump to a specific Course lesson (e.g. Course Map -> Key Level 1).
+   * The bug: tapping a chapter set the target lesson then `location.hash = '#/learn'`,
+   * but when the learner is ALREADY on #/learn (the common case while testing) the hash
+   * does not change, so no `hashchange` fires, `_handleRoute`/`enter()` never run, and the
+   * view never jumps to the tapped lesson (it just sits there). Fix: when already on the
+   * learn route, force EXACTLY ONE re-entry of the cached view (enter() re-reads
+   * learnLesson and renders once); otherwise navigate normally. Never does both, so the
+   * lesson demo can never be double-triggered by the jump. Works after reset and on touch.
+   */
+  async _goToLearnLesson(idx) {
+    try { if (Number.isInteger(idx)) this.progress?.set?.('learnLesson', Math.max(0, idx)); } catch { /* ignore */ }
+    const onLearn = (this.store?.getState?.().view === 'learn') || (location.hash === '#/learn');
+    if (onLearn) {
+      try { await this._enterView('learn'); }
+      catch (err) { console.info('[KeyMaster] re-enter learn failed:', err?.message ?? err); }
+    } else {
+      location.hash = '#/learn';   // hashchange -> _handleRoute -> _enterView -> enter() (one render)
+    }
+  }
+
   /** Build the Course Map from the live Course data and show it. */
   _openCourseMap() {
     const overlay = document.getElementById('km-coursemap');
@@ -554,7 +572,7 @@ class KeyMasterApp {
     if (!overlay || !body) return;
     overlay.hidden = false;
     body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Loading the journey\u2026</p>';
-    import('./foundations.js?v=rc2-203').then((F) => {
+    import('./foundations.js?v=rc2-204').then((F) => {
       const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
       const chapterAt = (typeof F.chapterAtIndex === 'function') ? F.chapterAtIndex : null;
       if (!steps.length || !chapterAt) { body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Course map unavailable right now.</p>'; return; }
@@ -606,9 +624,8 @@ class KeyMasterApp {
         row.append(dot, nm);
         if (ch.chIdx === curChIdx) { const here = document.createElement('span'); here.className = 'km-map__here'; here.textContent = 'You are here'; row.appendChild(here); }
         row.addEventListener('click', () => {
-          try { this.progress?.set?.('learnLesson', ch.start); } catch { /* ignore */ }
           this._closeCourseMap();
-          location.hash = '#/learn';
+          this._goToLearnLesson(ch.start);
         });
         body.lastChild.appendChild(row);
       });
@@ -1287,7 +1304,7 @@ class KeyMasterApp {
       const cta = this.root.querySelector('#learn-cta');
       if (cta) cta.textContent = started ? 'Continue the Foundation Course' : 'Start the Foundation Course';
       set('#course-hero-title', started ? 'Continue the Foundation Course' : COURSE_NAME);
-      import('./foundations.js?v=rc2-203').then((F) => {
+      import('./foundations.js?v=rc2-204').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
         const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
