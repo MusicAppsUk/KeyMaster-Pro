@@ -20,7 +20,7 @@ import { createTutorAudio } from './tutorAudio.js?v=rc2-195';
 import { createVoiceControl } from './voiceControl.js?v=rc2-191';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 
-const BUILD = 'rc2-202';
+const BUILD = 'rc2-203';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
@@ -191,18 +191,48 @@ function refresh(extra) {
       if (!cps) { engLine = 'unknown -- open Key Level 1 and play a note first, then reopen this panel'; engColor = '#e6a96b'; }
       else if (cps.ready) { engLine = 'Salamander grand LOADED (' + (cps.status ? cps.status.loaded : '?') + ' samples) -- the real piano is active'; engColor = '#7fd68a'; }
       else { const st = cps.status || {}; engLine = 'Salamander NOT loaded (' + (st.code || 'unknown') + (st.manifest ? '' : ', manifest missing') + ') -- you are hearing the BACKUP SYNTH, which sounds thin/plinky'; engColor = '#e2675f'; }
-      // (2) DOUBLE-TRIGGER -- did any note fire twice within 50ms?
-      let dupLine, dupColor, traceTxt = '';
+      // (2) DUPLICATE REACHING THE ENGINE -- was the SAME demo pitch struck twice within
+      // 220ms? The trace is logged at piano.noteOn, so this counts ACTUAL duplicate
+      // triggers that reached the engine. Restricted to src='demo' so playing along on the
+      // keys never false-flags. If the guards caught the double, it never reaches here.
+      let dupLine, dupColor, traceTxt = '', demoDup = 0;
       if (!tr || !tr.length) { dupLine = 'no notes captured yet -- play a phrase in Key Level 1, then reopen this panel'; dupColor = '#e6a96b'; }
       else {
-        const dupCount = tr.filter((e) => e.dup50).length;
         const engines = Array.from(new Set(tr.map((e) => e.engine)));
-        dupLine = dupCount ? ('DOUBLE-TRIGGER -- ' + dupCount + ' note(s) fired twice within 50ms (a real duplicate path)') : 'NONE -- every note fired exactly once (so the clinky is sound QUALITY, not a duplicate)';
-        dupColor = dupCount ? '#e2675f' : '#7fd68a';
-        traceTxt = 'last notes [' + engines.join(' + ') + ']:\n' + tr.slice(-10).map((e) =>
-          (e.name + '    ').slice(0, 4) + ' src=' + ((e.src || '?') + '        ').slice(0, 8) + ' ' + (e.engine === 'salamander' ? 'SALAMANDER' : 'pianoVoice') + ' rp=' + (e.repitch == null ? '-' : (e.repitch > 0 ? '+' : '') + e.repitch) + ' gap=' + (e.gapMs == null ? '-' : e.gapMs + 'ms') + (e.dup50 ? '  >>> DUP' : '')
+        const demoDupList = [];
+        for (let i = 0; i < tr.length; i++) {
+          if (tr[i].src !== 'demo') continue;
+          for (let j = i + 1; j < tr.length; j++) {
+            const dt = tr[j].t - tr[i].t;        // ms; the trace is time-ordered
+            if (dt > 220) break;
+            if (tr[j].src === 'demo' && tr[j].note === tr[i].note && dt > 4) {
+              demoDup++; demoDupList.push((tr[i].name || '?') + ' x2 @' + Math.round(dt) + 'ms');
+              break;
+            }
+          }
+        }
+        dupLine = demoDup
+          ? ('YES -- ' + demoDup + ' demo note(s) struck twice within 220ms: ' + demoDupList.slice(-4).join(', ') + ' (a duplicate trigger slipped the guards)')
+          : 'NO -- no demo pitch struck twice within 220ms reached the engine';
+        dupColor = demoDup ? '#e2675f' : '#7fd68a';
+        traceTxt = 'last notes [' + engines.join(' + ') + ']:\n' + tr.slice(-12).map((e) =>
+          (e.name + '    ').slice(0, 4) + ' src=' + ((e.src || '?') + '        ').slice(0, 8) + ' ' + (e.engine === 'salamander' ? 'SALAMANDER' : 'pianoVoice') + ' rp=' + (e.repitch == null ? '-' : (e.repitch > 0 ? '+' : '') + e.repitch) + ' gap=' + (e.gapMs == null ? '-' : e.gapMs + 'ms') + (e.dup50 ? '  >>> <50' : '')
         ).join('\n');
       }
+      // (2a/2b) DEMO GUARDS -- two SEPARATE counters so the cause is named, not guessed.
+      const reHits = (typeof window !== 'undefined' && typeof window.__kmDemoReentryHits === 'number') ? window.__kmDemoReentryHits : null;
+      const pdHits = (typeof window !== 'undefined' && typeof window.__kmDemoPitchHits   === 'number') ? window.__kmDemoPitchHits   : null;
+      const reLine = (reHits == null) ? 'not initialised' : (reHits + (reHits > 0 ? ' -- a second WHOLE demo was blocked' : ' -- no second whole demo fired'));
+      const reColor = (reHits == null) ? '#e6a96b' : (reHits > 0 ? '#7fd68a' : '#9a9488');
+      const pdLine = (pdHits == null) ? 'not initialised' : (pdHits + (pdHits > 0 ? ' -- a second SAME-PITCH trigger was blocked' : ' -- no same-pitch re-strike fired'));
+      const pdColor = (pdHits == null) ? '#e6a96b' : (pdHits > 0 ? '#7fd68a' : '#9a9488');
+      // CONCLUSION -- read the facts together so a tired reader gets ONE answer.
+      const haveTrace = !!(tr && tr.length);
+      let concl, conclColor;
+      if (reHits == null || pdHits == null || !haveTrace) { concl = 'open Key Level 1, let the demo play once, then reopen this panel'; conclColor = '#e6a96b'; }
+      else if (demoDup > 0) { concl = 'duplicate demo triggers STILL reach the engine within 220ms -- the trigger path is NOT yet clean (a path is uncovered)'; conclColor = '#e2675f'; }
+      else if (reHits > 0 || pdHits > 0) { concl = 'a duplicate demo trigger was caught & blocked (re-entry ' + reHits + ', pitch ' + pdHits + ') -- if the phrase now SOUNDS clean, the double was in the TRIGGER and is fixed'; conclColor = '#7fd68a'; }
+      else { concl = 'NO duplicate trigger detected -- if you STILL hear doubling, it is inside the piano ENGINE (e.g. reverb tail / sample), which needs a separate go-ahead'; conclColor = '#9ab0d6'; }
       // (3) KL1 JACK CHAIN -- why silent?
       const kl1Id = 'kl1-first-phrase.say.0';
       const kl1InPack = !!(VOICE_PACK && VOICE_PACK[kl1Id]);
@@ -212,7 +242,10 @@ function refresh(extra) {
       return '<div style="margin-top:10px;padding:10px;border:1px solid #4a4030;border-radius:8px;background:#1b1810">'
         + '<div style="color:#f3efe6;font-size:16px;font-weight:700;margin-bottom:9px;letter-spacing:.3px">KEY LEVEL 1 AUDIO VERDICT</div>'
         + '<div style="font-size:15px;margin-bottom:7px">1 &mdash; Piano engine: <span style="color:' + engColor + '">' + engLine + '</span></div>'
-        + '<div style="font-size:15px;margin-bottom:7px">2 &mdash; Double-trigger: <span style="color:' + dupColor + ';font-weight:600">' + dupLine + '</span></div>'
+        + '<div style="font-size:15px;margin-bottom:7px">2 &mdash; Duplicate reaching engine (demo, &le;220ms): <span style="color:' + dupColor + ';font-weight:600">' + dupLine + '</span></div>'
+        + '<div style="font-size:15px;margin-bottom:7px">2a &mdash; Re-entry guard caught: <span style="color:' + reColor + ';font-weight:600">' + reLine + '</span></div>'
+        + '<div style="font-size:15px;margin-bottom:7px">2b &mdash; Pitch-dup guard caught: <span style="color:' + pdColor + ';font-weight:600">' + pdLine + '</span></div>'
+        + '<div style="font-size:15px;margin:9px 0 7px;padding:7px 9px;border-radius:6px;background:#241f14"><b>&rarr; CONCLUSION:</b> <span style="color:' + conclColor + ';font-weight:600">' + concl + '</span></div>'
         + '<div style="font-size:15px;margin-bottom:7px">3 &mdash; KL1 Jack voice: <span style="color:#e6a96b">' + jackStatic + '</span></div>'
         + jackLive
         + (traceTxt ? ('<pre style="margin:6px 0 0;white-space:pre-wrap;color:#9a9488;font-size:10px;line-height:1.5">' + traceTxt + '</pre>') : '')

@@ -373,7 +373,7 @@ export default function createView(ctx) {
   // takes over automatically the instant it ships (recorded file -> temporary TTS -> text).
   const TTS_DEV_FALLBACK = true;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-202';
+  const KM_BUILD = 'rc2-203';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate
@@ -464,6 +464,22 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   let demoTimer = null;
   let autoAdvTimer = null;   // learn: auto-advance after a simple completed task
   let seqTimer = null;       // learn: drives the speak -> pause -> demo -> pause chain
+  // rc2-203: demo double-trigger guards (foundations demo path only; engine untouched).
+  // A genuine ~120ms double was PROVEN from a device recording, yet on paper each note
+  // schedules exactly once -- so something invokes the demo twice at runtime. Two guards
+  // make a re-strike impossible from the demo path, each with its OWN counter so the
+  // verdict panel can say EXACTLY which fired: a second whole demo (RE-ENTRY) or a second
+  // same-pitch trigger (PITCH). The pitch window (220ms) is matched to the detector window,
+  // so a ~120ms duplicate cannot slip the guard while still showing in the detector.
+  let lastDemoId = null;          // id of the card whose demo last started
+  let lastDemoAt = 0;             // performance.now() when that demo started
+  const DEMO_REFIRE_MS = 320;     // ignore a same-card demo re-fire inside this window
+  const DEMO_PITCH_DUP_MS = 220;  // ignore the SAME pitch re-scheduled inside this window (matches detector)
+  const recentDemoNotes = [];     // {midi, t} recently scheduled demo notes (de-dupe re-strikes)
+  if (typeof window !== 'undefined') {
+    if (typeof window.__kmDemoReentryHits !== 'number') window.__kmDemoReentryHits = 0;  // 2nd whole-demo blocked
+    if (typeof window.__kmDemoPitchHits   !== 'number') window.__kmDemoPitchHits   = 0;  // 2nd same-pitch trigger blocked
+  }
 
   // Teaching-rhythm pacing (learn). The tutor and keyboard take turns; nothing
   // overlaps and the tutor is never cut off. Calm, human, not sluggish.
@@ -509,6 +525,20 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   function playDemoVoice(midi, vel, durSec, atSec) {
     if (!audioReady()) return;
     const t = atSec ?? synth.ctx.currentTime;
+    // rc2-203: per-pitch de-dupe. If this exact pitch was already scheduled within
+    // DEMO_PITCH_DUP_MS (220ms -- matched to the detector so a ~120ms duplicate cannot
+    // slip through), this is a re-strike from a duplicate invocation -- skip it and COUNT
+    // it on the PITCH counter, so the panel can name the cause. Prune entries whose
+    // scheduled time is now >1.5s past. (Linear teaching demos never repeat a pitch this fast.)
+    const __demoCut = synth.ctx.currentTime - 1.5;
+    for (let __i = recentDemoNotes.length - 1; __i >= 0; __i--) {
+      if (recentDemoNotes[__i].t < __demoCut) recentDemoNotes.splice(__i, 1);
+    }
+    if (recentDemoNotes.some(n => n.midi === midi && Math.abs(n.t - t) <= DEMO_PITCH_DUP_MS / 1000)) {
+      if (typeof window !== 'undefined') window.__kmDemoPitchHits = (window.__kmDemoPitchHits || 0) + 1;
+      return;
+    }
+    recentDemoNotes.push({ midi, t });
     // STABILISED: the demo uses the SAME engine the on-screen keypress uses
     // (piano / pianoVoice) — the proven, always-ready path. The sampler is NOT
     // the demo path until it's verified working in the real Course; this
@@ -539,28 +569,28 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   // Sound the current card's example: single notes ring; a tight gap rolls a chord.
   function demoCard(c) {
     if (!c || !Array.isArray(c.demo) || !c.demo.length || !audioReady()) return;
+    // rc2-203: same-card re-fire guard. On paper each note schedules once, yet a ~120ms
+    // double was PROVEN on-device -- so something invokes demoCard twice for the same card.
+    // Ignore a repeat of the SAME card within 320ms and COUNT it on the RE-ENTRY counter;
+    // distinct cards and deliberate replays (always seconds apart) are unaffected.
+    const __nowMs = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+    if (c.id === lastDemoId && (__nowMs - lastDemoAt) < DEMO_REFIRE_MS) {
+      if (typeof window !== 'undefined') window.__kmDemoReentryHits = (window.__kmDemoReentryHits || 0) + 1;
+      return;
+    }
+    lastDemoId = c.id; lastDemoAt = __nowMs;
     stopDemoAudio();
     const gap = c.demoGap ?? 0.4;
     const isChord = gap <= 0.12;
     const vel = isChord ? 50 : 58;
     const dur = isChord ? 1.10 : Math.min(0.55, Math.max(0.20, gap * 0.9));
     const t0 = synth.ctx.currentTime + 0.02;
-    if (isChord) {
-      // Chord: notes ring together (unchanged) -- a quick roll at <=0.12s stagger.
-      c.demo.forEach((m, i) => playDemoVoice(m, vel, dur, t0 + i * gap));
-    } else {
-      // The course piano has a 0.7s release tail, so at melody tempo three notes
-      // can still be ringing at once: the dissonant overlap-cluster heard as "two
-      // notes at once". Play each note in real time and hard-stop the previous one
-      // (30 ms pop-safe fade) the instant the next begins, so every note reads as
-      // one distinct pitch. The final note has no successor, so it rings out.
-      c.demo.forEach((m, i) => {
-        demoSweepTimers.push(setTimeout(() => {
-          try { piano.allNotesOff(); } catch (_) { /* no-op */ }
-          playDemoVoice(m, vel, dur);
-        }, Math.round(i * gap * 1000)));
-      });
-    }
+    // rc2-203: revert to one clean Web-Audio-scheduled line for BOTH chord and melody.
+    // The earlier per-note hard-stop (rc2-202) did NOT remove the double, made the
+    // phrase choppy, and added fragility; the proven double predates it and is now
+    // handled by the guards above. Natural sustain serves the "sounded like music"
+    // pedagogy -- notes ring and overlap musically; the de-dupe blocks only re-strikes.
+    c.demo.forEach((m, i) => playDemoVoice(m, vel, dur, t0 + i * gap));
     sweepDemoVisual(c.demo, gap, isChord, dur);   // light each key as the tutor plays it
   }
 
