@@ -2035,6 +2035,161 @@
       "id": "recall-echo.reteach",
       "text": "Let’s hear the pattern once more — then echo it back, in your own time.",
       "file": "recall-echo-reteach.mp3"
+    },
+    {
+      "id": "kl1-welcome.say.0",
+      "text": "You have completed the Foundation Course. The whole map is yours now — the keyboard, the staff, the note names, and a steady pulse.",
+      "file": "kl1-welcome-0.mp3"
+    },
+    {
+      "id": "kl1-welcome.say.1",
+      "text": "From here, the KeyMaster Course begins. This is Key Level One — First Musicianship.",
+      "file": "kl1-welcome-1.mp3"
+    },
+    {
+      "id": "kl1-welcome.say.2",
+      "text": "Everything you have learned now starts to become music: reading, rhythm, your hands, harmony, and your first real pieces — with me beside you the whole way.",
+      "file": "kl1-welcome-2.mp3"
+    },
+    {
+      "id": "kl1-pulse-feel.say.0",
+      "text": "Every piece of music has a pulse — a steady beat underneath, like a calm, unhurried heartbeat. You can feel it before you play a single note.",
+      "file": "kl1-pulse-feel-0.mp3"
+    },
+    {
+      "id": "kl1-pulse-feel.say.1",
+      "text": "A musician feels that pulse first, then places the notes onto it. We will not rush — we feel the beat, and let the music rest on top of it.",
+      "file": "kl1-pulse-feel-1.mp3"
+    },
+    {
+      "id": "kl1-notes-values.say.0",
+      "text": "Notes do not only tell you which key to play — they tell you how long to hold it. The shape of the note is its length.",
+      "file": "kl1-notes-values-0.mp3"
+    },
+    {
+      "id": "kl1-notes-values.say.1",
+      "text": "A semibreve, the whole note, is held for four beats. A minim, the half note, lasts two. A crotchet, the quarter note, is one beat. The longer notes are hollow; the crotchet is filled in.",
+      "file": "kl1-notes-values-1.mp3"
+    },
+    {
+      "id": "kl1-piece-listen.say.0",
+      "text": "Now your first real piece from manuscript — a little tune called Morning Steps. Look at it as a whole before you play.",
+      "file": "kl1-piece-listen-0.mp3"
+    },
+    {
+      "id": "kl1-piece-listen.say.1",
+      "text": "The right hand rests over five notes, the thumb on C. It steps gently upward, then returns home and settles. Listen to how it sounds.",
+      "file": "kl1-piece-listen-1.mp3"
+    },
+    {
+      "id": "kl1-rests-intro.say.0",
+      "text": "Music is not only sound. The silences matter just as much — and they are written down too. A written silence is called a rest.",
+      "file": "kl1-rests-intro-0.mp3"
+    },
+    {
+      "id": "kl1-rests-intro.say.1",
+      "text": "Each note length has a matching rest. A crotchet rest is one beat of silence; a minim rest, two. You count a rest exactly as carefully as a note — the beat keeps going underneath.",
+      "file": "kl1-rests-intro-1.mp3"
+    },
+    {
+      "id": "kl1-blue-listen.say.0",
+      "text": "Here is a second piece — Blue Window. This one falls gently, like a line drawn downward, then turns and comes home.",
+      "file": "kl1-blue-listen-0.mp3"
+    },
+    {
+      "id": "kl1-blue-listen.say.1",
+      "text": "The right hand stays in its five-note home, thumb on C. Look at the shape, then listen to how it sounds.",
+      "file": "kl1-blue-listen-1.mp3"
+    },
+    {
+      "id": "kl1-light-listen.say.0",
+      "text": "A third piece — First Light. This one teaches a new thing: repeated notes, played gently, then a single skip that opens the melody up.",
+      "file": "kl1-light-listen-0.mp3"
+    },
+    {
+      "id": "kl1-light-listen.say.1",
+      "text": "The right hand stays home over five notes. Listen for the two soft repeats, then the lift up to G.",
+      "file": "kl1-light-listen-1.mp3"
+    },
+    {
+      "id": "kl1-lh-intro.say.0",
+      "text": "So far your right hand has done the playing. Now the left hand joins, and it usually reads from the bass clef — the lower of the two clefs.",
+      "file": "kl1-lh-intro-0.mp3"
+    },
+    {
+      "id": "kl1-lh-intro.say.1",
+      "text": "The bass clef carries the deeper notes, below Middle C. Here is a short left-hand line — notice the fingering counts the other way: the thumb is finger one, on the higher note.",
+      "file": "kl1-lh-intro-1.mp3"
+    },
+    {
+      "id": "kl1-hands-intro.say.0",
+      "text": "Piano music joins the two clefs into one system — the grand staff. The treble clef on top for the right hand, the bass clef below for the left.",
+      "file": "kl1-hands-intro-0.mp3"
+    },
+    {
+      "id": "kl1-hands-intro.say.1",
+      "text": "Reading both at once takes care, so we begin very gently: the left hand will hold one steady note while the right hand plays above it.",
+      "file": "kl1-hands-intro-1.mp3"
+    },
+    {
+      "id": "kl1-finger-why.say.0",
+      "text": "You may have noticed small numbers beside the notes. Those are fingering — they tell you which finger to use, and they are chosen with care.",
+      "file": "kl1-finger-why-0.mp3"
+    },
+    {
+      "id": "kl1-finger-why.say.1",
+      "text": "Good fingering lets your hand stay calm and reach every note without jumping about. The right finger in the right place is what makes playing feel easy.",
+      "file": "kl1-finger-why-1.mp3"
+    },
+    {
+      "id": "kl1-intervals-intro.say.0",
+      "text": "The distance between two notes is called an interval, and we name intervals by number. Two notes next-door to each other make a second — that is a step.",
+      "file": "kl1-intervals-intro-0.mp3"
+    },
+    {
+      "id": "kl1-intervals-intro.say.1",
+      "text": "Skip a note, and the distance grows to a third — that is a skip. From C, the next-door D is a second; jump over D to E, and that is a third.",
+      "file": "kl1-intervals-intro-1.mp3"
+    },
+    {
+      "id": "kl1-fivefinger-why.say.0",
+      "text": "You might wonder why we practise patterns at all. Here is why: a pattern trains your fingers to move evenly and independently, so that when a real piece arrives, your hand already knows the shape.",
+      "file": "kl1-fivefinger-why-0.mp3"
+    },
+    {
+      "id": "kl1-fivefinger-why.say.1",
+      "text": "The five-finger pattern hides inside countless melodies. Master it, and you are not just doing an exercise — you are learning the alphabet that pieces are written in.",
+      "file": "kl1-fivefinger-why-1.mp3"
+    },
+    {
+      "id": "kl1-harmony-tonic.say.0",
+      "text": "Every key has a home note — the note the music rests on, where a tune feels finished. Musicians call it the tonic.",
+      "file": "kl1-harmony-tonic-0.mp3"
+    },
+    {
+      "id": "kl1-harmony-tonic.say.1",
+      "text": "In the key of C major, the home note is C. You have felt it already — both your pieces came to rest on C. That feeling of arriving home is the tonic.",
+      "file": "kl1-harmony-tonic-1.mp3"
+    },
+    {
+      "id": "kl1-echo-task.say.0",
+      "text": "This time there is no written music. I will play a short phrase, and you play it straight back to me — by ear alone.",
+      "file": "kl1-echo-task-0.mp3"
+    },
+    {
+      "id": "kl1-echo-task.say.1",
+      "text": "Listen to the shape: where it rises, where it falls. Hold it in your ear, then find it on the keys. Listen carefully now.",
+      "file": "kl1-echo-task-1.mp3"
+    },
+    {
+      "id": "kl1-sight-micro.say.0",
+      "text": "Now a sight-reading moment. This is a phrase you have not heard — and I will not play it for you. Reading something new, on your own, is sight-reading.",
+      "file": "kl1-sight-micro-0.mp3"
+    },
+    {
+      "id": "kl1-sight-micro.say.1",
+      "text": "Look before you play. Find the shape — does it step up or down? Then play it, calmly, in your own time.",
+      "file": "kl1-sight-micro-1.mp3"
     }
   ]
 }
