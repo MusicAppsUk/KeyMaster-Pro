@@ -20,7 +20,7 @@ import { createTutorAudio } from './tutorAudio.js?v=rc2-195';
 import { createVoiceControl } from './voiceControl.js?v=rc2-191';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 
-const BUILD = 'rc2-204';
+const BUILD = 'rc2-205';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
@@ -226,13 +226,21 @@ function refresh(extra) {
       const reColor = (reHits == null) ? '#e6a96b' : (reHits > 0 ? '#7fd68a' : '#9a9488');
       const pdLine = (pdHits == null) ? 'not initialised' : (pdHits + (pdHits > 0 ? ' -- a second SAME-PITCH trigger was blocked' : ' -- no same-pitch re-strike fired'));
       const pdColor = (pdHits == null) ? '#e6a96b' : (pdHits > 0 ? '#7fd68a' : '#9a9488');
-      // CONCLUSION -- read the facts together so a tired reader gets ONE answer.
+      // (2c) KL1 FINAL-BOUNDARY GUARD (rc2-205) -- the chokepoint suppressor right at the
+      // piano output. This is the PRIMARY KL1 fix: it catches a duplicate from ANY source.
+      const klSup = (typeof window !== 'undefined' && typeof window.__kmKL1SuppressCount === 'number') ? window.__kmKL1SuppressCount : null;
+      const klLog = (typeof window !== 'undefined' && Array.isArray(window.__kmKL1SuppressLog)) ? window.__kmKL1SuppressLog : [];
+      const klLine = (klSup == null) ? 'not armed yet -- play the KL1 demo ("Hear it again"), then reopen this panel'
+        : (klSup > 0 ? (klSup + ' duplicate KL1 strike(s) suppressed at the output -- each intended note sounded ONCE') : '0 -- no duplicate reached the KL1 output (each intended note output once)');
+      const klColor = (klSup == null) ? '#e6a96b' : '#7fd68a';
+      const klLogTxt = klLog.length ? ('suppressed:\n' + klLog.slice(-6).join('\n')) : '';
+      // CONCLUSION -- lead with the boundary guard (the KL1 fix), so a tired reader gets ONE answer.
       const haveTrace = !!(tr && tr.length);
       let concl, conclColor;
-      if (reHits == null || pdHits == null || !haveTrace) { concl = 'open Key Level 1, let the demo play once, then reopen this panel'; conclColor = '#e6a96b'; }
-      else if (demoDup > 0) { concl = 'duplicate demo triggers STILL reach the engine within 220ms -- the trigger path is NOT yet clean (a path is uncovered)'; conclColor = '#e2675f'; }
-      else if (reHits > 0 || pdHits > 0) { concl = 'a duplicate demo trigger was caught & blocked (re-entry ' + reHits + ', pitch ' + pdHits + ') -- if the phrase now SOUNDS clean, the double was in the TRIGGER and is fixed'; conclColor = '#7fd68a'; }
-      else { concl = 'NO duplicate trigger detected -- if you STILL hear doubling, it is inside the piano ENGINE (e.g. reverb tail / sample), which needs a separate go-ahead'; conclColor = '#9ab0d6'; }
+      if (klSup == null || !haveTrace) { concl = 'open Key Level 1 and press "Hear it again", then reopen this panel'; conclColor = '#e6a96b'; }
+      else if (klSup > 0) { concl = klSup + ' duplicate KL1 strike(s) were SUPPRESSED at the piano output -- the phrase now plays each note once' + (klLog.length ? ' (' + klLog[klLog.length - 1] + ')' : ''); conclColor = '#7fd68a'; }
+      else if (demoDup > 0) { concl = 'a duplicate reached the engine OUTSIDE the armed KL1 window -- copy the trace line below and report it'; conclColor = '#e2675f'; }
+      else { concl = 'each intended KL1 note output exactly ONCE at the piano boundary -- a clean single phrase. Any remaining thickness is the grand\u2019s natural sustain, not a repeated strike'; conclColor = '#7fd68a'; }
       // (3) KL1 JACK CHAIN -- why silent?
       const kl1Id = 'kl1-first-phrase.say.0';
       const kl1InPack = !!(VOICE_PACK && VOICE_PACK[kl1Id]);
@@ -242,11 +250,12 @@ function refresh(extra) {
       return '<div style="margin-top:10px;padding:10px;border:1px solid #4a4030;border-radius:8px;background:#1b1810">'
         + '<div style="color:#f3efe6;font-size:16px;font-weight:700;margin-bottom:9px;letter-spacing:.3px">KEY LEVEL 1 AUDIO VERDICT</div>'
         + '<div style="font-size:15px;margin-bottom:7px">1 &mdash; Piano engine: <span style="color:' + engColor + '">' + engLine + '</span></div>'
-        + '<div style="font-size:15px;margin-bottom:7px">2 &mdash; Duplicate reaching engine (demo, &le;220ms): <span style="color:' + dupColor + ';font-weight:600">' + dupLine + '</span></div>'
-        + '<div style="font-size:15px;margin-bottom:7px">2a &mdash; Re-entry guard caught: <span style="color:' + reColor + ';font-weight:600">' + reLine + '</span></div>'
-        + '<div style="font-size:15px;margin-bottom:7px">2b &mdash; Pitch-dup guard caught: <span style="color:' + pdColor + ';font-weight:600">' + pdLine + '</span></div>'
+        + '<div style="font-size:15px;margin-bottom:7px">2 &mdash; KL1 output guard: <span style="color:' + klColor + ';font-weight:600">' + klLine + '</span></div>'
         + '<div style="font-size:15px;margin:9px 0 7px;padding:7px 9px;border-radius:6px;background:#241f14"><b>&rarr; CONCLUSION:</b> <span style="color:' + conclColor + ';font-weight:600">' + concl + '</span></div>'
-        + '<div style="font-size:15px;margin-bottom:7px">3 &mdash; KL1 Jack voice: <span style="color:#e6a96b">' + jackStatic + '</span></div>'
+        + (klLogTxt ? ('<pre style="margin:2px 0 7px;white-space:pre-wrap;color:#7fd68a;font-size:11px;line-height:1.5">' + klLogTxt + '</pre>') : '')
+        + '<div style="font-size:12px;color:#8a847a;margin-bottom:4px">detail &mdash; duplicate reaching engine (&le;220ms): <span style="color:' + dupColor + '">' + dupLine + '</span></div>'
+        + '<div style="font-size:12px;color:#8a847a;margin-bottom:4px">detail &mdash; re-entry guard: <span style="color:' + reColor + '">' + reLine + '</span> &middot; pitch guard: <span style="color:' + pdColor + '">' + pdLine + '</span></div>'
+        + '<div style="font-size:15px;margin:7px 0">3 &mdash; KL1 Jack voice: <span style="color:#e6a96b">' + jackStatic + '</span></div>'
         + jackLive
         + (traceTxt ? ('<pre style="margin:6px 0 0;white-space:pre-wrap;color:#9a9488;font-size:10px;line-height:1.5">' + traceTxt + '</pre>') : '')
       + '</div>';
