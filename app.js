@@ -26,8 +26,8 @@ import { PianoSynth } from './pianoVoice.js';
 import { createCoursePiano } from './coursePianoSampler.js';
 import { Scheduler } from './scheduler.js';
 import { Metronome } from './metronome.js';
-import './voiceTest.js?v=rc2-207';  // visible Voice Self-Test at #voice-test (no console needed)
-import './pwaUpdate.js?v=rc2-207';  // installable-PWA "Update available" flow
+import './voiceTest.js?v=rc2-209';  // visible Voice Self-Test at #voice-test (no console needed)
+import './pwaUpdate.js?v=rc2-209';  // installable-PWA "Update available" flow
 import { NoteInput } from './noteInput.js';
 import { createMidiEvaluator } from './midiEvaluator.js';
 import { createDevReadout, isDevMode } from './devReadout.js';
@@ -127,8 +127,8 @@ const VIEW_REGISTRY = {
   },
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-207',
-    load: () => import('./foundations.js?v=rc2-207'),
+    src: './foundations.js?v=rc2-209',
+    load: () => import('./foundations.js?v=rc2-209'),
   },
   scales: {
     slot: 'scales',
@@ -148,8 +148,8 @@ const VIEW_REGISTRY = {
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-207',
-    load: () => import('./foundations.js?v=rc2-207'),
+    src: './foundations.js?v=rc2-209',
+    load: () => import('./foundations.js?v=rc2-209'),
   },
 };
 
@@ -545,7 +545,7 @@ class KeyMasterApp {
   _closeCourseMap() { const m = document.getElementById('km-coursemap'); if (m) m.hidden = true; }
 
   /**
-   * rc2-207: reliable jump to a specific Course lesson (e.g. Course Map -> Key Level 1).
+   * rc2-209: reliable jump to a specific Course lesson (e.g. Course Map -> Key Level 1).
    * The bug: tapping a chapter set the target lesson then `location.hash = '#/learn'`,
    * but when the learner is ALREADY on #/learn (the common case while testing) the hash
    * does not change, so no `hashchange` fires, `_handleRoute`/`enter()` never run, and the
@@ -555,7 +555,7 @@ class KeyMasterApp {
    * lesson demo can never be double-triggered by the jump. Works after reset and on touch.
    */
   async _goToLearnLesson(idx) {
-    try { unlockAudio(); } catch { /* rc2-207: resume audio in this nav gesture so the lesson demo isn't blocked by autoplay suspension */ }
+    try { unlockAudio(); } catch { /* rc2-209: resume audio in this nav gesture so the lesson demo isn't blocked by autoplay suspension */ }
     try { if (Number.isInteger(idx)) this.progress?.set?.('learnLesson', Math.max(0, idx)); } catch { /* ignore */ }
     const onLearn = (this.store?.getState?.().view === 'learn') || (location.hash === '#/learn');
     if (onLearn) {
@@ -573,7 +573,7 @@ class KeyMasterApp {
     if (!overlay || !body) return;
     overlay.hidden = false;
     body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Loading the journey\u2026</p>';
-    import('./foundations.js?v=rc2-207').then((F) => {
+    import('./foundations.js?v=rc2-209').then((F) => {
       const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
       const chapterAt = (typeof F.chapterAtIndex === 'function') ? F.chapterAtIndex : null;
       if (!steps.length || !chapterAt) { body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Course map unavailable right now.</p>'; return; }
@@ -753,7 +753,7 @@ class KeyMasterApp {
         limiter: pianoFallback.limiter,                 // routed to the master bus below
         noteOn: (m, v, t) => {
           let __eng = 'pianoVoice';
-          // rc2-207: BLUNT, UNCONDITIONAL boundary counter -- proves whether KL1 demo
+          // rc2-209: BLUNT, UNCONDITIONAL boundary counter -- proves whether KL1 demo
           // audio reaches this final piano output at all. Every call bumps __kmWrapperHits
           // and records the note/source; these are surfaced live ON the KL1 card. Isolated,
           // never alters routing, removed once KL1 audio is signed off.
@@ -765,7 +765,7 @@ class KeyMasterApp {
               window.__kmLastNoteSrc = window.__kmNoteSrc || '?';
             }
           } catch (_) { /* a counter must NEVER break audio */ }
-          // rc2-207: KL1 demo SINGLE-TRIGGER guard at the FINAL note-output boundary.
+          // rc2-209: KL1 demo SINGLE-TRIGGER guard at the FINAL note-output boundary.
           // Active ONLY while a KL1 demo is playing (window armed by the KL1 demo path).
           // Suppresses a 2nd request for the SAME pitch within 250ms from ANY source -- a
           // demo re-fire, support replay, sampler+fallback, or keyboard echo -- so every
@@ -1348,7 +1348,7 @@ class KeyMasterApp {
       const cta = this.root.querySelector('#learn-cta');
       if (cta) cta.textContent = started ? 'Continue the Foundation Course' : 'Start the Foundation Course';
       set('#course-hero-title', started ? 'Continue the Foundation Course' : COURSE_NAME);
-      import('./foundations.js?v=rc2-207').then((F) => {
+      import('./foundations.js?v=rc2-209').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
         const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
