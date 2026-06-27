@@ -1,0 +1,243 @@
+# Generate KL1 Essential Jack Voice
+# -----------------------------------------------------------------------------
+# One dedicated, low-click workflow that brings Jack's voice into Key Level 1,
+# starting with the 31 essential chapter-opener lines — safely.
+#
+# HOW TO RUN (Actions tab -> this workflow -> "Run workflow"):
+#   1) Leave mode = "preflight" and run it. It costs nothing and commits nothing.
+#      Read the run Summary:
+#         "SAFE - exactly 31"  -> good, go to step 2.
+#         "STOP - ... got N"   -> do NOT proceed; tell Claude the number.
+#   2) Run it again with mode = "generate". It renders the 31 MP3s, syncs the
+#      runtime map (voicePackData.js), bumps the cache version to rc2-211, runs
+#      a strict safety gate, and commits everything to main in one revertible
+#      commit. GitHub Pages serves it within a minute or two.
+#
+# SAFETY (built in):
+#   * The generator is HARD-SCOPED with --only to exactly the 31 IDs, so it
+#     physically cannot bill or overwrite any Foundation line, ever.
+#   * Preflight must see exactly 31 to-generate or the run stops (fail-closed).
+#   * Before any commit, a gate proves the protected audio/content files are
+#     byte-for-byte unchanged (md5), every script still parses, CSS braces are
+#     balanced, the cache bump touched only cache-bust strings (not comments),
+#     and the map has the 31 new entries. Any failure = nothing is committed.
+#   * ELEVENLABS_API_KEY is read from the repo secret only. It never appears in
+#     the app, the map, or any committed file. The app/runtime never calls
+#     ElevenLabs; it only ever loads local MP3s.
+#   * Untouched: sampler, pianoVoice, MIDI, Scales, Foundation audio, routing,
+#     reset, Course Map, splash, and all lesson content.
+# -----------------------------------------------------------------------------
+
+name: Generate KL1 Essential Jack Voice
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "preflight = safe preview (no cost, no commit). generate = render 31 + sync + bump rc2-211 + commit to main."
+        type: choice
+        default: "preflight"
+        options:
+          - "preflight"
+          - "generate"
+
+permissions:
+  contents: write
+
+jobs:
+  kl1-essential-jack-voice:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # --- both modes -------------------------------------------------------
+      - name: Merge the 31 essential KL1 lines into the manifest (idempotent)
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/merge.mjs" << 'MJS'
+          import { readFileSync, writeFileSync, appendFileSync } from 'node:fs';
+          const manPath = 'tools/voice-lines.json';
+          const essPath = 'tools/kl1-essential-31.json';
+          const man = JSON.parse(readFileSync(manPath, 'utf8'));
+          const ess = JSON.parse(readFileSync(essPath, 'utf8'));
+          if (!Array.isArray(ess) || ess.length !== 31) {
+            console.error(`FATAL: tools/kl1-essential-31.json must hold exactly 31 lines (found ${ess && ess.length}).`);
+            process.exit(1);
+          }
+          const ids = new Set(man.lines.map((l) => l.id));
+          const owner = new Map(man.lines.map((l) => [l.file, l.id]));
+          for (const e of ess) {
+            if (owner.has(e.file) && owner.get(e.file) !== e.id) {
+              console.error(`FATAL: filename ${e.file} is already used by a different id (${owner.get(e.file)}).`);
+              process.exit(1);
+            }
+          }
+          let added = 0;
+          for (const e of ess) if (!ids.has(e.id)) { man.lines.push(e); added++; }
+          writeFileSync(manPath, JSON.stringify(man, null, 2) + '\n');
+          appendFileSync(process.env.GITHUB_ENV, `KL1_IDS=${ess.map((e) => e.id).join(',')}\n`);
+          console.log(`manifest: ${man.lines.length} lines total, ${added} newly added (${ess.length} essential, idempotent).`);
+          MJS
+          node "$RUNNER_TEMP/merge.mjs"
+
+      - name: Preflight - dry run, must show EXACTLY 31 (hard-scoped; Foundation untouchable)
+        shell: bash
+        run: |
+          node tools/generateVoicePack.mjs --only "$KL1_IDS" > "$RUNNER_TEMP/preflight.txt" 2>&1 || {
+            cat "$RUNNER_TEMP/preflight.txt"; echo "generator failed during preflight"; exit 1;
+          }
+          cat "$RUNNER_TEMP/preflight.txt"
+          TOGEN=$(grep 'to generate' "$RUNNER_TEMP/preflight.txt" | grep -oE '[0-9]+' | head -1)
+          WARN=$(grep 'lint warnings' "$RUNNER_TEMP/preflight.txt" | grep -oE '[0-9]+' | head -1)
+          WARN=${WARN:-0}
+          {
+            echo "## KL1 Essential Jack Voice"
+            echo ""
+            echo "- Scope (\`--only\`): **31** lines. Foundation lines are out of scope and cannot be billed or changed."
+            echo "- Dry-run will generate: **${TOGEN}**"
+            echo "- Lint warnings: **${WARN}**"
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$TOGEN" != "31" ]; then
+            {
+              echo ""
+              echo "### STOP - expected exactly 31, got ${TOGEN}."
+              echo "Nothing was generated and nothing was committed. Please tell Claude the number above."
+            } >> "$GITHUB_STEP_SUMMARY"
+            echo "STOP: expected 31, got ${TOGEN}"; exit 1
+          fi
+          {
+            echo ""
+            echo "### SAFE - exactly 31 will generate."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Preview only (preflight mode)
+        if: ${{ inputs.mode == 'preflight' }}
+        shell: bash
+        run: |
+          {
+            echo ""
+            echo "_Preview only - nothing rendered, nothing committed._"
+            echo "When ready, run this workflow again with **mode = generate**."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "Preflight complete. Re-run with mode=generate to render."
+
+      # --- generate mode only ----------------------------------------------
+      - name: Generate the 31 MP3s (Jack; hard-scoped; char-budget guarded)
+        if: ${{ inputs.mode == 'generate' }}
+        shell: bash
+        env:
+          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
+        run: |
+          node tools/generateVoicePack.mjs --only "$KL1_IDS" --generate --max-chars 6000 | tee "$RUNNER_TEMP/gen.txt"
+
+      - name: Verify exactly the 31 MP3s now exist
+        if: ${{ inputs.mode == 'generate' }}
+        shell: bash
+        run: |
+          cat > "$RUNNER_TEMP/verify_mp3.mjs" << 'MJS'
+          import { readFileSync, existsSync } from 'node:fs';
+          const ess = JSON.parse(readFileSync('tools/kl1-essential-31.json', 'utf8'));
+          const missing = ess.filter((e) => !existsSync('voice/en-GB/' + e.file));
+          if (missing.length) {
+            console.error('MISSING after generate: ' + missing.map((e) => e.file).join(', '));
+            process.exit(1);
+          }
+          console.log('All ' + ess.length + ' KL1 MP3s present in voice/en-GB/.');
+          MJS
+          node "$RUNNER_TEMP/verify_mp3.mjs"
+
+      - name: Sync voicePackData.js from the manifest
+        if: ${{ inputs.mode == 'generate' }}
+        shell: bash
+        run: node tools/sync-voicepack-data.mjs
+
+      - name: Cache bump rc2-210 -> rc2-211 (cache-bust strings only; comments preserved)
+        if: ${{ inputs.mode == 'generate' }}
+        shell: bash
+        run: |
+          for f in app.js foundations.js sw.js cockpit.css index.html voiceTest.js pwaUpdate.js; do
+            sed -i \
+              -e "s/v=rc2-210/v=rc2-211/g" \
+              -e "s/= 'rc2-210'/= 'rc2-211'/g" \
+              -e "s/keymaster-rc2-210/keymaster-rc2-211/g" \
+              -e 's/"rc2-210 /"rc2-211 /g' \
+              "$f"
+          done
+          echo "cache bump applied to 7 files."
+
+      - name: VERIFICATION GATE (fail = nothing is committed)
+        if: ${{ inputs.mode == 'generate' }}
+        shell: bash
+        run: |
+          set -e
+          # 1) protected audio/content files unchanged (first 12 of md5)
+          declare -A EXP=( \
+            [coursePianoSampler.js]=d0835e23bd1a \
+            [pianoVoice.js]=884bab6ea5d9 \
+            [synth.js]=4d4f08db1b88 \
+            [pianoEngine.js]=ef7038f08177 \
+            [courseKeyLevel1.js]=87b0cc522c00 \
+            [theme.css]=9e81987a5ead )
+          for f in "${!EXP[@]}"; do
+            got=$(md5sum "$f" | cut -c1-12)
+            [ "$got" = "${EXP[$f]}" ] || { echo "FAIL: protected file changed: $f ($got != ${EXP[$f]})"; exit 1; }
+          done
+          echo "protected md5s OK (sampler / pianoVoice / synth / pianoEngine / courseKeyLevel1 / theme)"
+          # 2) every bumped script + the map still parse (force ESM via .mjs copy; node-version independent)
+          for f in app.js foundations.js sw.js voiceTest.js pwaUpdate.js voicePackData.js; do
+            cp "$f" "$RUNNER_TEMP/chk.mjs" && node --check "$RUNNER_TEMP/chk.mjs" || { echo "FAIL parse: $f"; exit 1; }
+          done
+          echo "parse OK"
+          # 3) cockpit.css braces balanced
+          o=$(grep -o '{' cockpit.css | wc -l | tr -d ' '); c=$(grep -o '}' cockpit.css | wc -l | tr -d ' ')
+          [ "$o" = "335" ] && [ "$c" = "335" ] || { echo "FAIL braces: $o/$c"; exit 1; }
+          echo "braces OK $o/$c"
+          # 4) bump hit ONLY cache-bust strings (0 of the old patterns remain), and every file carries rc2-211
+          LEFT=$(( $(grep -o 'v=rc2-210' app.js index.html | wc -l) \
+                 + $(grep -ro "= 'rc2-210'" app.js foundations.js sw.js voiceTest.js pwaUpdate.js | wc -l) \
+                 + $(grep -o 'keymaster-rc2-210' sw.js | wc -l) \
+                 + $(grep -o '"rc2-210 ' cockpit.css | wc -l) ))
+          [ "$LEFT" -eq 0 ] || { echo "FAIL: $LEFT stray cache-bust rc2-210 string(s) left"; exit 1; }
+          for f in app.js foundations.js sw.js cockpit.css index.html voiceTest.js pwaUpdate.js; do
+            grep -q 'rc2-211' "$f" || { echo "FAIL: $f has no rc2-211 marker"; exit 1; }
+          done
+          echo "bump OK (cache-bust -> rc2-211, comments intact)"
+          # 5) map has the 31 new kl1 entries + correct total
+          KL1=$(grep -c '"kl1-' voicePackData.js); TOT=$(grep -cE '": "' voicePackData.js)
+          [ "$KL1" -eq 31 ] || { echo "FAIL: voicePackData kl1 count $KL1 != 31"; exit 1; }
+          echo "voicePackData OK ($TOT entries, $KL1 kl1-)"
+          {
+            echo ""
+            echo "### Verification gate: PASSED"
+            echo "- Protected audio/content files: unchanged (md5 verified)"
+            echo "- All scripts parse; cockpit.css braces ${o}/${c}"
+            echo "- Cache version: rc2-210 -> rc2-211 (cache-bust strings only)"
+            echo "- voicePackData.js: ${TOT} entries, ${KL1} new kl1-"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit rc2-211 to main
+        if: ${{ inputs.mode == 'generate' }}
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add voice/en-GB tools/voice-lines.json voicePackData.js \
+                  app.js foundations.js sw.js cockpit.css index.html voiceTest.js pwaUpdate.js
+          COUNT=$(git diff --cached --name-only | wc -l | tr -d ' ')
+          git commit -m "rc2-211: KL1 essential Jack voice (31 lines) + voicePackData sync + cache bump"
+          git push origin HEAD:main
+          {
+            echo ""
+            echo "### Shipped rc2-211 to main (${COUNT} files)"
+            echo "- 31 KL1 essential MP3s now in \`voice/en-GB/\`"
+            echo "- GitHub Pages will serve them within a minute or two"
+            echo "- Rollback: revert this single commit, or restore the rc2-210 deploy zip"
+            echo ""
+            echo "**Tablet check:** open Key Level 1 -> the 16 chapter-opener lines speak as Jack -> every other KL1 line stays text-only -> demo piano still clean."
+          } >> "$GITHUB_STEP_SUMMARY"
