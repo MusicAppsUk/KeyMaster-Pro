@@ -373,7 +373,7 @@ export default function createView(ctx) {
   // takes over automatically the instant it ships (recorded file -> temporary TTS -> text).
   const TTS_DEV_FALLBACK = true;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-205';
+  const KM_BUILD = 'rc2-206';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate
@@ -464,7 +464,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   let demoTimer = null;
   let autoAdvTimer = null;   // learn: auto-advance after a simple completed task
   let seqTimer = null;       // learn: drives the speak -> pause -> demo -> pause chain
-  // rc2-205: demo double-trigger guards (foundations demo path only; engine untouched).
+  // rc2-206: demo double-trigger guards (foundations demo path only; engine untouched).
   // A genuine ~120ms double was PROVEN from a device recording, yet on paper each note
   // schedules exactly once -- so something invokes the demo twice at runtime. Two guards
   // make a re-strike impossible from the demo path, each with its OWN counter so the
@@ -475,6 +475,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   let lastDemoAt = 0;             // performance.now() when that demo started
   const DEMO_REFIRE_MS = 320;     // ignore a same-card demo re-fire inside this window
   const DEMO_PITCH_DUP_MS = 220;  // ignore the SAME pitch re-scheduled inside this window (matches detector)
+  let kl1DebugTimer = null;       // rc2-206: drives the live on-card KL1 debug readout (KL1 cards only)
   const recentDemoNotes = [];     // {midi, t} recently scheduled demo notes (de-dupe re-strikes)
   if (typeof window !== 'undefined') {
     if (typeof window.__kmDemoReentryHits !== 'number') window.__kmDemoReentryHits = 0;  // 2nd whole-demo blocked
@@ -525,7 +526,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   function playDemoVoice(midi, vel, durSec, atSec) {
     if (!audioReady()) return;
     const t = atSec ?? synth.ctx.currentTime;
-    // rc2-205: per-pitch de-dupe. If this exact pitch was already scheduled within
+    // rc2-206: per-pitch de-dupe. If this exact pitch was already scheduled within
     // DEMO_PITCH_DUP_MS (220ms -- matched to the detector so a ~120ms duplicate cannot
     // slip through), this is a re-strike from a duplicate invocation -- skip it and COUNT
     // it on the PITCH counter, so the panel can name the cause. Prune entries whose
@@ -549,7 +550,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
     if (midi > 72) { const over = midi - 72; v = Math.max(26, vel - over * 2.2); d = Math.max(0.18, durSec * 0.85); }
     if (piano && typeof piano.noteOn === 'function') {
       try {
-        if (typeof window !== 'undefined') window.__kmNoteSrc = 'demo';   // rc2-199 TEMP diagnostic source tag
+        if (typeof window !== 'undefined') { window.__kmNoteSrc = 'demo'; window.__kmDemoSent = (window.__kmDemoSent || 0) + 1; }   // rc2-199/206 TEMP diagnostic
         piano.noteOn(midi, v, t);
         piano.noteOff(midi, t + d);
         demoVoices.push({ release: (rt) => { try { piano.noteOff(midi, Math.max(rt ?? synth.ctx.currentTime, synth.ctx.currentTime)); } catch (_) { /* no-op */ } } });
@@ -568,8 +569,9 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   }
   // Sound the current card's example: single notes ring; a tight gap rolls a chord.
   function demoCard(c) {
+    if (typeof window !== 'undefined') window.__kmDemoCardCalls = (window.__kmDemoCardCalls || 0) + 1;   // rc2-206: every demoCard entry
     if (!c || !Array.isArray(c.demo) || !c.demo.length || !audioReady()) return;
-    // rc2-205: same-card re-fire guard. On paper each note schedules once, yet a ~120ms
+    // rc2-206: same-card re-fire guard. On paper each note schedules once, yet a ~120ms
     // double was PROVEN on-device -- so something invokes demoCard twice for the same card.
     // Ignore a repeat of the SAME card within 320ms and COUNT it on the RE-ENTRY counter;
     // distinct cards and deliberate replays (always seconds apart) are unaffected.
@@ -579,8 +581,9 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       return;
     }
     lastDemoId = c.id; lastDemoAt = __nowMs;
+    if (typeof window !== 'undefined') { window.__kmDemoCardPlayed = (window.__kmDemoCardPlayed || 0) + 1; window.__kmDemoCardId = c.id; }   // rc2-206: demoCard that PASSED the re-entry guard
     stopDemoAudio();
-    // rc2-205: arm the KL1-only final-boundary single-trigger guard for the span of THIS
+    // rc2-206: arm the KL1-only final-boundary single-trigger guard for the span of THIS
     // demo (KL1 cards only -- id starts with "kl1"). While armed, the piano output boundary
     // suppresses any 2nd same-pitch request within 250ms from ANY source, so each intended
     // KL1 note sounds exactly once. Other lessons never arm it, so their audio is untouched.
@@ -593,13 +596,50 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
     const vel = isChord ? 50 : 58;
     const dur = isChord ? 1.10 : Math.min(0.55, Math.max(0.20, gap * 0.9));
     const t0 = synth.ctx.currentTime + 0.02;
-    // rc2-205: revert to one clean Web-Audio-scheduled line for BOTH chord and melody.
+    // rc2-206: revert to one clean Web-Audio-scheduled line for BOTH chord and melody.
     // The earlier per-note hard-stop (rc2-202) did NOT remove the double, made the
     // phrase choppy, and added fragility; the proven double predates it and is now
     // handled by the guards above. Natural sustain serves the "sounded like music"
     // pedagogy -- notes ring and overlap musically; the de-dupe blocks only re-strikes.
     c.demo.forEach((m, i) => playDemoVoice(m, vel, dur, t0 + i * gap));
     sweepDemoVisual(c.demo, gap, isChord, dur);   // light each key as the tutor plays it
+  }
+
+  // rc2-206: BLUNT live proof rendered ON the KL1 card itself (not only the console
+  // or the blue panel). It reads the unconditional counters set at the piano output
+  // boundary, so if Tim presses "Hear it again" and WRAPPER hits do not move, the KL1
+  // demo is NOT passing through the instrumented piano path -- proven on screen. KL1
+  // cards only; removed entirely on non-KL1 cards. Can never throw into the card.
+  function updateKL1Debug(c) {
+    if (typeof document === 'undefined') return;
+    try {
+      const isKL = !!(c && c.id && /^kl1/.test(c.id));
+      let dbg = document.getElementById('km-kl1-debug');
+      if (!isKL) { if (dbg && dbg.remove) dbg.remove(); return; }
+      if (!dbg) {
+        dbg = document.createElement('div');
+        dbg.id = 'km-kl1-debug';
+        dbg.style.cssText = 'margin:12px 0 0;padding:9px 11px;border:2px solid #285FA6;border-radius:8px;background:#0e1726;color:#cfe3ff;font:600 12px/1.6 ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word';
+        card.appendChild(dbg);
+      }
+      const W = (typeof window !== 'undefined') ? window : {};
+      const now = (typeof performance !== 'undefined' && performance.now) ? performance.now() : Date.now();
+      const armed = !!(W.__kmKL1DemoUntil && now < W.__kmKL1DemoUntil);
+      const wrap = W.__kmWrapperHits || 0;
+      const sup = W.__kmKL1SuppressCount || 0;
+      const verdict = (wrap === 0)
+        ? 'NO note has reached the piano boundary -- demo is BYPASSING it'
+        : (sup > 0 ? (sup + ' duplicate(s) suppressed at the boundary') : 'notes reached boundary; 0 duplicates seen');
+      dbg.textContent =
+        'KL1 LIVE DEBUG  \u00B7  build ' + KM_BUILD + '\n' +
+        'card id: ' + (c.id || '-') + '   is KL1: ' + isKL + '\n' +
+        'audio ready: ' + audioReady() + '   guard armed: ' + armed + '\n' +
+        'demoCard calls: ' + (W.__kmDemoCardCalls || 0) + '   played: ' + (W.__kmDemoCardPlayed || 0) + '   notes sent: ' + (W.__kmDemoSent || 0) + '\n' +
+        'WRAPPER hits: ' + wrap + '   (sampler ' + (W.__kmSamplerHits || 0) + ' / fallback ' + (W.__kmFallbackHits || 0) + ')\n' +
+        'last note: ' + (W.__kmLastNote || '-') + '   source: ' + (W.__kmLastNoteSrc || '-') + '\n' +
+        'duplicates suppressed: ' + sup + '\n' +
+        'verdict: ' + verdict;
+    } catch (_) { /* a debug readout must NEVER break the card */ }
   }
 
   // Original animated on-keyboard guidance: the keyboard lights each note as the
@@ -1379,6 +1419,13 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       // Gently bring the active teaching area into view (device-tuned; never jumps if visible).
       try { card.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (_) { /* no-op */ }
     }
+    // rc2-206: refresh the live on-card KL1 debug readout. Restart the poll each render so
+    // the numbers track the async demo (speak -> pause -> demo). KL1 cards only; self-removes elsewhere.
+    try {
+      if (kl1DebugTimer) { clearInterval(kl1DebugTimer); kl1DebugTimer = null; }
+      updateKL1Debug(c);
+      if (c && c.id && /^kl1/.test(c.id)) kl1DebugTimer = setInterval(() => updateKL1Debug(c), 250);
+    } catch (_) { /* a debug readout must never break render */ }
   }
 
   // ---- Try detection — accurate, teaching feedback --------------------------
@@ -1785,6 +1832,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       if (gateTimer) { clearTimeout(gateTimer); gateTimer = null; }
       if (autoAdvTimer) { clearTimeout(autoAdvTimer); autoAdvTimer = null; }
       if (seqTimer) { clearTimeout(seqTimer); seqTimer = null; }
+      if (kl1DebugTimer) { clearInterval(kl1DebugTimer); kl1DebugTimer = null; }   // rc2-206: stop the live debug poll
       stopPulse();
       clearCountIn();
       clearHandSeq();
