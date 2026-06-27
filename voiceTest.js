@@ -20,7 +20,7 @@ import { createTutorAudio } from './tutorAudio.js?v=rc2-195';
 import { createVoiceControl } from './voiceControl.js?v=rc2-191';
 import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 
-const BUILD = 'rc2-206';
+const BUILD = 'rc2-207';
 const WELCOME_ID = 'welcome.say.0';
 const WELCOME_FILE = (VOICE_PACK && VOICE_PACK[WELCOME_ID]) || 'welcome-0.mp3';
 const WELCOME_URL = `voice/en-GB/${WELCOME_FILE}`;
@@ -226,7 +226,7 @@ function refresh(extra) {
       const reColor = (reHits == null) ? '#e6a96b' : (reHits > 0 ? '#7fd68a' : '#9a9488');
       const pdLine = (pdHits == null) ? 'not initialised' : (pdHits + (pdHits > 0 ? ' -- a second SAME-PITCH trigger was blocked' : ' -- no same-pitch re-strike fired'));
       const pdColor = (pdHits == null) ? '#e6a96b' : (pdHits > 0 ? '#7fd68a' : '#9a9488');
-      // (2c) KL1 FINAL-BOUNDARY GUARD (rc2-206) -- the chokepoint suppressor right at the
+      // (2c) KL1 FINAL-BOUNDARY GUARD (rc2-207) -- the chokepoint suppressor right at the
       // piano output. This is the PRIMARY KL1 fix: it catches a duplicate from ANY source.
       const klSup = (typeof window !== 'undefined' && typeof window.__kmKL1SuppressCount === 'number') ? window.__kmKL1SuppressCount : null;
       const klLog = (typeof window !== 'undefined' && Array.isArray(window.__kmKL1SuppressLog)) ? window.__kmKL1SuppressLog : [];
