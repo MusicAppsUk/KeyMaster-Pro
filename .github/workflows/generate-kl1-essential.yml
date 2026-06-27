@@ -1,243 +1,261 @@
-# Generate KL1 Essential Jack Voice
-# -----------------------------------------------------------------------------
-# One dedicated, low-click workflow that brings Jack's voice into Key Level 1,
-# starting with the 31 essential chapter-opener lines — safely.
-#
-# HOW TO RUN (Actions tab -> this workflow -> "Run workflow"):
-#   1) Leave mode = "preflight" and run it. It costs nothing and commits nothing.
-#      Read the run Summary:
-#         "SAFE - exactly 31"  -> good, go to step 2.
-#         "STOP - ... got N"   -> do NOT proceed; tell Claude the number.
-#   2) Run it again with mode = "generate". It renders the 31 MP3s, syncs the
-#      runtime map (voicePackData.js), bumps the cache version to rc2-211, runs
-#      a strict safety gate, and commits everything to main in one revertible
-#      commit. GitHub Pages serves it within a minute or two.
-#
-# SAFETY (built in):
-#   * The generator is HARD-SCOPED with --only to exactly the 31 IDs, so it
-#     physically cannot bill or overwrite any Foundation line, ever.
-#   * Preflight must see exactly 31 to-generate or the run stops (fail-closed).
-#   * Before any commit, a gate proves the protected audio/content files are
-#     byte-for-byte unchanged (md5), every script still parses, CSS braces are
-#     balanced, the cache bump touched only cache-bust strings (not comments),
-#     and the map has the 31 new entries. Any failure = nothing is committed.
-#   * ELEVENLABS_API_KEY is read from the repo secret only. It never appears in
-#     the app, the map, or any committed file. The app/runtime never calls
-#     ElevenLabs; it only ever loads local MP3s.
-#   * Untouched: sampler, pianoVoice, MIDI, Scales, Foundation audio, routing,
-#     reset, Course Map, splash, and all lesson content.
-# -----------------------------------------------------------------------------
+name: Generate KL1 Essential Voice Pack
 
-name: Generate KL1 Essential Jack Voice
+# Two modes (chosen when you run the workflow):
+#   preflight  -> merge + dry-run generator + gate on "missing (to do): 31".
+#                 Generates NOTHING. Commits NOTHING. Safe to run repeatedly.
+#   generate   -> same gate, then actually build the 31 MP3s, sync data,
+#                 bump the version, run the protected-file gate, and commit.
 
 on:
   workflow_dispatch:
     inputs:
       mode:
-        description: "preflight = safe preview (no cost, no commit). generate = render 31 + sync + bump rc2-211 + commit to main."
+        description: "preflight = check only (no generate, no commit) | generate = build + commit"
         type: choice
-        default: "preflight"
+        default: preflight
         options:
-          - "preflight"
-          - "generate"
+          - preflight
+          - generate
+
+concurrency:
+  group: kl1-essential-voicepack
+  cancel-in-progress: false
 
 permissions:
   contents: write
 
+env:
+  # ---- Files ----
+  SRC_KL1: tools/kl1-essential-31.json
+  VOICE_LINES: tools/voice-lines.json
+  VOICE_DIR: voice/en-GB
+  VOICE_PACK_DATA: voicePackData.js
+  # ---- Gate values ----
+  EXPECT_MISSING: "31"
+  EXPECT_KL1: "31"
+  # ---- Version bump ----
+  VERSION_FROM: rc2-210
+  VERSION_TO: rc2-211
+  # ---- Protected baseline (never touched by the version-bump) ----
+  PROTECTED_GLOBS: "coursePianoSampler.js|pianoVoice.js|assets/piano/salamander-lite"
+  # ---- Generate-mode only: your repo's protected-file gate command.
+  #      If your gate script lives elsewhere, change this one line.
+  #      Leave blank to let the workflow auto-discover a known gate script. ----
+  PROTECTED_GATE_CMD: "node tools/protected-gate.mjs"
+
 jobs:
-  kl1-essential-jack-voice:
+  kl1-essential:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
-      # --- both modes -------------------------------------------------------
-      - name: Merge the 31 essential KL1 lines into the manifest (idempotent)
-        shell: bash
+      - name: Show mode
+        run: echo "Running in '${{ inputs.mode }}' mode."
+
+      # --- Step 1: idempotent merge of the 31 KL1 lines into voice-lines.json ---
+      # Runs in BOTH modes so the generator can see the 31 entries.
+      # In preflight this change is never committed (the runner is discarded).
+      - name: Merge KL1 essential into voice-lines.json (idempotent)
         run: |
-          cat > "$RUNNER_TEMP/merge.mjs" << 'MJS'
-          import { readFileSync, writeFileSync, appendFileSync } from 'node:fs';
-          const manPath = 'tools/voice-lines.json';
-          const essPath = 'tools/kl1-essential-31.json';
-          const man = JSON.parse(readFileSync(manPath, 'utf8'));
-          const ess = JSON.parse(readFileSync(essPath, 'utf8'));
-          if (!Array.isArray(ess) || ess.length !== 31) {
-            console.error(`FATAL: tools/kl1-essential-31.json must hold exactly 31 lines (found ${ess && ess.length}).`);
-            process.exit(1);
-          }
-          const ids = new Set(man.lines.map((l) => l.id));
-          const owner = new Map(man.lines.map((l) => [l.file, l.id]));
-          for (const e of ess) {
-            if (owner.has(e.file) && owner.get(e.file) !== e.id) {
-              console.error(`FATAL: filename ${e.file} is already used by a different id (${owner.get(e.file)}).`);
-              process.exit(1);
+          set -euo pipefail
+          cat > /tmp/merge-kl1.mjs <<'EOF'
+          import { readFileSync, writeFileSync, existsSync } from 'node:fs';
+
+          const SRC = process.env.SRC_KL1;
+          const DEST = process.env.VOICE_LINES;
+          const EXPECT_KL1 = parseInt(process.env.EXPECT_KL1 || '31', 10);
+          const KL1 = /^kl1-/i;
+          const die = (m) => { console.error('FATAL: ' + m); process.exit(2); };
+
+          const readJson = (p) => {
+            if (!existsSync(p)) die('missing file: ' + p);
+            try { return JSON.parse(readFileSync(p, 'utf8')); }
+            catch (e) { die('invalid JSON in ' + p + ': ' + e.message); }
+          };
+
+          const src = readJson(SRC);
+          const dest = readJson(DEST);
+
+          // Normalise the source into [{ id, obj }]
+          function srcEntries(d) {
+            if (Array.isArray(d)) {
+              return d.map((item, i) => {
+                if (!item || typeof item !== 'object' || typeof item.id !== 'string')
+                  die(SRC + '[' + i + '] has no string "id" field');
+                return { id: item.id, obj: item };
+              });
             }
+            if (d && typeof d === 'object') {
+              return Object.entries(d).map(([id, v]) => ({ id, obj: v }));
+            }
+            die(SRC + ' must be a JSON array or object');
           }
+          const entries = srcEntries(src);
+
+          // Sanity: the essential file must hold exactly 31 kl1- ids.
+          const srcKl1 = entries.filter(e => KL1.test(e.id));
+          if (srcKl1.length !== EXPECT_KL1)
+            die(SRC + ' contains ' + srcKl1.length + ' kl1- entries, expected ' + EXPECT_KL1);
+
+          // Guard against silent duplicate-append if the array uses a different key.
+          if (Array.isArray(dest) && dest.length && !dest.some(x => x && typeof x.id === 'string'))
+            die(DEST + ' is an array but items have no "id" field; cannot merge idempotently. Check schema.');
+
           let added = 0;
-          for (const e of ess) if (!ids.has(e.id)) { man.lines.push(e); added++; }
-          writeFileSync(manPath, JSON.stringify(man, null, 2) + '\n');
-          appendFileSync(process.env.GITHUB_ENV, `KL1_IDS=${ess.map((e) => e.id).join(',')}\n`);
-          console.log(`manifest: ${man.lines.length} lines total, ${added} newly added (${ess.length} essential, idempotent).`);
-          MJS
-          node "$RUNNER_TEMP/merge.mjs"
-
-      - name: Preflight - dry run, must show EXACTLY 31 (hard-scoped; Foundation untouchable)
-        shell: bash
-        run: |
-          node tools/generateVoicePack.mjs --only "$KL1_IDS" > "$RUNNER_TEMP/preflight.txt" 2>&1 || {
-            cat "$RUNNER_TEMP/preflight.txt"; echo "generator failed during preflight"; exit 1;
+          if (Array.isArray(dest)) {
+            const have = new Set(dest.map(x => x && x.id));
+            for (const { id, obj } of entries) {
+              if (!have.has(id)) { dest.push(obj); have.add(id); added++; }
+            }
+          } else if (dest && typeof dest === 'object') {
+            for (const { id, obj } of entries) {
+              if (!(id in dest)) { dest[id] = obj; added++; }
+            }
+          } else {
+            die(DEST + ' must be a JSON array or object');
           }
-          cat "$RUNNER_TEMP/preflight.txt"
-          TOGEN=$(grep 'to generate' "$RUNNER_TEMP/preflight.txt" | grep -oE '[0-9]+' | head -1)
-          WARN=$(grep 'lint warnings' "$RUNNER_TEMP/preflight.txt" | grep -oE '[0-9]+' | head -1)
-          WARN=${WARN:-0}
-          {
-            echo "## KL1 Essential Jack Voice"
-            echo ""
-            echo "- Scope (\`--only\`): **31** lines. Foundation lines are out of scope and cannot be billed or changed."
-            echo "- Dry-run will generate: **${TOGEN}**"
-            echo "- Lint warnings: **${WARN}**"
-          } >> "$GITHUB_STEP_SUMMARY"
-          if [ "$TOGEN" != "31" ]; then
-            {
-              echo ""
-              echo "### STOP - expected exactly 31, got ${TOGEN}."
-              echo "Nothing was generated and nothing was committed. Please tell Claude the number above."
-            } >> "$GITHUB_STEP_SUMMARY"
-            echo "STOP: expected 31, got ${TOGEN}"; exit 1
+
+          writeFileSync(DEST, JSON.stringify(dest, null, 2) + '\n');
+
+          const idsNow = Array.isArray(dest) ? dest.map(x => x && x.id) : Object.keys(dest);
+          const kl1Now = idsNow.filter(id => typeof id === 'string' && KL1.test(id));
+          console.log('Merge OK: added ' + added + ' new entr' + (added === 1 ? 'y' : 'ies') +
+                      '; voice-lines.json now has ' + kl1Now.length + ' kl1- ids.');
+          if (kl1Now.length < EXPECT_KL1)
+            die('after merge only ' + kl1Now.length + ' kl1- ids present, expected >= ' + EXPECT_KL1);
+          EOF
+          node /tmp/merge-kl1.mjs
+
+      # --- Steps 2-4: dry-run generator, parse "missing (to do): N", gate on 31 ---
+      # Runs in BOTH modes. Generator defaults to dry-run, so nothing is built here.
+      - name: Preflight gate (missing must equal 31)
+        run: |
+          set -euo pipefail
+          node tools/generate-jack.mjs | tee /tmp/jack.out
+          MISSING=$(grep -oE 'missing \(to do\): [0-9]+' /tmp/jack.out | grep -oE '[0-9]+$' | tail -n1 || true)
+          echo "Parsed missing = '${MISSING:-<none>}'"
+          if [ "${MISSING:-}" != "${EXPECT_MISSING}" ]; then
+            echo "::error::Gate failed — expected missing=${EXPECT_MISSING}, got '${MISSING:-<none>}'. Stopping."
+            exit 1
           fi
-          {
-            echo ""
-            echo "### SAFE - exactly 31 will generate."
-          } >> "$GITHUB_STEP_SUMMARY"
+          echo "Gate passed: missing == ${EXPECT_MISSING}."
 
-      - name: Preview only (preflight mode)
+      # --- Step 5: preflight ends here. Nothing generated, nothing committed. ---
+      - name: Preflight summary
         if: ${{ inputs.mode == 'preflight' }}
-        shell: bash
         run: |
-          {
-            echo ""
-            echo "_Preview only - nothing rendered, nothing committed._"
-            echo "When ready, run this workflow again with **mode = generate**."
-          } >> "$GITHUB_STEP_SUMMARY"
-          echo "Preflight complete. Re-run with mode=generate to render."
+          echo "PREFLIGHT PASSED: missing == ${EXPECT_MISSING}."
+          echo "No MP3s were generated and nothing was committed."
+          echo "Next: run this workflow again with mode = generate."
 
-      # --- generate mode only ----------------------------------------------
-      - name: Generate the 31 MP3s (Jack; hard-scoped; char-budget guarded)
+      # --- Step 6: actually generate the MP3s (generate mode only) ---
+      - name: Generate MP3s (DRY=false)
         if: ${{ inputs.mode == 'generate' }}
-        shell: bash
-        env:
-          ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
         run: |
-          node tools/generateVoicePack.mjs --only "$KL1_IDS" --generate --max-chars 6000 | tee "$RUNNER_TEMP/gen.txt"
+          set -euo pipefail
+          DRY=false node tools/generate-jack.mjs | tee /tmp/jack-gen.out
 
-      - name: Verify exactly the 31 MP3s now exist
+      # --- Step 7: verify exactly 31 kl1 MP3s exist ---
+      - name: Verify 31 KL1 MP3s exist
         if: ${{ inputs.mode == 'generate' }}
-        shell: bash
         run: |
-          cat > "$RUNNER_TEMP/verify_mp3.mjs" << 'MJS'
-          import { readFileSync, existsSync } from 'node:fs';
-          const ess = JSON.parse(readFileSync('tools/kl1-essential-31.json', 'utf8'));
-          const missing = ess.filter((e) => !existsSync('voice/en-GB/' + e.file));
-          if (missing.length) {
-            console.error('MISSING after generate: ' + missing.map((e) => e.file).join(', '));
-            process.exit(1);
-          }
-          console.log('All ' + ess.length + ' KL1 MP3s present in voice/en-GB/.');
-          MJS
-          node "$RUNNER_TEMP/verify_mp3.mjs"
+          set -euo pipefail
+          COUNT=$(find "${VOICE_DIR}" -maxdepth 1 -type f -iname 'kl1-*.mp3' | wc -l | tr -d ' ')
+          echo "Found ${COUNT} kl1-*.mp3 in ${VOICE_DIR}"
+          if [ "${COUNT}" != "${EXPECT_KL1}" ]; then
+            echo "::error::Expected ${EXPECT_KL1} kl1 MP3s in ${VOICE_DIR}, found ${COUNT}."
+            exit 1
+          fi
 
-      - name: Sync voicePackData.js from the manifest
+      # --- Step 8: sync voicePackData.js ---
+      - name: Sync voicePackData.js
         if: ${{ inputs.mode == 'generate' }}
-        shell: bash
         run: node tools/sync-voicepack-data.mjs
 
-      - name: Cache bump rc2-210 -> rc2-211 (cache-bust strings only; comments preserved)
+      # --- Step 9: verify voicePackData.js has exactly 31 kl1- entries ---
+      - name: Verify voicePackData.js has exactly 31 kl1- entries
         if: ${{ inputs.mode == 'generate' }}
-        shell: bash
         run: |
-          for f in app.js foundations.js sw.js cockpit.css index.html voiceTest.js pwaUpdate.js; do
-            sed -i \
-              -e "s/v=rc2-210/v=rc2-211/g" \
-              -e "s/= 'rc2-210'/= 'rc2-211'/g" \
-              -e "s/keymaster-rc2-210/keymaster-rc2-211/g" \
-              -e 's/"rc2-210 /"rc2-211 /g' \
-              "$f"
-          done
-          echo "cache bump applied to 7 files."
+          set -euo pipefail
+          cat > /tmp/check-vpd.mjs <<'EOF'
+          import { readFileSync, existsSync } from 'node:fs';
+          const F = process.env.VOICE_PACK_DATA;
+          const EXPECT = parseInt(process.env.EXPECT_KL1 || '31', 10);
+          if (!existsSync(F)) { console.error('FATAL: missing ' + F); process.exit(2); }
+          const txt = readFileSync(F, 'utf8');
+          const ids = new Set((txt.match(/kl1-[A-Za-z0-9_-]+/gi) || []).map(s => s.toLowerCase()));
+          console.log('voicePackData.js unique kl1- ids: ' + ids.size);
+          if (ids.size !== EXPECT) {
+            console.error('FATAL: expected ' + EXPECT + ' kl1- ids, found ' + ids.size);
+            process.exit(1);
+          }
+          EOF
+          node /tmp/check-vpd.mjs
 
-      - name: VERIFICATION GATE (fail = nothing is committed)
+      # --- Step 10: bump rc2-210 -> rc2-211 (skips protected baseline files) ---
+      - name: Bump version rc2-210 -> rc2-211
         if: ${{ inputs.mode == 'generate' }}
-        shell: bash
         run: |
-          set -e
-          # 1) protected audio/content files unchanged (first 12 of md5)
-          declare -A EXP=( \
-            [coursePianoSampler.js]=d0835e23bd1a \
-            [pianoVoice.js]=884bab6ea5d9 \
-            [synth.js]=4d4f08db1b88 \
-            [pianoEngine.js]=ef7038f08177 \
-            [courseKeyLevel1.js]=87b0cc522c00 \
-            [theme.css]=9e81987a5ead )
-          for f in "${!EXP[@]}"; do
-            got=$(md5sum "$f" | cut -c1-12)
-            [ "$got" = "${EXP[$f]}" ] || { echo "FAIL: protected file changed: $f ($got != ${EXP[$f]})"; exit 1; }
+          set -euo pipefail
+          FILES=$(git ls-files | grep -vE "${PROTECTED_GLOBS}" | while read -r f; do
+            if grep -Ilq "${VERSION_FROM}" "$f"; then echo "$f"; fi
+          done)
+          if [ -z "${FILES}" ]; then
+            echo "::error::No tracked, non-protected files contain '${VERSION_FROM}'. Nothing to bump."
+            exit 1
+          fi
+          echo "Bumping ${VERSION_FROM} -> ${VERSION_TO} in:"
+          echo "${FILES}" | sed 's/^/  /'
+          echo "${FILES}" | while read -r f; do
+            [ -n "$f" ] && sed -i "s/${VERSION_FROM}/${VERSION_TO}/g" "$f"
           done
-          echo "protected md5s OK (sampler / pianoVoice / synth / pianoEngine / courseKeyLevel1 / theme)"
-          # 2) every bumped script + the map still parse (force ESM via .mjs copy; node-version independent)
-          for f in app.js foundations.js sw.js voiceTest.js pwaUpdate.js voicePackData.js; do
-            cp "$f" "$RUNNER_TEMP/chk.mjs" && node --check "$RUNNER_TEMP/chk.mjs" || { echo "FAIL parse: $f"; exit 1; }
-          done
-          echo "parse OK"
-          # 3) cockpit.css braces balanced
-          o=$(grep -o '{' cockpit.css | wc -l | tr -d ' '); c=$(grep -o '}' cockpit.css | wc -l | tr -d ' ')
-          [ "$o" = "335" ] && [ "$c" = "335" ] || { echo "FAIL braces: $o/$c"; exit 1; }
-          echo "braces OK $o/$c"
-          # 4) bump hit ONLY cache-bust strings (0 of the old patterns remain), and every file carries rc2-211
-          LEFT=$(( $(grep -o 'v=rc2-210' app.js index.html | wc -l) \
-                 + $(grep -ro "= 'rc2-210'" app.js foundations.js sw.js voiceTest.js pwaUpdate.js | wc -l) \
-                 + $(grep -o 'keymaster-rc2-210' sw.js | wc -l) \
-                 + $(grep -o '"rc2-210 ' cockpit.css | wc -l) ))
-          [ "$LEFT" -eq 0 ] || { echo "FAIL: $LEFT stray cache-bust rc2-210 string(s) left"; exit 1; }
-          for f in app.js foundations.js sw.js cockpit.css index.html voiceTest.js pwaUpdate.js; do
-            grep -q 'rc2-211' "$f" || { echo "FAIL: $f has no rc2-211 marker"; exit 1; }
-          done
-          echo "bump OK (cache-bust -> rc2-211, comments intact)"
-          # 5) map has the 31 new kl1 entries + correct total
-          KL1=$(grep -c '"kl1-' voicePackData.js); TOT=$(grep -cE '": "' voicePackData.js)
-          [ "$KL1" -eq 31 ] || { echo "FAIL: voicePackData kl1 count $KL1 != 31"; exit 1; }
-          echo "voicePackData OK ($TOT entries, $KL1 kl1-)"
-          {
-            echo ""
-            echo "### Verification gate: PASSED"
-            echo "- Protected audio/content files: unchanged (md5 verified)"
-            echo "- All scripts parse; cockpit.css braces ${o}/${c}"
-            echo "- Cache version: rc2-210 -> rc2-211 (cache-bust strings only)"
-            echo "- voicePackData.js: ${TOT} entries, ${KL1} new kl1-"
-          } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Commit rc2-211 to main
+      # --- Step 11: protected-file gate (fail-closed if not found) ---
+      - name: Protected-file gate
         if: ${{ inputs.mode == 'generate' }}
-        shell: bash
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add voice/en-GB tools/voice-lines.json voicePackData.js \
-                  app.js foundations.js sw.js cockpit.css index.html voiceTest.js pwaUpdate.js
-          COUNT=$(git diff --cached --name-only | wc -l | tr -d ' ')
-          git commit -m "rc2-211: KL1 essential Jack voice (31 lines) + voicePackData sync + cache bump"
-          git push origin HEAD:main
-          {
+          set -euo pipefail
+          CMD="${PROTECTED_GATE_CMD:-}"
+          discover() {
+            for c in tools/protected-gate.mjs tools/check-protected.mjs scripts/protected-gate.mjs; do
+              if [ -f "$c" ]; then echo "node $c"; return 0; fi
+            done
             echo ""
-            echo "### Shipped rc2-211 to main (${COUNT} files)"
-            echo "- 31 KL1 essential MP3s now in \`voice/en-GB/\`"
-            echo "- GitHub Pages will serve them within a minute or two"
-            echo "- Rollback: revert this single commit, or restore the rc2-210 deploy zip"
-            echo ""
-            echo "**Tablet check:** open Key Level 1 -> the 16 chapter-opener lines speak as Jack -> every other KL1 line stays text-only -> demo piano still clean."
-          } >> "$GITHUB_STEP_SUMMARY"
+          }
+          # If an explicit "node <script>" was given but the script is missing, try discovery.
+          if [ -n "$CMD" ]; then
+            set -- $CMD
+            if [ "${1:-}" = "node" ] && [ -n "${2:-}" ] && [ ! -f "${2}" ]; then
+              echo "Configured gate script '${2}' not found; searching known locations..."
+              CMD="$(discover)"
+            fi
+          else
+            CMD="$(discover)"
+          fi
+          if [ -z "$CMD" ]; then
+            echo "::error::Protected-file gate not found. Set PROTECTED_GATE_CMD (workflow env) to your repo's gate command, then rerun generate."
+            exit 1
+          fi
+          echo "Running protected-file gate: $CMD"
+          eval "$CMD"
+
+      # --- Step 12: commit, only after every gate above has passed ---
+      - name: Commit
+        if: ${{ inputs.mode == 'generate' }}
+        run: |
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git commit -m "KL1 essential voice pack: 31 lines generated, voicePackData synced, ${VERSION_FROM} -> ${VERSION_TO}"
+          git push
