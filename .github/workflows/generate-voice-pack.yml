@@ -1,19 +1,44 @@
-name: Generate Jack voice pack (full KeyMaster PRO pack)
+name: Generate Jack voice pack
 
-# Generates the CURRENT, FULL Jack voice pack from tools/generate-jack.mjs,
-# which reads tools/voice-lines.json (the single source of truth). Additive:
-# existing MP3s are skipped, never re-billed. The run summary page shows totals.
+# The permanent, manifest-driven Jack voice pipeline. Source of truth:
+# tools/voice-lines.json. Add lines there, then run this workflow — no bespoke
+# workflow per chapter/lesson/piece is needed.
+#
+#   • dry_run = true  (default): preview only — no API calls, no files, no cost.
+#   • dry_run = false           : generate missing MP3s, sync the runtime map,
+#                                 optionally bump the cache version, and commit.
+#   • scope    (optional): id-prefix allowlist, e.g. "kl1-eveningbell". Only
+#                          matching lines are eligible. Blank = whole manifest.
+#   • max_new  (optional): abort a real run if more than this many NEW lines would
+#                          generate. Blank = no cap.
+#   • version  (optional): cache/version bump target, e.g. "rc2-211" (manual; never
+#                          auto-incremented). Blank = no bump (map still syncs).
+#
+# Additive: existing voice/en-GB/*.mp3 are skipped, never re-billed. Runtime never
+# calls ElevenLabs; the key stays a repo secret only.
 
 on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: "true = preview only (no cost, no files). false = generate the full pack and commit new MP3s to main."
+        description: "true = preview only (no cost, no files). false = generate + sync + (optional bump) + commit."
         type: choice
         default: "true"
         options:
           - "true"
           - "false"
+      scope:
+        description: "Optional id-prefix allowlist, comma-separated (e.g. kl1-eveningbell). Blank = whole manifest."
+        type: string
+        default: ""
+      max_new:
+        description: "Optional safety cap: abort a real run if more than this many NEW lines would generate. Blank = no cap."
+        type: string
+        default: ""
+      version:
+        description: "Optional cache/version bump target (e.g. rc2-211). Blank = no bump."
+        type: string
+        default: ""
 
 permissions:
   contents: write
@@ -26,25 +51,47 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
-      - name: Generate or preview the full Jack voice pack
+
+      - name: Generate or preview the Jack voice pack
         env:
           ELEVENLABS_API_KEY: ${{ secrets.ELEVENLABS_API_KEY }}
           DRY: ${{ inputs.dry_run }}
+          SCOPE: ${{ inputs.scope }}
+          MAX_NEW: ${{ inputs.max_new }}
         run: node tools/generate-jack.mjs
-      - name: Commit new MP3s to main
+
+      - name: Sync runtime map (voicePackData.js)
         if: ${{ inputs.dry_run == 'false' }}
+        run: node tools/sync-voicepack-data.mjs
+
+      - name: Cache/version bump (optional, manual target)
+        if: ${{ inputs.dry_run == 'false' && inputs.version != '' }}
+        env:
+          VERSION_IN: ${{ inputs.version }}
+        run: node tools/bump-version.mjs "$VERSION_IN"
+
+      - name: Commit to main
+        if: ${{ inputs.dry_run == 'false' }}
+        env:
+          SCOPE_IN: ${{ inputs.scope }}
+          VERSION_IN: ${{ inputs.version }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          CHANGES=$(git status --porcelain voice/en-GB | wc -l | tr -d ' ')
+          git add voice/en-GB voicePackData.js
+          if [ -n "$VERSION_IN" ]; then
+            git add app.js foundations.js sw.js cockpit.css index.html voiceTest.js pwaUpdate.js
+          fi
+          CHANGES=$(git diff --cached --name-only | wc -l | tr -d ' ')
           { echo ""; echo "### Publishing"; echo ""; } >> "$GITHUB_STEP_SUMMARY"
           if [ "$CHANGES" -gt 0 ]; then
-            git add voice/en-GB
-            git commit -m "Jack voice pack: add ${CHANGES} generated MP3(s)"
+            MSG="Jack voice pack"
+            [ -n "$SCOPE_IN" ] && MSG="$MSG (scope $SCOPE_IN)"
+            [ -n "$VERSION_IN" ] && MSG="$MSG + cache bump $VERSION_IN"
+            git commit -m "$MSG: ${CHANGES} file(s)"
             git push origin HEAD:main
-            { echo "- Committed: **yes** — ${CHANGES} new MP3(s)";
-              echo "- Target branch: **main** (Pages serves voice/en-GB/ automatically)"; } >> "$GITHUB_STEP_SUMMARY"
+            { echo "- Committed: **yes** — ${CHANGES} file(s)";
+              echo "- Branch: **main** (Pages serves voice/en-GB/ automatically)"; } >> "$GITHUB_STEP_SUMMARY"
           else
-            { echo "- Committed: **no** — every line already present in voice/en-GB/.";
-              echo "- Target branch: **main**"; } >> "$GITHUB_STEP_SUMMARY"
+            echo "- Committed: **no** — nothing changed (every in-scope line already present, map already in sync)." >> "$GITHUB_STEP_SUMMARY"
           fi
