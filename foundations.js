@@ -1006,11 +1006,25 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       // so the status never implies a voice that will not sound. No TTS is enabled here and
       // the lesson text/explain stays on screen regardless.
       const cur = steps[index];
-      const lineId = (cur && cur.id) ? cur.id + '.say' : null;
-      const lineRecorded = !!(lineId && audio && audio.hasPremium && audio.hasPremium(lineId));
+      // rc2-211: beat-array cards store their MP3s under per-beat IDs ("id.say.0",
+      // "id.say.1", ...) while single-line cards use "id.say". Testing "id.say" alone
+      // mislabels every fully recorded beat card as text-only, so check the IDs the
+      // runtime will actually request (mirrors sayBeats() in tutorAudio.js).
+      const hasMp3 = (id) => !!(id && audio && audio.hasPremium && audio.hasPremium(id));
+      let lineRecorded = false, partlyRecorded = false;
+      if (cur && cur.id) {
+        if (Array.isArray(cur.say) && cur.say.length) {
+          const recorded = cur.say.filter((_, i) => hasMp3(`${cur.id}.say.${i}`)).length;
+          lineRecorded = recorded === cur.say.length;
+          partlyRecorded = recorded > 0 && !lineRecorded;
+        } else {
+          lineRecorded = hasMp3(`${cur.id}.say`);
+        }
+      }
       const isKL1 = !!(cur && cur.id && /^kl1/.test(cur.id));
-      if (lineRecorded) msg = 'Tutor voice on. Captions on.';                       // recorded MP3 exists for THIS line
-      else if (recordedPackActive()) msg = isKL1                                    // pack active, but THIS line not recorded -> text only
+      if (lineRecorded) msg = 'Tutor voice on. Captions on.';                       // recorded MP3 exists for every beat of THIS card
+      else if (partlyRecorded) msg = 'Tutor voice on for part of this lesson \u2014 the rest shows as text for now. Captions on.';
+      else if (recordedPackActive()) msg = isKL1                                    // pack active, but THIS card not recorded -> text only
         ? 'Jack is text-only for this Key Level 1 lesson \u2014 recorded Jack audio has not been added for this line yet.'
         : 'Jack is text-only for this lesson \u2014 recorded audio has not been added for this line yet.';
       else if (ttsVoiceUsable()) msg = 'Tutor voice on (temporary device voice). Captions on.';
