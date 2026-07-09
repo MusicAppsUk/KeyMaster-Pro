@@ -2190,6 +2190,761 @@
       "id": "kl1-sight-micro.say.1",
       "text": "Look before you play. Find the shape — does it step up or down? Then play it, calmly, in your own time.",
       "file": "kl1-sight-micro-1.mp3"
+    },
+    {
+      "id": "kl1-shapes-recap.say.0",
+      "text": "In the Foundation you learned how notes move — by step, by skip, or by repeat. Those small moves are the building blocks of every melody.",
+      "file": "kl1-shapes-recap-0.mp3"
+    },
+    {
+      "id": "kl1-shapes-recap.say.1",
+      "text": "Now we use them to make music. Read the shape, hear it, and play it — a little more each time.",
+      "file": "kl1-shapes-recap-1.mp3"
+    },
+    {
+      "id": "kl1-first-phrase.say.0",
+      "text": "Here is a short phrase. Read it as one shape — it rises by step, then returns home.",
+      "file": "kl1-first-phrase-0.mp3"
+    },
+    {
+      "id": "kl1-first-phrase.say.1",
+      "text": "Listen to it first, then play it back.",
+      "file": "kl1-first-phrase-1.mp3"
+    },
+    {
+      "id": "kl1-first-phrase.reteach",
+      "text": "Take it gently — the phrase climbs three notes by step, then comes back down to where it started.",
+      "file": "kl1-first-phrase-reteach.mp3"
+    },
+    {
+      "id": "kl1-phrase-echo.say.0",
+      "text": "Now an echo. I will play a short phrase — listen to its shape, then play it back to me.",
+      "file": "kl1-phrase-echo-0.mp3"
+    },
+    {
+      "id": "kl1-phrase-echo.say.1",
+      "text": "This one steps gently down, coming home.",
+      "file": "kl1-phrase-echo-1.mp3"
+    },
+    {
+      "id": "kl1-phrase-echo.reteach",
+      "text": "Hear it as a falling line: each note is one step lower than the last, until it comes to rest.",
+      "file": "kl1-phrase-echo-reteach.mp3"
+    },
+    {
+      "id": "kl1-read-repeats.say.0",
+      "text": "The simplest move of all is no move — a note that repeats. The same dot stays on the same line or space, and you play the same key again.",
+      "file": "kl1-read-repeats-0.mp3"
+    },
+    {
+      "id": "kl1-read-repeats.say.1",
+      "text": "Here are two notes that each repeat. Play what you see — the same key, then the same key again.",
+      "file": "kl1-read-repeats-1.mp3"
+    },
+    {
+      "id": "kl1-read-repeats.reteach",
+      "text": "Gently — play the higher note twice, then the lower note twice. The lit keys show which two.",
+      "file": "kl1-read-repeats-reteach.mp3"
+    },
+    {
+      "id": "kl1-read-stepsup.say.0",
+      "text": "When notes climb to the very next line or space each time, they are stepping upward — a row of 2nds, moving up one key at a time.",
+      "file": "kl1-read-stepsup-0.mp3"
+    },
+    {
+      "id": "kl1-read-stepsup.say.1",
+      "text": "See how the notes rise, each just above the last. Play them climbing upward.",
+      "file": "kl1-read-stepsup-1.mp3"
+    },
+    {
+      "id": "kl1-read-stepsup.reteach",
+      "text": "Slowly — thumb on C, then the next finger one step up, and the next, and the next. The lit keys show the climb.",
+      "file": "kl1-read-stepsup-reteach.mp3"
+    },
+    {
+      "id": "kl1-read-stepsdown.say.0",
+      "text": "Now the other direction. When notes fall to the very next line or space each time, they are stepping downward — still 2nds, but descending.",
+      "file": "kl1-read-stepsdown-0.mp3"
+    },
+    {
+      "id": "kl1-read-stepsdown.say.1",
+      "text": "Watch the line fall, each note just below the last. Play it stepping down.",
+      "file": "kl1-read-stepsdown-1.mp3"
+    },
+    {
+      "id": "kl1-read-stepsdown.reteach",
+      "text": "Gently — start on G with the little finger, then step down one finger at a time. The lit keys show the descent.",
+      "file": "kl1-read-stepsdown-reteach.mp3"
+    },
+    {
+      "id": "kl1-read-skips.say.0",
+      "text": "A skip jumps further than a step — it leaps over a note. On the staff, it moves from a line to the next line, or a space to the next space. That is a 3rd.",
+      "file": "kl1-read-skips-0.mp3"
+    },
+    {
+      "id": "kl1-read-skips.say.1",
+      "text": "Here the notes skip upward, then skip back down. Feel how much wider a skip is than a step. Play it.",
+      "file": "kl1-read-skips-1.mp3"
+    },
+    {
+      "id": "kl1-read-skips.reteach",
+      "text": "Gently — thumb on C, skip to E, skip to G, then back down the same way. The lit keys show where to land.",
+      "file": "kl1-read-skips-reteach.mp3"
+    },
+    {
+      "id": "kl1-read-cold.say.0",
+      "text": "Now put it together, and read it yourself — I will not play this one first. It has a repeat, a skip, and a step, all in four notes.",
+      "file": "kl1-read-cold-0.mp3"
+    },
+    {
+      "id": "kl1-read-cold.say.1",
+      "text": "Look before you touch a key. Find each move: where it stays, where it skips, where it steps. Then play.",
+      "file": "kl1-read-cold-1.mp3"
+    },
+    {
+      "id": "kl1-read-cold.reteach",
+      "text": "Slowly — play C twice, then skip up to E, then step down to D. Now the keys are lit to guide your reading.",
+      "file": "kl1-read-cold-reteach.mp3"
+    },
+    {
+      "id": "kl1-pulse-play.say.0",
+      "text": "Let us feel four steady beats together. Count with me — one, two, three, four — evenly, never hurried.",
+      "file": "kl1-pulse-play-0.mp3"
+    },
+    {
+      "id": "kl1-pulse-play.say.1",
+      "text": "Then play any note once on each beat, landing exactly with the pulse. Listen first, then join in.",
+      "file": "kl1-pulse-play-1.mp3"
+    },
+    {
+      "id": "kl1-pulse-play.reteach",
+      "text": "Listen to the steady beat once more, then play one note on each pulse — even, unhurried, one to a beat.",
+      "file": "kl1-pulse-play-reteach.mp3"
+    },
+    {
+      "id": "kl1-pulse-eight.say.0",
+      "text": "You held four steady beats. Now hold eight — twice as far, the very same calm pulse. The challenge is to stay even all the way through.",
+      "file": "kl1-pulse-eight-0.mp3"
+    },
+    {
+      "id": "kl1-pulse-eight.say.1",
+      "text": "Count with me and play a note on every beat — one to eight — never speeding up. Listen first, then join in.",
+      "file": "kl1-pulse-eight-1.mp3"
+    },
+    {
+      "id": "kl1-pulse-eight.reteach",
+      "text": "Listen to the steady pulse again, then place one calm note on each beat, all eight, like footsteps that never hurry.",
+      "file": "kl1-pulse-eight-reteach.mp3"
+    },
+    {
+      "id": "kl1-pulse-rushing.say.0",
+      "text": "Here is the secret that takes musicians years to master: keeping the pulse steady. The most common mistake is rushing — speeding up without meaning to, especially on the easy notes.",
+      "file": "kl1-pulse-rushing-0.mp3"
+    },
+    {
+      "id": "kl1-pulse-rushing.say.1",
+      "text": "A steady pulse feels calm and even, like a slow clock. Rushing feels breathless, the beats crowding together. Always aim for calm and even.",
+      "file": "kl1-pulse-rushing-1.mp3"
+    },
+    {
+      "id": "kl1-notes-read.say.0",
+      "text": "Here is a short line in four-four time — four beats in the bar. Read the lengths as you play: two crotchets, then a minim held across two beats.",
+      "file": "kl1-notes-read-0.mp3"
+    },
+    {
+      "id": "kl1-notes-read.say.1",
+      "text": "Listen to it first, then play the same notes, giving the long note its full length.",
+      "file": "kl1-notes-read-1.mp3"
+    },
+    {
+      "id": "kl1-notes-read.reteach",
+      "text": "Slowly now — play the two short notes, one beat each, then hold the last note for two full beats. The lit keys will guide your hand.",
+      "file": "kl1-notes-read-reteach.mp3"
+    },
+    {
+      "id": "kl1-notes-held.say.0",
+      "text": "Two notes can share the same pitch yet sound quite different. One long note — a minim — is held, sounding once across two beats. Two crotchets are struck twice, a fresh sound on each beat.",
+      "file": "kl1-notes-held-0.mp3"
+    },
+    {
+      "id": "kl1-notes-held.say.1",
+      "text": "Same key, different rhythm. Holding is not the same as repeating — the page tells you which the composer wants.",
+      "file": "kl1-notes-held-1.mp3"
+    },
+    {
+      "id": "kl1-notes-twobar.say.0",
+      "text": "Now read a longer line — two full bars of four-four time. Watch the lengths: some notes are one beat, some are held for two.",
+      "file": "kl1-notes-twobar-0.mp3"
+    },
+    {
+      "id": "kl1-notes-twobar.say.1",
+      "text": "Read across the barline without stopping, and give every long note its full count. Listen first, then play it through.",
+      "file": "kl1-notes-twobar-1.mp3"
+    },
+    {
+      "id": "kl1-notes-twobar.reteach",
+      "text": "Slowly — C, D, then E held for two beats; then D twice, then C held for two. The lit keys will guide your hand.",
+      "file": "kl1-notes-twobar-reteach.mp3"
+    },
+    {
+      "id": "kl1-piece-play.say.0",
+      "text": "Now you play Morning Steps. Read the shape — four steps up, then home. Take your time; the notes matter more than the speed.",
+      "file": "kl1-piece-play-0.mp3"
+    },
+    {
+      "id": "kl1-piece-play.say.1",
+      "text": "If you wander, I will help you find your way — a small hint first, and a closer look only if you need it.",
+      "file": "kl1-piece-play-1.mp3"
+    },
+    {
+      "id": "kl1-piece-play.reteach",
+      "text": "Gently — the line rises one step at a time to the top, then steps down and rests on the note it began with. The lit keys will guide your hand.",
+      "file": "kl1-piece-play-reteach.mp3"
+    },
+    {
+      "id": "kl1-rests-play.say.0",
+      "text": "Now read a short bar with a rest in it. Play the first note, then keep the second beat silent — that is the rest — then play the last two.",
+      "file": "kl1-rests-play-0.mp3"
+    },
+    {
+      "id": "kl1-rests-play.say.1",
+      "text": "Count steadily through the silence: one, two, three, four. Do not let the rest hurry you on.",
+      "file": "kl1-rests-play-1.mp3"
+    },
+    {
+      "id": "kl1-rests-play.reteach",
+      "text": "Slowly — play the first note, count the silent beat, then step down two notes to the bottom. The lit keys will guide you.",
+      "file": "kl1-rests-play-reteach.mp3"
+    },
+    {
+      "id": "kl1-rests-read2.say.0",
+      "text": "Sometimes a bar begins with silence. This one opens with a rest — so you wait, counting beat one, then come in on beat two.",
+      "file": "kl1-rests-read2-0.mp3"
+    },
+    {
+      "id": "kl1-rests-read2.say.1",
+      "text": "Read it yourself and feel where you enter. Count one in silence, then step upward. Your turn.",
+      "file": "kl1-rests-read2-1.mp3"
+    },
+    {
+      "id": "kl1-rests-read2.reteach",
+      "text": "Count one silently, then play C, D, E stepping up. The lit keys show the climb after the rest.",
+      "file": "kl1-rests-read2-reteach.mp3"
+    },
+    {
+      "id": "kl1-blue-play.say.0",
+      "text": "Now you play Blue Window. Read the falling shape — G stepping down, then a turn and home to C. Unhurried.",
+      "file": "kl1-blue-play-0.mp3"
+    },
+    {
+      "id": "kl1-blue-play.say.1",
+      "text": "Let the long notes at the end breathe. If you lose your way, I will guide you gently.",
+      "file": "kl1-blue-play-1.mp3"
+    },
+    {
+      "id": "kl1-blue-play.reteach",
+      "text": "Gently — the line steps down four notes from the top, then rises one step and rests on home. The lit keys will guide your hand.",
+      "file": "kl1-blue-play-reteach.mp3"
+    },
+    {
+      "id": "kl1-light-play.say.0",
+      "text": "Now you play First Light. Strike the two repeated notes evenly, then reach up for the skip to G — do not let the repeats rush.",
+      "file": "kl1-light-play-0.mp3"
+    },
+    {
+      "id": "kl1-light-play.say.1",
+      "text": "Then step gently down and rest on home. Listen once more in your mind, then play.",
+      "file": "kl1-light-play-1.mp3"
+    },
+    {
+      "id": "kl1-light-play.reteach",
+      "text": "Gently — E twice with finger three, skip up to G, back to E, then step down D to C. The lit keys will guide your hand.",
+      "file": "kl1-light-play-reteach.mp3"
+    },
+    {
+      "id": "kl1-home-listen.say.0",
+      "text": "A fourth piece — Walking Home. This one wanders a little before it finds its way back, the way a phrase often does. Notice how it ends on home, sounding finished.",
+      "file": "kl1-home-listen-0.mp3"
+    },
+    {
+      "id": "kl1-home-listen.say.1",
+      "text": "Follow the line as it turns down, lifts again, and settles on C. That feeling of arriving is a phrase ending.",
+      "file": "kl1-home-listen-1.mp3"
+    },
+    {
+      "id": "kl1-home-play.say.0",
+      "text": "Now play Walking Home. Let it wander down, lift back up, and then — this is the important part — land softly on home, so it truly sounds finished.",
+      "file": "kl1-home-play-0.mp3"
+    },
+    {
+      "id": "kl1-home-play.say.1",
+      "text": "Shape the ending: the last two notes are the phrase coming to rest. Play it through.",
+      "file": "kl1-home-play-1.mp3"
+    },
+    {
+      "id": "kl1-home-play.reteach",
+      "text": "Gently — E, D, C stepping down, back up to D and E, then home to C held. The lit keys will guide your hand.",
+      "file": "kl1-home-play-reteach.mp3"
+    },
+    {
+      "id": "kl1-lh-play.say.0",
+      "text": "Let your left hand rest over five notes, the little finger on the low C. Now play a gentle line — up by step, then back home.",
+      "file": "kl1-lh-play-0.mp3"
+    },
+    {
+      "id": "kl1-lh-play.say.1",
+      "text": "Read it from the bass clef, and keep the hand calm. Listen first, then play.",
+      "file": "kl1-lh-play-1.mp3"
+    },
+    {
+      "id": "kl1-lh-play.reteach",
+      "text": "Slowly — little finger starts on low C, climb four notes by step, then come back down to home. The lit keys will guide your hand.",
+      "file": "kl1-lh-play-reteach.mp3"
+    },
+    {
+      "id": "kl1-lh-pattern.say.0",
+      "text": "The right hand has its five-finger pattern; the left hand has one too, low in the bass clef. The hand stays still, the little finger anchored on low C.",
+      "file": "kl1-lh-pattern-0.mp3"
+    },
+    {
+      "id": "kl1-lh-pattern.say.1",
+      "text": "Climb from C up to G and back, one finger to each note. Remember the left-hand fingering runs the other way — little finger low, thumb high. Listen, then play.",
+      "file": "kl1-lh-pattern-1.mp3"
+    },
+    {
+      "id": "kl1-lh-pattern.reteach",
+      "text": "Gently — little finger on low C, step up one finger at a time to the thumb on G, then step back down. The lit keys show the path.",
+      "file": "kl1-lh-pattern-reteach.mp3"
+    },
+    {
+      "id": "kl1-lh-study.say.0",
+      "text": "Now a little study for the left hand alone — not just a pattern, but a small piece. It uses skips this time: low C up to E, up to G, and back.",
+      "file": "kl1-lh-study-0.mp3"
+    },
+    {
+      "id": "kl1-lh-study.say.1",
+      "text": "Read it from the bass clef and keep the hand calm through the skips. Listen first, then play.",
+      "file": "kl1-lh-study-1.mp3"
+    },
+    {
+      "id": "kl1-lh-study.reteach",
+      "text": "Gently — low C, skip to E, skip to G, back to E, then step down to D and home C. The lit keys show the path.",
+      "file": "kl1-lh-study-reteach.mp3"
+    },
+    {
+      "id": "kl1-hands-play.say.0",
+      "text": "Here is your first move with both hands. Play the low C with your left hand and keep it gently held down.",
+      "file": "kl1-hands-play-0.mp3"
+    },
+    {
+      "id": "kl1-hands-play.say.1",
+      "text": "Then, above it, play three notes with your right hand — C, E, G — the home chord, one note after another. Left first, then right.",
+      "file": "kl1-hands-play-1.mp3"
+    },
+    {
+      "id": "kl1-hands-play.reteach",
+      "text": "Gently — the low note first with the left hand, held; then the right hand climbs C, E, G. The lit keys show the path.",
+      "file": "kl1-hands-play-reteach.mp3"
+    },
+    {
+      "id": "kl1-hands-rhhold.say.0",
+      "text": "Last time the left hand held while the right moved. Now we swap: the right hand holds a high note, and the left hand walks underneath it.",
+      "file": "kl1-hands-rhhold-0.mp3"
+    },
+    {
+      "id": "kl1-hands-rhhold.say.1",
+      "text": "Play and hold the high G with your right hand, then step up C, D, E with your left. The hands are learning to do different jobs at once.",
+      "file": "kl1-hands-rhhold-1.mp3"
+    },
+    {
+      "id": "kl1-hands-rhhold.reteach",
+      "text": "Gently — right hand on high G, held; then left hand steps up C, D, E. The lit keys show both parts.",
+      "file": "kl1-hands-rhhold-reteach.mp3"
+    },
+    {
+      "id": "kl1-hands-turns.say.0",
+      "text": "Here is another way hands work together — by taking turns, passing the music back and forth. Left, then right, then left, then right.",
+      "file": "kl1-hands-turns-0.mp3"
+    },
+    {
+      "id": "kl1-hands-turns.say.1",
+      "text": "Play low C with the left, then C above with the right; then E with the left, and E above with the right. A gentle conversation between your hands.",
+      "file": "kl1-hands-turns-1.mp3"
+    },
+    {
+      "id": "kl1-hands-turns.reteach",
+      "text": "Gently — left hand low C, right hand C, left hand E, right hand E. The lit keys show whose turn is whose.",
+      "file": "kl1-hands-turns-reteach.mp3"
+    },
+    {
+      "id": "kl1-finger-play.say.0",
+      "text": "Now play with a smooth, connected touch — we call it legato. Each note joins to the next with no gap, as if drawing one unbroken line.",
+      "file": "kl1-finger-play-0.mp3"
+    },
+    {
+      "id": "kl1-finger-play.say.1",
+      "text": "Hold each key just until the next one sounds, then release. The fingering keeps your hand steady so the line can stay smooth.",
+      "file": "kl1-finger-play-1.mp3"
+    },
+    {
+      "id": "kl1-finger-play.reteach",
+      "text": "Gently — thumb on C, step up to E, then back to the thumb. Connect the sound, no gaps. The lit keys will guide you.",
+      "file": "kl1-finger-play-reteach.mp3"
+    },
+    {
+      "id": "kl1-finger-detached.say.0",
+      "text": "You have a smooth legato touch. Now meet its opposite — a detached touch, where each note is short and separate, with a little space after it.",
+      "file": "kl1-finger-detached-0.mp3"
+    },
+    {
+      "id": "kl1-finger-detached.say.1",
+      "text": "Play these five notes crisply — press, then lift the finger cleanly so each note stands on its own. Light and bouncy, never heavy.",
+      "file": "kl1-finger-detached-1.mp3"
+    },
+    {
+      "id": "kl1-finger-detached.reteach",
+      "text": "Gently — thumb to little finger, C up to G, lifting each finger crisply. The lit keys show the climb.",
+      "file": "kl1-finger-detached-reteach.mp3"
+    },
+    {
+      "id": "kl1-finger-phrase.say.0",
+      "text": "Now a small musical phrase — and this time, let the fingering lead you. Follow the numbers exactly, and notice how the hand never has to jump.",
+      "file": "kl1-finger-phrase-0.mp3"
+    },
+    {
+      "id": "kl1-finger-phrase.say.1",
+      "text": "Play it smoothly, trusting the fingers shown. Good fingering is what makes a phrase feel effortless. Listen, then play.",
+      "file": "kl1-finger-phrase-1.mp3"
+    },
+    {
+      "id": "kl1-finger-phrase.reteach",
+      "text": "Gently — thumb on C, skip up to E with finger three, step down to D, home to C. The lit keys show the path.",
+      "file": "kl1-finger-phrase-reteach.mp3"
+    },
+    {
+      "id": "kl1-intervals-play.say.0",
+      "text": "Now play a line that uses both. First three steps — C, D, E, each a 2nd — then a skip up to G, a 3rd.",
+      "file": "kl1-intervals-play-0.mp3"
+    },
+    {
+      "id": "kl1-intervals-play.say.1",
+      "text": "Listen to how the skip opens up wider than the steps. Hear it first, then play it.",
+      "file": "kl1-intervals-play-1.mp3"
+    },
+    {
+      "id": "kl1-intervals-play.reteach",
+      "text": "Slowly — step up C, D, E one at a time, then skip past F to land on G. The lit keys will guide your hand.",
+      "file": "kl1-intervals-play-reteach.mp3"
+    },
+    {
+      "id": "kl1-intervals-2nd.say.0",
+      "text": "Let us live inside the 2nd for a moment. Here is a little melody where every move is a 2nd — a step — rising and then falling back.",
+      "file": "kl1-intervals-2nd-0.mp3"
+    },
+    {
+      "id": "kl1-intervals-2nd.say.1",
+      "text": "Because every move is a step, your fingers move to the very next note each time. Hear how smooth a line of 2nds sounds. Play it.",
+      "file": "kl1-intervals-2nd-1.mp3"
+    },
+    {
+      "id": "kl1-intervals-2nd.reteach",
+      "text": "Gently — C, D, E stepping up, then E, D, C stepping back. The lit keys show the small steps.",
+      "file": "kl1-intervals-2nd-reteach.mp3"
+    },
+    {
+      "id": "kl1-intervals-3rd.say.0",
+      "text": "Now the 3rd — the skip. From a note, a 3rd reaches past its neighbour to the note beyond. From C, a 3rd is E; from D, a 3rd is F.",
+      "file": "kl1-intervals-3rd-0.mp3"
+    },
+    {
+      "id": "kl1-intervals-3rd.say.1",
+      "text": "Play two 3rds — C up to E, then D up to F. Feel your hand reach a little wider than a step. Listen, then play.",
+      "file": "kl1-intervals-3rd-1.mp3"
+    },
+    {
+      "id": "kl1-intervals-3rd.reteach",
+      "text": "Gently — thumb on C, skip up to E; then finger two on D, skip up to F. The lit keys show where to land.",
+      "file": "kl1-intervals-3rd-reteach.mp3"
+    },
+    {
+      "id": "kl1-intervals-compare.say.0",
+      "text": "Here is the comparison that matters most. First a 2nd — C to D, a step, next-door. Then a 3rd — C to E, a skip, reaching past.",
+      "file": "kl1-intervals-compare-0.mp3"
+    },
+    {
+      "id": "kl1-intervals-compare.say.1",
+      "text": "On the keys, the skip is wider. On the page, the step goes line-to-space while the skip goes line-to-line. Play both, and feel the difference.",
+      "file": "kl1-intervals-compare-1.mp3"
+    },
+    {
+      "id": "kl1-intervals-compare.reteach",
+      "text": "Gently — C up to D, the step; back to C; then C up to E, the skip. The lit keys show both distances.",
+      "file": "kl1-intervals-compare-reteach.mp3"
+    },
+    {
+      "id": "kl1-fivefinger-play.say.0",
+      "text": "Here is a pattern every pianist learns — the five-finger pattern. Your hand stays perfectly still, one finger to each note, up to the top and back.",
+      "file": "kl1-fivefinger-play-0.mp3"
+    },
+    {
+      "id": "kl1-fivefinger-play.say.1",
+      "text": "From C, climb by step to G — thumb to little finger — then come back down. No jumping; the hand stays home. Listen, then play.",
+      "file": "kl1-fivefinger-play-1.mp3"
+    },
+    {
+      "id": "kl1-fivefinger-play.reteach",
+      "text": "Gently and evenly — thumb on C, step up one finger at a time to the little finger on G, then step back down the same path. The lit keys will guide you.",
+      "file": "kl1-fivefinger-play-reteach.mp3"
+    },
+    {
+      "id": "kl1-fivefinger-even.say.0",
+      "text": "Now play the pattern again, but with one goal only: evenness. Every note the same weight, the same length, like a row of identical pearls.",
+      "file": "kl1-fivefinger-even-0.mp3"
+    },
+    {
+      "id": "kl1-fivefinger-even.say.1",
+      "text": "The little finger is naturally weaker, so give it a touch more attention. Slow and even beats fast and uneven, every time. Listen, then play.",
+      "file": "kl1-fivefinger-even-1.mp3"
+    },
+    {
+      "id": "kl1-fivefinger-even.reteach",
+      "text": "Slowly and evenly — thumb to little finger and back, every note the same. The lit keys show the path; let your ear judge the evenness.",
+      "file": "kl1-fivefinger-even-reteach.mp3"
+    },
+    {
+      "id": "kl1-harmony-triad.say.0",
+      "text": "Three notes belong specially to the home note: C, E and G. Together they make the home chord — the tonic triad. Built from C, skipping to E, skipping again to G.",
+      "file": "kl1-harmony-triad-0.mp3"
+    },
+    {
+      "id": "kl1-harmony-triad.say.1",
+      "text": "Played all at once they make a chord; played one after another they make a broken chord. Let us play it broken — C, E, G, and back. Listen, then play.",
+      "file": "kl1-harmony-triad-1.mp3"
+    },
+    {
+      "id": "kl1-harmony-triad.reteach",
+      "text": "Gently — thumb on C, skip to E with finger three, skip to G with finger five, then back down. The lit keys will guide your hand.",
+      "file": "kl1-harmony-triad-reteach.mp3"
+    },
+    {
+      "id": "kl1-harmony-melody.say.0",
+      "text": "Harmony is not just a stack of notes — it is support. Listen: the left hand holds the home note, C, while the right hand sings a small melody above it.",
+      "file": "kl1-harmony-melody-0.mp3"
+    },
+    {
+      "id": "kl1-harmony-melody.say.1",
+      "text": "Play and hold low C with your left hand, then let the right hand step down to it — E, D, C. Feel how the held note holds the melody up.",
+      "file": "kl1-harmony-melody-1.mp3"
+    },
+    {
+      "id": "kl1-harmony-melody.reteach",
+      "text": "Gently — left hand holds low C; then right hand plays E, D, C stepping down. The lit keys show both parts.",
+      "file": "kl1-harmony-melody-reteach.mp3"
+    },
+    {
+      "id": "kl1-harmony-broken2.say.0",
+      "text": "You played the home chord rising. Now hear it fall — the same three notes, G, E, C, broken from the top downward. The same harmony, a different shape.",
+      "file": "kl1-harmony-broken2-0.mp3"
+    },
+    {
+      "id": "kl1-harmony-broken2.say.1",
+      "text": "Skip down through the chord — G to E to C — each step a 3rd. Listen, then play it falling home.",
+      "file": "kl1-harmony-broken2-1.mp3"
+    },
+    {
+      "id": "kl1-harmony-broken2.reteach",
+      "text": "Gently — little finger on G, skip down to E, skip down to C. The lit keys show where to land.",
+      "file": "kl1-harmony-broken2-reteach.mp3"
+    },
+    {
+      "id": "kl1-echo-task.reteach",
+      "text": "Listen again to the shape: it steps up, lifts to the highest note, then comes back. The lit keys will show you where it lives.",
+      "file": "kl1-echo-task-reteach.mp3"
+    },
+    {
+      "id": "kl1-sight-micro.reteach",
+      "text": "Take it slowly — the line begins up high and steps down to a long note at home. Now the keys are lit to show you; read the shape with them.",
+      "file": "kl1-sight-micro-reteach.mp3"
+    },
+    {
+      "id": "kl1-review.say.0",
+      "text": "Take a moment. Look at how much you can do now. You read shapes instead of spelling out every note. You feel a pulse and count through rests.",
+      "file": "kl1-review-0.mp3"
+    },
+    {
+      "id": "kl1-review.say.1",
+      "text": "You read both clefs, play with each hand, and have begun bringing them together. You know steps and skips, the home note, and the home chord — and you have two real pieces in your hands.",
+      "file": "kl1-review-1.mp3"
+    },
+    {
+      "id": "kl1-review.say.2",
+      "text": "This is genuine musicianship beginning. When you are ready, Key Level 2 — Confident Reading — will take it further. Beautifully done.",
+      "file": "kl1-review-2.mp3"
+    },
+    {
+      "id": "kl1-echo-two.say.0",
+      "text": "Let us train the ear with something small. I will play just two notes; you play them straight back.",
+      "file": "kl1-echo-two-0.mp3"
+    },
+    {
+      "id": "kl1-echo-two.say.1",
+      "text": "Listen for the gap between them — do they sit close, or open up wide? Listen now.",
+      "file": "kl1-echo-two-1.mp3"
+    },
+    {
+      "id": "kl1-echo-two.reteach",
+      "text": "Listen again — a low note, then a higher one a short skip above. The lit keys show where they live.",
+      "file": "kl1-echo-two-reteach.mp3"
+    },
+    {
+      "id": "kl1-echo-three.say.0",
+      "text": "Now three notes. A little more to hold in your ear — listen to the whole shape before you play.",
+      "file": "kl1-echo-three-0.mp3"
+    },
+    {
+      "id": "kl1-echo-three.say.1",
+      "text": "Does it rise, fall, or turn? Hold the shape, then play it back. Listening now.",
+      "file": "kl1-echo-three-1.mp3"
+    },
+    {
+      "id": "kl1-echo-three.reteach",
+      "text": "Listen again — three notes stepping upward, one after another. The lit keys will guide your hand.",
+      "file": "kl1-echo-three-reteach.mp3"
+    },
+    {
+      "id": "kl1-echo-shape.say.0",
+      "text": "One more echo, with a little turn in it. The shape goes up, then comes back down to where it began.",
+      "file": "kl1-echo-shape-0.mp3"
+    },
+    {
+      "id": "kl1-echo-shape.say.1",
+      "text": "Listen for that arch — out and back. Then play it from memory. Listening now.",
+      "file": "kl1-echo-shape-1.mp3"
+    },
+    {
+      "id": "kl1-echo-shape.reteach",
+      "text": "Listen again — it rises to its highest note, then steps back down to home. The lit keys show the path.",
+      "file": "kl1-echo-shape-reteach.mp3"
+    },
+    {
+      "id": "kl1-sight-treble2.say.0",
+      "text": "Another cold read — I will not play it. Look first: where does it start, and does it step or skip?",
+      "file": "kl1-sight-treble2-0.mp3"
+    },
+    {
+      "id": "kl1-sight-treble2.say.1",
+      "text": "This one skips upward through the notes. Trace the shape with your eyes, then play it calmly.",
+      "file": "kl1-sight-treble2-1.mp3"
+    },
+    {
+      "id": "kl1-sight-treble2.reteach",
+      "text": "Slowly — start on the bottom note, skip up to the middle, then skip up again to the top. Now the keys are lit to guide you.",
+      "file": "kl1-sight-treble2-reteach.mp3"
+    },
+    {
+      "id": "kl1-sight-bass.say.0",
+      "text": "Now read one in the bass clef, for the left hand — and again, I will not play it first.",
+      "file": "kl1-sight-bass-0.mp3"
+    },
+    {
+      "id": "kl1-sight-bass.say.1",
+      "text": "Find the starting note low down, then follow the shape. Little finger ready on the low note.",
+      "file": "kl1-sight-bass-1.mp3"
+    },
+    {
+      "id": "kl1-sight-bass.reteach",
+      "text": "Slowly — little finger on low C, then step up two notes. Now the keys are lit to show the way.",
+      "file": "kl1-sight-bass-reteach.mp3"
+    },
+    {
+      "id": "kl1-review-rhythm.say.0",
+      "text": "Let us gather everything together. First, rhythm — remember the note lengths? Read this short bar and give each note its full value.",
+      "file": "kl1-review-rhythm-0.mp3"
+    },
+    {
+      "id": "kl1-review-rhythm.say.1",
+      "text": "Two crotchets, then a minim held for two beats. Listen, then play it in time.",
+      "file": "kl1-review-rhythm-1.mp3"
+    },
+    {
+      "id": "kl1-review-rhythm.reteach",
+      "text": "Gently — two single beats stepping down, then a long held note at the bottom. The lit keys will guide you.",
+      "file": "kl1-review-rhythm-reteach.mp3"
+    },
+    {
+      "id": "kl1-review-shape.say.0",
+      "text": "Now reading by shape. Here is a line that steps, then skips. Read the distances, not the names.",
+      "file": "kl1-review-shape-0.mp3"
+    },
+    {
+      "id": "kl1-review-shape.say.1",
+      "text": "Three steps up, then a skip to the top. Hear it, then play it.",
+      "file": "kl1-review-shape-1.mp3"
+    },
+    {
+      "id": "kl1-review-shape.reteach",
+      "text": "Slowly — step up three notes, then skip past one to reach the top. The lit keys will guide you.",
+      "file": "kl1-review-shape-reteach.mp3"
+    },
+    {
+      "id": "kl1-review-lh.say.0",
+      "text": "Now the left hand. Read this short bass-clef line and play it down low, little finger leading.",
+      "file": "kl1-review-lh-0.mp3"
+    },
+    {
+      "id": "kl1-review-lh.say.1",
+      "text": "Up by step, then home. Listen, then play with the left hand.",
+      "file": "kl1-review-lh-1.mp3"
+    },
+    {
+      "id": "kl1-review-lh.reteach",
+      "text": "Gently — little finger on low C, step up, then back to the low C. The lit keys will guide you.",
+      "file": "kl1-review-lh-reteach.mp3"
+    },
+    {
+      "id": "kl1-review-interval.say.0",
+      "text": "Now harmony. Play the home chord broken — C, E, G — each note a skip of a 3rd above the last.",
+      "file": "kl1-review-interval-0.mp3"
+    },
+    {
+      "id": "kl1-review-interval.say.1",
+      "text": "These are the notes that belong to home in C major. Listen, then play them up.",
+      "file": "kl1-review-interval-1.mp3"
+    },
+    {
+      "id": "kl1-review-interval.reteach",
+      "text": "Gently — thumb on C, skip to E, skip to G, climbing the home chord. The lit keys will guide your hand.",
+      "file": "kl1-review-interval-reteach.mp3"
+    },
+    {
+      "id": "kl1-review-echo.say.0",
+      "text": "Now your ear. No notation — I play a short phrase, you echo it straight back.",
+      "file": "kl1-review-echo-0.mp3"
+    },
+    {
+      "id": "kl1-review-echo.say.1",
+      "text": "Hold the shape, then find it. Listening now.",
+      "file": "kl1-review-echo-1.mp3"
+    },
+    {
+      "id": "kl1-review-echo.reteach",
+      "text": "Listen again — three notes stepping downward from the top. The lit keys will show you where.",
+      "file": "kl1-review-echo-reteach.mp3"
+    },
+    {
+      "id": "kl1-review-sight.say.0",
+      "text": "And last, sight-reading. A phrase you have not heard — I will not play it. Read it, and play it on your own.",
+      "file": "kl1-review-sight-0.mp3"
+    },
+    {
+      "id": "kl1-review-sight.say.1",
+      "text": "Find the first note, read the shape, and play calmly. This is the habit that opens every piece.",
+      "file": "kl1-review-sight-1.mp3"
+    },
+    {
+      "id": "kl1-review-sight.reteach",
+      "text": "Slowly — the line steps down from the top to a long note at home. Now the keys are lit to guide you.",
+      "file": "kl1-review-sight-reteach.mp3"
     }
   ]
 }
