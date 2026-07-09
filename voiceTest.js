@@ -362,16 +362,20 @@ function check() {
 
 // Discreet always-visible build badge → instantly reveals a stale/mixed deploy,
 // and is a one-tap route to the Voice Self-Test. Deliberately tiny and muted.
+// rc2-212: moved LEFT (same height) so it no longer covers the transport strip's
+// Stay/Continue cluster on phones, and shrunk to the tiny/muted size the comment
+// above always promised. right:218px clears Stay+Continue at phone widths; on
+// wider screens it simply sits in empty space.
 function badge() {
   if (typeof document === 'undefined' || document.getElementById('km-build-badge')) return;
   const b = document.createElement('button');
   b.id = 'km-build-badge';
   b.textContent = BUILD;
   b.title = 'KeyMaster build — tap for Voice Self-Test';
-  b.style.cssText = 'position:fixed;right:10px;bottom:16px;z-index:2147483646;'
-    + 'font:700 15px/1 system-ui,sans-serif;color:#fff;background:#285FA6;'
-    + 'border:2px solid #fff;border-radius:12px;padding:13px 18px;opacity:.97;'
-    + 'box-shadow:0 2px 10px rgba(0,0,0,.35);min-width:64px;text-align:center;';
+  b.style.cssText = 'position:fixed;right:218px;bottom:16px;z-index:2147483646;'
+    + 'font:600 11px/1 system-ui,sans-serif;color:#fff;background:#285FA6;'
+    + 'border:1px solid rgba(255,255,255,.7);border-radius:9px;padding:6px 10px;opacity:.8;'
+    + 'box-shadow:0 1px 5px rgba(0,0,0,.25);text-align:center;';
   b.addEventListener('click', () => { try { location.hash = '#voice-test'; } catch (_) {} });
   document.body.appendChild(b);
 }
