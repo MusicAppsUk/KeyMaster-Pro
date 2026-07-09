@@ -162,9 +162,12 @@ function stateClass(state) {
 }
 
 // A note's head footprint (scaled to GAP), used for drawing + vertical auto-fit.
+// rc2-212: 'dotted-half' (dotted minim) shares the half-note footprint; the
+// augmentation dot itself is drawn in noteHead(). Additive — unknown values
+// still fall through to the quarter default exactly as before.
 function noteHeadGeom(value) {
   if (value === 'whole') return { rx: 0.64 * GAP, ry: 0.45 * GAP, rot: 0, open: true, stem: false };
-  if (value === 'half') return { rx: 0.58 * GAP, ry: 0.42 * GAP, rot: -20, open: true, stem: true };
+  if (value === 'half' || value === 'dotted-half') return { rx: 0.58 * GAP, ry: 0.42 * GAP, rot: -20, open: true, stem: true };
   return { rx: 0.58 * GAP, ry: 0.42 * GAP, rot: -20, open: false, stem: true };   // quarter (crotchet) default
 }
 
@@ -174,6 +177,15 @@ function noteHead(midi, clef, topY, cx, state, finger, value, letter) {
   const cls = 'km-staff__note' + (g.open ? ' km-staff__note--open' : '') + stateClass(state);
   let out = ledgersFor(midi, clef, topY, cx)
     + `<ellipse class="${cls}" cx="${cx}" cy="${y}" rx="${g.rx.toFixed(2)}" ry="${g.ry.toFixed(2)}" transform="rotate(${g.rot} ${cx} ${y})"/>`;
+  // rc2-212: augmentation dot for the dotted minim. Engraving rule: the dot sits
+  // just right of the head — in the SAME space for space-notes, in the space
+  // ABOVE for line-notes. A note is on a line when its step offset from the
+  // bottom line is an even number of half-gaps. Additive: only 'dotted-half'.
+  if (value === 'dotted-half') {
+    const k = Math.round((topY + 4 * GAP - y) / HALF);
+    const dotY = (k % 2 === 0) ? (y - HALF) : y;
+    out += `<circle class="km-staff__dot" cx="${(cx + g.rx + 7).toFixed(1)}" cy="${dotY.toFixed(1)}" r="3.1"/>`;
+  }
   let stemUp = true;
   if (g.stem) {
     const midLineY = topY + 2 * GAP;     // middle (3rd) line
@@ -270,8 +282,14 @@ const REST_TOP_MARK = 2 * GAP + 12;
  *   highlight  'lines' | 'spaces' | null      (default null)
  *   notes      Array of MIDI numbers, or { midi, state, finger, value } objects,
  *              or { rest: 'quarter'|'half'|'whole'|'eighth' } entries.
+ *              value: 'quarter' | 'half' | 'dotted-half' | 'whole' (rc2-212: dotted minim added).
  *   middleC    boolean   mark Middle C on the grand staff   (default false)
  *   timeSig    '4/4' | '3/4' | [n,d] | false  (optional; see resolveTimeSig)
+ *   marks      rc2-212, optional: dynamics under the staff, e.g.
+ *              [{ at: 1, text: 'p' }] — `at` is the 1-based note index (same
+ *              convention as opts.bars). Invalid entries are silently ignored;
+ *              text is whitelisted (letters + dot, max 8 chars). Additive —
+ *              absent by default, so existing cards render byte-identically.
  * @returns {HTMLDivElement} <div class="km-staff km-staff--{clef}">
  */
 export function buildStaff(opts = {}) {
@@ -311,6 +329,19 @@ export function buildStaff(opts = {}) {
       body += noteHead(it.midi, useClef, top, cx, it.state, it.finger, it.value, it.letter);
       const [t, b] = noteBounds(it.midi, useClef, top, it.value, Number.isFinite(it.finger), !!it.letter); mark(t); mark(b);
     });
+    // rc2-212: optional dynamics marks — grand staff places them below the bass
+    // staff. Same validation and viewBox tracking as the single-staff branch.
+    if (Array.isArray(opts.marks) && opts.marks.length) {
+      const my = bassTop + 5 * GAP + 26;
+      opts.marks.forEach((m) => {
+        const k = m && Math.round(m.at) - 1;
+        const ok = Number.isInteger(k) && k >= 0 && k < gxs.length
+          && typeof m.text === 'string' && /^[A-Za-z.]{1,8}$/.test(m.text);
+        if (!ok) return;
+        body += `<text class="km-staff__mark" x="${gxs[k]}" y="${my}" text-anchor="middle">${m.text}</text>`;
+        mark(my + 12);
+      });
+    }
   } else {
     const topY = 34;
     body += staffLines(topY, highlight) + clefMark(clef, topY);
@@ -337,6 +368,20 @@ export function buildStaff(opts = {}) {
         }
       });
       body += `<line class="km-staff__endbar" x1="${RIGHT}" y1="${topY}" x2="${RIGHT}" y2="${topY + 4 * GAP}"/>`;
+    }
+    // rc2-212: optional dynamics marks under the staff (see JSDoc). Placed well
+    // below note letters/ledger territory; every drawn mark extends the viewBox
+    // via mark() so nothing is ever clipped. Invalid entries fail harmlessly.
+    if (Array.isArray(opts.marks) && opts.marks.length) {
+      const my = topY + 5 * GAP + 26;
+      opts.marks.forEach((m) => {
+        const k = m && Math.round(m.at) - 1;
+        const ok = Number.isInteger(k) && k >= 0 && k < xs.length
+          && typeof m.text === 'string' && /^[A-Za-z.]{1,8}$/.test(m.text);
+        if (!ok) return;
+        body += `<text class="km-staff__mark" x="${xs[k]}" y="${my}" text-anchor="middle">${m.text}</text>`;
+        mark(my + 12);
+      });
     }
   }
 
@@ -416,6 +461,8 @@ function injectStaffStyles() {
 .view[data-view="learn"] .km-staff__finger{fill:var(--brass-deep,#9A7330);font-size:16px;font-weight:700;font-family:var(--font-mono,ui-monospace,monospace);}
 html[data-fingering="hidden"] .view[data-view="learn"] .km-staff__finger{display:none;}
 .view[data-view="learn"] .km-staff__letter{fill:${INK};font-size:15px;font-weight:700;font-family:var(--font-ui,system-ui,sans-serif);}
+.view[data-view="learn"] .km-staff__dot{fill:${INK};}
+.view[data-view="learn"] .km-staff__mark{fill:${INK};font-size:19px;font-style:italic;font-weight:700;font-family:Georgia,'Times New Roman',serif;}
 .view[data-view="learn"] .km-staff__line.is-hl{stroke:#E0A94B;stroke-width:3.2;}
 .view[data-view="learn"] .km-staff__space.is-hl{fill:rgba(224,169,75,.28);}
 .view[data-view="learn"] .km-staff__note.is-correct{fill:var(--good,#36c46a);stroke:none;filter:drop-shadow(0 0 5px color-mix(in srgb,var(--good,#36c46a) 55%,transparent));}
