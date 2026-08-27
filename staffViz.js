@@ -70,13 +70,15 @@ const TS_X = 66;
 const NOTE_L = 138;
 const NOTE_R = RIGHT - 26;
 const NOTE_SPACING = 58;
-function noteXs(n) {
+// rc2-213: `shift` moves the whole note area right to clear a key signature.
+function noteXs(n, shift) {
+  const L = NOTE_L + (Number.isFinite(shift) ? shift : 0);
   if (n <= 0) return [];
-  if (n === 1) return [Math.round((NOTE_L + NOTE_R) / 2)];
-  const span = NOTE_R - NOTE_L;
+  if (n === 1) return [Math.round((L + NOTE_R) / 2)];
+  const span = NOTE_R - L;
   const spacing = Math.min(NOTE_SPACING, span / (n - 1));
   const groupW = spacing * (n - 1);
-  const start = NOTE_L + (span - groupW) / 2;
+  const start = L + (span - groupW) / 2;
   return Array.from({ length: n }, (_, i) => Math.round(start + i * spacing));
 }
 
@@ -122,11 +124,79 @@ function clefMark(clef, topY) {
 
 // Stacked time-signature digits (serif, like the masterclass — NOT the music
 // font). numerator sits in the upper half of the staff, denominator in the lower.
-function timeSigMark(num, den, topY) {
+// rc2-213: `x` defaults to TS_X, but shifts right when a key signature is drawn.
+function timeSigMark(num, den, topY, x) {
+  const tx = Number.isFinite(x) ? x : TS_X;
   const ny = topY + Math.round(1.55 * GAP);
   const dy = topY + Math.round(3.62 * GAP);
-  return `<text class="km-staff__timesig" x="${TS_X}" y="${ny}" text-anchor="middle">${num}</text>`
-    + `<text class="km-staff__timesig" x="${TS_X}" y="${dy}" text-anchor="middle">${den}</text>`;
+  return `<text class="km-staff__timesig" x="${tx}" y="${ny}" text-anchor="middle">${num}</text>`
+    + `<text class="km-staff__timesig" x="${tx}" y="${dy}" text-anchor="middle">${den}</text>`;
+}
+
+// ---------------------------------------------------------------------------
+// rc2-213: ACCIDENTALS + KEY SIGNATURES.
+// Standard Unicode music symbols (notation, not art), drawn in the same music
+// font stack as the clefs/rests. staffStep() already maps a sharpened pitch to
+// its natural letter's staff position (F#4 sits on the F line), so an accidental
+// is purely an added glyph to the LEFT of the head — no vertical maths changes.
+const ACCIDENTAL_GLYPH = {
+  sharp: '\u266F', flat: '\u266D', natural: '\u266E',
+};
+const ACC_DX = 15;         // glyph centre offset left of the note-head centre
+
+// ENHARMONIC SPELLING. A MIDI number is ambiguous: 70 is both A# and Bb, and
+// they occupy DIFFERENT staff positions (A-space vs B-line). staffStep()'s
+// LETTER table spells everything sharpwards, which is right for A# and wrong
+// for Bb. A flattened note is the letter ABOVE, lowered — so for placement
+// purposes (and placement only) we read it one semitone higher. The sounding
+// pitch is never altered; this affects the drawn line/space alone.
+function spellingMidi(midi, accidental) {
+  return (accidental === 'flat') ? (midi + 1) : midi;
+}
+function accidentalMark(kind, cx, y, rx) {
+  const g = ACCIDENTAL_GLYPH[kind];
+  if (!g) return '';
+  const x = cx - rx - ACC_DX;
+  return `<text class="km-staff__acc" x="${x.toFixed(1)}" y="${(y + 6).toFixed(1)}" text-anchor="middle">${g}</text>`;
+}
+
+// Key signatures. Order of sharps (F C G D A E B) and flats (B E A D G C F),
+// with the standard engraving octave for each clef. Values are MIDI pitches
+// chosen purely for staff PLACEMENT via noteY(); they are never sounded.
+const KEYSIG_SHARP_PITCHES = { treble: [77, 72, 79, 74, 69, 76, 71], bass: [56, 51, 58, 53, 48, 55, 50] };
+const KEYSIG_FLAT_PITCHES  = { treble: [71, 76, 69, 74, 67, 72, 65], bass: [50, 55, 48, 53, 46, 51, 44] };
+const KS_X0 = 44;          // first accidental x, just right of the clef
+const KS_DX = 11;          // horizontal step between key-signature accidentals
+// resolveKeySig: accepts a signed integer (+n sharps / -n flats) or a key name.
+const KEY_NAME_TO_SIG = {
+  'C': 0, 'G': 1, 'D': 2, 'A': 3, 'E': 4, 'B': 5,
+  'F': -1, 'Bb': -2, 'Eb': -3, 'Ab': -4, 'Db': -5,
+  'Am': 0, 'Em': 1, 'Bm': 2, 'Dm': -1, 'Gm': -2, 'Cm': -3,
+};
+function resolveKeySig(opt) {
+  if (typeof opt === 'number' && Number.isInteger(opt)) return Math.max(-7, Math.min(7, opt));
+  if (typeof opt === 'string' && Object.prototype.hasOwnProperty.call(KEY_NAME_TO_SIG, opt)) return KEY_NAME_TO_SIG[opt];
+  return 0;
+}
+function keySigMark(sig, clef, topY) {
+  if (!sig) return '';
+  const sharps = sig > 0;
+  const n = Math.min(Math.abs(sig), 7);
+  const pitches = (sharps ? KEYSIG_SHARP_PITCHES : KEYSIG_FLAT_PITCHES)[clef] || [];
+  const glyph = sharps ? ACCIDENTAL_GLYPH.sharp : ACCIDENTAL_GLYPH.flat;
+  let out = '';
+  for (let i = 0; i < n; i += 1) {
+    const p = pitches[i];
+    if (!Number.isFinite(p)) continue;
+    const y = noteY(p, clef, topY);
+    out += `<text class="km-staff__acc km-staff__acc--ks" x="${KS_X0 + i * KS_DX}" y="${(y + 6).toFixed(1)}" text-anchor="middle">${glyph}</text>`;
+  }
+  return out;
+}
+// How far the note area must shift right to clear a rendered key signature.
+function keySigWidth(sig) {
+  const n = Math.min(Math.abs(resolveKeySig(sig)), 7);
+  return n ? (n * KS_DX + 12) : 0;
 }
 
 function noteY(midi, clef, topY) {
@@ -171,17 +241,37 @@ function noteHeadGeom(value) {
   return { rx: 0.58 * GAP, ry: 0.42 * GAP, rot: -20, open: false, stem: true };   // quarter (crotchet) default
 }
 
-function noteHead(midi, clef, topY, cx, state, finger, value, letter) {
-  const y = noteY(midi, clef, topY);
+// rc2-213: which values carry an augmentation dot, and which carry a quaver flag.
+const DOTTED_VALUES = new Set(['dotted-half', 'dotted-quarter', 'dotted-eighth']);
+const FLAGGED_VALUES = new Set(['eighth', 'dotted-eighth']);
+const KNOWN_VALUES = new Set(['whole', 'half', 'dotted-half', 'quarter', 'dotted-quarter', 'eighth', 'dotted-eighth']);
+
+// A quaver flag, drawn as an original SVG path (not a font glyph) so it always
+// attaches exactly to the stem end at this staff size. Mirrored for stem-down.
+function quaverFlag(sx, yEnd, stemUp) {
+  const d = stemUp
+    ? `M ${sx} ${yEnd} c 10 6 15 14 13 25 c 6 -13 2 -24 -13 -33 z`
+    : `M ${sx} ${yEnd} c 10 -6 15 -14 13 -25 c 6 13 2 24 -13 33 z`;
+  return `<path class="km-staff__flag" d="${d}"/>`;
+}
+
+function noteHead(midi, clef, topY, cx, state, finger, value, letter, accidental, beamDir, inBeam) {
+  // Placement uses the SPELLED pitch so a flat lands on the correct letter.
+  const sm = spellingMidi(midi, accidental);
+  const y = noteY(sm, clef, topY);
   const g = noteHeadGeom(value);
   const cls = 'km-staff__note' + (g.open ? ' km-staff__note--open' : '') + stateClass(state);
-  let out = ledgersFor(midi, clef, topY, cx)
-    + `<ellipse class="${cls}" cx="${cx}" cy="${y}" rx="${g.rx.toFixed(2)}" ry="${g.ry.toFixed(2)}" transform="rotate(${g.rot} ${cx} ${y})"/>`;
-  // rc2-212: augmentation dot for the dotted minim. Engraving rule: the dot sits
-  // just right of the head — in the SAME space for space-notes, in the space
-  // ABOVE for line-notes. A note is on a line when its step offset from the
-  // bottom line is an even number of half-gaps. Additive: only 'dotted-half'.
-  if (value === 'dotted-half') {
+  let out = ledgersFor(sm, clef, topY, cx);
+  // rc2-213: accidental glyph, left of the head. staffStep() already places a
+  // sharpened/flattened pitch on its natural letter's line or space, so this is
+  // purely additive — no vertical maths changes.
+  if (accidental) out += accidentalMark(accidental, cx, y, g.rx);
+  out += `<ellipse class="${cls}" cx="${cx}" cy="${y}" rx="${g.rx.toFixed(2)}" ry="${g.ry.toFixed(2)}" transform="rotate(${g.rot} ${cx} ${y})"/>`;
+  // Augmentation dot. Engraving rule: the dot sits just right of the head — in
+  // the SAME space for space-notes, in the space ABOVE for line-notes. A note is
+  // on a line when its step offset from the bottom line is an even number of
+  // half-gaps. rc2-213: generalised from 'dotted-half' to every dotted value.
+  if (DOTTED_VALUES.has(value)) {
     const k = Math.round((topY + 4 * GAP - y) / HALF);
     const dotY = (k % 2 === 0) ? (y - HALF) : y;
     out += `<circle class="km-staff__dot" cx="${(cx + g.rx + 7).toFixed(1)}" cy="${dotY.toFixed(1)}" r="3.1"/>`;
@@ -189,10 +279,15 @@ function noteHead(midi, clef, topY, cx, state, finger, value, letter) {
   let stemUp = true;
   if (g.stem) {
     const midLineY = topY + 2 * GAP;     // middle (3rd) line
-    stemUp = y >= midLineY;              // note on/below middle line -> stem up
+    // rc2-213: inside a beam group every stem must point the SAME way, so the
+    // group's shared direction (beamDir) overrides the per-note rule.
+    stemUp = (beamDir === 'up') ? true : (beamDir === 'down') ? false : (y >= midLineY);
     const sx = stemUp ? (cx + g.rx - 1.6) : (cx - g.rx + 1.6);
     const y2 = stemUp ? (y - STEM) : (y + STEM);
     out += `<line class="km-staff__stem" x1="${sx.toFixed(2)}" y1="${y}" x2="${sx.toFixed(2)}" y2="${y2}"/>`;
+    // A flag is drawn only on an UNBEAMED quaver — beamed quavers get the beam
+    // instead, which is what the flag would otherwise duplicate.
+    if (FLAGGED_VALUES.has(value) && !inBeam) out += quaverFlag(sx, y2, stemUp);
   }
   if (Number.isFinite(finger)) {
     const fy = (g.stem && stemUp) ? (y - STEM - 8) : (y - g.ry - 12);
@@ -206,16 +301,19 @@ function noteHead(midi, clef, topY, cx, state, finger, value, letter) {
 }
 
 // Vertical extent [top, bottom] of a note + stem + fingering, for auto-fit.
-function noteBounds(midi, clef, topY, value, hasFinger, hasLetter) {
-  const y = noteY(midi, clef, topY);
+function noteBounds(midi, clef, topY, value, hasFinger, hasLetter, beamDir, accidental) {
+  const y = noteY(spellingMidi(midi, accidental), clef, topY);
   const g = noteHeadGeom(value);
   let top = y - g.ry - 4;
   let bot = y + g.ry + 4;
   let stemUp = true;
   if (g.stem) {
     const midLineY = topY + 2 * GAP;
-    stemUp = y >= midLineY;
-    if (stemUp) top = y - STEM - 4; else bot = y + STEM + 4;
+    stemUp = (beamDir === 'up') ? true : (beamDir === 'down') ? false : (y >= midLineY);
+    // rc2-213: a beam sits just beyond the stem end, and a flag curls past it —
+    // reserve a little extra so neither is ever clipped by the auto-fit viewBox.
+    const extra = (FLAGGED_VALUES.has(value) || beamDir) ? 12 : 4;
+    if (stemUp) top = y - STEM - extra; else bot = y + STEM + extra;
   }
   if (hasFinger) top = Math.min(top, ((g.stem && stemUp) ? (y - STEM) : (y - g.ry)) - 22);
   if (hasLetter) bot = Math.max(bot, y + g.ry + 24);
@@ -245,6 +343,9 @@ function normaliseSeq(notes) {
         finger: n.finger,
         value: (typeof n.value === 'string' ? n.value : 'quarter'),
         letter: (typeof n.letter === 'string' ? n.letter : undefined),
+        // rc2-213: 'sharp' | 'flat' | 'natural'. Anything else is ignored, so a
+        // typo degrades to "no accidental drawn" rather than breaking the staff.
+        accidental: (Object.prototype.hasOwnProperty.call(ACCIDENTAL_GLYPH, n.accidental) ? n.accidental : undefined),
       };
     }
     return { midi: n, state: 'on', value: 'quarter' };
@@ -275,16 +376,130 @@ function resolveTimeSig(opt, seq) {
 
 const REST_TOP_MARK = 2 * GAP + 12;
 
+// ---------------------------------------------------------------------------
+// rc2-213: BEAMS. opts.beams is a list of [startIndex, endIndex] pairs (1-based,
+// inclusive — the same convention as opts.bars and opts.marks) naming runs of
+// quavers to join with a beam rather than flag individually. Real engraving
+// beams quavers within a beat, so a course piece reads far more like true sheet
+// music with these than without.
+function resolveBeams(beams, seq, clefAt, topAt) {
+  const map = new Map();
+  const groups = [];
+  if (!Array.isArray(beams)) return { map, groups };
+  beams.forEach((b, gi) => {
+    if (!Array.isArray(b) || b.length < 2) return;
+    const a = Math.round(b[0]) - 1;
+    const z = Math.round(b[1]) - 1;
+    if (!Number.isInteger(a) || !Number.isInteger(z)) return;
+    if (a < 0 || z >= seq.length || z <= a) return;
+    // Every note in the run must be a pitched, flaggable note. A rest or a minim
+    // inside a beam group is a data error, so the group is skipped whole rather
+    // than drawn wrongly.
+    let ok = true;
+    for (let i = a; i <= z; i += 1) {
+      const it = seq[i];
+      if (!it || it.rest || !FLAGGED_VALUES.has(it.value)) { ok = false; break; }
+    }
+    if (!ok) return;
+    // Shared stem direction from the group's average head height, so a beam
+    // never has stems fighting each other.
+    let sum = 0;
+    // rc2-215: a beam may not span a system break — the notes must share a row.
+    let sameRow = true;
+    for (let i = a; i <= z; i += 1) if (topAt(i) !== topAt(a)) { sameRow = false; break; }
+    if (!sameRow) return;
+    for (let i = a; i <= z; i += 1) sum += noteY(spellingMidi(seq[i].midi, seq[i].accidental), clefAt(i), topAt(i));
+    const midLineY = topAt(a) + 2 * GAP;
+    const dir = ((sum / (z - a + 1)) >= midLineY) ? 'up' : 'down';
+    for (let i = a; i <= z; i += 1) map.set(i, dir);
+    groups.push({ a, z, dir });
+  });
+  return { map, groups };
+}
+
+function beamLines(groups, seq, xs, clefAt, topAt) {
+  let out = '';
+  groups.forEach(({ a, z, dir }) => {
+    const up = dir === 'up';
+    // The beam sits at the far end of the stems: use the most extreme stem end
+    // in the group so it clears every note-head under it.
+    let edge = up ? Infinity : -Infinity;
+    for (let i = a; i <= z; i += 1) {
+      const y = noteY(spellingMidi(seq[i].midi, seq[i].accidental), clefAt(i), topAt(i));
+      const end = up ? (y - STEM) : (y + STEM);
+      edge = up ? Math.min(edge, end) : Math.max(edge, end);
+    }
+    const ga = noteHeadGeom(seq[a].value);
+    const gz = noteHeadGeom(seq[z].value);
+    const x1 = up ? (xs[a] + ga.rx - 1.6) : (xs[a] - ga.rx + 1.6);
+    const x2 = up ? (xs[z] + gz.rx - 1.6) : (xs[z] - gz.rx + 1.6);
+    // Re-draw each stem to reach the shared beam edge, then lay the beam across.
+    for (let i = a; i <= z; i += 1) {
+      const y = noteY(spellingMidi(seq[i].midi, seq[i].accidental), clefAt(i), topAt(i));
+      const gi = noteHeadGeom(seq[i].value);
+      const sx = up ? (xs[i] + gi.rx - 1.6) : (xs[i] - gi.rx + 1.6);
+      out += `<line class="km-staff__stem" x1="${sx.toFixed(2)}" y1="${y}" x2="${sx.toFixed(2)}" y2="${edge.toFixed(2)}"/>`;
+    }
+    out += `<line class="km-staff__beam" x1="${x1.toFixed(2)}" y1="${edge.toFixed(2)}" x2="${x2.toFixed(2)}" y2="${edge.toFixed(2)}"/>`;
+  });
+  return out;
+}
+
+// ---------------------------------------------------------------------------
+// rc2-215: MULTI-SYSTEM (WRAPPING) NOTATION.
+// KL3 reads passages longer than a single line can hold legibly. opts.systems
+// is a list of 1-based note indices at which a NEW LINE begins — the same
+// index convention as opts.bars/marks/beams. Absent (the default) means one
+// system, and the renderer behaves exactly as before.
+//
+// Returns inclusive 0-based [start, end] ranges, one per system.
+const SYSTEM_DY = 8 * GAP;   // vertical distance between successive systems
+function resolveSystems(systemsOpt, n) {
+  if (n <= 0) return [[0, -1]];
+  if (!Array.isArray(systemsOpt) || !systemsOpt.length) return [[0, n - 1]];
+  const cuts = systemsOpt
+    .map((x) => Math.round(x) - 1)
+    .filter((k) => Number.isInteger(k) && k > 0 && k < n)
+    .sort((a, b) => a - b)
+    .filter((k, i, arr) => i === 0 || k !== arr[i - 1]);   // de-duplicate
+  if (!cuts.length) return [[0, n - 1]];
+  const out = [];
+  let start = 0;
+  cuts.forEach((c) => { out.push([start, c - 1]); start = c; });
+  out.push([start, n - 1]);
+  return out.filter(([a, z]) => a <= z);
+}
+
 /**
  * Build a staff diagram.
  * @param {object} opts
  *   clef       'treble' | 'bass' | 'grand'   (default 'treble')
  *   highlight  'lines' | 'spaces' | null      (default null)
- *   notes      Array of MIDI numbers, or { midi, state, finger, value } objects,
- *              or { rest: 'quarter'|'half'|'whole'|'eighth' } entries.
- *              value: 'quarter' | 'half' | 'dotted-half' | 'whole' (rc2-212: dotted minim added).
+ *   notes      Array of MIDI numbers, or { midi, state, finger, value, accidental }
+ *              objects, or { rest: 'quarter'|'half'|'whole'|'eighth' } entries.
+ *              value: 'whole' | 'half' | 'dotted-half' | 'quarter' |
+ *                     'dotted-quarter' | 'eighth' | 'dotted-eighth'
+ *                     (rc2-212 added the dotted minim; rc2-213 added the quaver,
+ *                      the dotted crotchet and the dotted quaver).
+ *              accidental: rc2-213, 'sharp' | 'flat' | 'natural' — drawn to the
+ *                     left of the head. Unknown values are ignored.
  *   middleC    boolean   mark Middle C on the grand staff   (default false)
  *   timeSig    '4/4' | '3/4' | [n,d] | false  (optional; see resolveTimeSig)
+ *   keySig     rc2-213, optional: a signed integer (+n sharps / −n flats) or a
+ *              key name ('G', 'F', 'Bb', 'Em', …). Drawn after the clef; the
+ *              note area shifts right to clear it. Default 0 (no key signature),
+ *              so every existing card is byte-identical.
+ *   beams      rc2-213, optional: [[start, end], …] 1-based inclusive index
+ *              pairs naming runs of quavers to beam together instead of
+ *              flagging. A group containing a rest or a non-quaver is ignored.
+ *   systems    rc2-215, optional: [n, …] 1-based note indices at which a NEW
+ *              LINE (system) begins, for passages too long to read on one
+ *              line. Out-of-range, zero and duplicate entries are ignored;
+ *              order does not matter. Absent = one system, byte-identical to
+ *              earlier builds. The time signature is stated on the first
+ *              system only; the key signature repeats on every system, as in
+ *              real engraving. A beam may not span a system break and is
+ *              refused if it tries.
  *   marks      rc2-212, optional: dynamics under the staff, e.g.
  *              [{ at: 1, text: 'p' }] — `at` is the 1-based note index (same
  *              convention as opts.bars). Invalid entries are silently ignored;
@@ -299,6 +514,11 @@ export function buildStaff(opts = {}) {
   const seq = normaliseSeq(Array.isArray(opts.notes) ? opts.notes : []);
   const middleC = !!opts.middleC;
   const tsig = resolveTimeSig(opts.timeSig, seq);
+  // rc2-213: key signature. ksShift moves the time signature and the whole note
+  // area right so nothing collides with the drawn accidentals.
+  const ksig = resolveKeySig(opts.keySig);
+  const ksShift = keySigWidth(ksig);
+  const tsX = TS_X + ksShift;
 
   let body = '';
   const ys = [];
@@ -309,7 +529,8 @@ export function buildStaff(opts = {}) {
     const bassTop = trebleTop + 4 * GAP + 3 * GAP + 8;
     body += staffLines(trebleTop, highlight) + clefMark('treble', trebleTop);
     body += staffLines(bassTop, highlight) + clefMark('bass', bassTop);
-    if (tsig) { body += timeSigMark(tsig[0], tsig[1], trebleTop) + timeSigMark(tsig[0], tsig[1], bassTop); }
+    if (ksig) { body += keySigMark(ksig, 'treble', trebleTop) + keySigMark(ksig, 'bass', bassTop); }
+    if (tsig) { body += timeSigMark(tsig[0], tsig[1], trebleTop, tsX) + timeSigMark(tsig[0], tsig[1], bassTop, tsX); }
     body += `<line class="km-staff__brace" x1="${LEFT}" y1="${trebleTop}" x2="${LEFT}" y2="${bassTop + 4 * GAP}"/>`;
     body += `<line class="km-staff__endbar" x1="${RIGHT}" y1="${trebleTop}" x2="${RIGHT}" y2="${bassTop + 4 * GAP}"/>`;
     mark(trebleTop - 14);
@@ -320,15 +541,21 @@ export function buildStaff(opts = {}) {
       body += `<text class="km-staff__mc" x="${cx + 20}" y="${noteY(60, 'treble', trebleTop) + 4}">Middle C</text>`;
       const [t, b] = noteBounds(60, 'treble', trebleTop, 'quarter', false); mark(t); mark(b);
     }
-    const gxs = noteXs(seq.length);
+    const gxs = noteXs(seq.length, ksShift);
+    // rc2-213: on the grand staff a note's clef/top depend on its own pitch.
+    const gClefAt = (i) => ((seq[i].midi >= 60) ? 'treble' : 'bass');
+    const gTopAt = (i) => ((seq[i].midi >= 60) ? trebleTop : bassTop);
+    const { map: gBeamDir, groups: gBeamGroups } = resolveBeams(opts.beams, seq, gClefAt, gTopAt);
     seq.forEach((it, i) => {
       const cx = gxs[i];
       if (it.rest) { body += restGlyph(it.rest, cx, trebleTop); mark(trebleTop + REST_TOP_MARK); return; }
-      const useClef = (it.midi >= 60) ? 'treble' : 'bass';
-      const top = (useClef === 'treble') ? trebleTop : bassTop;
-      body += noteHead(it.midi, useClef, top, cx, it.state, it.finger, it.value, it.letter);
-      const [t, b] = noteBounds(it.midi, useClef, top, it.value, Number.isFinite(it.finger), !!it.letter); mark(t); mark(b);
+      const useClef = gClefAt(i);
+      const top = gTopAt(i);
+      const dir = gBeamDir.get(i);
+      body += noteHead(it.midi, useClef, top, cx, it.state, it.finger, it.value, it.letter, it.accidental, dir, !!dir);
+      const [t, b] = noteBounds(it.midi, useClef, top, it.value, Number.isFinite(it.finger), !!it.letter, dir, it.accidental); mark(t); mark(b);
     });
+    if (gBeamGroups.length) body += beamLines(gBeamGroups, seq, gxs, gClefAt, gTopAt);
     // rc2-212: optional dynamics marks — grand staff places them below the bass
     // staff. Same validation and viewBox tracking as the single-staff branch.
     if (Array.isArray(opts.marks) && opts.marks.length) {
@@ -343,42 +570,68 @@ export function buildStaff(opts = {}) {
       });
     }
   } else {
-    const topY = 34;
-    body += staffLines(topY, highlight) + clefMark(clef, topY);
-    if (tsig) { body += timeSigMark(tsig[0], tsig[1], topY); }
-    mark(topY - 14);
-    mark(topY + 5 * GAP + 18);
-    const xs = noteXs(seq.length);
-    seq.forEach((it, i) => {
-      if (it.rest) { body += restGlyph(it.rest, xs[i], topY); mark(topY + REST_TOP_MARK); return; }
-      body += noteHead(it.midi, clef, topY, xs[i], it.state, it.finger, it.value, it.letter);
-      const [t, b] = noteBounds(it.midi, clef, topY, it.value, Number.isFinite(it.finger), !!it.letter); mark(t); mark(b);
+    // rc2-215: one or more systems (lines). With no opts.systems this loop runs
+    // exactly once with topY = 34, producing byte-identical output to rc2-214.
+    const systems = resolveSystems(opts.systems, seq.length);
+    const xs = new Array(seq.length);
+    const tops = new Array(seq.length);
+
+    systems.forEach(([a, z], si) => {
+      const topY = 34 + si * SYSTEM_DY;
+      body += staffLines(topY, highlight) + clefMark(clef, topY);
+      if (ksig) { body += keySigMark(ksig, clef, topY); }
+      // Engraving convention: the time signature is stated once, on the first
+      // system only. A reader carries it; restating it would imply a change.
+      if (tsig && si === 0) { body += timeSigMark(tsig[0], tsig[1], topY, tsX); }
+      mark(topY - 14);
+      mark(topY + 5 * GAP + 18);
+      const rowXs = noteXs(z - a + 1, ksShift);
+      for (let i = a; i <= z; i += 1) { xs[i] = rowXs[i - a]; tops[i] = topY; }
     });
+
+    const sClefAt = () => clef;
+    const sTopAt = (i) => tops[i];
+    const { map: sBeamDir, groups: sBeamGroups } = resolveBeams(opts.beams, seq, sClefAt, sTopAt);
+    seq.forEach((it, i) => {
+      const topY = tops[i];
+      if (it.rest) { body += restGlyph(it.rest, xs[i], topY); mark(topY + REST_TOP_MARK); return; }
+      const dir = sBeamDir.get(i);
+      body += noteHead(it.midi, clef, topY, xs[i], it.state, it.finger, it.value, it.letter, it.accidental, dir, !!dir);
+      const [t, b] = noteBounds(it.midi, clef, topY, it.value, Number.isFinite(it.finger), !!it.letter, dir, it.accidental); mark(t); mark(b);
+    });
+    if (sBeamGroups.length) body += beamLines(sBeamGroups, seq, xs, sClefAt, sTopAt);
     // rc2-178: proper manuscript barlines. opts.bars is a list of 1-based note
     // indices after which an internal barline falls; an end barline closes the
     // line. Additive — only renders when a step requests bars, so existing
     // diagram-style staffs are untouched. Reuses the endbar stroke.
+    // rc2-215: barlines are drawn per system, and each system is closed at its
+    // right edge, so a wrapped passage reads like real manuscript.
     const bars = Array.isArray(opts.bars) ? opts.bars : [];
     if (bars.length) {
       bars.forEach((b) => {
         const k = Math.round(b) - 1;
-        if (k >= 0 && k < xs.length - 1) {
+        // A barline is only drawn between two notes on the SAME system; a bar
+        // that ends a system is closed by that system's end barline instead.
+        if (k >= 0 && k < xs.length - 1 && tops[k] === tops[k + 1]) {
           const bx = Math.round((xs[k] + xs[k + 1]) / 2);
-          body += `<line class="km-staff__endbar" x1="${bx}" y1="${topY}" x2="${bx}" y2="${topY + 4 * GAP}"/>`;
+          body += `<line class="km-staff__endbar" x1="${bx}" y1="${tops[k]}" x2="${bx}" y2="${tops[k] + 4 * GAP}"/>`;
         }
       });
-      body += `<line class="km-staff__endbar" x1="${RIGHT}" y1="${topY}" x2="${RIGHT}" y2="${topY + 4 * GAP}"/>`;
+      systems.forEach(([, z], si) => {
+        const topY = 34 + si * SYSTEM_DY;
+        if (z >= 0) body += `<line class="km-staff__endbar" x1="${RIGHT}" y1="${topY}" x2="${RIGHT}" y2="${topY + 4 * GAP}"/>`;
+      });
     }
     // rc2-212: optional dynamics marks under the staff (see JSDoc). Placed well
     // below note letters/ledger territory; every drawn mark extends the viewBox
     // via mark() so nothing is ever clipped. Invalid entries fail harmlessly.
     if (Array.isArray(opts.marks) && opts.marks.length) {
-      const my = topY + 5 * GAP + 26;
       opts.marks.forEach((m) => {
         const k = m && Math.round(m.at) - 1;
         const ok = Number.isInteger(k) && k >= 0 && k < xs.length
           && typeof m.text === 'string' && /^[A-Za-z.]{1,8}$/.test(m.text);
         if (!ok) return;
+        const my = tops[k] + 5 * GAP + 26;
         body += `<text class="km-staff__mark" x="${xs[k]}" y="${my}" text-anchor="middle">${m.text}</text>`;
         mark(my + 12);
       });
@@ -462,6 +715,10 @@ function injectStaffStyles() {
 html[data-fingering="hidden"] .view[data-view="learn"] .km-staff__finger{display:none;}
 .view[data-view="learn"] .km-staff__letter{fill:${INK};font-size:15px;font-weight:700;font-family:var(--font-ui,system-ui,sans-serif);}
 .view[data-view="learn"] .km-staff__dot{fill:${INK};}
+.view[data-view="learn"] .km-staff__acc{fill:${INK};font-family:${MUSIC_FONT};font-size:32px;}
+.view[data-view="learn"] .km-staff__acc--ks{font-size:30px;}
+.view[data-view="learn"] .km-staff__flag{fill:${INK};stroke:none;}
+.view[data-view="learn"] .km-staff__beam{stroke:${INK};stroke-width:6.5;stroke-linecap:butt;}
 .view[data-view="learn"] .km-staff__mark{fill:${INK};font-size:19px;font-style:italic;font-weight:700;font-family:Georgia,'Times New Roman',serif;}
 .view[data-view="learn"] .km-staff__line.is-hl{stroke:#E0A94B;stroke-width:3.2;}
 .view[data-view="learn"] .km-staff__space.is-hl{fill:rgba(224,169,75,.28);}
