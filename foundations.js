@@ -30,16 +30,21 @@ import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 import { STAGES } from './courseMap.js?v=rc2-83';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-108';
 import { buildHandSvg, setHandHighlight, FINGER_NAMES } from './handViz.js?v=rc2-81';
-import { buildStaff, flashPlayed } from './staffViz.js?v=rc2-215';
+import { buildStaff, flashPlayed } from './staffViz.js?v=rc2-218';
 import { createCourseVoice } from './courseVoice.js?v=rc2-105';
 import { FOUNDATION_STEPS } from './courseFoundation.js?v=rc2-136';
 import { STAGE1_MAKING_STEPS } from './courseStage1Making.js?v=rc2-136';
 import { STAGE2_READING_STEPS } from './courseStage2Reading.js?v=rc2-136';
 import { STAGE3_TWOHANDS_STEPS } from './courseStage3TwoHands.js?v=rc2-136';
-import { KEY_LEVEL1_STEPS } from './courseKeyLevel1.js?v=rc2-215';
-import { KEY_LEVEL2_STEPS } from './courseKeyLevel2.js?v=rc2-215';
-import { KEY_LEVEL3_STEPS } from './courseKeyLevel3.js?v=rc2-215';
-import { COURSE_CHAPTERS } from './courseChapters.js?v=rc2-215';
+import { KEY_LEVEL1_STEPS } from './courseKeyLevel1.js?v=rc2-218';
+import { KEY_LEVEL2_STEPS } from './courseKeyLevel2.js?v=rc2-218';
+import { KEY_LEVEL3_STEPS } from './courseKeyLevel3.js?v=rc2-218';
+import { KEY_LEVEL4_STEPS } from './courseKeyLevel4.js?v=rc2-218';
+import { KEY_LEVEL5_STEPS } from './courseKeyLevel5.js?v=rc2-218';
+import { KEY_LEVEL6_STEPS } from './courseKeyLevel6.js?v=rc2-218';
+import { KEY_LEVEL7_STEPS } from './courseKeyLevel7.js?v=rc2-218';
+import { KEY_LEVEL8_STEPS } from './courseKeyLevel8.js?v=rc2-218';
+import { COURSE_CHAPTERS } from './courseChapters.js?v=rc2-218';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
 const pcOf = (m) => ((m % 12) + 12) % 12;
@@ -109,6 +114,11 @@ export const LEARN_STEPS = [
   ...KEY_LEVEL1_STEPS,
   ...KEY_LEVEL2_STEPS,
   ...KEY_LEVEL3_STEPS,
+  ...KEY_LEVEL4_STEPS,
+  ...KEY_LEVEL5_STEPS,
+  ...KEY_LEVEL6_STEPS,
+  ...KEY_LEVEL7_STEPS,
+  ...KEY_LEVEL8_STEPS,
 ];
 
 // ---- Course chapters -------------------------------------------------------
@@ -164,11 +174,11 @@ export const KEYMASTER_LEVELS = [
   { level: 1, name: 'First Musicianship',    status: 'available' },
   { level: 2, name: 'Real Repertoire',       status: 'available' },
   { level: 3, name: 'Pattern Fluency',       status: 'available' },
-  { level: 4, name: 'Musical Independence',  status: 'planned' },
-  { level: 5, name: 'Harmonic Fluency',      status: 'planned' },
-  { level: 6, name: 'Expressive Repertoire', status: 'planned' },
-  { level: 7, name: 'Advanced Musicianship', status: 'planned' },
-  { level: 8, name: 'Performance Mastery',   status: 'planned' },
+  { level: 4, name: 'Musical Independence',  status: 'available' },
+  { level: 5, name: 'Harmonic Fluency',      status: 'available' },
+  { level: 6, name: 'Expressive Repertoire', status: 'available' },
+  { level: 7, name: 'Advanced Musicianship', status: 'available' },
+  { level: 8, name: 'Performance Mastery',   status: 'available' },
 ];
 
 /**
@@ -377,7 +387,7 @@ export default function createView(ctx) {
   // takes over automatically the instant it ships (recorded file -> temporary TTS -> text).
   const TTS_DEV_FALLBACK = true;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-215';
+  const KM_BUILD = 'rc2-218';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate
