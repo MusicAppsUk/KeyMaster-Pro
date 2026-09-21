@@ -23,7 +23,7 @@
 // factory: createView({ mount, store, keyboard, viewport, synth, scheduler,
 // metronome }) → { enter(), exit(), destroy() }.
 
-import { majorFingering, harmonicMinorFingering, chromaticFingering, arpeggioFingering } from './fingeringEngine.js';
+import { majorFingering, harmonicMinorFingering, chromaticFingering } from './fingeringEngine.js';
 import { buildScale } from './scaleEngine.js';
 import { unlockAudio, perfToContextTime } from './audioContext.js';
 import { createStaffView } from './staffView.js';
@@ -46,7 +46,7 @@ const CHROMATIC_KEYS = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'B
 /** Every tonic the module can build, for persistence checks. */
 const KEYS = [...new Set([...MAJOR_KEYS, ...MINOR_KEYS, ...CHROMATIC_KEYS])];
 function keysForType(type) {
-  if (type === 'major' || type === 'arpeggio_major') return MAJOR_KEYS;
+  if (type === 'major') return MAJOR_KEYS;
   if (type === 'chromatic') return CHROMATIC_KEYS;
   return MINOR_KEYS;
 }
@@ -56,9 +56,7 @@ function keysForType(type) {
  * arpeggio.
  */
 function keyFieldLabel(type) {
-  if (type === 'chromatic') return 'Start note';
-  if (type === 'arpeggio_major' || type === 'arpeggio_minor') return 'Root';
-  return 'Key';
+  return type === 'chromatic' ? 'Start note' : 'Key';
 }
 /**
  * Switching between major and minor may leave the current tonic off the new
@@ -84,10 +82,12 @@ const TYPES = [
   ['harmonic_minor', 'Harmonic minor'],
   ['melodic_minor', 'Melodic minor'],
   ['chromatic', 'Chromatic'],
-  // rc2-223: arpeggios live here as scale TYPES, not in a room of their own —
-  // which is how the books present them, next to the scale in the same key.
-  ['arpeggio_major', 'Major arpeggio'],
-  ['arpeggio_minor', 'Minor arpeggio'],
+  // rc2-226: the two arpeggio types that lived here have moved to the Arpeggio
+  // Masterclass. Putting them in this dropdown got them working quickly and
+  // then hid them: a broken chord is not a scale, and a whole strand of the
+  // book was sitting behind a menu. The engines are unchanged — scaleEngine
+  // still builds arpeggio_major and arpeggio_minor, and fingeringEngine still
+  // fingers them; only this room stopped offering them.
 ];
 // --- Register centring -------------------------------------------------------
 // Place the RH tonic in whichever octave puts it CLOSEST to Middle C (C4 = MIDI
@@ -244,8 +244,6 @@ export default function createView(ctx) {
       major: majorFingering,
       harmonic_minor: harmonicMinorFingering,
       chromatic: chromaticFingering,
-      arpeggio_major: (t, h, o) => arpeggioFingering(t, h, { ...o, quality: 'major' }),
-      arpeggio_minor: (t, h, o) => arpeggioFingering(t, h, { ...o, quality: 'minor' }),
     };
     if (FINGERED[sel.type]) {
       const f = FINGERED[sel.type](sel.tonic, hand, {

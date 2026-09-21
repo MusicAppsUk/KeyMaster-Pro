@@ -38,9 +38,9 @@
 
   <!-- Separated styling layers (theme tokens first, then component sheets). -->
   <link rel="stylesheet" href="theme.css?v=rc2-127" />
-  <link rel="stylesheet" href="keyboard.css?v=rc2-225" />
-  <link rel="stylesheet" href="notation.css?v=rc2-225" />
-  <link rel="stylesheet" href="cockpit.css?v=rc2-225" />
+  <link rel="stylesheet" href="keyboard.css?v=rc2-226" />
+  <link rel="stylesheet" href="notation.css?v=rc2-226" />
+  <link rel="stylesheet" href="cockpit.css?v=rc2-226" />
 
   <!-- The only inline style: hide the shell until the app flips data-boot,
        preventing an unstyled flash before the module graph resolves. -->
@@ -156,13 +156,13 @@
               <span class="vector__open" aria-hidden="true">Open &#8594;</span>
             </a>
 
-            <div class="vector vector--locked" aria-disabled="true" role="group" aria-label="Arpeggio Masterclass — planned, locked">
-              <span class="vector__status vector__status--planned">Planned</span>
+            <a class="vector vector--arpeggios" href="#/arpeggios">
+              <span class="vector__status vector__status--active">Active</span>
               <span class="vector__eyebrow">04 — Flow</span>
               <span class="vector__title">Arpeggio Masterclass</span>
               <span class="vector__blurb">Broken-chord patterns across all keys, hands, and inversions.</span>
-              <span class="vector__lock" aria-hidden="true">🔒</span>
-            </div>
+              <span class="vector__open" aria-hidden="true">Open &#8594;</span>
+            </a>
 
             <div class="vector vector--locked" aria-disabled="true" role="group" aria-label="Pattern Reading — future, locked">
               <span class="vector__status vector__status--future">Future</span>
@@ -240,6 +240,17 @@
       >
         <h1 id="reading-heading" class="view__title">Cognitive Sight-Reading</h1>
         <div class="view__body" data-slot="sightreading"></div>
+      </section>
+
+      <!-- Arpeggio Masterclass mount. -->
+      <section
+        class="view view--arpeggios"
+        data-view="arpeggios"
+        aria-labelledby="arpeggios-heading"
+        hidden
+      >
+        <h1 id="arpeggios-heading" class="view__title">Arpeggio Masterclass</h1>
+        <div class="view__body" data-slot="arpeggios"></div>
       </section>
 
       <!-- Chord Masterclass mount. -->
@@ -392,7 +403,7 @@
 
   <!-- Single module entry point. Absolute path so it resolves regardless of
        the route in the hash. -->
-  <script type="module" src="app.js?v=rc2-225"></script>
+  <script type="module" src="app.js?v=rc2-226"></script>
   <script defer src="cockpitUI.js?v=rc2-155"></script>
 </body>
 </html>
