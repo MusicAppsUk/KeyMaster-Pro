@@ -33,6 +33,7 @@
 import {
   CHORD_ROOTS, buildChord, qualityGroups, inversionCount, inversionLabel,
 } from './chordDictionary.js';
+import { buildCadence, cadenceForms } from './cadenceEngine.js';
 import { createStaffView } from './staffView.js';
 import { unlockAudio } from './audioContext.js';
 
@@ -53,12 +54,27 @@ function octaveFor(rootName) {
 export default function createView(ctx) {
   const { mount, keyboard, piano, synth, evaluator } = ctx;
 
-  const sel = { root: 'C', quality: 'major', inversion: 0 };
+  // rc2-225: the room has two shelves. 'chords' browses by chord root; the
+  // 'cadences' shelf browses by KEY, because a cadence belongs to a key rather
+  // than to a chord. They share the panel, the staff, the keys and the sound.
+  const sel = {
+    tab: 'chords',
+    root: 'C', quality: 'major', inversion: 0,
+    key: 'C', mode: 'major', form: 'full',
+  };
+  const CAD_MAJOR = ['C', 'G', 'D', 'A', 'E', 'B', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'F#'];
+  const CAD_MINOR = ['A', 'E', 'B', 'F#', 'C#', 'G#', 'Eb', 'Bb', 'F', 'C', 'G', 'D'];
+  const cadKeys = () => (sel.mode === 'minor' ? CAD_MINOR : CAD_MAJOR);
+  let seqTimers = [];
   const disposers = [];
   const staff = createStaffView({ compact: false });
   let cards = new Map();          // quality id -> button
   let rootPills = new Map();      // root -> button
   let invButtons = [];
+  const cadCards = new Map();     // form id -> button
+  const cadPills = new Map();     // key -> button
+  const modeButtons = new Map();  // 'major'|'minor' -> button
+  const tabButtons = new Map();   // 'chords'|'cadences' -> button
 
   injectStyles();
   const ui = build();
@@ -93,7 +109,30 @@ export default function createView(ctx) {
     }
   }
 
+  /**
+   * Play a run of chords in time. A cadence is a sentence, not a stack: heard
+   * all at once it is just a cluster, and heard too slowly it stops being one
+   * gesture. 850ms a chord with the last one held is about right for hearing
+   * the voice-leading.
+   */
+  function playSequence(chords) {
+    clearTimers();
+    chords.forEach((ch, i) => {
+      const t = window.setTimeout(() => {
+        try { playChord(ch.notes); } catch (_) { /* no-op */ }
+        highlightChord(ch);
+      }, i * 850);
+      seqTimers.push(t);
+    });
+  }
+
+  function clearTimers() {
+    seqTimers.forEach((t) => { try { window.clearTimeout(t); } catch (_) { /* no-op */ } });
+    seqTimers = [];
+  }
+
   function stopSound() {
+    clearTimers();
     const p = voice();
     try { p && p.allNotesOff && p.allNotesOff(); } catch (_) { /* no-op */ }
     try { synth && synth.allNotesOff && synth.allNotesOff(); } catch (_) { /* no-op */ }
@@ -102,6 +141,20 @@ export default function createView(ctx) {
   /* ===================================================================== *
    * Selection
    * ===================================================================== */
+
+  /** Light a chord's keys and arm recognition for it. */
+  function highlightChord(ch) {
+    for (const v of ['target', 'root', 'match', 'mismatch']) {
+      try { keyboard.clearHighlight(v); } catch (_) { /* no-op */ }
+    }
+    const midis = ch.midis || ch.notes.map((n) => n.midi);
+    try {
+      keyboard.highlight(midis, 'target');
+      const rootNote = ch.notes.find((n) => n.degree === 1) || ch.notes[0];
+      keyboard.highlight([rootNote.midi], 'root');
+    } catch (_) { /* no-op */ }
+    try { evaluator && evaluator.setExpected(midis); } catch (_) { /* no-op */ }
+  }
 
   function current() {
     return buildChord(sel.root, sel.quality, {
@@ -153,6 +206,7 @@ export default function createView(ctx) {
    * should answer immediately; that instant answer is the whole experience.
    */
   function show({ sound = false } = {}) {
+    if (sel.tab === 'cadences') { showCadence({ sound }); return; }
     const ch = current();
 
     ui.symbol.textContent = ch.symbol;
@@ -175,20 +229,102 @@ export default function createView(ctx) {
       staff.setChord(ch.notes.map((n) => `${asciiName(n)}${octaveOf(n)}`), { clef: 'grand' });
     } catch (_) { /* a staff failure must never silence the room */ }
 
-    // Keys
-    for (const v of ['target', 'root', 'match', 'mismatch']) {
-      try { keyboard.clearHighlight(v); } catch (_) { /* no-op */ }
-    }
-    try {
-      keyboard.highlight(ch.notes.map((n) => n.midi), 'target');
-      keyboard.highlight([ch.notes.find((n) => n.degree === 1)?.midi ?? ch.notes[0].midi], 'root');
-    } catch (_) { /* no-op */ }
-
-    // Recognition stays armed the whole time — play it and the keys answer.
-    try { evaluator && evaluator.setExpected(ch.notes.map((n) => n.midi)); } catch (_) { /* no-op */ }
-
+    highlightChord(ch);
     refreshCards();
     if (sound) playChord(ch.notes);
+  }
+
+  /* ---- Cadences -------------------------------------------------------- */
+
+  function showCadence({ sound = false } = {}) {
+    const cad = buildCadence(sel.key, { form: sel.form, mode: sel.mode, octave: 4 });
+
+    ui.symbol.textContent = `${display(sel.key)} ${sel.mode}`;
+    ui.qualityName.textContent = cad.form.label;
+    ui.invName.textContent = cad.form.blurb;
+
+    // The progression, chord by chord, with its roman numeral underneath. This
+    // is the row a learner reads across; the numerals are what make it a
+    // cadence rather than five unrelated chords.
+    ui.noteList.replaceChildren(...cad.chords.map((ch) => {
+      const s2 = el('span', { class: 'chl__step' });
+      const rn = el('span', { class: 'chl__roman' }); rn.textContent = ch.roman;
+      const nn = el('span', { class: 'chl__stepnotes' });
+      nn.textContent = ch.notes.map((n) => n.name).join(' ');
+      s2.append(rn, nn);
+      return s2;
+    }));
+
+    // Staff: the whole cadence at once would need five columns the staff does
+    // not offer, so it shows the chord the ear is on — the first, or whichever
+    // the playback has reached.
+    try {
+      staff.setChord(cad.chords[0].notes.map((n) => `${asciiName(n)}${octaveOf(n)}`), { clef: 'grand' });
+    } catch (_) { /* never silence the room over the staff */ }
+
+    highlightChord(cad.chords[0]);
+    refreshCadenceCards();
+    if (sound) playSequence(cad.chords);
+  }
+
+  function refreshCadenceCards() {
+    for (const [id, btn] of cadCards) {
+      const cad = buildCadence(sel.key, { form: id, mode: sel.mode, octave: 4 });
+      const sym = btn.querySelector('.chl__sym');
+      const notes = btn.querySelector('.chl__notes');
+      if (sym) sym.textContent = cad.chords.map((c) => c.roman).join(' \u2013 ');
+      if (notes) notes.textContent = cad.form.label;
+      btn.classList.toggle('is-active', id === sel.form);
+      btn.setAttribute('aria-pressed', id === sel.form ? 'true' : 'false');
+    }
+    for (const [k, btn] of cadPills) {
+      btn.classList.toggle('is-active', k === sel.key);
+      btn.setAttribute('aria-pressed', k === sel.key ? 'true' : 'false');
+    }
+    for (const [m, btn] of modeButtons) {
+      btn.classList.toggle('is-active', m === sel.mode);
+      btn.setAttribute('aria-pressed', m === sel.mode ? 'true' : 'false');
+    }
+  }
+
+  /** Swap the shelf. The panel, staff, keys and sound are shared. */
+  function selectTab(tab) {
+    if (sel.tab === tab) return;
+    stopSound();
+    sel.tab = tab;
+    const onChords = tab === 'chords';
+    ui.rootWrap.classList.toggle('is-hidden', !onChords);
+    ui.cadWrap.classList.toggle('is-hidden', onChords);
+    ui.grid.classList.toggle('is-hidden', !onChords);
+    ui.cadGrid.classList.toggle('is-hidden', onChords);
+    ui.invRow.classList.toggle('is-hidden', !onChords);
+    for (const [t, b] of tabButtons) {
+      b.classList.toggle('is-active', t === tab);
+      b.setAttribute('aria-pressed', t === tab ? 'true' : 'false');
+    }
+    show({ sound: false });
+  }
+
+  function selectMode(m) {
+    sel.mode = m;
+    if (!cadKeys().includes(sel.key)) sel.key = cadKeys()[0];
+    rebuildCadKeys();
+    show({ sound: true });
+  }
+
+  function rebuildCadKeys() {
+    ui.cadRow.replaceChildren();
+    cadPills.clear();
+    for (const k of cadKeys()) {
+      const b = el('button', {
+        class: 'chl__pill' + (NATURAL.has(k) ? '' : ' is-accidental'),
+        type: 'button', 'aria-pressed': 'false',
+      });
+      b.textContent = display(k);
+      b.addEventListener('click', () => { sel.key = k; show({ sound: true }); });
+      ui.cadRow.appendChild(b);
+      cadPills.set(k, b);
+    }
   }
 
   function selectQuality(id) {
@@ -219,6 +355,17 @@ export default function createView(ctx) {
       + 'A♭ major and G♯ major are the same shape and two different chords on paper.';
     head.append(title, blurb);
 
+    // ---- Shelf switch ------------------------------------------------------
+    const tabs = el('div', { class: 'chl__tabs', role: 'group', 'aria-label': 'Library shelf' });
+    for (const [id, label] of [['chords', 'Chords'], ['cadences', 'Cadences']]) {
+      const b = el('button', { class: 'chl__tab', type: 'button', 'aria-pressed': String(id === 'chords') });
+      b.textContent = label;
+      if (id === 'chords') b.classList.add('is-active');
+      b.addEventListener('click', () => selectTab(id));
+      tabs.appendChild(b);
+      tabButtons.set(id, b);
+    }
+
     // ---- Root picker -------------------------------------------------------
     const rootWrap = el('div', { class: 'chl__roots' });
     const rootLabel = el('span', { class: 'chl__fieldlabel' });
@@ -235,6 +382,22 @@ export default function createView(ctx) {
       rootPills.set(r, b);
     }
     rootWrap.append(rootLabel, rootRow);
+
+    // ---- Key picker, for the cadence shelf ---------------------------------
+    const cadWrap = el('div', { class: 'chl__roots is-hidden' });
+    const cadLabel = el('span', { class: 'chl__fieldlabel' });
+    cadLabel.textContent = 'Key';
+    const modeRow = el('div', { class: 'chl__moderow', role: 'group', 'aria-label': 'Mode' });
+    for (const [m, label] of [['major', 'Major'], ['minor', 'Minor']]) {
+      const b = el('button', { class: 'chl__mode', type: 'button', 'aria-pressed': String(m === 'major') });
+      b.textContent = label;
+      if (m === 'major') b.classList.add('is-active');
+      b.addEventListener('click', () => selectMode(m));
+      modeRow.appendChild(b);
+      modeButtons.set(m, b);
+    }
+    const cadRow = el('div', { class: 'chl__rootrow', role: 'group', 'aria-label': 'Cadence key' });
+    cadWrap.append(cadLabel, modeRow, cadRow);
 
     // ---- Selected chord ----------------------------------------------------
     const panel = el('div', { class: 'chl__panel' });
@@ -275,8 +438,28 @@ export default function createView(ctx) {
       grid.appendChild(section);
     }
 
-    root.append(head, rootWrap, panel, grid);
-    return { root, symbol, qualityName, noteList, invName, invRow, grid };
+    // ---- Cadence forms -----------------------------------------------------
+    const cadGrid = el('div', { class: 'chl__grid is-hidden' });
+    const cadSection = el('section', { class: 'chl__group' });
+    const cadHead = el('h3', { class: 'chl__grouphead' });
+    cadHead.textContent = 'Cadences';
+    const cadCardRow = el('div', { class: 'chl__cards' });
+    for (const f of cadenceForms()) {
+      const b = el('button', { class: 'chl__card', type: 'button', 'aria-pressed': 'false' });
+      const sym = el('span', { class: 'chl__sym' });
+      const lab = el('span', { class: 'chl__lab' }); lab.textContent = f.label;
+      const notes = el('span', { class: 'chl__notes' });
+      b.append(sym, lab, notes);
+      b.addEventListener('click', () => { sel.form = f.id; show({ sound: true }); });
+      cadCardRow.appendChild(b);
+      cadCards.set(f.id, b);
+    }
+    cadSection.append(cadHead, cadCardRow);
+    cadGrid.appendChild(cadSection);
+
+    root.append(head, tabs, rootWrap, cadWrap, panel, grid, cadGrid);
+    return { root, symbol, qualityName, noteList, invName, invRow, grid,
+      rootWrap, cadWrap, cadRow, cadGrid };
   }
 
   function wire() {
@@ -291,6 +474,7 @@ export default function createView(ctx) {
   return {
     enter() {
       mount.replaceChildren(ui.root);
+      rebuildCadKeys();
       refreshInversions();
       show({ sound: false });     // opening the room should not make a noise
     },
@@ -378,10 +562,10 @@ function injectStyles() {
   .chl__staff { width: 100%; margin: .3rem 0 .1rem; }
   .chl__invname { font-size: .8rem; opacity: .6; }
   .chl__invrow { display: flex; gap: .35rem; flex-wrap: wrap; justify-content: center; }
-  .chl__inv { padding: .4rem .7rem; border-radius: .5rem; cursor: pointer;
+  .chl__inv, .chl__mode { padding: .4rem .7rem; border-radius: .5rem; cursor: pointer;
     border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04);
     color: inherit; font: 600 .86rem/1 inherit; }
-  .chl__inv.is-active { background: var(--km-accent, #c8a34a); color: #14110c; border-color: transparent; }
+  .chl__inv.is-active, .chl__mode.is-active { background: var(--km-accent, #c8a34a); color: #14110c; border-color: transparent; }
   .chl__actions { display: flex; gap: .5rem; flex-wrap: wrap; justify-content: center; margin-top: .35rem; }
 
   .chl__grid { display: flex; flex-direction: column; gap: .9rem; }
@@ -398,6 +582,20 @@ function injectStyles() {
   .chl__lab { font-size: .72rem; opacity: .62; }
   .chl__notes { font-size: .78rem; opacity: .78; margin-top: .15rem; letter-spacing: .01em; }
   .chl__card.is-active .chl__lab, .chl__card.is-active .chl__notes { opacity: .78; }
+
+  .chl__tabs { display: flex; gap: .3rem; }
+  .chl__tab { padding: .55rem 1.1rem; border-radius: .55rem; cursor: pointer; color: inherit;
+    border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04);
+    font: 600 .95rem/1 inherit; }
+  .chl__tab.is-active { background: var(--km-accent, #c8a34a); color: #14110c; border-color: transparent; }
+  .chl__moderow { display: flex; gap: .3rem; margin-bottom: .45rem; }
+  .is-hidden { display: none !important; }
+
+  .chl__step { display: flex; flex-direction: column; align-items: center; gap: .1rem;
+    min-width: 5.2rem; padding: .4rem .5rem; border-radius: .5rem; background: rgba(255,255,255,.06); }
+  .chl__roman { font-size: 1.05rem; font-weight: 700; letter-spacing: .02em; }
+  .chl__stepnotes { font-size: .74rem; opacity: .72; }
+  .chl__invname { max-width: 46ch; text-align: center; line-height: 1.4; }
 
   @media (max-width: 560px) {
     .chl__symbol { font-size: 2.1rem; }

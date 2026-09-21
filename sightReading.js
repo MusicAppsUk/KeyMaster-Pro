@@ -46,8 +46,35 @@ const STAGES = [
     tagline: 'A continuous scrolling timeline — recovery-focused.',    ready: true },
 ];
 
+
+/**
+ * rc2-225 — play through the Course piano when the app offers one.
+ *
+ * Every room is handed both `piano` (the Salamander sampler with the pianoVoice
+ * fallback — the voice the Course and the keyboard use) and `synth` (a plainer
+ * instrument for cues). This room only ever reached for `synth`, which is why
+ * its playback sounded thinner than the rest of the app. Preferring `piano` and
+ * keeping `synth` as the fallback changes nothing about WHEN notes are played,
+ * only which instrument plays them; the note and time arguments are identical.
+ */
+function makeVoice(piano, synth) {
+  const usePiano = !!(piano && typeof piano.noteOn === 'function');
+  return {
+    usingPiano: usePiano,
+    noteOn(midi, vel, when) {
+      if (usePiano) { try { piano.noteOn(midi, vel, when); return; } catch (_) { /* fall through */ } }
+      try { synth && synth.noteOn(midi, vel, when, 'demo'); } catch (_) { /* no-op */ }
+    },
+    noteOff(midi, when) {
+      if (usePiano) { try { piano.noteOff(midi, when); return; } catch (_) { /* fall through */ } }
+      try { synth && synth.noteOff(midi, when); } catch (_) { /* no-op */ }
+    },
+  };
+}
+
 export default function createView(ctx) {
-  const { mount, keyboard, viewport, synth, input, evaluator, nav } = ctx;
+  const { mount, keyboard, viewport, synth, piano, input, evaluator, nav } = ctx;
+  const voice = makeVoice(piano, synth);
   const audioOK = Boolean(synth);
 
   // ---- shell state ----
@@ -630,8 +657,8 @@ export default function createView(ctx) {
       timers.push(setTimeout(() => {
         if (token !== playToken || mode !== 'listening') return;   // stale → silent
         const now = synth.ctx.currentTime;
-        synth.noteOn(m.midi, 90, now);
-        synth.noteOff(m.midi, now + dt * 0.9);
+        voice.noteOn(m.midi, 90, now);
+        voice.noteOff(m.midi, now + dt * 0.9);
         staff.clearMarks();
         staff.mark(i, 'current');
       }, ms));

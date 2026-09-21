@@ -30,7 +30,7 @@ import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 import { STAGES } from './courseMap.js?v=rc2-83';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-108';
 import { buildHandSvg, setHandHighlight, FINGER_NAMES } from './handViz.js?v=rc2-81';
-import { buildStaff, flashPlayed } from './staffViz.js?v=rc2-224';
+import { buildStaff, flashPlayed } from './staffViz.js?v=rc2-225';
 import { createCourseVoice } from './courseVoice.js?v=rc2-105';
 import { FOUNDATION_STEPS } from './courseFoundation.js?v=rc2-136';
 import { STAGE1_MAKING_STEPS } from './courseStage1Making.js?v=rc2-136';
@@ -387,7 +387,7 @@ export default function createView(ctx) {
   // takes over automatically the instant it ships (recorded file -> temporary TTS -> text).
   const TTS_DEV_FALLBACK = true;
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-224';
+  const KM_BUILD = 'rc2-225';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate

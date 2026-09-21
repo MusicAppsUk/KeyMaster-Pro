@@ -26,8 +26,8 @@ import { PianoSynth } from './pianoVoice.js';
 import { createCoursePiano } from './coursePianoSampler.js';
 import { Scheduler } from './scheduler.js';
 import { Metronome } from './metronome.js';
-import './voiceTest.js?v=rc2-224';  // visible Voice Self-Test at #voice-test (no console needed)
-import './pwaUpdate.js?v=rc2-224';  // installable-PWA "Update available" flow
+import './voiceTest.js?v=rc2-225';  // visible Voice Self-Test at #voice-test (no console needed)
+import './pwaUpdate.js?v=rc2-225';  // installable-PWA "Update available" flow
 import { NoteInput } from './noteInput.js';
 import { createMidiEvaluator } from './midiEvaluator.js';
 import { createDevReadout, isDevMode } from './devReadout.js';
@@ -127,32 +127,32 @@ const VIEW_REGISTRY = {
   },
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-224',
-    load: () => import('./foundations.js?v=rc2-224'),
+    src: './foundations.js?v=rc2-225',
+    load: () => import('./foundations.js?v=rc2-225'),
   },
   scales: {
     slot: 'scales',
-    src: './scalesMasterclass.js?v=rc2-224',
-    load: () => import('./scalesMasterclass.js?v=rc2-224'),
+    src: './scalesMasterclass.js?v=rc2-225',
+    load: () => import('./scalesMasterclass.js?v=rc2-225'),
   },
   sightreading: {
     slot: 'sightreading',
-    src: './sightReading.js?v=rc2-83',
-    load: () => import('./sightReading.js?v=rc2-83'),
+    src: './sightReading.js?v=rc2-225',
+    load: () => import('./sightReading.js?v=rc2-225'),
   },
   chords: {
     // rc2-224: the Chords room is now a LIBRARY, not a trainer — pick a root and
     // browse the whole family, as a chord book does. The old guided trainer stays
     // on disk untouched (chordMasterclass.js); reverting is these two lines.
     slot: 'chords',
-    src: './chordLibrary.js?v=rc2-224',
-    load: () => import('./chordLibrary.js?v=rc2-224'),
+    src: './chordLibrary.js?v=rc2-225',
+    load: () => import('./chordLibrary.js?v=rc2-225'),
   },
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-224',
-    load: () => import('./foundations.js?v=rc2-224'),
+    src: './foundations.js?v=rc2-225',
+    load: () => import('./foundations.js?v=rc2-225'),
   },
 };
 
@@ -591,7 +591,7 @@ class KeyMasterApp {
     if (!overlay || !body) return;
     overlay.hidden = false;
     body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Loading the journey\u2026</p>';
-    import('./foundations.js?v=rc2-224').then((F) => {
+    import('./foundations.js?v=rc2-225').then((F) => {
       const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
       const chapterAt = (typeof F.chapterAtIndex === 'function') ? F.chapterAtIndex : null;
       if (!steps.length || !chapterAt) { body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Course map unavailable right now.</p>'; return; }
@@ -1398,7 +1398,7 @@ class KeyMasterApp {
       const cta = this.root.querySelector('#learn-cta');
       if (cta) cta.textContent = started ? 'Continue the Foundation Course' : 'Start the Foundation Course';
       set('#course-hero-title', started ? 'Continue the Foundation Course' : COURSE_NAME);
-      import('./foundations.js?v=rc2-224').then((F) => {
+      import('./foundations.js?v=rc2-225').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
         const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];

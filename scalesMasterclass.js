@@ -23,7 +23,7 @@
 // factory: createView({ mount, store, keyboard, viewport, synth, scheduler,
 // metronome }) → { enter(), exit(), destroy() }.
 
-import { majorFingering, harmonicMinorFingering, chromaticFingering } from './fingeringEngine.js';
+import { majorFingering, harmonicMinorFingering, chromaticFingering, arpeggioFingering } from './fingeringEngine.js';
 import { buildScale } from './scaleEngine.js';
 import { unlockAudio, perfToContextTime } from './audioContext.js';
 import { createStaffView } from './staffView.js';
@@ -46,11 +46,20 @@ const CHROMATIC_KEYS = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'B
 /** Every tonic the module can build, for persistence checks. */
 const KEYS = [...new Set([...MAJOR_KEYS, ...MINOR_KEYS, ...CHROMATIC_KEYS])];
 function keysForType(type) {
-  if (type === 'major') return MAJOR_KEYS;
+  if (type === 'major' || type === 'arpeggio_major') return MAJOR_KEYS;
   if (type === 'chromatic') return CHROMATIC_KEYS;
   return MINOR_KEYS;
 }
-function keyFieldLabel(type) { return type === 'chromatic' ? 'Start note' : 'Key'; }
+/**
+ * The control above the note list names what it is actually selecting: a key for
+ * a scale, the note a chromatic begins on, and the root of the triad for an
+ * arpeggio.
+ */
+function keyFieldLabel(type) {
+  if (type === 'chromatic') return 'Start note';
+  if (type === 'arpeggio_major' || type === 'arpeggio_minor') return 'Root';
+  return 'Key';
+}
 /**
  * Switching between major and minor may leave the current tonic off the new
  * list (C sharp has no major entry; A flat has no minor one). Fall back to the
@@ -75,6 +84,10 @@ const TYPES = [
   ['harmonic_minor', 'Harmonic minor'],
   ['melodic_minor', 'Melodic minor'],
   ['chromatic', 'Chromatic'],
+  // rc2-223: arpeggios live here as scale TYPES, not in a room of their own —
+  // which is how the books present them, next to the scale in the same key.
+  ['arpeggio_major', 'Major arpeggio'],
+  ['arpeggio_minor', 'Minor arpeggio'],
 ];
 // --- Register centring -------------------------------------------------------
 // Place the RH tonic in whichever octave puts it CLOSEST to Middle C (C4 = MIDI
@@ -133,10 +146,37 @@ function spelledStaffName(scale, step) {
   return `${d.name}${octave}`;
 }
 
+
+/**
+ * rc2-225 — play through the Course piano when the app offers one.
+ *
+ * Every room is handed both `piano` (the Salamander sampler with the pianoVoice
+ * fallback — the voice the Course and the keyboard use) and `synth` (a plainer
+ * instrument for cues). This room only ever reached for `synth`, which is why
+ * its playback sounded thinner than the rest of the app. Preferring `piano` and
+ * keeping `synth` as the fallback changes nothing about WHEN notes are played,
+ * only which instrument plays them; the note and time arguments are identical.
+ */
+function makeVoice(piano, synth) {
+  const usePiano = !!(piano && typeof piano.noteOn === 'function');
+  return {
+    usingPiano: usePiano,
+    noteOn(midi, vel, when) {
+      if (usePiano) { try { piano.noteOn(midi, vel, when); return; } catch (_) { /* fall through */ } }
+      try { synth && synth.noteOn(midi, vel, when, 'demo'); } catch (_) { /* no-op */ }
+    },
+    noteOff(midi, when) {
+      if (usePiano) { try { piano.noteOff(midi, when); return; } catch (_) { /* fall through */ } }
+      try { synth && synth.noteOff(midi, when); } catch (_) { /* no-op */ }
+    },
+  };
+}
+
 const CLEAN_RUN_ACCURACY = 0.9; // threshold to unlock the Tempo Climb
 
 export default function createView(ctx) {
-  const { mount, keyboard, viewport, synth, scheduler, metronome, evaluator } = ctx;
+  const { mount, keyboard, viewport, synth, piano, scheduler, metronome, evaluator } = ctx;
+  const voice = makeVoice(piano, synth);
   const audioOK = Boolean(synth && scheduler);
 
   const sel = { tonic: storedDefaultTonic(), type: 'major', hand: 'RH', octaves: 1, updown: false, metro: true };
@@ -200,7 +240,13 @@ export default function createView(ctx) {
     // major patterns exactly (tools/derive-fingering.mjs) — they are shown, but
     // with a line saying they have not been checked against a method book yet.
     // A key with no candidate at all returns finger: null and practises on notes.
-    const FINGERED = { major: majorFingering, harmonic_minor: harmonicMinorFingering, chromatic: chromaticFingering };
+    const FINGERED = {
+      major: majorFingering,
+      harmonic_minor: harmonicMinorFingering,
+      chromatic: chromaticFingering,
+      arpeggio_major: (t, h, o) => arpeggioFingering(t, h, { ...o, quality: 'major' }),
+      arpeggio_minor: (t, h, o) => arpeggioFingering(t, h, { ...o, quality: 'minor' }),
+    };
     if (FINGERED[sel.type]) {
       const f = FINGERED[sel.type](sel.tonic, hand, {
         octaves: sel.octaves, startOctave: baseOctaveFor(hand, sel.tonic),
@@ -364,7 +410,7 @@ export default function createView(ctx) {
         // (Both-Hands), so the summed peak stays under the synth limiter and does
         // not crackle. Learner-play volume is unaffected (separate path).
         const vel = col.length > 1 ? 52 : 72;
-        col.forEach((c) => { synth.noteOn(c.midi, vel, now, 'demo'); synth.noteOff(c.midi, now + dt * 0.92); });
+        col.forEach((c) => { voice.noteOn(c.midi, vel, now); voice.noteOff(c.midi, now + dt * 0.92); });
         keyboard.clearHighlight('target');
         keyboard.highlight(colMidis(col), 'target');
         staff.scrollToIndex(i, true);     // glide this note under the fixed playhead
@@ -1163,4 +1209,4 @@ function injectStyles() {
  * Exposed for tooling only (tools/check-scales-masterclass.mjs). Not used by the
  * app at runtime — the view closes over these directly.
  */
-export const _internal = { MAJOR_KEYS, MINOR_KEYS, CHROMATIC_KEYS, KEYS, keysForType, keyFieldLabel, reconcileTonic, spelledStaffName };
+export const _internal = { MAJOR_KEYS, MINOR_KEYS, CHROMATIC_KEYS, KEYS, keysForType, keyFieldLabel, reconcileTonic, spelledStaffName, makeVoice };
