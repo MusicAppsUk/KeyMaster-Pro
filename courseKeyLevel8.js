@@ -200,6 +200,31 @@ export const KEY_LEVEL8_STEPS = [
     mode: 'none',
   },
 
+  // rc2-228 - THE AURAL STRAND. One card per Key Level: a phrase is sounded and
+  // nothing is written down. Before this build there were 143 cards across
+  // KL2-KL8 and not one of them asked the learner to use their ears, while 79%
+  // of the course was notation. Each card trains a DIFFERENT listening skill,
+  // in the key and the material its own level already works in.
+  {
+    eyebrow: 'KeyMaster Course \u00B7 Key Level 8', title: "By ear — the closing phrase", id: 'kl8-by-ear',
+    say: [
+      { text: "One last time by ear — and this time there is no help at all. No notation, no lit keys, no hint.", pauseAfter: 700, tone: 'warm' },
+      { text: "This is how the Minuet ends. Seven notes, and they leap rather than step. Listen as many times as you need, and find it.", pauseAfter: 420, tone: 'instruct' },
+    ],
+    explain: ["The Minuet’s closing phrase, by ear. No notation, no lit keys, no hint.", "It moves by leaps rather than steps, which is harder to hold in the ear — and it is the phrase an audience remembers."],
+    demo: [84, 83, 81, 83, 86, 79, 78], demoGap: 0.38,
+    tryPrompt: "Play back the closing phrase — by ear, unaided.",
+    targets: [84, 83, 81, 83, 86, 79, 78], mode: 'sequence',
+    okMsg: "Seven notes, leaping, from hearing alone and with nothing to help you. That is the ear this course set out to build.",
+    // KL8's hint and reteach coach the METHOD, never the notes. The validator
+    // was right to insist they exist \u2014 a learner must never be stranded with
+    // no way forward, even at the last level. But handing over the pitches
+    // would destroy the exercise, so these teach how to listen instead, and
+    // the lit keys stay off: no answer is shown, only a route to finding it.
+    hint: "Do not chase individual notes. Hold the shape: it steps down, leaps up further than you expect, then drops and settles. Try it in two halves.",
+    reteach: "Take it in two halves. Find the first three notes \u2014 they walk downward. Then the last four, which leap. Replay as often as you like; there is no clock here.",
+    support: { replay: true },
+  },
   // ===== Chapter 7 — Where You Are Now ===================================
   {
     eyebrow: 'KeyMaster Course · Key Level 8', title: 'What comes next', id: 'kl8-next',

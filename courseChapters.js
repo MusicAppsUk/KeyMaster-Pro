@@ -143,6 +143,8 @@ export const COURSE_CHAPTERS = [
     intro: 'A new five-finger home on G \u2014 why the key needs its sharp, and how a key signature carries that instruction through a whole piece.' },
   { course: 'keymaster', stage: 2, name: 'Meadow Song', ids: ['kl2-meadow-listen', 'kl2-meadow-sharp', 'kl2-meadow-perform'],
     intro: 'G major, three-time, quavers and a black key \u2014 the first piece that asks for everything at once.' },
+  { course: 'keymaster', stage: 2, name: 'By Ear', ids: ['kl2-by-ear'],
+    intro: 'One phrase, played to you and not written down. The ear is a reading tool too.' },
   { course: 'keymaster', stage: 2, name: 'Key Level 2 Review', ids: ['kl2-review-read', 'kl2-review'],
     intro: 'A sight-reading check with no demonstration, and a look at how much reading ground this level has covered.' },
   // ===== Key Level 3 — Pattern Fluency ==================================
@@ -160,6 +162,8 @@ export const COURSE_CHAPTERS = [
     intro: 'The first piece written across two lines, as real sheet music is \u2014 and the reading skill of crossing the break without stopping.' },
   { course: 'keymaster', stage: 3, name: 'Reading Ahead', ids: ['kl3-scan-teach', 'kl3-scan-play'],
     intro: 'Ten seconds of scanning before a note is played \u2014 the habit that separates fluent readers from everyone else.' },
+  { course: 'keymaster', stage: 3, name: 'By Ear', ids: ['kl3-by-ear'],
+    intro: 'Steps and skips \u2014 heard this time, not seen. The same distances your eyes have been learning.' },
   { course: 'keymaster', stage: 3, name: 'Key Level 3 Review', ids: ['kl3-review-read', 'kl3-review'],
     intro: 'An undemonstrated sight-read across two systems in a sharp key, and a look at how much reading has changed.' },
   // ===== Key Level 4 — Musical Independence =============================
@@ -171,6 +175,8 @@ export const COURSE_CHAPTERS = [
     intro: 'Hands moving in opposite directions \u2014 easier than it sounds, because mirrored movement is natural to the body.' },
   { course: 'keymaster', stage: 4, name: 'Different Rhythms', ids: ['kl4-rhythm-listen', 'kl4-rhythm-play'],
     intro: 'One hand twice as fast as the other, held together by a single pulse \u2014 and the trick of thinking in where they meet.' },
+  { course: 'keymaster', stage: 4, name: 'By Ear', ids: ['kl4-by-ear'],
+    intro: 'The Minuet\u2019s opening, met by ear before it is met on the page \u2014 recognition before execution, exactly.' },
   { course: 'keymaster', stage: 4, name: 'The Minuet \u2014 the melody', ids: ['kl4-minuet-story', 'kl4-minuet-rh-listen', 'kl4-minuet-rh-a', 'kl4-minuet-rh-b'],
     intro: 'Real repertoire: the Minuet in G by Christian Petzold \u2014 not Bach, and the story of how the world got that wrong.' },
   { course: 'keymaster', stage: 4, name: 'The Minuet \u2014 the left hand', ids: ['kl4-minuet-lh', 'kl4-minuet-lh-hard'],
@@ -198,6 +204,8 @@ export const COURSE_CHAPTERS = [
     intro: 'Hearing the next chord before you read it \u2014 the exercise this whole level was built to make possible.' },
   { course: 'keymaster', stage: 5, name: 'Harmony in Real Music', ids: ['kl5-real-analysis'],
     intro: 'A melody with its harmony written underneath and analysed \u2014 reading the structure before reading the tune.' },
+  { course: 'keymaster', stage: 5, name: 'By Ear', ids: ['kl5-by-ear'],
+    intro: 'A chord rather than a line. Three notes at once, heard and found.' },
   { course: 'keymaster', stage: 5, name: 'Key Level 5 Review', ids: ['kl5-review-play', 'kl5-review'],
     intro: 'Deduce a key from its signature and build its home chord unaided \u2014 then a look at how differently you now listen.' },
   // ===== Key Level 6 — Expressive Repertoire ============================
@@ -215,6 +223,8 @@ export const COURSE_CHAPTERS = [
     intro: 'Petzold\u2019s second half \u2014 six bars of which you already know, and the two that finally close the piece.' },
   { course: 'keymaster', stage: 6, name: 'Interpretive Choice', ids: ['kl6-interpret-teach', 'kl6-interpret-play'],
     intro: 'One phrase, three defensible readings, and no right answer \u2014 the first time the decision is genuinely yours.' },
+  { course: 'keymaster', stage: 6, name: 'By Ear', ids: ['kl6-by-ear'],
+    intro: 'The bar where the Minuet stops repeating itself, found by ear.' },
   { course: 'keymaster', stage: 6, name: 'Key Level 6 Review', ids: ['kl6-review-read', 'kl6-review'],
     intro: 'An undemonstrated read carrying every expressive mark of the level, and a look at how much of the music is now your own.' },
   // ===== Key Level 7 — Advanced Musicianship ============================
@@ -232,6 +242,8 @@ export const COURSE_CHAPTERS = [
     intro: 'Following a score you cannot yet play \u2014 the habit that keeps understanding ahead of technique.' },
   { course: 'keymaster', stage: 7, name: 'Transposition', ids: ['kl7-transpose-teach', 'kl7-transpose-play'],
     intro: 'The same shape in a different key \u2014 the definitive test of whether a passage was understood or merely memorised.' },
+  { course: 'keymaster', stage: 7, name: 'By Ear', ids: ['kl7-by-ear'],
+    intro: 'The note that does not belong to the key \u2014 heard rather than read.' },
   { course: 'keymaster', stage: 7, name: 'Key Level 7 Review', ids: ['kl7-review-read', 'kl7-review'],
     intro: 'An unfamiliar passage in a new key and metre, with no demonstration, no fingering and no hints.' },
   // ===== Key Level 8 — Performance Mastery ==============================
@@ -247,6 +259,8 @@ export const COURSE_CHAPTERS = [
     intro: 'Choosing what to play and in what order \u2014 the last musicianly skill the course teaches.' },
   { course: 'keymaster', stage: 8, name: 'The Complete Minuet', ids: ['kl8-minuet-close', 'kl8-minuet-whole'],
     intro: 'The closing bars, and then all thirty-two \u2014 performed whole, unchecked and unmarked, for you to judge yourself.' },
+  { course: 'keymaster', stage: 8, name: 'By Ear', ids: ['kl8-by-ear'],
+    intro: 'The closing phrase, by ear, with no help of any kind.' },
   { course: 'keymaster', stage: 8, name: 'Where You Are Now', ids: ['kl8-next', 'kl8-review'],
     intro: 'What to learn after this, where to find it \u2014 and an honest account of what is now true that was not when you began.' },
 ];

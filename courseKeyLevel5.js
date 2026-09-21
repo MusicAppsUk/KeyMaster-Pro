@@ -348,6 +348,26 @@ export const KEY_LEVEL5_STEPS = [
     mode: 'none',
   },
 
+  // rc2-228 - THE AURAL STRAND. One card per Key Level: a phrase is sounded and
+  // nothing is written down. Before this build there were 143 cards across
+  // KL2-KL8 and not one of them asked the learner to use their ears, while 79%
+  // of the course was notation. Each card trains a DIFFERENT listening skill,
+  // in the key and the material its own level already works in.
+  {
+    eyebrow: 'KeyMaster Course \u00B7 Key Level 5', title: "By ear — a chord, not a line", id: 'kl5-by-ear',
+    say: [
+      { text: "Every phrase you have echoed so far has been one note after another. This one is not.", pauseAfter: 660, tone: 'warm' },
+      { text: "I will sound three notes together — a triad. Listen to its colour as well as its notes: this is one of the minor ones. Find all three and hold them down together.", pauseAfter: 420, tone: 'instruct' },
+    ],
+    explain: ["Three notes sounded together — a minor triad — with nothing written. Find all three and hold them.", "Hearing a chord is a different skill from hearing a tune. Listen for the colour first, then the notes inside it."],
+    demo: [67, 70, 74], demoGap: 0.05,
+    tryPrompt: "Play the three notes of the chord you heard — together, by ear.",
+    targets: [67, 70, 74], mode: 'set',
+    okMsg: "A chord found by ear, not by counting up from a root. That is how harmony is actually heard.",
+    hint: "The lowest note is G. Build a minor triad on it — the third is the note that makes it sound minor.",
+    reteach: "Listen again for the bottom note first, then the one in the middle — the middle note is what gives the chord its shade.",
+    support: { highlight: [67, 70, 74], replay: true },
+  },
   // ===== Chapter 9 — Key Level 5 Review ==================================
   {
     eyebrow: 'KeyMaster Course · Key Level 5', title: 'Harmony check', id: 'kl5-review-play',

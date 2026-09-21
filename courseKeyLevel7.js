@@ -279,6 +279,26 @@ export const KEY_LEVEL7_STEPS = [
     support: { highlight: [67, 71, 74], replay: true },
   },
 
+  // rc2-228 - THE AURAL STRAND. One card per Key Level: a phrase is sounded and
+  // nothing is written down. Before this build there were 143 cards across
+  // KL2-KL8 and not one of them asked the learner to use their ears, while 79%
+  // of the course was notation. Each card trains a DIFFERENT listening skill,
+  // in the key and the material its own level already works in.
+  {
+    eyebrow: 'KeyMaster Course \u00B7 Key Level 7', title: "By ear — hear the modulation", id: 'kl7-by-ear',
+    say: [
+      { text: "This Key Level showed you the Minuet stepping out of G major and into D major, and the sharp that carries it there.", pauseAfter: 680, tone: 'warm' },
+      { text: "Now hear it. The line I play climbs through six notes, and one of them is the note that does not belong to G major. Find them all — including that one.", pauseAfter: 420, tone: 'instruct' },
+    ],
+    explain: ["A rising line from the Minuet’s second section, played with nothing written.", "One of its notes is foreign to G major — the sharp that carries the music into the new key. Hearing a modulation as it happens is an advanced ear, and it starts here."],
+    demo: [69, 71, 73, 74, 76, 78], demoGap: 0.36,
+    tryPrompt: "Play back the rising line — by ear, including the note that changes key.",
+    targets: [69, 71, 73, 74, 76, 78], mode: 'sequence',
+    okMsg: "You heard the key change as it happened. That is an ear doing analysis in real time.",
+    hint: "Six notes, climbing all the way. The third one is a black key — that is the one carrying the music somewhere new.",
+    reteach: "Listen again to the third note. It sits a semitone higher than the scale of G major would put it.",
+    support: { highlight: [69, 71, 73, 74, 76, 78], replay: true },
+  },
   // ===== Chapter 8 — Key Level 7 Review ==================================
   {
     eyebrow: 'KeyMaster Course · Key Level 7', title: 'Structural reading check', id: 'kl7-review-read',

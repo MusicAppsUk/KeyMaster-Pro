@@ -255,6 +255,26 @@ export const KEY_LEVEL4_STEPS = [
     support: { highlight: [67, 69, 71], replay: true },
   },
 
+  // rc2-228 - THE AURAL STRAND. One card per Key Level: a phrase is sounded and
+  // nothing is written down. Before this build there were 143 cards across
+  // KL2-KL8 and not one of them asked the learner to use their ears, while 79%
+  // of the course was notation. Each card trains a DIFFERENT listening skill,
+  // in the key and the material its own level already works in.
+  {
+    eyebrow: 'KeyMaster Course \u00B7 Key Level 4', title: "By ear — before you read it", id: 'kl4-by-ear',
+    say: [
+      { text: "Before you see a single note of the piece you are about to learn, you are going to hear how it begins.", pauseAfter: 660, tone: 'warm' },
+      { text: "This is the opening of the Minuet. Nothing is written down. Find it by ear — and when you meet it on the page in a moment, you will already know it.", pauseAfter: 400, tone: 'instruct' },
+    ],
+    explain: ["The Minuet’s first bar, played to you with nothing written. Find it by ear.", "You will see it notated in the next chapter. Meeting it with your ears first is the whole idea behind this course: recognition before execution."],
+    demo: [74, 67, 69, 71, 72], demoGap: 0.42,
+    tryPrompt: "Play back the opening of the Minuet — by ear, before you read it.",
+    targets: [74, 67, 69, 71, 72], mode: 'sequence',
+    okMsg: "You found the opening of the piece by ear. When you see it written in a moment, it will be a piece you already recognise.",
+    hint: "One high note to begin, then four notes climbing from well below it.",
+    reteach: "Listen again: it opens on a high note, drops a long way, then walks back up in four steps.",
+    support: { highlight: [74, 67, 69, 71, 72], replay: true },
+  },
   // ===== Chapter 5 — The Minuet: the melody ==============================
   {
     eyebrow: 'KeyMaster Course · Key Level 4', title: 'A famous piece, and a correction', id: 'kl4-minuet-story',

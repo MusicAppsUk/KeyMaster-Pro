@@ -649,6 +649,26 @@ export const KEY_LEVEL2_STEPS = [
     support: { highlight: [67, 71, 74, 72, 69, 78], replay: true },
   },
 
+  // rc2-228 - THE AURAL STRAND. One card per Key Level: a phrase is sounded and
+  // nothing is written down. Before this build there were 143 cards across
+  // KL2-KL8 and not one of them asked the learner to use their ears, while 79%
+  // of the course was notation. Each card trains a DIFFERENT listening skill,
+  // in the key and the material its own level already works in.
+  {
+    eyebrow: 'KeyMaster Course \u00B7 Key Level 2', title: "By ear — the shape of a phrase", id: 'kl2-by-ear',
+    say: [
+      { text: "Something different now. I will play a short phrase, and there will be nothing written down — nothing to read at all.", pauseAfter: 640, tone: 'warm' },
+      { text: "Listen to its shape. It climbs, turns at the top, and comes back down the way it came. Hold that shape in your ear, then find it.", pauseAfter: 380, tone: 'instruct' },
+    ],
+    explain: ["No notation here. Listen to the phrase and play it back from memory alone.", "Follow its shape — up, a turning point, and back down. Hearing shape is how a musician reads ahead."],
+    demo: [67, 69, 71, 69, 67], demoGap: 0.46,
+    tryPrompt: "Play back the phrase you just heard — by ear.",
+    targets: [67, 69, 71, 69, 67], mode: 'sequence',
+    okMsg: "You heard the turn at the top and found it. That is the ear leading the hand, which is the right way round.",
+    hint: "It rises by steps, turns once at the highest note, and walks back down to where it started.",
+    reteach: "Listen again for the highest note — that is the turning point. Everything before it climbs; everything after it falls.",
+    support: { highlight: [67, 69, 71, 69, 67], replay: true },
+  },
   // ===== Chapter 10 — Key Level 2 Review ================================
   // Consolidation, and an honest doorway to the repertoire chapters that
   // follow once verified source material is available (see the note at the

@@ -373,6 +373,26 @@ export const KEY_LEVEL3_STEPS = [
     support: { highlight: [60, 67, 65, 64, 62], replay: true },
   },
 
+  // rc2-228 - THE AURAL STRAND. One card per Key Level: a phrase is sounded and
+  // nothing is written down. Before this build there were 143 cards across
+  // KL2-KL8 and not one of them asked the learner to use their ears, while 79%
+  // of the course was notation. Each card trains a DIFFERENT listening skill,
+  // in the key and the material its own level already works in.
+  {
+    eyebrow: 'KeyMaster Course \u00B7 Key Level 3', title: "By ear — a step or a skip?", id: 'kl3-by-ear',
+    say: [
+      { text: "This Key Level taught your eyes to see a step and a skip without counting. Now your ears will do the same work.", pauseAfter: 640, tone: 'warm' },
+      { text: "The phrase I play moves by steps and by skips, turn and turn about. A step is next door; a skip jumps over a note. Listen for which is which.", pauseAfter: 400, tone: 'instruct' },
+    ],
+    explain: ["Nothing written. A short phrase that alternates steps and skips — play it back by ear.", "A step goes next door; a skip jumps one. Hearing the difference is the same skill your eyes learned, moved to the ear."],
+    demo: [60, 62, 65, 64, 60], demoGap: 0.48,
+    tryPrompt: "Play back the phrase — by ear. Listen for where it steps and where it skips.",
+    targets: [60, 62, 65, 64, 60], mode: 'sequence',
+    okMsg: "Steps and skips, heard rather than seen. Your ears and your eyes are now learning the same language.",
+    hint: "It steps up, then skips up, then steps down, then skips down — four moves, alternating.",
+    reteach: "Listen again to the second move: it jumps further than the first. That is the skip.",
+    support: { highlight: [60, 62, 65, 64, 60], replay: true },
+  },
   // ===== Chapter 8 — Key Level 3 Review =================================
   {
     eyebrow: 'KeyMaster Course \u00B7 Key Level 3', title: 'Sight-reading check', id: 'kl3-review-read',

@@ -38,9 +38,9 @@
 
   <!-- Separated styling layers (theme tokens first, then component sheets). -->
   <link rel="stylesheet" href="theme.css?v=rc2-127" />
-  <link rel="stylesheet" href="keyboard.css?v=rc2-226" />
-  <link rel="stylesheet" href="notation.css?v=rc2-226" />
-  <link rel="stylesheet" href="cockpit.css?v=rc2-226" />
+  <link rel="stylesheet" href="keyboard.css?v=rc2-228" />
+  <link rel="stylesheet" href="notation.css?v=rc2-228" />
+  <link rel="stylesheet" href="cockpit.css?v=rc2-228" />
 
   <!-- The only inline style: hide the shell until the app flips data-boot,
        preventing an unstyled flash before the module graph resolves. -->
@@ -149,10 +149,10 @@
             </a>
 
             <a class="vector vector--chords" href="#/chords">
-              <span class="vector__status vector__status--next">Stage 1 Live</span>
+              <span class="vector__status vector__status--active">Active</span>
               <span class="vector__eyebrow">03 — Harmony</span>
-              <span class="vector__title">Chord Masterclass</span>
-              <span class="vector__blurb">Triads, inversions, hand by hand.</span>
+              <span class="vector__title">Harmony Masterclass</span>
+              <span class="vector__blurb">Every chord, every key — and the cadences that close them.</span>
               <span class="vector__open" aria-hidden="true">Open &#8594;</span>
             </a>
 
@@ -253,14 +253,14 @@
         <div class="view__body" data-slot="arpeggios"></div>
       </section>
 
-      <!-- Chord Masterclass mount. -->
+      <!-- Harmony Masterclass mount (route id stays "chords"). -->
       <section
         class="view view--chords"
         data-view="chords"
         aria-labelledby="chords-heading"
         hidden
       >
-        <h1 id="chords-heading" class="view__title">Chord Masterclass</h1>
+        <h1 id="chords-heading" class="view__title">Harmony Masterclass</h1>
         <div class="view__body" data-slot="chords"></div>
       </section>
 
@@ -403,7 +403,7 @@
 
   <!-- Single module entry point. Absolute path so it resolves regardless of
        the route in the hash. -->
-  <script type="module" src="app.js?v=rc2-226"></script>
+  <script type="module" src="app.js?v=rc2-228"></script>
   <script defer src="cockpitUI.js?v=rc2-155"></script>
 </body>
 </html>

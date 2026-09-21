@@ -357,6 +357,26 @@ export const KEY_LEVEL6_STEPS = [
     support: { highlight: [67, 69, 71, 72, 74], replay: true },
   },
 
+  // rc2-228 - THE AURAL STRAND. One card per Key Level: a phrase is sounded and
+  // nothing is written down. Before this build there were 143 cards across
+  // KL2-KL8 and not one of them asked the learner to use their ears, while 79%
+  // of the course was notation. Each card trains a DIFFERENT listening skill,
+  // in the key and the material its own level already works in.
+  {
+    eyebrow: 'KeyMaster Course \u00B7 Key Level 6', title: "By ear — where the music turns", id: 'kl6-by-ear',
+    say: [
+      { text: "You have learned that the Minuet’s second half begins by repeating its first half, note for note, for six whole bars.", pauseAfter: 660, tone: 'warm' },
+      { text: "This is the bar where it stops repeating and turns for home. Nothing written. Listen for where it goes instead.", pauseAfter: 400, tone: 'instruct' },
+    ],
+    explain: ["The bar where the Minuet leaves its own repetition and turns towards the close — played to you, not written.", "Knowing where a piece departs from what you expect is how a memory of it is built."],
+    demo: [69, 71, 69, 67, 66], demoGap: 0.44,
+    tryPrompt: "Play back the bar you just heard — by ear.",
+    targets: [69, 71, 69, 67, 66], mode: 'sequence',
+    okMsg: "You found the moment the music turns. That is the bar a performer remembers, because it is the one that surprises.",
+    hint: "It lifts once, then falls by steps — and the last note is lower than the one it started on.",
+    reteach: "Listen again to the end of it: the line walks downward and settles on a note just below where it began.",
+    support: { highlight: [69, 71, 69, 67, 66], replay: true },
+  },
   // ===== Chapter 8 — Key Level 6 Review ==================================
   {
     eyebrow: 'KeyMaster Course · Key Level 6', title: 'Expression check', id: 'kl6-review-read',
