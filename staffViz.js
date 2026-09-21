@@ -1149,13 +1149,32 @@ export function buildStaff(opts = {}) {
     // rc2-212: optional dynamics marks under the staff (see JSDoc). Placed well
     // below note letters/ledger territory; every drawn mark extends the viewBox
     // via mark() so nothing is ever clipped. Invalid entries fail harmlessly.
+    // rc2-219: ANNOTATION ROWS. Dynamics, hairpins, Roman numerals and pedal
+    // lines all live below the staff, and at fixed offsets they collided —
+    // a dynamic sat directly on top of its own hairpin. Rows are now allocated
+    // in engraving order, and ONLY to the kinds actually present, so a card
+    // with a single annotation keeps it close to the staff where it belongs.
+    const rowOrder = [
+      ['marks', Array.isArray(opts.marks) && opts.marks.length, 22],
+      ['hairpins', Array.isArray(opts.hairpins) && opts.hairpins.length, 20],
+      ['analysis', Array.isArray(opts.analysis) && opts.analysis.length, 24],
+      ['pedal', Array.isArray(opts.pedal) && opts.pedal.length, 26],
+    ];
+    const rowY = {};
+    let rowCursor = 5 * GAP + 26;
+    rowOrder.forEach(([key, present, height]) => {
+      if (!present) return;
+      rowY[key] = rowCursor;
+      rowCursor += height;
+    });
+
     if (Array.isArray(opts.marks) && opts.marks.length) {
       opts.marks.forEach((m) => {
         const k = m && Math.round(m.at) - 1;
         const ok = Number.isInteger(k) && k >= 0 && k < xs.length
           && typeof m.text === 'string' && /^[A-Za-z.]{1,8}$/.test(m.text);
         if (!ok) return;
-        const my = tops[k] + 5 * GAP + 26;
+        const my = tops[k] + rowY.marks;
         body += `<text class="km-staff__mark" x="${xs[k]}" y="${my}" text-anchor="middle">${m.text}</text>`;
         mark(my + 12);
       });
@@ -1193,7 +1212,7 @@ export function buildStaff(opts = {}) {
         const a = Math.round(hp && hp.from) - 1, z = Math.round(hp && hp.to) - 1;
         if (!(a >= 0 && z < xs.length && z > a)) return;
         if (tops[a] !== tops[z]) return;
-        const hy = tops[a] + 5 * GAP + 30;
+        const hy = tops[a] + rowY.hairpins;
         body += hairpinPath(xs[a], xs[z], hy, hp.dir !== 'dim');
         mark(hy + 14);
       });
@@ -1204,7 +1223,7 @@ export function buildStaff(opts = {}) {
         const a = Math.round(pd && pd.from) - 1, z = Math.round(pd && pd.to) - 1;
         if (!(a >= 0 && z < xs.length && z > a)) return;
         if (tops[a] !== tops[z]) return;
-        const py = tops[a] + 5 * GAP + 62;
+        const py = tops[a] + rowY.pedal;
         body += pedalMark(xs[a], xs[z], py);
         mark(py + 12);
       });
@@ -1219,7 +1238,7 @@ export function buildStaff(opts = {}) {
         const ok = Number.isInteger(k) && k >= 0 && k < xs.length
           && typeof m.text === 'string' && /^[A-Za-z0-9\u00B0\u2205/+-]{1,8}$/.test(m.text);
         if (!ok) return;
-        const ay = tops[k] + 5 * GAP + 48;
+        const ay = tops[k] + rowY.analysis;
         body += `<text class="km-staff__analysis" x="${xs[k]}" y="${ay}" text-anchor="middle">${m.text}</text>`;
         mark(ay + 12);
       });
@@ -1234,7 +1253,11 @@ export function buildStaff(opts = {}) {
   const aria = clef === 'grand' ? 'Grand staff' : (clef === 'bass' ? 'Bass staff' : 'Treble staff');
   const svg = `<svg class="km-staff__svg" viewBox="0 ${yTop} ${W} ${vbH}" preserveAspectRatio="xMidYMid meet" role="img" aria-label="${aria}">${body}</svg>`;
   const wrap = document.createElement('div');
-  wrap.className = `km-staff km-staff--${clef}`;
+  // rc2-219: a multi-system single staff is as much a score as a multi-system
+  // grand staff, and needs the same exemption from the height cap. Without it
+  // a three-line passage is scaled down to ~80% and reads small on a tablet.
+  const isScore = Array.isArray(opts.systems) && opts.systems.length > 0 && clef !== 'grand';
+  wrap.className = `km-staff km-staff--${clef}` + (isScore ? ' km-staff--score' : '');
   wrap.innerHTML = svg;
   scheduleHandDemotion();
   return wrap;
