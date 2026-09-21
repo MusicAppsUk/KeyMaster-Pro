@@ -26,8 +26,8 @@ import { PianoSynth } from './pianoVoice.js';
 import { createCoursePiano } from './coursePianoSampler.js';
 import { Scheduler } from './scheduler.js';
 import { Metronome } from './metronome.js';
-import './voiceTest.js?v=rc2-210';  // visible Voice Self-Test at #voice-test (no console needed)
-import './pwaUpdate.js?v=rc2-210';  // installable-PWA "Update available" flow
+import './voiceTest.js?v=rc2-222';  // visible Voice Self-Test at #voice-test (no console needed)
+import './pwaUpdate.js?v=rc2-222';  // installable-PWA "Update available" flow
 import { NoteInput } from './noteInput.js';
 import { createMidiEvaluator } from './midiEvaluator.js';
 import { createDevReadout, isDevMode } from './devReadout.js';
@@ -127,13 +127,13 @@ const VIEW_REGISTRY = {
   },
   foundations: {
     slot: 'foundations',
-    src: './foundations.js?v=rc2-219',
-    load: () => import('./foundations.js?v=rc2-219'),
+    src: './foundations.js?v=rc2-222',
+    load: () => import('./foundations.js?v=rc2-222'),
   },
   scales: {
     slot: 'scales',
-    src: './scalesMasterclass.js?v=rc2-83',
-    load: () => import('./scalesMasterclass.js?v=rc2-83'),
+    src: './scalesMasterclass.js?v=rc2-222',
+    load: () => import('./scalesMasterclass.js?v=rc2-222'),
   },
   sightreading: {
     slot: 'sightreading',
@@ -148,8 +148,8 @@ const VIEW_REGISTRY = {
   // Master Training reuses the Foundations engine in "learn mode" (ctx.route).
   learn: {
     slot: 'learn',
-    src: './foundations.js?v=rc2-219',
-    load: () => import('./foundations.js?v=rc2-219'),
+    src: './foundations.js?v=rc2-222',
+    load: () => import('./foundations.js?v=rc2-222'),
   },
 };
 
@@ -190,6 +190,20 @@ const KEYBOARD_HIDDEN_DEFAULT = {
  * remembered under localStorage `fingerHidden:<viewId>`. The fingering engine,
  * assigned data, scoring and MIDI are never affected — only painting.
  */
+// rc2-220: correctness feedback (the green/red paint on keys and note-heads)
+// is ON by default everywhere. A learner can switch it off per module — which
+// is a genuine practice mode, not merely a preference: playing without the
+// colours is how you find out whether you actually know the notes.
+const FEEDBACK_HIDDEN_DEFAULT = {
+  home: false,
+  'learn-app': false,
+  foundations: false,
+  scales: false,
+  sightreading: false,
+  chords: false,
+  learn: false,
+};
+
 const FINGERING_HIDDEN_DEFAULT = {
   home: false,
   'learn-app': false,
@@ -252,6 +266,7 @@ class KeyMasterApp {
       this._applyKeyboardPref(this._resolveKeyboardHidden(initialView));
       document.documentElement.setAttribute('data-view', initialView);
       this._applyFingeringPref(this._resolveFingeringHidden(initialView));
+      this._applyFeedbackPref(this._resolveFeedbackHidden(initialView));
     } catch { /* ignore */ }
     await this._connectMidiSilently();
 
@@ -573,7 +588,7 @@ class KeyMasterApp {
     if (!overlay || !body) return;
     overlay.hidden = false;
     body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Loading the journey\u2026</p>';
-    import('./foundations.js?v=rc2-219').then((F) => {
+    import('./foundations.js?v=rc2-222').then((F) => {
       const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];
       const chapterAt = (typeof F.chapterAtIndex === 'function') ? F.chapterAtIndex : null;
       if (!steps.length || !chapterAt) { body.innerHTML = '<p style="color:var(--ivory-faint);padding:1rem;text-align:center">Course map unavailable right now.</p>'; return; }
@@ -1036,6 +1051,36 @@ class KeyMasterApp {
     }
   }
 
+  /** Show/hide correctness colours (display only); remembered per module. */
+  _toggleFeedback() {
+    const hidden = document.documentElement.getAttribute('data-feedback') !== 'hidden';
+    this._applyFeedbackPref(hidden);
+    const viewId = this.store.getState().view ?? 'home';
+    try { window.localStorage.setItem(`feedbackHidden:${viewId}`, hidden ? '1' : '0'); } catch { /* ignore */ }
+  }
+
+  /** Resolve a module's feedback-hidden state: remembered choice, else default. */
+  _resolveFeedbackHidden(viewId) {
+    try {
+      const stored = window.localStorage.getItem(`feedbackHidden:${viewId}`);
+      if (stored === '1') return true;
+      if (stored === '0') return false;
+    } catch { /* ignore */ }
+    return FEEDBACK_HIDDEN_DEFAULT[viewId] ?? false;
+  }
+
+  // Display only. The evaluators still run, still decide correctness and still
+  // emit their events — only the paint is suppressed — so scoring, progression
+  // and spoken feedback are completely unaffected by this switch.
+  _applyFeedbackPref(hidden) {
+    document.documentElement.setAttribute('data-feedback', hidden ? 'hidden' : 'shown');
+    const btn = this.root.querySelector('[data-action="toggle-feedback"]');
+    if (btn) {
+      btn.setAttribute('aria-pressed', String(hidden));
+      btn.textContent = hidden ? '\u25CF Show Feedback' : '\u25CF Hide Feedback';
+    }
+  }
+
   /** Show/hide fingering numbers (display only); remembered per module. */
   _toggleFingering() {
     const hidden = document.documentElement.getAttribute('data-fingering') !== 'hidden';
@@ -1145,6 +1190,7 @@ class KeyMasterApp {
         case 'connect-midi': this._connectMidi(); break;
         case 'toggle-keyboard': this._toggleKeyboard(); break;
         case 'toggle-fingering': this._toggleFingering(); break;
+        case 'toggle-feedback': this._toggleFeedback(); break;
         case 'back': (this._backFn ?? (() => this._goHome()))(); break;
         case 'fullscreen': this._toggleFullscreen(); break;
         case 'exit': this._exit(); break;
@@ -1252,6 +1298,7 @@ class KeyMasterApp {
     // and apply this module's fingering-number preference (display only).
     document.documentElement.setAttribute('data-view', viewId);
     this._applyFingeringPref(this._resolveFingeringHidden(viewId));
+    this._applyFeedbackPref(this._resolveFeedbackHidden(viewId));
 
     // Seed the breadcrumb. A module with internal levels (e.g. Sight-Reading)
     // overrides this with a deeper trail via ctx.nav during _enterView.
@@ -1348,7 +1395,7 @@ class KeyMasterApp {
       const cta = this.root.querySelector('#learn-cta');
       if (cta) cta.textContent = started ? 'Continue the Foundation Course' : 'Start the Foundation Course';
       set('#course-hero-title', started ? 'Continue the Foundation Course' : COURSE_NAME);
-      import('./foundations.js?v=rc2-219').then((F) => {
+      import('./foundations.js?v=rc2-222').then((F) => {
         const name = (typeof getDisplayName === 'function' && getDisplayName()) || F.LEARNER_NAME || '';
         set('#hero-greeting', F.greetingFor(new Date(), name));
         const steps = Array.isArray(F.LEARN_STEPS) ? F.LEARN_STEPS : [];

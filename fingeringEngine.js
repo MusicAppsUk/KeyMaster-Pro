@@ -74,6 +74,76 @@ const MAJOR_FINGERINGS = Object.freeze({
   Gb: entry([2, 3, 4, 1, 2, 3, 1, 2], [4, 3, 2, 1, 3, 2, 1, 4], true,  true),
 });
 
+/**
+ * HARMONIC MINOR FINGERINGS — rc2-221.
+ *
+ * Harmonic minor is the minor form the standard scale manuals teach, so this
+ * table covers all twelve keys in their conventional minor spellings (D sharp
+ * minor is written as E flat minor, as the books do).
+ *
+ * HOW THESE WERE PRODUCED — this matters, so it is recorded here rather than in
+ * a commit message. They were NOT written from memory. An earlier hand-written
+ * draft got the left hand wrong, which is exactly the sort of error that teaches
+ * a habit a learner then has to unlearn. Instead `tools/derive-fingering.mjs`
+ * derives them from four rules:
+ *
+ *   R1  the thumb plays only white keys;
+ *   R2  thumbs fall twice per octave, splitting the seven degrees 3 + 4;
+ *   R3  of the legal splits, the right hand takes the earliest and the left hand
+ *       the one anchored on the tonic (or the latest, if the tonic is black);
+ *   R4  the thumb is each hand's inner edge, so the outermost note of the scale
+ *       — the top for the right hand, the bottom for the left — is never a thumb.
+ *
+ * That tool then PROVES the rules by regenerating all 13 major keys x 2 hands
+ * already verified above. It reproduces 26 of 26 exactly, and its multi-octave
+ * join agrees with a first-principles derivation at 2, 3 and 4 octaves. If a
+ * single pattern failed, the tool exits non-zero and no minor fingering ships.
+ *
+ * STATUS, AND WHAT THE LEARNER SEES
+ *   'verified'  checked against a method book. Shown with no caveat.
+ *   'derived'   rule-engine output, gate-passed. Shown WITH a one-line note
+ *               saying it has not been book-checked yet.
+ *   'none'      no candidate at all. Notes only, no finger numbers.
+ *
+ * Promoting a key to 'verified' is a one-word edit once it has been checked.
+ * The two keys worth checking first are E flat and B flat minor: the no-thumb-
+ * on-black-key rule leaves them exactly one legal split, where some editions
+ * relax the rule instead.
+ *
+ * TABLE BELOW IS MACHINE-GENERATED — regenerate with:
+ *   node tools/derive-fingering.mjs --js
+ */
+const HARMONIC_MINOR_FINGERINGS = Object.freeze({
+  //          RH ascending                LH ascending             chain  status
+  A:    minorEntry([1, 2, 3, 1, 2, 3, 4, 5], [5, 4, 3, 2, 1, 3, 2, 1], true, 'derived'), // A B C D E F G#
+  E:    minorEntry([1, 2, 3, 1, 2, 3, 4, 5], [5, 4, 3, 2, 1, 3, 2, 1], true, 'derived'), // E F# G A B C D#
+  B:    minorEntry([1, 2, 3, 1, 2, 3, 4, 5], [4, 3, 2, 1, 4, 3, 2, 1], true, 'derived'), // B C# D E F# G A#
+  'F#': minorEntry([3, 4, 1, 2, 3, 1, 2, 3], [4, 3, 2, 1, 3, 2, 1, 4], true, 'derived'), // F# G# A B C# D E#
+  'C#': minorEntry([3, 4, 1, 2, 3, 1, 2, 3], [3, 2, 1, 4, 3, 2, 1, 3], true, 'derived'), // C# D# E F# G# A B#
+  'G#': minorEntry([3, 4, 1, 2, 3, 1, 2, 3], [3, 2, 1, 4, 3, 2, 1, 3], true, 'derived'), // G# A# B C# D# E Fx
+  'Eb': minorEntry([3, 1, 2, 3, 4, 1, 2, 3], [2, 1, 4, 3, 2, 1, 3, 2], true, 'derived'), // Eb F Gb Ab Bb Cb D
+  'Bb': minorEntry([4, 1, 2, 3, 1, 2, 3, 4], [2, 1, 3, 2, 1, 4, 3, 2], true, 'derived'), // Bb C Db Eb F Gb A
+  F:    minorEntry([1, 2, 3, 4, 1, 2, 3, 4], [5, 4, 3, 2, 1, 3, 2, 1], true, 'derived'), // F G Ab Bb C Db E
+  C:    minorEntry([1, 2, 3, 1, 2, 3, 4, 5], [5, 4, 3, 2, 1, 3, 2, 1], true, 'derived'), // C D Eb F G Ab B
+  G:    minorEntry([1, 2, 3, 1, 2, 3, 4, 5], [5, 4, 3, 2, 1, 3, 2, 1], true, 'derived'), // G A Bb C D Eb F#
+  D:    minorEntry([1, 2, 3, 1, 2, 3, 4, 5], [5, 4, 3, 2, 1, 3, 2, 1], true, 'derived'), // D E F G A Bb C#
+});
+
+/** The twelve minor keys in the spellings the scale manuals use, book order. */
+export const MINOR_KEY_ORDER = Object.freeze(
+  ['A', 'E', 'B', 'F#', 'C#', 'G#', 'Eb', 'Bb', 'F', 'C', 'G', 'D'],
+);
+
+/** Normalised entry for a minor-scale fingering, carrying its own status. */
+function minorEntry(rh, lh, chainable, status) {
+  return Object.freeze({
+    RH: rh ? Object.freeze(rh.slice()) : null,
+    LH: lh ? Object.freeze(lh.slice()) : null,
+    chainable: Object.freeze({ RH: chainable, LH: chainable }),
+    status: status || 'none',
+  });
+}
+
 /** Normalised entry shape. */
 function entry(rh, lh, rhChainable, lhChainable) {
   return Object.freeze({
@@ -226,4 +296,172 @@ function parseTonic(name) {
 }
 
 /** Exposed for tests / tooling. */
-export const _internal = { MAJOR_FINGERINGS, chainFingers };
+/**
+ * Produce fingering for a HARMONIC MINOR scale.
+ *
+ * Contract difference from majorFingering: the result carries a `status` of
+ * 'verified', 'derived' or 'none'.
+ *
+ *   'verified' — book-checked. `reviewed: true`, no note.
+ *   'derived'  — produced by the gate-passing rule engine. Fingers ARE returned,
+ *                `reviewed: false`, and `note` says plainly that it has not been
+ *                book-checked. Callers should show the fingering AND the note.
+ *   'none'     — no candidate. `finger: null` throughout, notes only.
+ *
+ * @param {string} tonicName   Canonical tonic, e.g. "A", "F#".
+ * @param {'RH'|'LH'} hand
+ * @param {Object} [opts]      Same options as majorFingering.
+ * @returns {FingeringResult & { status: 'verified'|'derived'|'none' }}
+ */
+export function harmonicMinorFingering(tonicName, hand, opts = {}) {
+  const key = canonicalTonic(tonicName);
+  const record = HARMONIC_MINOR_FINGERINGS[key];
+  if (hand !== 'RH' && hand !== 'LH') {
+    throw new RangeError(`harmonicMinorFingering: hand must be 'RH' or 'LH', got "${hand}"`);
+  }
+
+  const octaves = Math.max(1, opts.octaves ?? 1);
+  const startOctave = opts.startOctave ?? 4;
+  const scale = buildScale(parseTonic(key), 'harmonic_minor');
+
+  const midis = [];
+  for (let o = 0; o < octaves; o++) midis.push(...scale.midiAt(startOctave + o));
+  midis.push(scale.midiAt(startOctave + octaves)[0]);
+
+  const withoutFingers = (why) => {
+    const notes = midis.map((midi, i) => ({ midi, degree: (i % 7) + 1, finger: null }));
+    if (opts.descending) notes.reverse();
+    return { hand, notes, reviewed: false, status: 'none', note: why };
+  };
+
+  if (!record || !record[hand] || record.status === 'none') {
+    return withoutFingers(
+      `${key} harmonic minor (${hand}) has no fingering on file yet — practising ` +
+      `on notes only. The pitches are correct.`,
+    );
+  }
+
+  const pattern = record[hand];
+  let fingers;
+  if (octaves === 1) {
+    fingers = pattern.slice();
+  } else if (record.chainable[hand]) {
+    fingers = chainFingers(pattern, hand, octaves);
+  } else {
+    return withoutFingers(
+      `${key} harmonic minor (${hand}) has no checked multi-octave join — ` +
+      `practising on notes only.`,
+    );
+  }
+
+  const notes = midis.map((midi, i) => ({ midi, degree: (i % 7) + 1, finger: fingers[i] }));
+  if (opts.descending) notes.reverse();
+
+  if (record.status === 'verified') {
+    return { hand, notes, reviewed: true, status: 'verified' };
+  }
+  return {
+    hand,
+    notes,
+    reviewed: false,
+    status: 'derived',
+    note: 'Fingering derived from the standard scale rules — not yet checked against a method book.',
+  };
+}
+
+/* --------------------------------------------------------------------------- *
+ * CHROMATIC — rc2-222
+ * --------------------------------------------------------------------------- */
+
+const BLACK_PC = Object.freeze(new Set([1, 3, 6, 8, 10]));
+const isBlackKey = (midi) => BLACK_PC.has((((midi % 12) + 12) % 12));
+
+/**
+ * Chromatic fingering, as a rule rather than a table.
+ *
+ * Unlike the diatonic scales, the chromatic fingering is a property of the
+ * KEYBOARD, not of the key: the finger a note takes depends only on whether it
+ * and its neighbour are black or white, so it is identical from all twelve
+ * starting notes. Storing twelve tables of thirteen numbers would be twelve
+ * chances to mistype the same fact.
+ *
+ * The rules:
+ *   R1  every black key takes the 3rd finger;
+ *   R2  every white key takes the thumb — except where two white keys are
+ *       adjacent, which in a chromatic scale happens only at E-F and B-C. That
+ *       pair cannot take the thumb twice running, so one of them takes the 2nd;
+ *   R3  which one is decided by the hand. The thumb is each hand's inner edge,
+ *       so the RIGHT hand gives the 2nd finger to the UPPER note of the pair and
+ *       the LEFT hand to the LOWER one;
+ *   R4  the first note of the scale has nothing before it and the last has
+ *       nothing after it, so a white note at either end simply takes the thumb.
+ *
+ * Starting on C this produces the familiar
+ *   RH  1 3 1 3 1 2 3 1 3 1 3 1 2
+ *   LH  1 3 1 3 2 1 3 1 3 1 3 2 1
+ * and the same shape, rotated, from every other note.
+ *
+ * @param {string} tonicName   Starting note, e.g. "C", "Eb", "F#".
+ * @param {'RH'|'LH'} hand
+ * @param {Object} [opts]      { octaves, startOctave, descending }
+ * @returns {FingeringResult & { status: 'derived' }}
+ */
+export function chromaticFingering(tonicName, hand, opts = {}) {
+  const key = canonicalTonic(tonicName);
+  if (hand !== 'RH' && hand !== 'LH') {
+    throw new RangeError(`chromaticFingering: hand must be 'RH' or 'LH', got "${hand}"`);
+  }
+  const octaves = Math.max(1, opts.octaves ?? 1);
+  const startOctave = opts.startOctave ?? 4;
+  const scale = buildScale(parseTonic(key), 'chromatic');
+
+  const midis = [];
+  for (let o = 0; o < octaves; o++) midis.push(...scale.midiAt(startOctave + o));
+  midis.push(scale.midiAt(startOctave + octaves)[0]);
+
+  const fingers = chromaticFingers(midis, hand);
+  const notes = midis.map((midi, i) => ({ midi, degree: (i % 12) + 1, finger: fingers[i] }));
+  if (opts.descending) notes.reverse();
+
+  return {
+    hand,
+    notes,
+    reviewed: false,
+    status: 'derived',
+    note: 'Fingering derived from the standard scale rules — not yet checked against a method book.',
+  };
+}
+
+/**
+ * The rule itself, split out so tooling can exercise it directly.
+ * @param {number[]} midis  Consecutive semitones, ascending.
+ * @param {'RH'|'LH'} hand
+ * @returns {number[]}
+ */
+function chromaticFingers(midis, hand) {
+  return midis.map((m, i) => {
+    if (isBlackKey(m)) return 3;                                  // R1
+    if (hand === 'RH') {
+      const prev = midis[i - 1];                                  // R3 / R4
+      return (prev != null && !isBlackKey(prev)) ? 2 : 1;
+    }
+    const next = midis[i + 1];
+    return (next != null && !isBlackKey(next)) ? 2 : 1;
+  });
+}
+
+/** Review state of every harmonic-minor key, for tooling and check sheets. */
+export function harmonicMinorStatus() {
+  const out = {};
+  for (const [k, r] of Object.entries(HARMONIC_MINOR_FINGERINGS)) out[k] = r.status;
+  return out;
+}
+
+/** Which harmonic-minor keys have been checked against a method book. */
+export function verifiedHarmonicMinorKeys() {
+  return Object.entries(HARMONIC_MINOR_FINGERINGS)
+    .filter(([, r]) => r.status === 'verified' && r.RH && r.LH)
+    .map(([k]) => k);
+}
+
+export const _internal = { MAJOR_FINGERINGS, HARMONIC_MINOR_FINGERINGS, chainFingers, chromaticFingers, isBlackKey };

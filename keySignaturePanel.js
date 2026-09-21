@@ -42,6 +42,10 @@ function diaOf(name) {
  * @returns {{ kind:'sharp'|'flat'|'none', count:number, letters:string[] }}
  */
 export function keySignature(tonic, type) {
+  // rc2-222: a chromatic scale belongs to no key. Without this it would inherit
+  // its starting note's signature — an E flat chromatic drawn with three flats,
+  // which would then suppress the very accidentals that make it chromatic.
+  if (/chromatic/i.test(type || '')) return { kind: 'none', count: 0, letters: [] };
   const letter = tonic[0].toUpperCase();
   const acc = tonic.slice(1);
   const accVal = acc === '#' ? 1 : acc === 'b' ? -1 : acc === 'x' ? 2 : acc === 'bb' ? -2 : 0;

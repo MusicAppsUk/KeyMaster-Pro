@@ -23,7 +23,7 @@
 // factory: createView({ mount, store, keyboard, viewport, synth, scheduler,
 // metronome }) → { enter(), exit(), destroy() }.
 
-import { majorFingering } from './fingeringEngine.js';
+import { majorFingering, harmonicMinorFingering, chromaticFingering } from './fingeringEngine.js';
 import { buildScale } from './scaleEngine.js';
 import { unlockAudio, perfToContextTime } from './audioContext.js';
 import { createStaffView } from './staffView.js';
@@ -33,12 +33,48 @@ import { createKeySignaturePanel, keySignature } from './keySignaturePanel.js';
 import { WHY_B_MAJOR_HTML } from './infoCopy.js';
 import { EventBridge } from './eventBridge.js';
 
-const KEYS = ['C', 'G', 'D', 'A', 'E', 'B', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'F#'];
+// rc2-221: the key list now follows the scale type, as the scale manuals do.
+// Major keys are spelled as major keys; minor keys as minor keys — so the minor
+// list carries C sharp and G sharp minor (which have no major counterpart here)
+// and writes D sharp minor as E flat minor, which is how it is normally played.
+const MAJOR_KEYS = ['C', 'G', 'D', 'A', 'E', 'B', 'F', 'Bb', 'Eb', 'Ab', 'Db', 'F#'];
+const MINOR_KEYS = ['A', 'E', 'B', 'F#', 'C#', 'G#', 'Eb', 'Bb', 'F', 'C', 'G', 'D'];
+// rc2-222: the chromatic scale has no key — it is the same twelve notes wherever
+// you begin. So its list is simply the twelve starting notes in pitch order, and
+// the control above it is relabelled from "Key" to "Start note".
+const CHROMATIC_KEYS = ['C', 'C#', 'D', 'Eb', 'E', 'F', 'F#', 'G', 'Ab', 'A', 'Bb', 'B'];
+/** Every tonic the module can build, for persistence checks. */
+const KEYS = [...new Set([...MAJOR_KEYS, ...MINOR_KEYS, ...CHROMATIC_KEYS])];
+function keysForType(type) {
+  if (type === 'major') return MAJOR_KEYS;
+  if (type === 'chromatic') return CHROMATIC_KEYS;
+  return MINOR_KEYS;
+}
+function keyFieldLabel(type) { return type === 'chromatic' ? 'Start note' : 'Key'; }
+/**
+ * Switching between major and minor may leave the current tonic off the new
+ * list (C sharp has no major entry; A flat has no minor one). Fall back to the
+ * same-sounding key rather than resetting the learner to the top of the list.
+ */
+// The three lists overlap almost completely, so only four tonics ever need a
+// swap: D flat and C sharp, and A flat and G sharp. Every other spelling appears
+// on whichever list you are moving to.
+const TONIC_SWAP = Object.freeze({
+  'C#': 'Db', Db: 'C#', 'G#': 'Ab', Ab: 'G#', 'D#': 'Eb', Gb: 'F#',
+});
+function reconcileTonic(tonic, type) {
+  const list = keysForType(type);
+  if (list.includes(tonic)) return tonic;
+  const swapped = TONIC_SWAP[tonic];
+  if (swapped && list.includes(swapped)) return swapped;
+  return list[0];
+}
 const TYPES = [
   ['major', 'Major'],
   ['natural_minor', 'Natural minor'],
   ['harmonic_minor', 'Harmonic minor'],
   ['melodic_minor', 'Melodic minor'],
+  ['chromatic', 'Chromatic'],
 ];
 // --- Register centring -------------------------------------------------------
 // Place the RH tonic in whichever octave puts it CLOSEST to Middle C (C4 = MIDI
@@ -66,6 +102,35 @@ function rhBaseOctave(tonicName) {
 function baseOctaveFor(hand, tonicName) {
   const rh = rhBaseOctave(tonicName);
   return hand === 'LH' ? rh - 1 : rh;        // hands stay one octave apart
+}
+
+/**
+ * rc2-221 — SPELL THE STAFF FROM THE SCALE, NOT FROM A PITCH-CLASS TABLE.
+ *
+ * The staff used to name each note with noteName(midi, {accidental: 'sharp'|
+ * 'flat'}), which looks the pitch up in a twelve-entry table. That is right for
+ * most keys and wrong for every scale whose spelling crosses a letter boundary,
+ * because it picks the letter by sound rather than by degree:
+ *
+ *   • F sharp major's seventh is E sharp. The table returned F, so the note was
+ *     drawn on the F space — and under a six-sharp key signature an F space
+ *     reads as F sharp, a semitone above what was actually sounding. A wrong
+ *     note on the page, in one of the twelve keys already on the menu.
+ *   • E flat minor's sixth is C flat and G sharp minor's seventh is F double
+ *     sharp; both were drawn a staff position out for the same reason.
+ *
+ * The scale already knows its own spelling — that is what scaleEngine exists
+ * for, and it is what the note readout underneath has always shown. This maps a
+ * step back to its degree and takes the letter and accidental from there, then
+ * solves for the scientific octave that puts that spelling on the step's actual
+ * pitch. Returns null if a step has no degree, so callers can fall back.
+ */
+function spelledStaffName(scale, step) {
+  if (!step || !Number.isInteger(step.degree)) return null;
+  const d = scale.degrees[(step.degree - 1) % scale.degrees.length];
+  if (!d || LETTER_PC[d.letter] == null) return null;
+  const octave = Math.round((step.midi - LETTER_PC[d.letter] - d.accidental) / 12) - 1;
+  return `${d.name}${octave}`;
 }
 
 const CLEAN_RUN_ACCURACY = 0.9; // threshold to unlock the Tempo Climb
@@ -129,8 +194,15 @@ export default function createView(ctx) {
   // ONE ascending pass for a given hand: tonic→tonic, with fingering (majors).
   function buildHandAsc(hand) {
     const steps = [];
-    if (sel.type === 'major') {
-      const f = majorFingering(sel.tonic, hand, {
+    // rc2-221: major and harmonic minor both come from the fingering engine.
+    // Major fingerings are book-verified and show silently. Harmonic minor
+    // fingerings are derived by a rule engine that reproduces all 26 verified
+    // major patterns exactly (tools/derive-fingering.mjs) — they are shown, but
+    // with a line saying they have not been checked against a method book yet.
+    // A key with no candidate at all returns finger: null and practises on notes.
+    const FINGERED = { major: majorFingering, harmonic_minor: harmonicMinorFingering, chromatic: chromaticFingering };
+    if (FINGERED[sel.type]) {
+      const f = FINGERED[sel.type](sel.tonic, hand, {
         octaves: sel.octaves, startOctave: baseOctaveFor(hand, sel.tonic),
       });
       f.notes.forEach((n) => steps.push({ midi: n.midi, finger: n.finger, degree: n.degree }));
@@ -143,7 +215,7 @@ export default function createView(ctx) {
       }
       steps.push({ midi: scale.midiAt(baseOctaveFor(hand, sel.tonic) + sel.octaves)[0], finger: null, degree: 1 });
       if (hand === primaryHand()) ui.fingerNote.textContent =
-        'Fingering for minor scales is pending verification — practising on notes only.';
+        'Fingering for this scale form is pending verification — practising on notes only.';
     }
     return steps;
   }
@@ -202,11 +274,13 @@ export default function createView(ctx) {
 
     // Mirror onto the permanent compact staff. Both-Hands → grand-staff chords.
     const pref = scale.degrees.some((d) => d.name.includes('b')) ? 'flat' : 'sharp';
-    const primaryNames = cols.map((col) => noteName(primaryOf(col).midi, { accidental: pref }));
+    const nameOf = (step) => spelledStaffName(scale, step)
+      ?? noteName(step.midi, { accidental: pref });
+    const primaryNames = cols.map((col) => nameOf(primaryOf(col)));
     const primaryFingers = cols.map((col) => primaryOf(col).finger);
     let lowerNames = null, lowerFingers = null;
     if (sel.hand === 'Both') {
-      lowerNames = cols.map((col) => noteName(lowerOf(col).midi, { accidental: pref }));
+      lowerNames = cols.map((col) => nameOf(lowerOf(col)));
       lowerFingers = cols.map((col) => lowerOf(col)?.finger ?? null);
     }
     const grand = sel.hand === 'Both';
@@ -247,11 +321,13 @@ export default function createView(ctx) {
     // only: no expected notes are set, so nothing is scored.
     const scale = buildScale(parseTonic(sel.tonic), sel.type);
     const pref = scale.degrees.some((d) => d.name.includes('b')) ? 'flat' : 'sharp';
-    const primaryNames = cols.map((col) => noteName(primaryOf(col).midi, { accidental: pref }));
+    const nameOf = (step) => spelledStaffName(scale, step)
+      ?? noteName(step.midi, { accidental: pref });
+    const primaryNames = cols.map((col) => nameOf(primaryOf(col)));
     const primaryFingers = cols.map((col) => primaryOf(col).finger);
     let lowerNames = null, lowerFingers = null;
     if (sel.hand === 'Both') {
-      lowerNames = cols.map((col) => noteName(lowerOf(col).midi, { accidental: pref }));
+      lowerNames = cols.map((col) => nameOf(lowerOf(col)));
       lowerFingers = cols.map((col) => lowerOf(col)?.finger ?? null);
     }
     const grand = sel.hand === 'Both';
@@ -593,7 +669,9 @@ export default function createView(ctx) {
     root.innerHTML = `<p class="vector__eyebrow">01 — Technique</p>`;
 
     const bar = el('div', { class: 'smc__bar' });
-    const keySel = select(KEYS.map((k) => [k, displayTonic(k)]), sel.tonic);
+    const keySel = select(keysForType(sel.type).map((k) => [k, displayTonic(k)]), sel.tonic);
+    const keyField = labeled(keyFieldLabel(sel.type), keySel);
+    const keyFieldText = keyField.querySelector('.smc__fieldlabel');
     const typeSel = select(TYPES, sel.type);
     const handSel = select([['RH', 'Right hand'], ['LH', 'Left hand'], ['Both', 'Both hands']], sel.hand);
     const octSel = select([['1', '1 octave'], ['2', '2 octaves']], String(sel.octaves));
@@ -609,7 +687,7 @@ export default function createView(ctx) {
     metro.checked = sel.metro;        // default ON
     metroWrap.append(metro, document.createTextNode(' Practice metronome'));
     bar.append(
-      labeled('Key', keySel), labeled('Scale', typeSel),
+      keyField, labeled('Scale', typeSel),
       labeled('Hand', handSel), labeled('Range', octSel), updownWrap, fingerWrap, metroWrap,
       keySig.el,
     );
@@ -706,13 +784,20 @@ export default function createView(ctx) {
 
     root.append(controls, stage);
 
-    return { root, keySel, typeSel, handSel, octSel, updown, fingerToggle, metro,
+    return { root, keySel, keyFieldText, typeSel, handSel, octSel, updown, fingerToggle, metro,
              notesLine, fingerNote, listenBtn, practiceBtn, stopBtn, reviewBtn, tempo, tempoVal, status, metrics, climb };
   }
 
   function wireControls() {
     ui.keySel.addEventListener('change', () => { sel.tonic = ui.keySel.value; reset(); });
-    ui.typeSel.addEventListener('change', () => { sel.type = ui.typeSel.value; reset(); });
+    ui.typeSel.addEventListener('change', () => {
+      sel.type = ui.typeSel.value;
+      // rc2-221: major and minor offer different key lists, so repopulate and
+      // carry the learner across to the same-sounding key where one exists.
+      sel.tonic = reconcileTonic(sel.tonic, sel.type);
+      repopulateKeys();
+      reset();
+    });
     ui.handSel.addEventListener('change', () => { sel.hand = ui.handSel.value; reset(); });
     ui.octSel.addEventListener('change', () => { sel.octaves = Number(ui.octSel.value); reset(); });
     ui.updown.addEventListener('change', () => { sel.updown = ui.updown.checked; reset(); });
@@ -847,10 +932,33 @@ export default function createView(ctx) {
   };
 
   function syncControls() {
+    sel.tonic = reconcileTonic(sel.tonic, sel.type);
+    repopulateKeys();
     ui.keySel.value = sel.tonic; ui.typeSel.value = sel.type;
     ui.handSel.value = sel.hand; ui.octSel.value = String(sel.octaves);
     ui.updown.checked = sel.updown;
     ui.metro.checked = sel.metro;
+  }
+
+  /**
+   * Rebuild the Key dropdown for the current scale type, preserving the chosen
+   * tonic. Only touches the DOM when the list actually differs, so reopening the
+   * view does not churn the control.
+   */
+  function repopulateKeys() {
+    if (ui.keyFieldText) ui.keyFieldText.textContent = keyFieldLabel(sel.type);
+    const want = keysForType(sel.type);
+    const have = Array.from(ui.keySel.options).map((o) => o.value);
+    if (have.length === want.length && have.every((v, i) => v === want[i])) {
+      ui.keySel.value = sel.tonic;
+      return;
+    }
+    ui.keySel.replaceChildren(...want.map((k) => {
+      const o = document.createElement('option');
+      o.value = k; o.textContent = displayTonic(k);
+      return o;
+    }));
+    ui.keySel.value = sel.tonic;
   }
 }
 
@@ -1050,3 +1158,9 @@ function injectStyles() {
   `;
   document.head.appendChild(s);
 }
+
+/**
+ * Exposed for tooling only (tools/check-scales-masterclass.mjs). Not used by the
+ * app at runtime — the view closes over these directly.
+ */
+export const _internal = { MAJOR_KEYS, MINOR_KEYS, CHROMATIC_KEYS, KEYS, keysForType, keyFieldLabel, reconcileTonic, spelledStaffName };

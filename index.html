@@ -38,9 +38,9 @@
 
   <!-- Separated styling layers (theme tokens first, then component sheets). -->
   <link rel="stylesheet" href="theme.css?v=rc2-127" />
-  <link rel="stylesheet" href="keyboard.css?v=rc2-127" />
-  <link rel="stylesheet" href="notation.css?v=rc2-127" />
-  <link rel="stylesheet" href="cockpit.css?v=rc2-210" />
+  <link rel="stylesheet" href="keyboard.css?v=rc2-222" />
+  <link rel="stylesheet" href="notation.css?v=rc2-222" />
+  <link rel="stylesheet" href="cockpit.css?v=rc2-222" />
 
   <!-- The only inline style: hide the shell until the app flips data-boot,
        preventing an unstyled flash before the module graph resolves. -->
@@ -80,6 +80,7 @@
 
         <button type="button" class="btn btn--ghost" data-action="toggle-keyboard" aria-pressed="false">⌨ Hide Keyboard</button>
         <button type="button" class="btn btn--ghost" data-action="toggle-fingering" aria-pressed="false" aria-label="Show or hide fingering numbers">① Hide Fingering</button>
+        <button type="button" class="btn btn--ghost" data-action="toggle-feedback" aria-pressed="false" aria-label="Show or hide the green and red correct-note colours">● Hide Feedback</button>
         <button type="button" class="btn btn--ghost" data-action="fullscreen" aria-label="Toggle full screen">⛶ Full Screen</button>
         <button type="button" class="btn btn--ghost" data-action="exit" aria-label="Exit full screen or return to dashboard">⤓ Exit</button>
 
@@ -391,7 +392,7 @@
 
   <!-- Single module entry point. Absolute path so it resolves regardless of
        the route in the hash. -->
-  <script type="module" src="app.js?v=rc2-219"></script>
+  <script type="module" src="app.js?v=rc2-222"></script>
   <script defer src="cockpitUI.js?v=rc2-155"></script>
 </body>
 </html>
