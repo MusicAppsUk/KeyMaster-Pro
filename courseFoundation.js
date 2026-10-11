@@ -484,10 +484,10 @@ export const FOUNDATION_STEPS = [
   },
   {
     eyebrow: 'Looking ahead', title: 'Chords come next', id: 'bridge-chords',
-    explain: ['You sounded your first chord \u2014 three notes ringing together.', 'Chords have their own stage further on in the Course. For extra practice any time, the Chord Masterclass is always open.'],
+    explain: ['You sounded your first chord \u2014 three notes ringing together.', 'Chords have their own stage further on in the Course. For extra practice any time, the Harmony Masterclass is always open.'],
     show: { kind: 'keys', midis: [60, 64, 67], caption: 'Chords are built from stacked notes.' },
     demo: [60, 64, 67], demoGap: 0.08, mode: 'none',
-    bridge: { label: 'For extra chord practice, open Chord Masterclass', hash: '#/chords' },
+    bridge: { label: 'For extra chord practice, open the Harmony Masterclass', hash: '#/chords' },
     autoNext: 3200,
   },
   {

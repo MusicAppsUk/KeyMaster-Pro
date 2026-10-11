@@ -135,7 +135,7 @@ export const COURSE_CHAPTERS = [
     intro: 'A calmer piece built from question and answer \u2014 the phrase-shape at the heart of almost all real music. The doorway into repertoire proper.' },
   { course: 'keymaster', stage: 2, name: 'The Quaver', ids: ['kl2-quaver-hear', 'kl2-quaver-see', 'kl2-quaver-count', 'kl2-quaver-descend'],
     intro: 'Notes faster than the beat \u2014 two to a beat, joined by a beam. Heard first, counted aloud, then played.' },
-  { course: 'keymaster', stage: 2, name: 'First Light', ids: ['kl2-firstlight-listen', 'kl2-firstlight-a', 'kl2-firstlight-perform'],
+  { course: 'keymaster', stage: 2, name: 'Skylark', ids: ['kl2-firstlight-listen', 'kl2-firstlight-a', 'kl2-firstlight-perform'],
     intro: 'The first piece that moves at two speeds \u2014 steady notes with quicker ones woven through, shaped by quiet and strong.' },
   { course: 'keymaster', stage: 2, name: 'Black Keys & F sharp', ids: ['kl2-blackkeys-see', 'kl2-fsharp-meet', 'kl2-fsharp-sign'],
     intro: 'The pattern of black keys, and the first one you will play from notation \u2014 F sharp, and the sign that raises it.' },

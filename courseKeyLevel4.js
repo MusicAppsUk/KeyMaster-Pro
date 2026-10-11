@@ -133,7 +133,7 @@ export const KEY_LEVEL4_STEPS = [
   {
     eyebrow: 'KeyMaster Course · Key Level 4', title: 'Play the held bass', id: 'kl4-held-play',
     say: [
-      { text: 'Now you. Left thumb— no, little finger — on the low G. Press it once, and leave it down. Then let the right hand walk up: G, A, B.', pauseAfter: 720, tone: 'warm' },
+      { text: 'Now you. Left little finger on the low G. Press it once, and leave it down. Then let the right hand walk up: G, A, B.', pauseAfter: 720, tone: 'warm' },
       { text: 'If the bass note stops early, nothing is broken. Just notice it, and hold a little longer next time.', pauseAfter: 440, tone: 'warm' },
     ],
     explain: ['Left little finger on the low G: press once and hold for all three beats. Right hand then walks up G, A, B — one note per beat.', 'Listen for the bass still sounding underneath as the third right-hand note arrives. That overlap is the sound of two independent parts.'],

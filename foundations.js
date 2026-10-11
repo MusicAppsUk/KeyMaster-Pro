@@ -30,21 +30,21 @@ import { VOICE_PACK } from './voicePackData.js?v=rc2-191';
 import { STAGES } from './courseMap.js?v=rc2-83';
 import { createLearnOverlay } from './learnOverlay.js?v=rc2-108';
 import { buildHandSvg, setHandHighlight, FINGER_NAMES } from './handViz.js?v=rc2-81';
-import { buildStaff, flashPlayed } from './staffViz.js?v=rc2-229';
+import { buildStaff, flashPlayed } from './staffViz.js?v=rc2-231';
 import { createCourseVoice } from './courseVoice.js?v=rc2-105';
-import { FOUNDATION_STEPS } from './courseFoundation.js?v=rc2-136';
+import { FOUNDATION_STEPS } from './courseFoundation.js?v=rc2-231';
 import { STAGE1_MAKING_STEPS } from './courseStage1Making.js?v=rc2-136';
 import { STAGE2_READING_STEPS } from './courseStage2Reading.js?v=rc2-136';
 import { STAGE3_TWOHANDS_STEPS } from './courseStage3TwoHands.js?v=rc2-136';
 import { KEY_LEVEL1_STEPS } from './courseKeyLevel1.js?v=rc2-218';
-import { KEY_LEVEL2_STEPS } from './courseKeyLevel2.js?v=rc2-229';
-import { KEY_LEVEL3_STEPS } from './courseKeyLevel3.js?v=rc2-229';
-import { KEY_LEVEL4_STEPS } from './courseKeyLevel4.js?v=rc2-229';
-import { KEY_LEVEL5_STEPS } from './courseKeyLevel5.js?v=rc2-229';
-import { KEY_LEVEL6_STEPS } from './courseKeyLevel6.js?v=rc2-229';
-import { KEY_LEVEL7_STEPS } from './courseKeyLevel7.js?v=rc2-229';
-import { KEY_LEVEL8_STEPS } from './courseKeyLevel8.js?v=rc2-229';
-import { COURSE_CHAPTERS } from './courseChapters.js?v=rc2-229';
+import { KEY_LEVEL2_STEPS } from './courseKeyLevel2.js?v=rc2-231';
+import { KEY_LEVEL3_STEPS } from './courseKeyLevel3.js?v=rc2-231';
+import { KEY_LEVEL4_STEPS } from './courseKeyLevel4.js?v=rc2-231';
+import { KEY_LEVEL5_STEPS } from './courseKeyLevel5.js?v=rc2-231';
+import { KEY_LEVEL6_STEPS } from './courseKeyLevel6.js?v=rc2-231';
+import { KEY_LEVEL7_STEPS } from './courseKeyLevel7.js?v=rc2-231';
+import { KEY_LEVEL8_STEPS } from './courseKeyLevel8.js?v=rc2-231';
+import { COURSE_CHAPTERS } from './courseChapters.js?v=rc2-231';
 
 const NOTE_NAMES = ['C', 'C\u266F', 'D', 'D\u266F', 'E', 'F', 'F\u266F', 'G', 'G\u266F', 'A', 'A\u266F', 'B'];
 const pcOf = (m) => ((m % 12) + 12) % 12;
@@ -69,7 +69,10 @@ const B_MAJOR_SHARPS = [66, 61, 68, 63, 70];
 // learning memory ONLY and must never carry personal data, so the name is NOT
 // persisted. Production will read a preferred display name from a profile hook
 // (welcomeExperience.getDisplayName is the natural future home).
-export const LEARNER_NAME = 'Tim';
+// rc2-230: no learner name is built in. Jack's recorded greetings named the product
+// owner, so every buyer would have been greeted as "Tim". A display name, if the
+// learner gives one, comes from welcomeExperience.getDisplayName().
+export const LEARNER_NAME = '';
 
 // Time-of-day greeting from local device time. Pure + exported for headless tests.
 export function greetingFor(date, name) {
@@ -385,9 +388,9 @@ export default function createView(ctx) {
   // text. Status is reported as 'temporary' and logged "Jack voice: temporary device
   // voice". The approved recorded voice (voice/en-GB/*.mp3 + re-enabling setPack above)
   // takes over automatically the instant it ships (recorded file -> temporary TTS -> text).
-  const TTS_DEV_FALLBACK = true;
+  const TTS_DEV_FALLBACK = false;   // rc2-230: off. Jack is recorded MP3s only; a missing line shows as a caption.
   // Build token — visible in the Voice Self-Test (#voice-test) and on window.__kmBuild.
-  const KM_BUILD = 'rc2-229';
+  const KM_BUILD = 'rc2-231';
 try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {}).foundations = KM_BUILD; } catch (_) { /* no-op */ }
   // Jack's audio goes through ONE central controller (voiceControl.js): a single
   // narration authority that guarantees one active playback and ignores duplicate
@@ -404,6 +407,8 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   // PREMIUM_VOICE_READY to true once the files in VOICE_SCRIPT.md are recorded and
   // dropped into voice/en-GB/. (Full script + delivery brief: VOICE_SCRIPT.md.)
   const PREMIUM_VOICE_READY = true;
+  // rc2-230: flip to true only when greeting.back.* are re-recorded without a learner name.
+  const NAMELESS_GREETINGS_RECORDED = false;
   // Full code-matched voice pack (every spoken line ID -> local MP3), imported from
   // voicePackData.js — generated from the course script so IDs always match.
   // Recorded voice pack DELIBERATELY NOT loaded: the voice/en-GB/*.mp3 files do not
@@ -412,7 +417,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
   // mute even with TTS on, because the TTS fallback only fires when there is NO mapped
   // URL. With no pack, every line goes straight to the TTS fallback and Jack speaks.
   // Re-enable this line the moment the recordings ship (premium files then auto-play).
-  if (audio && PREMIUM_VOICE_READY) audio.setPack(VOICE_PACK, 'en-GB');   // rc2-194: approved recorded Jack pack enabled (Course tries MP3 first; missing line -> strict male TTS -> text)
+  if (audio && PREMIUM_VOICE_READY) audio.setPack(VOICE_PACK, 'en-GB');   // rc2-194: approved recorded Jack pack enabled. rc2-230: missing line -> caption only (no device voice, ever).
   // Visual teaching cues (brackets / pointer / labels), measured from real key geometry.
   const overlay = learnMode ? createLearnOverlay(keyboard) : null;
   // Master Training uses its own curriculum; Foundations keeps the original cards.
@@ -890,6 +895,9 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
     if (autoAdvTimer) { clearTimeout(autoAdvTimer); autoAdvTimer = null; }
     if (learnMode && progress && steps[index]) {
       progress.addToSet('foundationsCompleted', steps[index].title);
+      // rc2-230: completion is also recorded by card id. Titles are not unique (two cards
+      // shared one), so chapter completion now reads ids, with titles as legacy fallback.
+      progress.addToSet('cardsCompleted', steps[index].id);
       progress.addToSet('learnCompleted', steps[index].title);
       if (steps[index].progressKey) progress.addToSet('courseConcepts', steps[index].progressKey);
     }
@@ -913,11 +921,16 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
 
   // Has every step in a given chapter been completed? Used to acknowledge a
   // chapter as a real milestone when the next one opens (journey, not gamification).
+  const TITLE_COUNTS = steps.reduce((m, s) => { m[s.title] = (m[s.title] || 0) + 1; return m; }, {});
+  const TITLE_IS_UNIQUE = (t) => TITLE_COUNTS[t] === 1;
   function chapterComplete(chIdx) {
     if (!progress || chIdx < 1 || chIdx > COURSE_CHAPTERS.length) return false;
     return COURSE_CHAPTERS[chIdx - 1].ids.every((id) => {
       const st = steps.find((s) => s.id === id);
-      return st ? progress.has('foundationsCompleted', st.title) : true;
+      if (!st) return true;
+      if (progress.has('cardsCompleted', st.id)) return true;
+      // Legacy (pre-rc2-230) progress stored titles. Trust a title only if no other card shares it.
+      return TITLE_IS_UNIQUE(st.title) && progress.has('foundationsCompleted', st.title);
     });
   }
 
@@ -1078,7 +1091,10 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
       // resumed lesson narrates as normal. (Meet the Keyboard's audio is untouched.)
       let spBranch = 'none', spLine = null; const spWaBefore = welcomeAutoPlayed;
       if (resuming) {
-        spBranch = 'welcome-back'; spLine = 'greeting.back.' + partOfDayKey();
+        // rc2-230: the recorded greeting.back.* MP3s say "Good morning, Tim". Until they are
+        // re-recorded without a name (voice batch V1), use a line id with no MP3 so the
+        // caption is shown and paced exactly as before, with no named audio.
+        spBranch = 'welcome-back'; spLine = (NAMELESS_GREETINGS_RECORDED ? 'greeting.back.' : 'greeting.back-nameless.') + partOfDayKey();
         reportJackVoice(spLine, pendingGreeting);
         audio.say(spLine, pendingGreeting, { source: 'greeting', once: true });
         welcomeAutoPlayed = true;
@@ -1603,7 +1619,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
         else neutral('Good \u2014 now the next step.');
       } else {
         tryState.seqPos = 0;
-        guide(`That was ${name}. ${c.hint || 'Start again from C.'}`);
+        guide(`That was ${name}. ${c.hint || `Start again from ${NOTE_NAMES[targetsPc[0]]}.`}`);
       }
     } else if (c.mode === 'count') {
       if (countInActive) return;   // count-in is listen-first; presses don't count yet
@@ -1905,7 +1921,7 @@ try { if (typeof window !== 'undefined') (window.__kmVer = window.__kmVer || {})
         // gives a short "Welcome back, Tim." The Continue button is the resume CTA, so
         // the lesson page stays uncluttered (no "continue where you left off" line).
         const greetText = started
-          ? `Welcome back, ${LEARNER_NAME}.`
+          ? (LEARNER_NAME ? `Welcome back, ${LEARNER_NAME}.` : 'Welcome back.')
           : 'Welcome to the course. I\u2019m Jack. I\u2019ll guide you step by step.';
         if (greetingEl) greetingEl.textContent = greetText;
         if (!greeted) {

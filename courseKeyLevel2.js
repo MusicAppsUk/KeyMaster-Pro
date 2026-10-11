@@ -392,14 +392,14 @@ export const KEY_LEVEL2_STEPS = [
     support: { highlight: [69, 67, 65, 64, 62, 60], replay: true },
   },
 
-  // ===== Chapter 6 — First Light (a piece with quavers) ==================
+  // ===== Chapter 6 — Skylark (a piece with quavers) ==================
   {
-    eyebrow: 'KeyMaster Course \u00B7 Key Level 2', title: 'First Light \u2014 listen first', id: 'kl2-firstlight-listen',
+    eyebrow: 'KeyMaster Course \u00B7 Key Level 2', title: 'Skylark \u2014 listen first', id: 'kl2-firstlight-listen',
     say: [
-      { text: 'Here is First Light \u2014 the first piece you will play that moves at two speeds. Steady notes, and quicker ones woven through them.', pauseAfter: 680, tone: 'warm' },
+      { text: 'Here is Skylark \u2014 the first piece you will play that moves at two speeds. Steady notes, and quicker ones woven through them.', pauseAfter: 680, tone: 'warm' },
       { text: 'Listen for where it quickens. It happens twice, and both times it settles again afterwards.', pauseAfter: 420, tone: 'instruct' },
     ],
-    explain: ['First Light: a piece that moves at two speeds \u2014 crotchets and quavers together.', 'It quickens twice, and settles both times. Listen for that pattern of movement and rest before you read it.'],
+    explain: ['Skylark: a piece that moves at two speeds \u2014 crotchets and quavers together.', 'It quickens twice, and settles both times. Listen for that pattern of movement and rest before you read it.'],
     show: { kind: 'staff', clef: 'treble', timeSig: [4, 4], notes: [
       { midi: 60, value: 'quarter', finger: 1 }, { midi: 64, value: 'quarter', finger: 3 },
       { midi: 65, value: 'eighth', finger: 4 }, { midi: 64, value: 'eighth', finger: 3 },
@@ -412,17 +412,17 @@ export const KEY_LEVEL2_STEPS = [
       { midi: 60, value: 'whole', finger: 1 },
     ], beams: [[3, 4], [11, 12]], bars: [5, 8, 13],
       marks: [{ at: 1, text: 'p' }, { at: 9, text: 'f' }],
-      caption: 'First Light \u2014 steady notes with quicker ones woven through.' },
+      caption: 'Skylark \u2014 steady notes with quicker ones woven through.' },
     demo: [60, 64, 65, 64, 62, 64, 62, 60, 64, 67, 65, 64, 62, 60], demoGap: 0.4,
     mode: 'none',
   },
   {
-    eyebrow: 'KeyMaster Course \u00B7 Key Level 2', title: 'First Light \u2014 the opening phrase', id: 'kl2-firstlight-a',
+    eyebrow: 'KeyMaster Course \u00B7 Key Level 2', title: 'Skylark \u2014 the opening phrase', id: 'kl2-firstlight-a',
     say: [
       { text: 'Take the opening phrase alone. Two steady notes, a quick pair, then a long note to settle on.', pauseAfter: 640, tone: 'warm' },
       { text: 'Quiet throughout \u2014 this is the piece waking up, not announcing itself.', pauseAfter: 400, tone: 'instruct' },
     ],
-    explain: ['The opening phrase of First Light: two crotchets, a beamed quaver pair, then a minim.', 'Played quietly. The character here is gentle \u2014 the dynamics are part of the reading, not an afterthought.'],
+    explain: ['The opening phrase of Skylark: two crotchets, a beamed quaver pair, then a minim.', 'Played quietly. The character here is gentle \u2014 the dynamics are part of the reading, not an afterthought.'],
     show: { kind: 'staff', clef: 'treble', timeSig: [4, 4], notes: [
       { midi: 60, value: 'quarter', finger: 1 }, { midi: 64, value: 'quarter', finger: 3 },
       { midi: 65, value: 'eighth', finger: 4 }, { midi: 64, value: 'eighth', finger: 3 },
@@ -440,12 +440,12 @@ export const KEY_LEVEL2_STEPS = [
     support: { highlight: [60, 64, 65, 62], replay: true },
   },
   {
-    eyebrow: 'KeyMaster Course \u00B7 Key Level 2', title: 'First Light \u2014 perform it whole', id: 'kl2-firstlight-perform',
+    eyebrow: 'KeyMaster Course \u00B7 Key Level 2', title: 'Skylark \u2014 perform it whole', id: 'kl2-firstlight-perform',
     say: [
       { text: 'Now the whole piece. The second half answers the first \u2014 it climbs higher and speaks more strongly before coming home.', pauseAfter: 680, tone: 'warm' },
       { text: 'Two speeds, two dynamics, one steady pulse holding it all together. Take a breath, and play it as music.', pauseAfter: 420, tone: 'instruct' },
     ],
-    explain: ['Perform First Light complete. The second half climbs higher and plays stronger, then resolves home.', 'Everything Key Level 2 has taught so far is in this one piece: quavers, dynamics, phrase shape, and a pulse that never wavers.'],
+    explain: ['Perform Skylark complete. The second half climbs higher and plays stronger, then resolves home.', 'Everything Key Level 2 has taught so far is in this one piece: quavers, dynamics, phrase shape, and a pulse that never wavers.'],
     show: { kind: 'staff', clef: 'treble', timeSig: [4, 4], notes: [
       { midi: 60, value: 'quarter', finger: 1 }, { midi: 64, value: 'quarter', finger: 3 },
       { midi: 65, value: 'eighth', finger: 4 }, { midi: 64, value: 'eighth', finger: 3 },
@@ -458,9 +458,9 @@ export const KEY_LEVEL2_STEPS = [
       { midi: 60, value: 'whole', finger: 1 },
     ], beams: [[3, 4], [11, 12]], bars: [5, 8, 13],
       marks: [{ at: 1, text: 'p' }, { at: 9, text: 'f' }],
-      caption: 'First Light \u2014 performed whole.' },
+      caption: 'Skylark \u2014 performed whole.' },
     demo: [60, 64, 65, 64, 62, 64, 62, 60, 64, 67, 65, 64, 62, 60], demoGap: 0.4,
-    tryPrompt: 'Perform First Light \u2014 both phrases, quiet then strong, steady throughout.',
+    tryPrompt: 'Perform Skylark \u2014 both phrases, quiet then strong, steady throughout.',
     targets: [60, 64, 65, 64, 62, 64, 62, 60, 64, 67, 65, 64, 62, 60], mode: 'sequence',
     okMsg: 'That is a real piece, performed \u2014 two speeds, two dynamics, and the pulse never lost. Genuinely well played.',
     hint: 'The first phrase you already know. The second starts a skip higher, climbs to the top, then steps all the way home.',
@@ -697,10 +697,10 @@ export const KEY_LEVEL2_STEPS = [
     eyebrow: 'KeyMaster Course \u00B7 Key Level 2', title: 'Key Level 2 \u2014 what you have gained', id: 'kl2-review',
     say: [
       { text: 'Look at what has changed. You read in three-time as easily as four. You read notes faster than the beat. You read a key signature and carry it in your head.', pauseAfter: 700, tone: 'warm' },
-      { text: 'You have played a black key from notation, and shaped pieces with quiet and strong. Five pieces are now in your hands: Slate, Homeward, Still Water, First Light and Meadow Song.', pauseAfter: 620, tone: 'warm' },
+      { text: 'You have played a black key from notation, and shaped pieces with quiet and strong. Five pieces are now in your hands: Slate, Homeward, Still Water, Skylark and Meadow Song.', pauseAfter: 620, tone: 'warm' },
       { text: 'That is real repertoire, honestly earned. Key Level 3 \u2014 Pattern Fluency \u2014 will take it further when you are ready.', pauseAfter: 420, tone: 'instruct' },
     ],
-    explain: ['Key Level 2 complete. You now read three-time and four-time, quavers within the beat, dynamics, and a key signature carried across a whole piece.', 'You have played your first black key from notation, moved your hand to a new five-finger home on G, and performed five pieces: Slate, Homeward, Still Water, First Light and Meadow Song.', 'Key Level 3 \u2014 Pattern Fluency \u2014 builds directly on this: recognising shapes and patterns fast enough that reading becomes fluent rather than deliberate.'],
+    explain: ['Key Level 2 complete. You now read three-time and four-time, quavers within the beat, dynamics, and a key signature carried across a whole piece.', 'You have played your first black key from notation, moved your hand to a new five-finger home on G, and performed five pieces: Slate, Homeward, Still Water, Skylark and Meadow Song.', 'Key Level 3 \u2014 Pattern Fluency \u2014 builds directly on this: recognising shapes and patterns fast enough that reading becomes fluent rather than deliberate.'],
     mode: 'none',
   },
 ];

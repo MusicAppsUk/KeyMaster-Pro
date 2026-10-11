@@ -29,6 +29,7 @@ function freshState() {
     learnLesson: 0,               // current Master Training lesson index
     learnCompleted: [],           // ids of completed Learn lessons
     foundationsCompleted: [],     // ids of completed Foundations cards
+    cardsCompleted: [],           // rc2-230: completed card ids (titles are not unique)
     heardNarration: [],           // narration ids already spoken (no repeats)
     voiceOn: true,                // tutor voice preference
     voicePrefMigrated: false,     // one-time: legacy 'voice off' migrated to Jack-on default
