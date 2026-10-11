@@ -84,6 +84,13 @@ export const CHORD_QUALITIES = Object.freeze([
     degrees: [[1, 0], [3, 3], [5, 6], [7, 10]] },
   { id: 'dim7',    label: 'Diminished 7th',   suffix: 'dim7',  group: 'Sevenths',
     degrees: [[1, 0], [3, 3], [5, 6], [7, 9]] },
+  // rc2-229. A dominant seventh with a flattened fifth: the same b5 and b7 as a
+  // half-diminished, but a MAJOR third. Twenty-three qualities were here and
+  // this was not one of them, which a chord chart spotted before any of our own
+  // checks did — the harnesses could prove every chord we had was right, and
+  // had nothing to say about a chord we had never listed.
+  { id: 'dom7b5',  label: 'Dominant 7th \u266D5', suffix: '7\u266D5', group: 'Sevenths',
+    degrees: [[1, 0], [3, 4], [5, 6], [7, 10]] },
   { id: 'aug7',    label: 'Augmented 7th',    suffix: 'aug7',  group: 'Sevenths',
     degrees: [[1, 0], [3, 4], [5, 8], [7, 10]] },
   { id: 'dom7sus4', label: '7th suspended 4th', suffix: '7sus4', group: 'Sevenths',
@@ -138,6 +145,41 @@ export function spell(letter, accidental) {
   if (accidental > 0) return letter + '♯'.repeat(accidental);
   return letter + '♭'.repeat(-accidental);
 }
+
+/**
+ * Semitones above the root for each degree of a MAJOR scale. A chord formula is
+ * written as its distance from this: a third four semitones up is a plain 3, a
+ * third three semitones up is a flat 3.
+ */
+const MAJOR_DEGREE = { 1: 0, 2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: 11, 9: 14, 11: 17, 13: 21 };
+
+/**
+ * The chord's formula, as a player would write it: "1, \u266D3, \u266D5, \u266D\u266D7".
+ *
+ * Derived from the degree table rather than stored beside it, so the formula and
+ * the notes can never drift apart. This is the thing a chord chart teaches and
+ * our library was not showing: the note names tell you one chord, the formula
+ * tells you how to build that chord on any of the other sixteen roots.
+ */
+export function formula(qualityId) {
+  const q = quality(qualityId);
+  if (!q) return '';
+  return q.degrees.map(([degree, semitones]) => {
+    const diff = semitones - MAJOR_DEGREE[degree];
+    const mark = diff === 0 ? '' : diff > 0 ? '\u266F'.repeat(diff) : '\u266D'.repeat(-diff);
+    return mark + degree;
+  }).join(', ');
+}
+
+/**
+ * The twelve a cheat sheet teaches: the triads and the sevenths. These are the
+ * SYSTEM \u2014 learn them and every other chord in the dictionary is a variation.
+ * The sixths, suspensions and extensions are lookup material, not system.
+ */
+export const CORE_QUALITIES = Object.freeze([
+  'major', 'minor', 'dim', 'aug',
+  'maj7', 'min7', 'dom7', 'aug7', 'dom7b5', 'minmaj7', 'halfdim', 'dim7',
+]);
 
 /** The quality record for an id, or undefined. */
 export function quality(id) {

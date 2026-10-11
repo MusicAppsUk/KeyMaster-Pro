@@ -32,6 +32,7 @@
 
 import {
   CHORD_ROOTS, buildChord, qualityGroups, inversionCount, inversionLabel,
+  CORE_QUALITIES, formula, quality,
 } from './chordDictionary.js';
 import { buildCadence, cadenceForms } from './cadenceEngine.js';
 import { createStaffView } from './staffView.js';
@@ -75,6 +76,7 @@ export default function createView(ctx) {
   const cadPills = new Map();     // key -> button
   const modeButtons = new Map();  // 'major'|'minor' -> button
   const tabButtons = new Map();   // 'chords'|'cadences' -> button
+  const sheetRows = new Map();    // quality id -> { formula, notes } cells
 
   injectStyles();
   const ui = build();
@@ -162,17 +164,44 @@ export default function createView(ctx) {
     });
   }
 
-  /** Redraw every card's note list for the current root. Cheap: 23 chords. */
+  /**
+   * rc2-229 \u2014 THE CHEAT SHEET.
+   *
+   * A printed chord chart is stuck in one key, and the hard part was never
+   * knowing that a diminished 7th is 1 b3 b5 bb7 \u2014 it is working out what that
+   * is on A flat. So this one follows the selected root: the formulas stay put
+   * and the note names re-spell themselves every time you change it.
+   *
+   * Twelve rows, not twenty-four. These are the SYSTEM; learn them and the rest
+   * of the dictionary is variation. The sixths, suspensions and extensions stay
+   * in the grid below, where you look them up rather than learn them.
+   */
+  function refreshSheet() {
+    for (const [id, cells] of sheetRows) {
+      const ch = buildChord(sel.root, id, { octave: octaveFor(sel.root) });
+      cells.notes.textContent = ch.notes
+        .slice().sort((a, b) => a.degree - b.degree).map((n) => n.name).join(' ');
+      cells.row.classList.toggle('is-active', id === sel.quality);
+    }
+    if (ui.sheetRoot) ui.sheetRoot.textContent = display(sel.root);
+  }
+
+  /** Redraw every card's note list for the current root. Cheap: 24 chords. */
   function refreshCards() {
     for (const [id, btn] of cards) {
       const ch = buildChord(sel.root, id, { octave: octaveFor(sel.root) });
       const sym = btn.querySelector('.chl__sym');
       const notes = btn.querySelector('.chl__notes');
+      const form = btn.querySelector('.chl__formula');
       if (sym) sym.textContent = ch.symbol;
       if (notes) {
         notes.textContent = ch.notes
           .slice().sort((a, b) => a.degree - b.degree).map((n) => n.name).join(' ');
       }
+      // The formula was in the data all along and never on the screen. The note
+      // names tell you this chord; the formula tells you how to build it on any
+      // of the other sixteen roots.
+      if (form) form.textContent = formula(id);
       btn.classList.toggle('is-active', id === sel.quality);
       btn.setAttribute('aria-pressed', id === sel.quality ? 'true' : 'false');
     }
@@ -231,6 +260,7 @@ export default function createView(ctx) {
 
     highlightChord(ch);
     refreshCards();
+    refreshSheet();
     if (sound) playChord(ch.notes);
   }
 
@@ -296,6 +326,7 @@ export default function createView(ctx) {
     ui.rootWrap.classList.toggle('is-hidden', !onChords);
     ui.cadWrap.classList.toggle('is-hidden', onChords);
     ui.grid.classList.toggle('is-hidden', !onChords);
+    ui.sheet.classList.toggle('is-hidden', !onChords);
     ui.cadGrid.classList.toggle('is-hidden', onChords);
     ui.invRow.classList.toggle('is-hidden', !onChords);
     for (const [t, b] of tabButtons) {
@@ -348,12 +379,68 @@ export default function createView(ctx) {
 
     const head = el('div', { class: 'chl__head' });
     const title = el('h2', { class: 'chl__title' });
-    title.textContent = 'Chord Library';
+    title.textContent = 'Harmony Masterclass';
     const blurb = el('p', { class: 'chl__blurb' });
     blurb.textContent = 'Every chord on every root. Tap one to hear it, see it and find it '
       + 'under your hands. Both spellings of each black-key root are listed, because '
       + 'A♭ major and G♯ major are the same shape and two different chords on paper.';
     head.append(title, blurb);
+
+    // ---- Cheat sheet -------------------------------------------------------
+    const sheet = el('section', { class: 'chl__sheet' });
+    const sheetHead = el('button', { class: 'chl__sheettoggle', type: 'button', 'aria-expanded': 'true' });
+    const sheetTitle = el('span', { class: 'chl__sheettitle' });
+    sheetTitle.textContent = 'Cheat sheet';
+    const sheetRoot = el('span', { class: 'chl__sheetroot' });
+    const sheetChev = el('span', { class: 'chl__chev', 'aria-hidden': 'true' });
+    sheetChev.textContent = '\u2013';
+    sheetHead.append(sheetTitle, sheetRoot, sheetChev);
+
+    const sheetBody = el('div', { class: 'chl__sheetbody' });
+    const sheetNote = el('p', { class: 'chl__sheetnote' });
+    sheetNote.textContent = 'The twelve that make the system. The formula is the part that '
+      + 'travels \u2014 learn it once and you can build the chord on any root. The notes '
+      + 'beside it follow whichever root you pick.';
+    const table = el('div', { class: 'chl__sheettable' });
+    const hRow = el('div', { class: 'chl__sheetrow is-head' });
+    for (const [t, cls] of [['Chord', 'chl__cname'], ['Formula', 'chl__cform'], ['Notes', 'chl__cnotes']]) {
+      const h = el('span', { class: cls }); h.textContent = t; hRow.appendChild(h);
+    }
+    table.appendChild(hRow);
+    for (const id of CORE_QUALITIES) {
+      const q = quality(id);
+      if (!q) continue;
+      const row = el('button', { class: 'chl__sheetrow', type: 'button' });
+      const nameC = el('span', { class: 'chl__cname' }); nameC.textContent = q.label;
+      const formC = el('span', { class: 'chl__cform' }); formC.textContent = formula(id);
+      const notesC = el('span', { class: 'chl__cnotes' });
+      row.append(nameC, formC, notesC);
+      row.addEventListener('click', () => selectQuality(id));
+      table.appendChild(row);
+      sheetRows.set(id, { row, formula: formC, notes: notesC });
+    }
+    sheetBody.append(sheetNote, table);
+    sheet.append(sheetHead, sheetBody);
+
+    // Open the first time, and remember the choice after that \u2014 a reference you
+    // already know is clutter, and one you do not is the point of the page.
+    let sheetOpen = true;
+    try {
+      const v = window.localStorage.getItem('km_chord_sheet');
+      if (v === 'closed') sheetOpen = false;
+    } catch (_) { /* storage may be blocked; default to open */ }
+    const applySheet = () => {
+      sheetBody.classList.toggle('is-hidden', !sheetOpen);
+      sheetHead.setAttribute('aria-expanded', sheetOpen ? 'true' : 'false');
+      sheetChev.textContent = sheetOpen ? '\u2013' : '+';
+    };
+    sheetHead.addEventListener('click', () => {
+      sheetOpen = !sheetOpen;
+      applySheet();
+      try { window.localStorage.setItem('km_chord_sheet', sheetOpen ? 'open' : 'closed'); }
+      catch (_) { /* no-op */ }
+    });
+    applySheet();
 
     // ---- Shelf switch ------------------------------------------------------
     const tabs = el('div', { class: 'chl__tabs', role: 'group', 'aria-label': 'Library shelf' });
@@ -429,7 +516,8 @@ export default function createView(ctx) {
         const sym = el('span', { class: 'chl__sym' });
         const lab = el('span', { class: 'chl__lab' }); lab.textContent = q.label;
         const notes = el('span', { class: 'chl__notes' });
-        b.append(sym, lab, notes);
+        const form = el('span', { class: 'chl__formula' });
+        b.append(sym, lab, form, notes);
         b.addEventListener('click', () => selectQuality(q.id));
         row.appendChild(b);
         cards.set(q.id, b);
@@ -457,9 +545,9 @@ export default function createView(ctx) {
     cadSection.append(cadHead, cadCardRow);
     cadGrid.appendChild(cadSection);
 
-    root.append(head, tabs, rootWrap, cadWrap, panel, grid, cadGrid);
+    root.append(head, tabs, sheet, rootWrap, cadWrap, panel, grid, cadGrid);
     return { root, symbol, qualityName, noteList, invName, invRow, grid,
-      rootWrap, cadWrap, cadRow, cadGrid };
+      rootWrap, cadWrap, cadRow, cadGrid, sheet, sheetRoot };
   }
 
   function wire() {
@@ -583,6 +671,33 @@ function injectStyles() {
   .chl__notes { font-size: .78rem; opacity: .78; margin-top: .15rem; letter-spacing: .01em; }
   .chl__card.is-active .chl__lab, .chl__card.is-active .chl__notes { opacity: .78; }
 
+  .chl__sheet { border: 1px solid rgba(255,255,255,.12); border-radius: .9rem;
+    background: rgba(255,255,255,.03); overflow: hidden; }
+  .chl__sheettoggle { display: flex; align-items: baseline; gap: .6rem; width: 100%;
+    padding: .7rem .9rem; background: none; border: 0; color: inherit; cursor: pointer; text-align: left; }
+  .chl__sheettitle { font-size: .74rem; letter-spacing: .1em; text-transform: uppercase;
+    font-weight: 600; opacity: .62; }
+  .chl__sheetroot { font-size: 1rem; font-weight: 700; }
+  .chl__chev { margin-left: auto; font: 700 1.1rem/1 inherit; opacity: .5; }
+  .chl__sheetbody { padding: 0 .9rem .9rem; }
+  .chl__sheetnote { margin: 0 0 .6rem; font-size: .82rem; opacity: .64; line-height: 1.45; max-width: 60ch; }
+  .chl__sheettable { display: flex; flex-direction: column; }
+  .chl__sheetrow { display: grid; grid-template-columns: minmax(7.5rem, 1.3fr) minmax(7rem, 1fr) minmax(7rem, 1.2fr);
+    gap: .5rem; align-items: baseline; width: 100%; text-align: left; cursor: pointer;
+    padding: .34rem .45rem; border: 0; border-radius: .4rem; background: none;
+    color: inherit; font: inherit; }
+  .chl__sheetrow:not(.is-head):hover { background: rgba(255,255,255,.07); }
+  .chl__sheetrow.is-active { background: var(--km-accent, #c8a34a); color: #14110c; }
+  .chl__sheetrow.is-head { cursor: default; font-size: .68rem; letter-spacing: .09em;
+    text-transform: uppercase; opacity: .45; border-bottom: 1px solid rgba(255,255,255,.1);
+    padding-bottom: .35rem; margin-bottom: .2rem; }
+  .chl__cname { font-size: .88rem; font-weight: 600; }
+  .chl__cform { font-size: .88rem; font-variant-numeric: tabular-nums; opacity: .8; }
+  .chl__cnotes { font-size: .88rem; font-weight: 700; }
+  .chl__sheetrow.is-active .chl__cform { opacity: .72; }
+  .chl__formula { font-size: .74rem; opacity: .6; font-variant-numeric: tabular-nums; }
+  .chl__card.is-active .chl__formula { opacity: .7; }
+
   .chl__tabs { display: flex; gap: .3rem; }
   .chl__tab { padding: .55rem 1.1rem; border-radius: .55rem; cursor: pointer; color: inherit;
     border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.04);
@@ -598,6 +713,9 @@ function injectStyles() {
   .chl__invname { max-width: 46ch; text-align: center; line-height: 1.4; }
 
   @media (max-width: 560px) {
+    .chl__sheetrow { grid-template-columns: minmax(6rem, 1.2fr) minmax(5.6rem, 1fr) minmax(5.6rem, 1.1fr);
+      gap: .35rem; }
+    .chl__cname, .chl__cform, .chl__cnotes { font-size: .8rem; }
     .chl__symbol { font-size: 2.1rem; }
     .chl__cards { grid-template-columns: repeat(auto-fill, minmax(8.2rem, 1fr)); }
     .chl__pill { min-width: 2.6rem; padding: .45rem .4rem; font-size: .94rem; }
